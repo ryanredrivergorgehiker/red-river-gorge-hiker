@@ -1,5 +1,7 @@
 name: CI
 
+# Website CI retriggered after workflow registration on main.
+
 on:
   pull_request:
     types:
