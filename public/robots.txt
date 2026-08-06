@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ryanredrivergorgehiker.github.io/red-river-gorge-hiker/sitemap-index.xml

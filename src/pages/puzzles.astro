@@ -1,0 +1,4 @@
+---
+import Base from '../layouts/Base.astro'; import Card from '../components/Card.astro'; import {photographs,PUZZLE} from '../data/products'; const puzzles=photographs.filter(p=>p.puzzleAvailable);
+---
+<Base title="Puzzles" description="Three approved 500-piece Red River Gorge photography puzzles by Ryan D. Lewis."><div class="page"><p class="eyebrow">Three approved photographs</p><h1>Puzzles</h1><p class="lede">Each horizontal 500-piece puzzle measures 18 × 24 inches and is fulfilled by Fine Art America.</p><div class="grid">{puzzles.map(photo=><article><Card photo={photo}/><ul class="facts"><li>{PUZZLE.dimensions}</li><li>{PUZZLE.pieceCount} pieces</li><li>{PUZZLE.orientation}</li><li>{PUZZLE.customerPrice}</li></ul><a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">View This Puzzle <span class="sr-only">on Fine Art America (opens in a new tab)</span></a></article>)}</div></div></Base>

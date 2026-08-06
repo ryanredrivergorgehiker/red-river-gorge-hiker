@@ -1,0 +1,5 @@
+---
+import Artwork from './Artwork.astro';
+const { photo }=Astro.props; const base=import.meta.env.BASE_URL;
+---
+<article class="card"><a href={`${base}photographs/${photo.slug}/`}><Artwork title={photo.title} catalogId={photo.catalogId}/><h3>{photo.title}</h3><p>{photo.location}</p></a></article>

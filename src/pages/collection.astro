@@ -1,0 +1,4 @@
+---
+import Base from '../layouts/Base.astro'; import Card from '../components/Card.astro'; import {photographs} from '../data/products';
+---
+<Base title="Collection" description="The six-photograph launch collection by Red River Gorge photographer Ryan D. Lewis."><div class="page"><p class="eyebrow">The launch collection</p><h1>Collection</h1><p class="lede">Six views from Clifty Wilderness, Red River Gorge, Kentucky.</p><div class="grid">{photographs.map(photo=><Card photo={photo}/>)}</div></div></Base>
