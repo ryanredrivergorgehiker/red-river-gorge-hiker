@@ -8,12 +8,22 @@ on:
       - reopened
       - ready_for_review
   workflow_dispatch:
+    inputs:
+      task:
+        description: Task to run
+        required: true
+        default: test
+        type: choice
+        options:
+          - test
+          - generate-lockfile
 
 permissions:
   contents: read
 
 jobs:
   contract:
+    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Repository contract
     runs-on: ubuntu-latest
 
@@ -25,6 +35,7 @@ jobs:
         run: python3 -m unittest discover -s tests -p "test*.py" -v
 
   build:
+    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Astro build
     runs-on: ubuntu-latest
 
@@ -43,3 +54,30 @@ jobs:
 
       - name: Run checks
         run: npm run check
+
+  lockfile:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'generate-lockfile' }}
+    name: Generate package lock
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate complete lockfile
+        run: |
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Upload lockfile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
+          retention-days: 1
