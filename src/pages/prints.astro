@@ -7,18 +7,16 @@ const base = import.meta.env.BASE_URL;
 ---
 <Base
   title="Prints from the Red River Gorge"
-  description="Selected wall-art formats for the six Red River Gorge Hiker launch photographs, fulfilled by Fine Art America."
+  description="Wall-art options for the six Red River Gorge Hiker launch photographs, fulfilled by Fine Art America."
 >
   <div class="page">
-    <p class="eyebrow">Fulfilled by Fine Art America</p>
+    <p class="eyebrow">Fine-art prints</p>
     <h1>Prints from the Red River Gorge</h1>
     <div class="prose-wide">
-      <p class="lede">The six photographs in the Red River Gorge Hiker launch collection are available through Fine Art America in selected wall-art sizes and formats. Choose a photograph below to read its story or continue to Fine Art America to view the currently available product options.</p>
+      <p class="lede">All six photographs in the launch collection are available in selected wall-art formats through Fine Art America.</p>
       <div class="notice">
-        <strong>Online fulfillment:</strong> Fine Art America handles online product selection, payment, production, framing when selected, fulfillment, shipping, and ordinary order service. Ryan does not personally produce or ship website orders.
+        <strong>Ordering:</strong> Fine Art America shows the available sizes and formats, processes payment, produces the order, and handles shipping.
       </div>
-      <p>Available formats, sizes, framing choices, and final buyer prices are shown by Fine Art America. Those prices may vary according to the selected product and options.</p>
-      <p>Local displays and personally produced physical photographs are separate from online Fine Art America fulfillment. A venue display does not mean that every displayed photograph is available for immediate purchase at that location.</p>
     </div>
 
     <div class="grid collection-grid">
@@ -26,7 +24,7 @@ const base = import.meta.env.BASE_URL;
         <article class="product-card">
           <Card photo={photo} />
           <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-            View wall art options
+            View print options
             <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
           </a>
         </article>
@@ -35,8 +33,8 @@ const base = import.meta.env.BASE_URL;
 
     <section class="section prose-wide">
       <h2>Selected photographs are also available as puzzles</h2>
-      <p>Three selected photographs are also offered as 500-piece puzzles.</p>
-      <a href={`${base}puzzles/`}>Explore the Puzzles</a>
+      <p>Three photographs are offered as 500-piece puzzles.</p>
+      <a href={`${base}puzzles/`}>View the puzzles</a>
     </section>
   </div>
 </Base>
