@@ -195,7 +195,7 @@ h3 {
   text-underline-offset: .18em;
 }
 
-/* Keep the footer compact: useful links first, then one concise ownership line. */
+/* Keep the footer compact: useful links first, then social links, then one concise ownership line. */
 footer .footer-inner {
   display: flex;
   flex-direction: column;
@@ -218,6 +218,35 @@ footer .footer-nav a {
   font-size: .9rem;
   font-weight: 650;
   line-height: 1.3;
+}
+footer .footer-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .8rem;
+}
+footer .footer-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1px solid rgba(255, 255, 255, .45);
+  border-radius: 50%;
+  color: white;
+  text-decoration: none;
+}
+footer .footer-social a:hover {
+  border-color: white;
+  background: rgba(255, 255, 255, .1);
+}
+footer .footer-social a:focus-visible {
+  outline-color: white;
+}
+footer .footer-social svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: currentColor;
 }
 footer .footer-credit {
   display: flex;
@@ -245,6 +274,10 @@ footer .footer-credit strong {
   footer .footer-nav a,
   footer .footer-credit {
     font-size: .84rem;
+  }
+  footer .footer-social a {
+    width: 2rem;
+    height: 2rem;
   }
   footer .footer-credit {
     flex-direction: column;
