@@ -11,7 +11,12 @@ const base = import.meta.env.BASE_URL;
 ---
 <article class="card">
   <a href={`${base}photographs/${photo.slug}/`}>
-    <Artwork title={photo.title} catalogId={photo.catalogId} alt={photo.altText} />
+    <Artwork
+      title={photo.title}
+      catalogId={photo.catalogId}
+      alt={photo.altText}
+      sizes="(max-width: 700px) calc(100vw - 2rem), (max-width: 1120px) calc((100vw - 5.5rem) / 2), 525px"
+    />
     <p class="eyebrow">{photo.catalogId}</p>
     <h3>{photo.title}</h3>
     <p>{photo.shortDescription}</p>
