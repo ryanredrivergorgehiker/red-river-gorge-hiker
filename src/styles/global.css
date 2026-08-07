@@ -89,20 +89,69 @@ main { min-height: 60vh; }
 .prose section { margin-block: 2.25rem; }
 .prose section:first-of-type { margin-top: 1.75rem; }
 
-/* Long-form reading pages use a generous line length without shrinking the page shell. */
+/* Long-form pages keep generous reading width without shrinking the page shell. */
 .about-copy > p,
-.stories-page > .stories-intro,
-.story-entry {
+.stories-page > .stories-intro {
   max-width: var(--reading);
 }
-.story-entry {
-  border-top: 1px solid var(--line);
-  margin-top: 3rem;
-  padding-top: 2.5rem;
+
+/* Compact story index with native, accessible expand/collapse behavior. */
+.story-accordion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.35rem;
+  margin-top: 2rem;
+  align-items: start;
 }
-.story-entry:first-of-type { margin-top: 2rem; }
-.story-entry p { max-width: var(--reading); }
-.story-entry h2 { margin-bottom: 1.25rem; }
+.story-accordion {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.28);
+  min-width: 0;
+}
+.story-accordion[open] { grid-column: 1 / -1; }
+.story-accordion summary {
+  min-height: 12rem;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+  padding: 1.35rem;
+}
+.story-accordion summary::-webkit-details-marker { display: none; }
+.story-accordion[open] summary {
+  min-height: 0;
+  border-bottom: 1px solid var(--line);
+}
+.story-summary-title {
+  color: var(--gorge);
+  font-family: var(--serif);
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 600;
+  line-height: 1.12;
+}
+.story-summary-copy {
+  color: var(--charcoal);
+  font-size: .96rem;
+  line-height: 1.55;
+}
+.story-summary-action {
+  color: var(--gorge);
+  font-size: .9rem;
+  font-weight: 700;
+  margin-top: auto;
+  text-decoration: underline;
+  text-underline-offset: .18em;
+}
+.story-summary-action .when-open { display: none; }
+.story-accordion[open] .story-summary-action .when-closed { display: none; }
+.story-accordion[open] .story-summary-action .when-open { display: inline; }
+.story-body {
+  max-width: var(--reading);
+  padding: 1.5rem 1.35rem 1.25rem;
+}
+.story-body p:last-child { margin-bottom: 0; }
+.reference-link { text-decoration-thickness: 1px; }
 
 /* Homepage */
 .home-hero { padding-top: 1.5rem; }
@@ -117,6 +166,8 @@ main { min-height: 60vh; }
 .section { padding-block: 3.5rem; border-top: 1px solid var(--line); }
 .section-intro { max-width: none; margin-bottom: 1.75rem; }
 .section-intro h2 { margin-bottom: .7rem; }
+.home-collection-section { padding-bottom: 2.25rem; }
+.home-feature-grid { border-top: 0; padding-top: 0; }
 
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem; }
 .story-grid, .feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem 3rem; }
@@ -172,6 +223,16 @@ main { min-height: 60vh; }
 .asset-note strong { font-family: var(--serif); font-size: 1.3rem; }
 .asset-note small { margin-top: .5rem; }
 
+/* Photograph detail pages use the artwork's actual composition to determine display size. */
+.photo-page { padding-top: 1.75rem; }
+.photo-page > h1 { margin-top: 0; }
+.photo-artwork-stage { margin: 1rem auto 0; }
+.photo-artwork-stage .artwork picture img { width: 100%; }
+.photo-artwork-panorama { max-width: 100%; }
+.photo-artwork-landscape { max-width: 1040px; }
+.photo-artwork-square { max-width: 860px; }
+.photo-artwork-portrait { max-width: 720px; }
+
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem 1.1rem; margin-top: 1.4rem; }
 .button {
   display: inline-block;
@@ -221,6 +282,7 @@ code { overflow-wrap: anywhere; }
   .home-mosaic > * { grid-column: auto !important; grid-row: auto !important; }
   .collection-mosaic > :first-child { grid-column: 1 / -1 !important; }
   .puzzle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-accordion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 850px) {
@@ -241,13 +303,18 @@ code { overflow-wrap: anywhere; }
   .brand-mark { width: 3.5rem; height: 3.5rem; }
   .wordmark { font-size: 1.08rem; gap: .6rem; }
   .page { padding-block: 2.5rem 3.5rem; }
+  .photo-page { padding-top: 1.35rem; }
+  .photo-artwork-stage { max-width: 100%; }
   .home-hero { padding-top: 1rem; }
   .home-hero-copy { padding: 1.5rem 0 2.5rem; }
   .home-hero-copy h1, h1 { font-size: clamp(2rem, 9.5vw, 2.65rem); }
   h2 { font-size: clamp(1.55rem, 7vw, 2.05rem); }
   .section { padding-block: 2.75rem; }
-  .grid, .split, .footer-inner, .collection-mosaic, .home-mosaic, .puzzle-grid { grid-template-columns: 1fr; }
+  .home-feature-grid { padding-top: 0; }
+  .grid, .split, .footer-inner, .collection-mosaic, .home-mosaic, .puzzle-grid, .story-accordion-grid { grid-template-columns: 1fr; }
   .collection-mosaic > *, .home-mosaic > * { grid-column: auto !important; grid-row: auto !important; }
+  .story-accordion[open] { grid-column: auto; }
+  .story-accordion summary { min-height: 0; }
   .grid { gap: 2.25rem; }
   .details div { grid-template-columns: 1fr; gap: 0; }
   .photo-nav { flex-direction: column; }
