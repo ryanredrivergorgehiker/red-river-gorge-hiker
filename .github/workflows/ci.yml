@@ -8,43 +8,32 @@ on:
       - reopened
       - ready_for_review
   workflow_dispatch:
-    inputs:
-      task:
-        description: Task to run
-        required: true
-        default: test
-        type: choice
-        options:
-          - test
-          - generate-lockfile
 
 permissions:
   contents: read
 
 jobs:
   contract:
-    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Repository contract
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run repository contract tests
         run: python3 -m unittest discover -s tests -p "test*.py" -v
 
   build:
-    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Astro build
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -52,48 +41,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=critical
+          npm audit --omit=dev --audit-level=high
+
       - name: Run checks
         run: npm run check
-
-  lockfile:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'generate-lockfile' }}
-    name: Generate package lock
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout selected branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Generate and verify complete lockfile
-        run: |
-          rm -f package-lock.json
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Commit generated lockfile
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          if git diff --cached --quiet; then
-            echo "No lockfile changes to commit."
-          else
-            git commit -m "Generate complete npm lockfile"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
-      - name: Upload lockfile artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock
-          path: package-lock.json
-          retention-days: 1
