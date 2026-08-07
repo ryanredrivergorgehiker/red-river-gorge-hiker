@@ -16,7 +16,6 @@ on:
         type: choice
         options:
           - test
-          - upgrade-lockfile
 
 permissions:
   contents: read
@@ -59,51 +58,3 @@ jobs:
 
       - name: Run checks
         run: npm run check
-
-  lockfile:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'upgrade-lockfile' }}
-    name: Upgrade and verify package lock
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout selected branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.ref_name }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-
-      - name: Generate and repair complete lockfile
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm audit fix --package-lock-only --ignore-scripts --no-fund
-          npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Audit upgraded dependencies
-        run: |
-          npm audit --audit-level=critical
-          npm audit --omit=dev --audit-level=high
-
-      - name: Commit upgraded lockfile
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          if git diff --cached --quiet; then
-            echo "No lockfile changes to commit."
-          else
-            git commit -m "Update lockfile for Astro 7"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
-      - name: Upload lockfile artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: astro-7-package-lock
-          path: package-lock.json
-          retention-days: 1
