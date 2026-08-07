@@ -9,6 +9,10 @@ ALL = '\n'.join(
     for path in (ROOT / 'src').rglob('*')
     if path.is_file()
 )
+PUBLIC_ASTRO = '\n'.join(
+    path.read_text(errors='ignore')
+    for path in (ROOT / 'src').rglob('*.astro')
+)
 
 
 class SiteContract(unittest.TestCase):
@@ -51,11 +55,15 @@ class SiteContract(unittest.TestCase):
 
     def test_prohibited_photo(self):
         self.assertNotRegex(DATA.lower(), r'rrgh-0006|sunset')
-        public = '\n'.join(
-            path.read_text(errors='ignore')
-            for path in (ROOT / 'src').rglob('*.astro')
+        self.assertNotRegex(PUBLIC_ASTRO.lower(), r'rrgh-0006|sunset')
+
+    def test_public_copy_is_timeless_and_catalog_ids_are_internal(self):
+        self.assertNotRegex(PUBLIC_ASTRO, r'RRGH-\d{4}')
+        self.assertNotRegex(
+            PUBLIC_ASTRO.lower(),
+            r'\blaunch\s+(collection|photographs?|puzzles?)\b',
         )
-        self.assertNotRegex(public.lower(), r'rrgh-0006|sunset')
+        self.assertNotIn('<dt>Catalog ID</dt>', PUBLIC_ASTRO)
 
     def test_navigation_order(self):
         header = (ROOT / 'src/components/Header.astro').read_text()
