@@ -30,8 +30,8 @@ h1, h2, h3 {
   letter-spacing: -.02em;
   line-height: 1.08;
 }
-h1 { font-size: clamp(2.45rem, 5vw, 4rem); margin: .25rem 0 1.1rem; }
-h2 { font-size: clamp(1.75rem, 3.1vw, 2.6rem); margin: 0 0 .8rem; }
+h1 { font-size: clamp(2.35rem, 4.2vw, 3.35rem); margin: .25rem 0 1.1rem; }
+h2 { font-size: clamp(1.7rem, 2.7vw, 2.25rem); margin: 0 0 .8rem; }
 h3 { font-size: clamp(1.2rem, 1.8vw, 1.55rem); margin: 0 0 .45rem; }
 p { margin: 0 0 1rem; }
 
@@ -43,7 +43,7 @@ p { margin: 0 0 1rem; }
   margin-inline: auto;
 }
 .header-inner {
-  min-height: 6.35rem;
+  min-height: 7.3rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -52,16 +52,16 @@ p { margin: 0 0 1rem; }
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: .9rem;
+  gap: 1rem;
   color: var(--gorge);
   font-family: var(--serif);
-  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
   font-weight: 700;
   line-height: 1.1;
   text-decoration: none;
   white-space: nowrap;
 }
-.brand-mark { width: 4.35rem; height: 4.35rem; flex: none; }
+.brand-mark { width: 5.75rem; height: 5.75rem; flex: none; }
 .desktop-nav ul, .nav-menu ul { display: flex; gap: 1.35rem; list-style: none; margin: 0; padding: 0; }
 .desktop-nav a, .nav-menu a { color: var(--charcoal); font-size: .98rem; text-decoration: none; }
 .desktop-nav a:hover, .nav-menu a:hover { color: var(--gorge); }
@@ -82,7 +82,7 @@ main { min-height: 60vh; }
 }
 .lede {
   font-family: var(--serif);
-  font-size: clamp(1.15rem, 1.8vw, 1.35rem);
+  font-size: clamp(1.12rem, 1.65vw, 1.3rem);
   line-height: 1.55;
   max-width: 52rem;
 }
@@ -94,8 +94,10 @@ main { min-height: 60vh; }
 .home-hero-media { width: 100%; }
 .home-hero-media .artwork { margin: 0; }
 .home-hero-media .artwork picture img { width: 100%; }
+.hero-purchase { display: block; color: inherit; text-decoration: none; }
+.hero-purchase:hover .artwork-image { filter: brightness(.98); }
 .home-hero-copy { max-width: 900px; padding: 2rem 0 3rem; }
-.home-hero-copy h1 { font-size: clamp(2.35rem, 4.6vw, 3.8rem); max-width: 16ch; }
+.home-hero-copy h1 { font-size: clamp(2.25rem, 3.8vw, 3.15rem); max-width: 17ch; }
 .home-hero-copy .lede { max-width: 45rem; }
 .section { padding-block: 3.5rem; border-top: 1px solid var(--line); }
 .section-intro { max-width: 800px; margin-bottom: 1.75rem; }
@@ -174,7 +176,7 @@ main { min-height: 60vh; }
 .content-split { margin-top: 2.5rem; }
 .purchase-panel { display: grid; align-content: start; gap: 1.25rem; }
 .purchase-panel section { border: 1px solid var(--line); background: rgba(255,255,255,.35); padding: 1.2rem; }
-.purchase-panel h2 { font-size: 1.45rem; }
+.purchase-panel h2 { font-size: 1.4rem; }
 .puzzle-panel { border-color: var(--sandstone) !important; }
 .details { margin-block: 1.75rem; }
 .details div { border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 8.5rem 1fr; gap: 1rem; padding-block: .6rem; }
@@ -207,6 +209,9 @@ code { overflow-wrap: anywhere; }
 
 @media (max-width: 850px) {
   .header-inner, .footer-inner, main > section, .page { width: min(100% - 2rem, var(--content)); }
+  .header-inner { min-height: 6.2rem; }
+  .brand-mark { width: 4.5rem; height: 4.5rem; }
+  .wordmark { font-size: 1.3rem; }
   .desktop-nav { display: none; }
   .nav-menu { display: block; position: relative; }
   .nav-menu summary { cursor: pointer; padding: .45rem .6rem; font-weight: 700; }
@@ -216,14 +221,14 @@ code { overflow-wrap: anywhere; }
 }
 
 @media (max-width: 700px) {
-  .header-inner { min-height: 5.2rem; gap: 1rem; }
-  .brand-mark { width: 3.35rem; height: 3.35rem; }
-  .wordmark { font-size: 1.08rem; gap: .65rem; }
+  .header-inner { min-height: 5.3rem; gap: .8rem; }
+  .brand-mark { width: 3.5rem; height: 3.5rem; }
+  .wordmark { font-size: 1.08rem; gap: .6rem; }
   .page { padding-block: 2.5rem 3.5rem; }
   .home-hero { padding-top: 1rem; }
   .home-hero-copy { padding: 1.5rem 0 2.5rem; }
-  .home-hero-copy h1, h1 { font-size: clamp(2.15rem, 11vw, 3rem); }
-  h2 { font-size: clamp(1.65rem, 8vw, 2.25rem); }
+  .home-hero-copy h1, h1 { font-size: clamp(2rem, 9.5vw, 2.65rem); }
+  h2 { font-size: clamp(1.55rem, 7vw, 2.05rem); }
   .section { padding-block: 2.75rem; }
   .grid, .split, .footer-inner, .collection-mosaic, .home-mosaic, .puzzle-grid { grid-template-columns: 1fr; }
   .collection-mosaic > *, .home-mosaic > * { grid-column: auto !important; grid-row: auto !important; }
