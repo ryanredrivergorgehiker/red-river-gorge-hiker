@@ -1,0 +1,15 @@
+name: Deploy GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  registry:
+    name: Register Pages workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Registration only
+        run: echo "Select the website branch from Actions to run the real preview deployment."
