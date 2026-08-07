@@ -34,7 +34,6 @@ const artworkSchema = {
 ---
 <Base title={photo.title} description={photo.shortDescription}>
   <div class="page">
-    <p class="eyebrow">{photo.catalogId}</p>
     <h1>{photo.title}</h1>
     <p class="lede">{photo.shortDescription}</p>
     <p>{photo.contextLine}</p>
@@ -43,6 +42,7 @@ const artworkSchema = {
       title={photo.title}
       catalogId={photo.catalogId}
       alt={photo.altText}
+      showCaption={false}
     />
 
     <div class="split content-split">
@@ -52,16 +52,15 @@ const artworkSchema = {
         <dl class="details">
           <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
           <div><dt>Location</dt><dd>{photo.location}</dd></div>
-          <div><dt>Catalog ID</dt><dd>{photo.catalogId}</dd></div>
         </dl>
         <p>Photography by Ryan D. Lewis.</p>
-        <p>Photographs © Ryan D. Lewis. All rights reserved. Red River Gorge Hiker is the public photography brand.</p>
+        <p>Photographs © Ryan D. Lewis. All rights reserved.</p>
       </section>
 
       <aside class="purchase-panel" aria-label="Available products">
         <section>
           <h2>Available as wall art</h2>
-          <p>View the available sizes and wall-art formats through Fine Art America. Fine Art America produces and ships online orders.</p>
+          <p>View available sizes and wall-art formats through Fine Art America. Fine Art America produces and ships online orders.</p>
           <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
             View wall art options
             <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
@@ -71,7 +70,7 @@ const artworkSchema = {
         {photo.puzzleAvailable && photo.puzzleUrl && (
           <section class="puzzle-panel">
             <h2>Available as a 500-piece puzzle</h2>
-            <p>This photograph is available as an 18 × 24-inch horizontal puzzle with 500 pieces. The current customer price is $59.99 before shipping and tax. Fine Art America produces and ships the puzzle.</p>
+            <p>This photograph is available as an 18 × 24-inch horizontal puzzle with 500 pieces. The current customer price is $59.99 before shipping and tax.</p>
             <a class="button secondary" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
               View this puzzle
               <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
