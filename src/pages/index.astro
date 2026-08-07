@@ -12,50 +12,96 @@ if (!featuredPhotograph) {
 }
 ---
 <Base
-  title="Kentucky landscape photography"
-  description="A quiet field journal and fine-art photography collection from Kentucky’s Red River Gorge by Ryan D. Lewis."
+  title="Photography and stories from Kentucky’s Red River Gorge"
+  description="Photography and stories from Kentucky’s Red River Gorge and Clifty Wilderness by Ryan D. Lewis."
 >
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">Clifty Wilderness · Kentucky</p>
-      <h1>Red River Gorge Hiker</h1>
-      <p class="lede">Photography by Ryan D. Lewis</p>
-      <p>A regional photography collection shaped by time spent exploring the Red River Gorge.</p>
+      <p class="eyebrow">Red River Gorge Hiker</p>
+      <h1>Photography and stories from Kentucky’s Red River Gorge and Clifty Wilderness.</h1>
+      <p class="lede">These photographs grow from time spent hiking, backpacking, camping, exploring, and returning to the Red River Gorge in changing seasons and conditions. Each image is connected to a real place, a real day, and a story worth remembering.</p>
+      <p class="actions">
+        <a class="button" href={`${base}collection/`}>Explore the Launch Collection</a>
+        <a class="text-link" href={`${base}photographs/double-rainbow-at-eagles-point-buttress/`}>The Story Behind the Rainbow</a>
+      </p>
     </div>
     <Artwork
       title={featuredPhotograph.title}
       catalogId={featuredPhotograph.catalogId}
+      alt={featuredPhotograph.altText}
       eager
     />
   </section>
 
-  <section class="collection">
-    <p class="eyebrow">Launch collection</p>
-    <h2>Six photographs from the Gorge</h2>
-    <div class="grid">{photographs.map((photo) => <Card photo={photo} />)}</div>
-    <p><a class="button" href={`${base}collection/`}>View the collection</a></p>
+  <section class="section prose-wide">
+    <p class="eyebrow">Purpose</p>
+    <h2>A deeper connection to the Gorge</h2>
+    <p>Red River Gorge Hiker presents landscape photography shaped by direct experience of Kentucky’s sandstone country. The work is not separated from the journey that produced it: winter hikes through ice and snow, quiet nights near overlooks, off-trail searches for waterfalls, and the moments when weather and light transform a familiar place.</p>
+    <p>Every photograph in the launch collection includes the story behind it. Visitors can experience the image, learn what happened, and choose an available print through Fine Art America.</p>
   </section>
 
-  <section class="collection split">
-    <div>
-      <h2>Prints and puzzles</h2>
-      <p>Explore wall-art options fulfilled by Fine Art America, or see the three approved 500-piece puzzles.</p>
-      <a href={`${base}prints/`}>Prints</a> · <a href={`${base}puzzles/`}>Puzzles</a>
+  <section class="section collection">
+    <p class="eyebrow">The Launch Collection</p>
+    <h2>Six photographs from the Gorge</h2>
+    <p class="lede">Six photographs introduce Red River Gorge Hiker through rainbows, sunrise, arches, waterfalls, winter ice, and remote exploration. The collection is presented in a settled sequence, beginning with the signature Double Rainbow panorama and ending with the discovery of Splatter Falls.</p>
+    <div class="grid">{photographs.map((photo) => <Card photo={photo} />)}</div>
+    <p><a class="button" href={`${base}collection/`}>View the Full Collection</a></p>
+  </section>
+
+  <section class="section">
+    <p class="eyebrow">Stories from the field</p>
+    <h2>Stories from the field</h2>
+    <p class="lede">The photographs matter because of what happened around them. These three stories introduce the themes that run through the collection.</p>
+    <div class="story-grid">
+      <article>
+        <h3>Assurance after the storm</h3>
+        <p>A hard summer rain cleared above Eagle’s Point Buttress and revealed a brilliant double rainbow while Ryan was already preparing for a Sheltowee Trace thru-hike. He experienced the moment as personal assurance that he would be able to complete the journey he had chosen.</p>
+        <a href={`${base}photographs/double-rainbow-at-eagles-point-buttress/`}>Read the rainbow story</a>
+      </article>
+      <article>
+        <h3>Winter changes familiar places</h3>
+        <p>Severe snow and freezing conditions transformed Red-byrd Arch into a scene of sandstone, deep winter, and a towering layered ice formation. Conditions were icy enough that Ryan and his cousin used a short rappel during part of the day.</p>
+        <a href={`${base}photographs/winter-at-red-byrd-arch/`}>Read the winter story</a>
+      </article>
+      <article>
+        <h3>Documenting a discovery</h3>
+        <p>While exploring remote cliff-line drainages, Ryan found an unexpected four-drop cascade, measured and documented it, and named it Splatter Falls for the way water bursts outward between its middle drops.</p>
+        <a href={`${base}photographs/splatter-falls/`}>Read the discovery story</a>
+      </article>
     </div>
-    <div>
-      <h2>Field stories</h2>
-      <p>Editorial notes about exploring the Gorge—with sensitive places and unsafe route details left out.</p>
-      <a href={`${base}exploring-the-gorge/`}>Read Stories</a>
-    </div>
-    <div>
-      <h2>About</h2>
-      <p>Red River Gorge Hiker is the public photography brand of Ryan D. Lewis.</p>
-      <a href={`${base}about/`}>About the work</a>
-    </div>
-    <div>
-      <h2>Displays and partners</h2>
-      <p>Updates on approved community displays and potential local arrangements.</p>
-      <a href={`${base}displays-and-partners/`}>Current status</a>
-    </div>
+  </section>
+
+  <section class="section feature-grid">
+    <article>
+      <p class="eyebrow">About</p>
+      <h2>About Ryan</h2>
+      <p>Ryan D. Lewis is an explorer and photographer whose work is rooted in Kentucky’s Red River Gorge and Clifty Wilderness. He photographs the places he reaches through hiking, backpacking, camping, and repeated exploration in changing weather and seasons. His images preserve both the landscape and the circumstances that made each photograph possible.</p>
+      <a href={`${base}about/`}>Meet Ryan</a>
+    </article>
+    <article>
+      <p class="eyebrow">Prints</p>
+      <h2>Bring the Gorge home</h2>
+      <p>All six launch photographs are available in selected wall-art formats through Fine Art America. Fine Art America provides the available product options, processes payment, produces the order, and handles shipping and ordinary order service.</p>
+      <a href={`${base}prints/`}>Explore Prints</a>
+    </article>
+    <article>
+      <p class="eyebrow">Puzzles</p>
+      <h2>Selected photographs as puzzles</h2>
+      <p>Three photographs with compositions suited to the current horizontal format are also available as 500-piece puzzles: Winter at Red-byrd Arch, Sunrise at Eagle’s Nest, and Ice at West of Copperas Pillar.</p>
+      <p>Each puzzle is 18 × 24 inches and currently priced at $59.99 before shipping and tax. Fine Art America produces and ships the finished puzzle.</p>
+      <a href={`${base}puzzles/`}>Explore Puzzles</a>
+    </article>
+    <article>
+      <p class="eyebrow">Stories</p>
+      <h2>Exploring the Gorge</h2>
+      <p>The Red River Gorge changes with water, ice, weather, light, and season. Exploring it repeatedly creates a different understanding than a single visit can provide. Red River Gorge Hiker will continue to share the experiences behind the photographs, including winter conditions, remote waterfalls, sandstone features, overlooks, camps, and moments of discovery.</p>
+      <a href={`${base}exploring-the-gorge/`}>Read the Stories</a>
+    </article>
+    <article>
+      <p class="eyebrow">Community</p>
+      <h2>Photography in the places that inspire it</h2>
+      <p>Red River Gorge Hiker is developing thoughtful relationships with local places connected to hikers, visitors, and the regional landscape. These relationships may include displays, donated artwork, or small locally managed physical-print pilots. Online orders remain separate and are fulfilled by Fine Art America.</p>
+      <a href={`${base}displays-and-partners/`}>Displays and Partners</a>
+    </article>
   </section>
 </Base>
