@@ -4,18 +4,17 @@ import Card from '../components/Card.astro';
 import { photographs } from '../data/products';
 ---
 <Base
-  title="The Launch Collection"
+  title="The Collection"
   description="Six photographs made in Kentucky’s Red River Gorge and Clifty Wilderness by Ryan D. Lewis."
 >
   <div class="page">
-    <p class="eyebrow">Red River Gorge Hiker</p>
-    <h1>The Launch Collection</h1>
+    <h1>The collection</h1>
     <div class="prose-wide">
-      <p class="lede">Six photographs made in Kentucky’s Red River Gorge and Clifty Wilderness, presented in the launch order selected by Ryan D. Lewis.</p>
+      <p class="lede">Six photographs made in Kentucky’s Red River Gorge and Clifty Wilderness.</p>
       <p>Open any photograph to see the full image, its story, capture details, and available print or puzzle options.</p>
     </div>
-    <div class="grid collection-grid">
-      {photographs.map((photo) => <Card photo={photo} />)}
+    <div class="grid collection-mosaic">
+      {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}
     </div>
   </div>
 </Base>
