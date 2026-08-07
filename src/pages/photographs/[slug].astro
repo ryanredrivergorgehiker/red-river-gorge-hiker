@@ -1,7 +1,91 @@
 ---
-import Base from '../../layouts/Base.astro'; import Artwork from '../../components/Artwork.astro'; import {photographs,type Photograph} from '../../data/products';
-export function getStaticPaths(){return photographs.map((photo,index)=>({params:{slug:photo.slug},props:{photo,index}}));}
-interface Props{photo:Photograph;index:number} const {photo,index}=Astro.props; const base=import.meta.env.BASE_URL; const prev=photographs[(index-1+photographs.length)%photographs.length]!; const next=photographs[(index+1)%photographs.length]!;
-const artworkSchema={'@context':'https://schema.org','@type':'VisualArtwork',name:photo.title,identifier:photo.catalogId,creator:{'@type':'Person',name:'Ryan D. Lewis'},locationCreated:photo.location,copyrightHolder:{'@type':'Person',name:'Ryan D. Lewis'}};
+import Base from '../../layouts/Base.astro';
+import Artwork from '../../components/Artwork.astro';
+import { photographs, type Photograph } from '../../data/products';
+
+export function getStaticPaths() {
+  return photographs.map((photo, index) => ({
+    params: { slug: photo.slug },
+    props: { photo, index }
+  }));
+}
+
+interface Props {
+  photo: Photograph;
+  index: number;
+}
+
+const { photo, index } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const prev = photographs[(index - 1 + photographs.length) % photographs.length]!;
+const next = photographs[(index + 1) % photographs.length]!;
+
+const artworkSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'VisualArtwork',
+  name: photo.title,
+  identifier: photo.catalogId,
+  description: photo.shortDescription,
+  dateCreated: photo.captureDate,
+  creator: { '@type': 'Person', name: 'Ryan D. Lewis' },
+  locationCreated: photo.location,
+  copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }
+};
 ---
-<Base title={photo.title} description={`${photo.title}, ${photo.catalogId}, photographed by Ryan D. Lewis in the Red River Gorge.`}><div class="page"><p class="eyebrow">{photo.catalogId}</p><h1>{photo.title}</h1><p>{photo.location}</p><Artwork title={photo.title} catalogId={photo.catalogId}/><div class="split"><section><h2>The photograph</h2><div class="notice"><strong>Approved story and alt text pending.</strong> The Google Drive content master and Photography Catalog were unavailable, so no story or descriptive details have been invented.</div><p>Photography by Ryan D. Lewis</p><p>Photographs © Ryan D. Lewis. All rights reserved. Red River Gorge Hiker is the public photography brand.</p></section><aside><a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">View Wall Art Options <span class="sr-only">on Fine Art America (opens in a new tab)</span></a>{photo.puzzleAvailable&&<a class="button secondary" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">View This Puzzle <span class="sr-only">on Fine Art America (opens in a new tab)</span></a>}</aside></div><nav class="photo-nav" aria-label="Photograph navigation"><a href={`${base}photographs/${prev.slug}/`}>← {prev.title}</a><a href={`${base}photographs/${next.slug}/`}>{next.title} →</a></nav><script is:inline type="application/ld+json" set:html={JSON.stringify(artworkSchema)}/></div></Base>
+<Base title={photo.title} description={photo.shortDescription}>
+  <div class="page">
+    <p class="eyebrow">{photo.catalogId}</p>
+    <h1>{photo.title}</h1>
+    <p class="lede">{photo.shortDescription}</p>
+    <p>{photo.contextLine}</p>
+
+    <Artwork
+      title={photo.title}
+      catalogId={photo.catalogId}
+      alt={photo.altText}
+    />
+
+    <div class="split content-split">
+      <section class="prose">
+        <h2>The story behind the photograph</h2>
+        <p>{photo.story}</p>
+        <dl class="details">
+          <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
+          <div><dt>Location</dt><dd>{photo.location}</dd></div>
+          <div><dt>Catalog ID</dt><dd>{photo.catalogId}</dd></div>
+        </dl>
+        <p>Photography by Ryan D. Lewis.</p>
+        <p>Photographs © Ryan D. Lewis. All rights reserved. Red River Gorge Hiker is the public photography brand.</p>
+      </section>
+
+      <aside class="purchase-panel" aria-label="Available products">
+        <section>
+          <h2>Available as wall art</h2>
+          <p>View the available sizes and wall-art formats through Fine Art America. Fine Art America produces and ships online orders.</p>
+          <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+            View wall art options
+            <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+          </a>
+        </section>
+
+        {photo.puzzleAvailable && photo.puzzleUrl && (
+          <section class="puzzle-panel">
+            <h2>Available as a 500-piece puzzle</h2>
+            <p>This photograph is available as an 18 × 24-inch horizontal puzzle with 500 pieces. The current customer price is $59.99 before shipping and tax. Fine Art America produces and ships the puzzle.</p>
+            <a class="button secondary" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+              View this puzzle
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+          </section>
+        )}
+      </aside>
+    </div>
+
+    <nav class="photo-nav" aria-label="Photograph navigation">
+      <a href={`${base}photographs/${prev.slug}/`}>← {prev.title}</a>
+      <a href={`${base}photographs/${next.slug}/`}>{next.title} →</a>
+    </nav>
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(artworkSchema)} />
+  </div>
+</Base>
