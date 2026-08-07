@@ -1,10 +1,22 @@
 ---
 import Base from '../layouts/Base.astro';
 
+const waterfallReferences = {
+  lili: 'https://kywaterfalls.com/cumberland-plateau/lilis-leap-falls',
+  fletcher: 'https://kywaterfalls.com/cumberland-plateau/fletcher-ridge-falls',
+  parachute: 'https://kywaterfalls.com/cumberland-plateau/parachute-falls',
+  tallTwin: 'https://kywaterfalls.com/cumberland-plateau/tall-twin-falls',
+  frontierDouble: 'https://kywaterfalls.com/cumberland-plateau/frontier-double-falls'
+} as const;
+
+const externalLink = (label: string, url: string) =>
+  `<a class="reference-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+
 const stories = [
   {
     title: 'Lili’s Leap',
     id: 'lilis-leap',
+    summary: 'Sick, exhausted, and alone in the backcountry, Ryan left the known route anyway—and found a 94-foot waterfall he would name for his daughter.',
     paragraphs: [
       `I had barely slept.`,
       `It was March 2023, and the temperature had fallen to around 20 degrees during the night. Cold was expected. What wasn't expected was spending much of the night sick.`,
@@ -22,7 +34,7 @@ const stories = [
       `I measured it later at approximately 94 feet 3 inches. But standing there that day, measurements weren't really what mattered.`,
       `I had been miserable for hours. I was still sick. I was alone.`,
       `And suddenly I was incredibly happy.`,
-      `I named it <strong>Lili’s Leap Falls</strong>, for my daughter Lili—and because finding it had required exactly that: a leap.`,
+      `I named it ${externalLink('Lili’s Leap Falls', waterfallReferences.lili)}, for my daughter Lili—and because finding it had required exactly that: a leap.`,
       `Finding the waterfall wasn't the end of the day.`,
       `Bushwhacking back out, I eventually found myself traversing down approximately a 20-foot wall. I was solo. I had no rope.`,
       `There wasn't much to do except get myself down it.`,
@@ -44,6 +56,7 @@ const stories = [
   {
     title: 'The Day the Gorge Took 13 Hours',
     id: 'the-day-the-gorge-took-13-hours',
+    summary: 'A 31.87-mile Sheltowee Trace day began with a rattlesnake in a convenience store and became thirteen hours of walking through the Gorge in rain.',
     paragraphs: [
       `I woke up around 4:45 in the morning because I knew the rain was coming.`,
       `The goal was simple: get everything packed while it was still dry.`,
@@ -94,6 +107,7 @@ const stories = [
   {
     title: 'The Blank Places on the Map',
     id: 'the-blank-places-on-the-map',
+    summary: 'Years of studying cliff lines, drainages, and empty topo-map spaces turned exploration into a game of asking what the map had missed.',
     paragraphs: [
       `At some point, exploring the Red River Gorge became a game.`,
       `I knew the places everyone went.`,
@@ -120,9 +134,9 @@ const stories = [
       `Some were significant.`,
       `Some eventually became recognized features.`,
       `Granddaddy's Arch came out of that process.`,
-      `Lili's Leap came out of it.`,
-      `Fletcher Ridge Falls came out of it.`,
-      `So did Parachute Falls, Tall Twin Falls, Frontier Double Falls and others.`,
+      `${externalLink("Lili's Leap", waterfallReferences.lili)} came out of it.`,
+      `${externalLink('Fletcher Ridge Falls', waterfallReferences.fletcher)} came out of it.`,
+      `So did ${externalLink('Parachute Falls', waterfallReferences.parachute)}, ${externalLink('Tall Twin Falls', waterfallReferences.tallTwin)}, ${externalLink('Frontier Double Falls', waterfallReferences.frontierDouble)} and others.`,
       `Eventually I wasn't just visiting the Gorge anymore.`,
       `I was investigating it.`,
       `And the competition wasn't really with another person.`,
@@ -141,10 +155,11 @@ const stories = [
   {
     title: 'The Fletcher Ridge Hunt',
     id: 'the-fletcher-ridge-hunt',
+    summary: 'A blank drainage and a hunch led Ryan to document a 133-foot waterfall and a corridor of other previously undocumented features.',
     paragraphs: [
       `The waterfall existed before I found it.`,
       `That distinction matters.`,
-      `I didn't create Fletcher Ridge Falls. I didn't discover some untouched place that no human being had ever seen.`,
+      `I didn't create ${externalLink('Fletcher Ridge Falls', waterfallReferences.fletcher)}. I didn't discover some untouched place that no human being had ever seen.`,
       `What I did was look at the terrain, believe something significant might be there, go looking for it, document it and bring it into a modern record where it had not previously existed.`,
       `And what I found was much larger than I expected.`,
       `Fletcher Ridge Falls drops approximately <strong>133 feet</strong>.`,
@@ -157,7 +172,7 @@ const stories = [
       `A drainage above a substantial cliff line can sometimes tell you that there <em>should</em> be a waterfall even when no waterfall appears on your map.`,
       `Then you have to go find out whether you're right.`,
       `Fletcher Ridge was part of a much larger period of doing exactly that.`,
-      `The area began producing more discoveries: Parachute Falls. Tall Twin Falls. Frontier Double Falls. Other unnamed or undocumented features.`,
+      `The area began producing more discoveries: ${externalLink('Parachute Falls', waterfallReferences.parachute)}. ${externalLink('Tall Twin Falls', waterfallReferences.tallTwin)}. ${externalLink('Frontier Double Falls', waterfallReferences.frontierDouble)}. Other unnamed or undocumented features.`,
       `Eventually what had begun as individual discoveries started looking like an entire corridor.`,
       `And Fletcher Ridge stood above them.`,
       `There is also a historical symmetry that I didn't understand when I first walked into that drainage.`,
@@ -178,6 +193,7 @@ const stories = [
   {
     title: 'Granddaddy’s Arch',
     id: 'granddaddys-arch',
+    summary: 'An off-trail search produced an arch Ryan named for family history—and marked a shift from using other people’s records to contributing his own.',
     paragraphs: [
       `I went looking in the places people usually passed by.`,
       `That was the game by then.`,
@@ -205,6 +221,7 @@ const stories = [
   {
     title: 'Walking Home',
     id: 'walking-home',
+    summary: 'After 340.77 miles on the Sheltowee Trace, the biggest change was not physical; it was deciding that the next chapter should be about sharing the Gorge with his daughter.',
     paragraphs: [
       `By the time I reached familiar country, I had already been walking for a very long time.`,
       `The Sheltowee Trace had once seemed impossible to me.`,
@@ -252,12 +269,29 @@ const stories = [
 >
   <div class="page stories-page">
     <h1>Stories</h1>
+    <p class="stories-intro">Six stories from years spent hiking, backpacking, and exploring the Gorge. Choose a story to open the full account.</p>
 
-    {stories.map((story) => (
-      <article class="story-entry" id={story.id}>
-        <h2>{story.title}</h2>
-        {story.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
-      </article>
-    ))}
+    <div class="story-accordion-grid">
+      {stories.map((story) => (
+        <details class="story-accordion" id={story.id}>
+          <summary>
+            <span class="story-summary-title">{story.title}</span>
+            <span class="story-summary-copy">{story.summary}</span>
+            <span class="story-summary-action" aria-hidden="true">
+              <span class="when-closed">Read story…</span>
+              <span class="when-open">Close story</span>
+            </span>
+          </summary>
+          <div class="story-body">
+            {story.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
+          </div>
+        </details>
+      ))}
+    </div>
   </div>
+
+  <script is:inline>
+    const story = document.querySelector(window.location.hash);
+    if (story instanceof HTMLDetailsElement) story.open = true;
+  </script>
 </Base>
