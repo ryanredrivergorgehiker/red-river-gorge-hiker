@@ -1,7 +1,46 @@
 ---
-import Header from '../components/Header.astro'; import Footer from '../components/Footer.astro'; import '../styles/global.css'; import '../styles/refinements.css';
-interface Props { title:string; description:string; }
-const {title,description}=Astro.props; const canonical=new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin); const fullTitle=`${title} | Red River Gorge Hiker`;
-const schema={ '@context':'https://schema.org','@type':'WebSite',name:'Red River Gorge Hiker',url:Astro.site?.toString(),copyrightHolder:{'@type':'Person',name:'Ryan D. Lewis'} };
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+import '../styles/refinements.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const fullTitle = `${title} | Red River Gorge Hiker`;
+const base = import.meta.env.BASE_URL;
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Red River Gorge Hiker',
+  url: Astro.site?.toString(),
+  copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }
+};
 ---
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><meta name="generator" content={Astro.generator}><title>{fullTitle}</title><meta name="description" content={description}><link rel="canonical" href={canonical}><meta property="og:type" content="website"><meta property="og:title" content={fullTitle}><meta property="og:description" content={description}><meta property="og:url" content={canonical}><meta name="twitter:card" content="summary"><script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} /></head><body><Header/><main id="main"><slot/></main><Footer/></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)}></script>
+  </head>
+  <body>
+    <Header />
+    <main id="main"><slot /></main>
+    <Footer />
+    <script is:inline src={`${base}scripts/story-paragraphs.js`}></script>
+  </body>
+</html>
