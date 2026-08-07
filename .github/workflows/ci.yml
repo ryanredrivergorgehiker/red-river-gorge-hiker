@@ -48,10 +48,3 @@ jobs:
 
       - name: Run checks
         run: npm run check
-
-      - name: Upload review build
-        uses: actions/upload-artifact@v4
-        with:
-          name: website-review-build
-          path: dist
-          if-no-files-found: error
