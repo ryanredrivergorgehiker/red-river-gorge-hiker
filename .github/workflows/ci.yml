@@ -8,22 +8,12 @@ on:
       - reopened
       - ready_for_review
   workflow_dispatch:
-    inputs:
-      task:
-        description: Task to run
-        required: true
-        default: test
-        type: choice
-        options:
-          - test
-          - import-assets
 
 permissions:
   contents: read
 
 jobs:
   contract:
-    if: github.event_name == 'pull_request' || inputs.task == 'test'
     name: Repository contract
     runs-on: ubuntu-latest
 
@@ -35,7 +25,6 @@ jobs:
         run: python3 -m unittest discover -s tests -p "test*.py" -v
 
   build:
-    if: github.event_name == 'pull_request' || inputs.task == 'test'
     name: Astro build
     runs-on: ubuntu-latest
 
@@ -59,139 +48,3 @@ jobs:
 
       - name: Run checks
         run: npm run check
-
-  import-assets:
-    if: github.event_name == 'workflow_dispatch' && inputs.task == 'import-assets'
-    name: Import approved public assets
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout selected branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
-
-      - name: Download approved Drive archive
-        env:
-          ARCHIVE_URL: https://drive.google.com/uc?export=download&id=1yMlbOUtBQN-vWjwlWfDE5ui1ziVZrkWg
-          ARCHIVE_SHA256: 2edd1289ce432a3d29eef25c4ac0e75a80c26035e9ddc9899e84c29e0e51199b
-        run: |
-          set -euo pipefail
-          curl --fail --location --retry 3 --output /tmp/rrgh-assets.zip "$ARCHIVE_URL"
-          echo "$ARCHIVE_SHA256  /tmp/rrgh-assets.zip" | sha256sum --check --strict
-
-      - name: Verify archive manifest and file hashes
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/rrgh-assets
-          mkdir -p /tmp/rrgh-assets
-          unzip -q /tmp/rrgh-assets.zip -d /tmp/rrgh-assets
-          python3 - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import json
-
-          root = Path('/tmp/rrgh-assets')
-          manifest_path = root / 'asset-manifest.json'
-          manifest = json.loads(manifest_path.read_text())
-
-          assert manifest['releaseVersion'] == 'web-assets-v01'
-          assert manifest['formats'] == ['avif', 'webp']
-
-          expected_catalog = [
-              'RRGH-0001',
-              'RRGH-0004',
-              'RRGH-0005',
-              'RRGH-0002',
-              'RRGH-0007',
-              'RRGH-0003',
-          ]
-          assert [item['catalogId'] for item in manifest['artworks']] == expected_catalog
-
-          expected_paths = {'asset-manifest.json'}
-          derivative_count = 0
-
-          for artwork in manifest['artworks']:
-              assert len(artwork['derivatives']) == 8
-              for derivative in artwork['derivatives']:
-                  derivative_count += 1
-                  assert derivative['watermarkConfirmed'] is True
-                  assert derivative['metadataStripped'] is True
-                  relative = Path('public/assets/images') / derivative['publicFilename']
-                  expected_paths.add(relative.as_posix())
-                  path = root / relative
-                  assert path.is_file(), relative
-                  assert path.stat().st_size == derivative['fileSize'], relative
-                  assert hashlib.sha256(path.read_bytes()).hexdigest() == derivative['sha256'], relative
-
-          assert derivative_count == 48
-
-          brand = manifest['brand']
-          assert brand['transparencyConfirmed'] is True
-          assert brand['metadataStripped'] is True
-          brand_relative = Path('public/assets/brand') / brand['publicFilename']
-          expected_paths.add(brand_relative.as_posix())
-          brand_path = root / brand_relative
-          assert brand_path.is_file()
-          assert brand_path.stat().st_size == brand['fileSize']
-          assert hashlib.sha256(brand_path.read_bytes()).hexdigest() == brand['sha256']
-
-          for qr in manifest['qr']:
-              assert qr['destination'] == 'https://redrivergorgehiker.com/prints'
-              qr_relative = Path('public/assets/qr') / qr['publicFilename']
-              expected_paths.add(qr_relative.as_posix())
-              qr_path = root / qr_relative
-              assert qr_path.is_file()
-              assert qr_path.stat().st_size == qr['fileSize']
-              assert hashlib.sha256(qr_path.read_bytes()).hexdigest() == qr['sha256']
-
-          actual_paths = {
-              path.relative_to(root).as_posix()
-              for path in root.rglob('*')
-              if path.is_file()
-          }
-          assert actual_paths == expected_paths, sorted(actual_paths ^ expected_paths)
-          assert len(actual_paths) == 52
-          print('Approved public asset archive validated: 52 files.')
-          PY
-
-      - name: Stage only approved public assets
-        run: |
-          set -euo pipefail
-          rm -rf public/assets/brand public/assets/images public/assets/qr
-          rm -f asset-manifest.json
-          mkdir -p public/assets
-          cp -R /tmp/rrgh-assets/public/assets/brand public/assets/brand
-          cp -R /tmp/rrgh-assets/public/assets/images public/assets/images
-          cp -R /tmp/rrgh-assets/public/assets/qr public/assets/qr
-          cp /tmp/rrgh-assets/asset-manifest.json asset-manifest.json
-
-          git add public/assets/brand public/assets/images public/assets/qr asset-manifest.json
-          git diff --cached --check
-
-          changed="$(git diff --cached --name-only)"
-          test -n "$changed"
-          while IFS= read -r path; do
-            case "$path" in
-              asset-manifest.json|public/assets/brand/*|public/assets/images/*|public/assets/qr/*) ;;
-              *) echo "Unexpected staged path: $path" >&2; exit 1 ;;
-            esac
-          done <<< "$changed"
-
-          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "55"
-          test "$(git diff --cached --diff-filter=D --name-only | sort)" = "$(printf '%s\n' \
-            public/assets/brand/README.md \
-            public/assets/images/README.md \
-            public/assets/qr/README.md | sort)"
-          test -f public/assets/social/README.md
-
-      - name: Commit approved public assets
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Import approved public website assets"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
