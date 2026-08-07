@@ -1,0 +1,49 @@
+/* Final visual-balance refinements layered after the base stylesheet. */
+
+/* Keep the public brand visually stronger than individual page titles. */
+@media (min-width: 851px) {
+  .header-inner { min-height: 8.4rem; }
+  .brand-mark { width: 6.75rem; height: 6.75rem; }
+  .wordmark {
+    gap: 1.1rem;
+    font-size: clamp(1.6rem, 2.4vw, 2rem);
+  }
+}
+
+/* Pull ordinary page titles back from the oversized early-preview scale. */
+h1 {
+  font-size: clamp(2.15rem, 3.3vw, 2.85rem);
+  margin-top: 0;
+}
+
+/* Collection/commerce indexes should begin close to the header, like the photo pages. */
+.catalog-page { padding-top: 1.75rem; }
+
+/* Photograph titles and introductory copy should frame the image, not overpower it. */
+.photo-page > h1 {
+  font-size: clamp(2.05rem, 3.05vw, 2.7rem);
+  margin-bottom: .7rem;
+}
+.photo-page > .lede {
+  font-size: clamp(1.05rem, 1.35vw, 1.18rem);
+  line-height: 1.48;
+  margin-bottom: .6rem;
+}
+.photo-page > .lede + p {
+  font-size: .98rem;
+  margin-bottom: .8rem;
+}
+
+@media (max-width: 850px) and (min-width: 701px) {
+  .header-inner { min-height: 6.7rem; }
+  .brand-mark { width: 5rem; height: 5rem; }
+  .wordmark { font-size: 1.4rem; }
+  .catalog-page { padding-top: 1.5rem; }
+}
+
+@media (max-width: 700px) {
+  h1 { font-size: clamp(1.95rem, 8vw, 2.35rem); }
+  .photo-page > h1 { font-size: clamp(1.95rem, 8vw, 2.3rem); }
+  .catalog-page { padding-top: 1.25rem; }
+  .brand-mark { width: 3.75rem; height: 3.75rem; }
+}
