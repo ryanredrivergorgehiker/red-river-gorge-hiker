@@ -7,7 +7,13 @@
 }
 html,
 body { background: var(--parchment); }
-.site-header { background: rgba(232, 220, 200, .98); }
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(232, 220, 200, .98);
+  box-shadow: 0 1px 0 var(--line);
+}
 .mobile-primary-nav { display: none; }
 
 /* All ordinary pages should begin close to the header instead of opening with a blank band. */
