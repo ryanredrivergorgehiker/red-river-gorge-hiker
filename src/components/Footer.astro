@@ -7,6 +7,11 @@ const footerLinks = [
   ['Privacy', 'privacy/'],
   ['Copyright and Terms', 'copyright-and-terms/']
 ] as const;
+
+const socialLinks = {
+  instagram: 'https://www.instagram.com/redrivergorgehiker/',
+  facebook: 'https://www.facebook.com/profile.php?id=61593038581429'
+} as const;
 ---
 <footer>
   <div class="footer-inner">
@@ -16,6 +21,22 @@ const footerLinks = [
       ))}
       <a href="mailto:Ryan@RedRiverGorgeHiker.com">Email</a>
     </nav>
+
+    <nav class="footer-social" aria-label="Social media">
+      <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" aria-label="Red River Gorge Hiker on Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm10.5 1.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
+        </svg>
+        <span class="sr-only">Instagram</span>
+      </a>
+      <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Red River Gorge Hiker on Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M13.7 22v-8.6h2.9l.4-3.4h-3.3V7.8c0-1 .3-1.7 1.7-1.7H17V3.1c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.4V10H7.5v3.4h2.8V22h3.4Z" />
+        </svg>
+        <span class="sr-only">Facebook</span>
+      </a>
+    </nav>
+
     <div class="footer-credit">
       <strong>Red River Gorge Hiker</strong>
       <span>© Ryan D. Lewis. All rights reserved.</span>
