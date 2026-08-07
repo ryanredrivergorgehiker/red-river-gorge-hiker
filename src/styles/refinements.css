@@ -8,6 +8,7 @@
 html,
 body { background: var(--parchment); }
 .site-header { background: rgba(232, 220, 200, .98); }
+.mobile-primary-nav { display: none; }
 
 /* All ordinary pages should begin close to the header instead of opening with a blank band. */
 .page { padding-top: 1.25rem; }
@@ -93,6 +94,58 @@ h3 {
   .desktop-nav a { font-size: 1rem; }
 }
 
+/* On tablets and phones, keep the complete primary navigation visible below the brand. */
+@media (max-width: 850px) {
+  .header-inner {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    padding-block: .55rem .7rem;
+  }
+  .wordmark { width: 100%; }
+  .mobile-primary-nav {
+    display: block;
+    width: 100%;
+    border-top: 1px solid var(--line);
+    padding-top: .45rem;
+  }
+  .mobile-primary-nav ul {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .34rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+  .mobile-primary-nav li {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .mobile-primary-nav li + li::before {
+    content: '·';
+    color: var(--pine);
+    margin-right: .34rem;
+    font-weight: 700;
+  }
+  .mobile-primary-nav a {
+    color: var(--charcoal);
+    font-size: clamp(.76rem, 2.4vw, .9rem);
+    line-height: 1.2;
+    text-decoration: none;
+  }
+  .mobile-primary-nav a:hover { color: var(--gorge); }
+  .mobile-primary-nav a[aria-current='page'] {
+    color: var(--gorge);
+    text-decoration: underline;
+    text-decoration-color: var(--sunrise);
+    text-decoration-thickness: 2px;
+    text-underline-offset: .24em;
+  }
+}
+
 @media (max-width: 850px) and (min-width: 701px) {
   .header-inner { min-height: 6.8rem; }
   .brand-mark { width: 5.25rem; height: 5.25rem; }
@@ -103,6 +156,11 @@ h3 {
 }
 
 @media (max-width: 700px) {
+  .header-inner {
+    min-height: 0;
+    gap: .35rem;
+    padding-block: .5rem .65rem;
+  }
   .page,
   .catalog-page,
   .photo-page { padding-top: 1rem; }
@@ -112,4 +170,7 @@ h3 {
   .photo-page > h1 { font-size: clamp(1.67rem, 7vw, 1.98rem); }
   .brand-mark { width: 4rem; height: 4rem; }
   .wordmark { font-size: 1.1rem; }
+  .mobile-primary-nav ul { gap: .28rem; }
+  .mobile-primary-nav li + li::before { margin-right: .28rem; }
+  .mobile-primary-nav a { font-size: clamp(.76rem, 3.2vw, .86rem); }
 }
