@@ -1,4 +1,42 @@
 ---
-import Base from '../layouts/Base.astro'; import Card from '../components/Card.astro'; import {photographs} from '../data/products';
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { photographs } from '../data/products';
+
+const base = import.meta.env.BASE_URL;
 ---
-<Base title="Fine-art prints" description="View wall-art options for six Red River Gorge photographs by Ryan D. Lewis."><div class="page"><p class="eyebrow">Fulfilled by Fine Art America</p><h1>Prints</h1><p class="lede">Choose materials, sizes, and framing through Fine Art America. Buyer prices vary by selected production options.</p><div class="notice"><strong>Ordering note:</strong> Online ordering, payment, printing, fulfillment, and shipping are handled by Fine Art America.</div><div class="grid">{photographs.map(photo=><article><Card photo={photo}/><a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">View Wall Art Options <span class="sr-only">on Fine Art America (opens in a new tab)</span></a></article>)}</div><section><h2>Prints QR</h2><p>The approved QR asset is pending. Its verified destination is <code>https://redrivergorgehiker.com/prints</code>; it will not be regenerated or substituted.</p></section></div></Base>
+<Base
+  title="Prints from the Red River Gorge"
+  description="Selected wall-art formats for the six Red River Gorge Hiker launch photographs, fulfilled by Fine Art America."
+>
+  <div class="page">
+    <p class="eyebrow">Fulfilled by Fine Art America</p>
+    <h1>Prints from the Red River Gorge</h1>
+    <div class="prose-wide">
+      <p class="lede">The six photographs in the Red River Gorge Hiker launch collection are available through Fine Art America in selected wall-art sizes and formats. Choose a photograph below to read its story or continue to Fine Art America to view the currently available product options.</p>
+      <div class="notice">
+        <strong>Online fulfillment:</strong> Fine Art America handles online product selection, payment, production, framing when selected, fulfillment, shipping, and ordinary order service. Ryan does not personally produce or ship website orders.
+      </div>
+      <p>Available formats, sizes, framing choices, and final buyer prices are shown by Fine Art America. Those prices may vary according to the selected product and options.</p>
+      <p>Local displays and personally produced physical photographs are separate from online Fine Art America fulfillment. A venue display does not mean that every displayed photograph is available for immediate purchase at that location.</p>
+    </div>
+
+    <div class="grid collection-grid">
+      {photographs.map((photo) => (
+        <article class="product-card">
+          <Card photo={photo} />
+          <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+            View wall art options
+            <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+          </a>
+        </article>
+      ))}
+    </div>
+
+    <section class="section prose-wide">
+      <h2>Selected photographs are also available as puzzles</h2>
+      <p>Three selected photographs are also offered as 500-piece puzzles.</p>
+      <a href={`${base}puzzles/`}>Explore the Puzzles</a>
+    </section>
+  </div>
+</Base>
