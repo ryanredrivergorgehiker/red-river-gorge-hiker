@@ -58,13 +58,21 @@ const artworkSchema = {
     <p>{photo.contextLine}</p>
 
     <div class:list={['photo-artwork-stage', `photo-artwork-${orientationClass}`]}>
-      <Artwork
-        title={photo.title}
-        catalogId={photo.catalogId}
-        alt={photo.altText}
-        sizes={imageSizes}
-        showCaption={false}
-      />
+      <a
+        class="photo-artwork-link"
+        href={photo.wallArtUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`View wall art options for ${photo.title} on Fine Art America (opens in a new tab)`}
+      >
+        <Artwork
+          title={photo.title}
+          catalogId={photo.catalogId}
+          alt={photo.altText}
+          sizes={imageSizes}
+          showCaption={false}
+        />
+      </a>
     </div>
 
     <div class="split content-split">
