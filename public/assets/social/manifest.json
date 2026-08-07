@@ -1,0 +1,61 @@
+{
+  "releaseVersion": "social-assets-v01",
+  "brand": "Red River Gorge Hiker",
+  "purpose": "Approved public social-media derivatives for automated Metricool publishing",
+  "files": [
+    {
+      "catalogId": "RRGH-0001",
+      "filename": "RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg",
+      "fileSize": 501465,
+      "sha256": "0d2a68efd399a74581638d3cf4b4c1fdfe3e0eb595ba18788dac7dbff9ddbddf",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    },
+    {
+      "catalogId": "RRGH-0004",
+      "filename": "RRGH-0004-Winter_at_Red-byrd_Arch-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0004-Winter_at_Red-byrd_Arch-SOCIAL-WM.jpg",
+      "fileSize": 990050,
+      "sha256": "90329b8dabc94049dd7ea404d79e12b390775171da3896f0f7c7f3985b365a03",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    },
+    {
+      "catalogId": "RRGH-0005",
+      "filename": "RRGH-0005-Sunrise_at_Eagles_Nest-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0005-Sunrise_at_Eagles_Nest-SOCIAL-WM.jpg",
+      "fileSize": 818675,
+      "sha256": "f7c5a6a007c9dd9cd8f53dbb0404efba69a4414f37632f92b0c5f431d63b0d8b",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    },
+    {
+      "catalogId": "RRGH-0002",
+      "filename": "RRGH-0002-Dog_Fork_Falls_in_Winter-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0002-Dog_Fork_Falls_in_Winter-SOCIAL-WM.jpg",
+      "fileSize": 1551884,
+      "sha256": "857091459033b5a99dbf665e7394c03ab7c8c3c1c44de8e10024b6aea5729f15",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    },
+    {
+      "catalogId": "RRGH-0007",
+      "filename": "RRGH-0007-Ice_at_West_of_Copperas_Pillar-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0007-Ice_at_West_of_Copperas_Pillar-SOCIAL-WM.jpg",
+      "fileSize": 1224921,
+      "sha256": "a015d53d56b19f0195e5ea75b0f17dcb7e366cea814b607c5c2ac1192ffce292",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    },
+    {
+      "catalogId": "RRGH-0003",
+      "filename": "RRGH-0003-Splatter_Falls-SOCIAL-WM.jpg",
+      "publicPath": "public/assets/social/RRGH-0003-Splatter_Falls-SOCIAL-WM.jpg",
+      "fileSize": 1071847,
+      "sha256": "251e2bf19b78eef21e298dafa471eda1f42cf9bd9d6d5e12cc6befeba5f8fb17",
+      "watermarkedSocialDerivative": true,
+      "source": "Google Drive / Photography Catalog / 05 Social Media Exports"
+    }
+  ]
+}
