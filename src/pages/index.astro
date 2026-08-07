@@ -18,11 +18,9 @@ if (!featuredPhotograph) {
   <section class="home-hero">
     <div class="home-hero-media">
       <a
-        class="hero-purchase"
-        href={featuredPhotograph.wallArtUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`View wall art options for ${featuredPhotograph.title} on Fine Art America`}
+        class="hero-link"
+        href={`${base}photographs/${featuredPhotograph.slug}/`}
+        aria-label={`Read the story behind ${featuredPhotograph.title}`}
       >
         <Artwork
           title={featuredPhotograph.title}
