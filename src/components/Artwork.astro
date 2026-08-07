@@ -2,5 +2,5 @@
 interface Props { title:string; catalogId:string; eager?:boolean; }
 const {title,catalogId,eager=false}=Astro.props;
 ---
-<figure class="artwork unavailable" data-artwork oncontextmenu="return false"><div class="asset-note" role="img" aria-label={`Approved photograph unavailable: ${title}`}><span>{catalogId}</span><strong>Approved watermarked image pending</strong><small>No substitute image is shown.</small></div><div class="art-overlay" aria-hidden="true"></div><figcaption>{title} · Photography by Ryan D. Lewis</figcaption></figure>
+<figure class="artwork unavailable" data-artwork data-loading={eager ? 'eager' : 'lazy'} oncontextmenu="return false"><div class="asset-note" role="img" aria-label={`Approved photograph unavailable: ${title}`}><span>{catalogId}</span><strong>Approved watermarked image pending</strong><small>No substitute image is shown.</small></div><div class="art-overlay" aria-hidden="true"></div><figcaption>{title} · Photography by Ryan D. Lewis</figcaption></figure>
 <script>document.querySelectorAll('[data-artwork]').forEach(el=>el.addEventListener('dragstart',e=>e.preventDefault()));</script>
