@@ -26,15 +26,12 @@ const path = Astro.url.pathname;
         ))}
       </ul>
     </nav>
-    <details class="nav-menu">
-      <summary>Menu</summary>
-      <nav aria-label="Primary mobile">
-        <ul>
-          {nav.map(([label,href]) => (
-            <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
-          ))}
-        </ul>
-      </nav>
-    </details>
+    <nav class="mobile-primary-nav" aria-label="Primary mobile">
+      <ul>
+        {nav.map(([label,href]) => (
+          <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
+        ))}
+      </ul>
+    </nav>
   </div>
 </header>
