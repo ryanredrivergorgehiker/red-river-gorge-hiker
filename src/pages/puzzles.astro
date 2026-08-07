@@ -1,4 +1,47 @@
 ---
-import Base from '../layouts/Base.astro'; import Card from '../components/Card.astro'; import {photographs,PUZZLE} from '../data/products'; const puzzles=photographs.filter(p=>p.puzzleAvailable);
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { photographs, PUZZLE } from '../data/products';
+
+const puzzles = photographs.filter((photo) => photo.puzzleAvailable);
 ---
-<Base title="Puzzles" description="Three approved 500-piece Red River Gorge photography puzzles by Ryan D. Lewis."><div class="page"><p class="eyebrow">Three approved photographs</p><h1>Puzzles</h1><p class="lede">Each horizontal 500-piece puzzle measures 18 × 24 inches and is fulfilled by Fine Art America.</p><div class="grid">{puzzles.map(photo=><article><Card photo={photo}/><ul class="facts"><li>{PUZZLE.dimensions}</li><li>{PUZZLE.pieceCount} pieces</li><li>{PUZZLE.orientation}</li><li>{PUZZLE.customerPrice}</li></ul><a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">View This Puzzle <span class="sr-only">on Fine Art America (opens in a new tab)</span></a></article>)}</div></div></Base>
+<Base
+  title="Red River Gorge Puzzles"
+  description="Three selected Red River Gorge photographs offered as 500-piece puzzles through Fine Art America."
+>
+  <div class="page">
+    <p class="eyebrow">Three selected photographs</p>
+    <h1>Red River Gorge Puzzles</h1>
+    <div class="prose-wide">
+      <p class="lede">Three selected Red River Gorge photographs are offered as puzzles. These landscape compositions fit Fine Art America’s current horizontal format while preserving the character of the original images.</p>
+      <div class="notice">
+        <strong>Product standard:</strong> Each puzzle is 18 × 24 inches, horizontal, and contains 500 pieces. The current customer price is $59.99 before shipping and tax. Fine Art America produces and ships each order.
+      </div>
+    </div>
+
+    <div class="grid collection-grid">
+      {puzzles.map((photo) => (
+        <article class="product-card">
+          <Card photo={photo} />
+          <p>{photo.puzzleSummary}</p>
+          <ul class="facts">
+            <li>{PUZZLE.dimensions}</li>
+            <li>{PUZZLE.pieceCount} pieces</li>
+            <li>{PUZZLE.orientation}</li>
+            <li>{PUZZLE.customerPrice}</li>
+          </ul>
+          <p class="actions">
+            <a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+              View this puzzle
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+            <a class="text-link" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+              View wall art options
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+          </p>
+        </article>
+      ))}
+    </div>
+  </div>
+</Base>
