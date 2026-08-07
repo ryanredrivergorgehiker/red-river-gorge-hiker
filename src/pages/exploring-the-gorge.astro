@@ -1,42 +1,38 @@
 ---
 import Base from '../layouts/Base.astro';
+const base = import.meta.env.BASE_URL;
 ---
 <Base
-  title="Exploring the Gorge"
-  description="Stories about returning to Kentucky’s Red River Gorge through changing weather, seasons, water, and light."
+  title="Stories from the Gorge"
+  description="Stories behind photographs made by Ryan D. Lewis in Kentucky’s Red River Gorge and Clifty Wilderness."
 >
   <div class="page prose">
     <p class="eyebrow">Stories</p>
-    <h1>Exploring the Gorge</h1>
-    <p class="lede">The Red River Gorge cannot be reduced to a single overlook, trail, season, or photograph. Water changes the cliff lines. Cold weather builds temporary architecture from ice. Light reveals details that disappear minutes later. Returning over time creates a relationship with the landscape that a single visit cannot provide.</p>
+    <h1>Stories from the Gorge</h1>
+    <p class="lede">The photographs on Red River Gorge Hiker come from particular days—weather changing, difficult winter travel, unexpected light, and long hours exploring the landscape.</p>
 
     <section>
-      <h2>Returning in every season</h2>
-      <p>Repeated visits make change visible. The same sandstone, forest, creek, or overlook can feel entirely different after heavy rain, during a clear winter morning, or in the final thaw when snow and ice are disappearing quickly.</p>
+      <h2>A rainbow after the storm</h2>
+      <p>A hard summer rain cleared above Eagle’s Point Buttress and revealed a double rainbow across the Gorge while Ryan was preparing for a Sheltowee Trace thru-hike.</p>
+      <a href={`${base}photographs/double-rainbow-at-eagles-point-buttress/`}>Read the full story</a>
     </section>
 
     <section>
-      <h2>Winter changes the Gorge</h2>
-      <p>Winter can expose form and structure. Leaves fall away, long views open, waterfalls build ice, and shelters and arches take on a different scale. These conditions can also require conservative judgment, appropriate equipment, and a willingness to turn around.</p>
+      <h2>Winter at Red-byrd Arch</h2>
+      <p>Snow, ice, and freezing conditions changed the familiar sandstone shelter into a severe winter scene dominated by a large ice formation.</p>
+      <a href={`${base}photographs/winter-at-red-byrd-arch/`}>Read the full story</a>
     </section>
 
     <section>
-      <h2>Finding water beyond the familiar</h2>
-      <p>Many of Ryan’s explorations follow water through remote drainages and along cliff lines. The purpose is not to publish route instructions to every location. It is to understand how water moves through the landscape and to document what is found responsibly.</p>
-    </section>
-
-    <section>
-      <h2>Overlooks, camps, and changing light</h2>
-      <p>Some photographs begin with waiting. A campsite choice, a storm clearing, or a walk onto an overlook can create a vantage that did not exist in the original plan.</p>
-    </section>
-
-    <section>
-      <h2>Documenting a discovery</h2>
-      <p>When Ryan discovered Splatter Falls, he did more than make a photograph. He measured and documented the four-drop cascade and gave it a name connected to the movement of its water.</p>
+      <h2>Discovering Splatter Falls</h2>
+      <p>While exploring remote cliff-line drainages, Ryan found a four-drop cascade, measured and documented it, and named it Splatter Falls for the way the water bursts outward between its middle drops.</p>
+      <a href={`${base}photographs/splatter-falls/`}>Read the full story</a>
     </section>
 
     <div class="notice">
-      <strong>This is not a trail guide.</strong> Sensitive coordinates, private access information, and detailed off-trail route instructions may be intentionally withheld. Outdoor conditions change, and every visitor remains responsible for preparation, permission, weather awareness, route choices, equipment, and safety.
+      Detailed off-trail route information and sensitive coordinates are not published simply because a photograph was made there.
     </div>
+
+    <p><a class="button" href={`${base}collection/`}>View all six photographs</a></p>
   </div>
 </Base>
