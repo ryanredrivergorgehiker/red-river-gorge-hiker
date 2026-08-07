@@ -19,6 +19,25 @@ const { photo, index } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const prev = photographs[(index - 1 + photographs.length) % photographs.length]!;
 const next = photographs[(index + 1) % photographs.length]!;
+const orientationClass = photo.orientation.toLowerCase();
+const imageSizes = photo.orientation === 'Panorama'
+  ? '(max-width: 1180px) calc(100vw - 3rem), 1180px'
+  : photo.orientation === 'Portrait'
+    ? '(max-width: 700px) calc(100vw - 2rem), 720px'
+    : photo.orientation === 'Square'
+      ? '(max-width: 700px) calc(100vw - 2rem), 860px'
+      : '(max-width: 700px) calc(100vw - 2rem), 1040px';
+
+const splatterReference = photo.slug === 'splatter-falls'
+  ? {
+      label: 'Splatter Falls',
+      url: 'https://kywaterfalls.com/cumberland-plateau/splatter-falls'
+    }
+  : null;
+
+const splatterStoryParts = splatterReference
+  ? photo.story.split(splatterReference.label)
+  : [];
 
 const artworkSchema = {
   '@context': 'https://schema.org',
@@ -33,22 +52,38 @@ const artworkSchema = {
 };
 ---
 <Base title={photo.title} description={photo.shortDescription}>
-  <div class="page">
+  <div class="page photo-page">
     <h1>{photo.title}</h1>
     <p class="lede">{photo.shortDescription}</p>
     <p>{photo.contextLine}</p>
 
-    <Artwork
-      title={photo.title}
-      catalogId={photo.catalogId}
-      alt={photo.altText}
-      showCaption={false}
-    />
+    <div class:list={['photo-artwork-stage', `photo-artwork-${orientationClass}`]}>
+      <Artwork
+        title={photo.title}
+        catalogId={photo.catalogId}
+        alt={photo.altText}
+        sizes={imageSizes}
+        showCaption={false}
+      />
+    </div>
 
     <div class="split content-split">
       <section class="prose">
         <h2>The story behind the photograph</h2>
-        <p>{photo.story}</p>
+        {splatterReference && splatterStoryParts.length > 1 ? (
+          <p>
+            {splatterStoryParts[0]}
+            <a
+              class="reference-link"
+              href={splatterReference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >{splatterReference.label}</a>
+            {splatterStoryParts.slice(1).join(splatterReference.label)}
+          </p>
+        ) : (
+          <p>{photo.story}</p>
+        )}
         <dl class="details">
           <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
           <div><dt>Location</dt><dd>{photo.location}</dd></div>
