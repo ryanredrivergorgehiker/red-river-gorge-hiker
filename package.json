@@ -12,8 +12,8 @@
     "check": "astro check && npm test && npm run build"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.4.2",
-    "astro": "^5.12.8"
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^7.1.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
@@ -21,6 +21,6 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20.11"
+    "node": ">=22.12.0"
   }
 }
