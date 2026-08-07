@@ -17,7 +17,7 @@ body { background: var(--parchment); }
 
 /* A quieter, more proportional type scale across the entire site. */
 h1 {
-  font-size: clamp(2rem, 3vw, 2.7rem);
+  font-size: clamp(1.8rem, 2.7vw, 2.43rem);
   line-height: 1.08;
   margin: 0 0 .9rem;
 }
@@ -37,7 +37,7 @@ h3 {
 
 /* Keep the homepage important without letting its headline dominate the brand. */
 .home-hero-copy h1 {
-  font-size: clamp(2.1rem, 3.15vw, 2.85rem);
+  font-size: clamp(1.89rem, 2.84vw, 2.57rem);
   line-height: 1.08;
 }
 .home-hero-copy .lede {
@@ -56,7 +56,7 @@ h3 {
 
 /* Photograph titles and introductory copy frame the artwork rather than overpowering it. */
 .photo-page > h1 {
-  font-size: clamp(1.95rem, 2.7vw, 2.55rem);
+  font-size: clamp(1.76rem, 2.43vw, 2.3rem);
   margin-bottom: .65rem;
 }
 .photo-page > .lede {
@@ -84,11 +84,11 @@ h3 {
 
 /* The public brand should remain the strongest persistent element in the interface. */
 @media (min-width: 851px) {
-  .header-inner { min-height: 8.85rem; }
-  .brand-mark { width: 7.75rem; height: 7.75rem; }
+  .header-inner { min-height: 9.55rem; }
+  .brand-mark { width: 8.5rem; height: 8.5rem; }
   .wordmark {
-    gap: 1.15rem;
-    font-size: clamp(1.65rem, 2.2vw, 1.95rem);
+    gap: 1.2rem;
+    font-size: clamp(1.82rem, 2.42vw, 2.15rem);
   }
   .desktop-nav a { font-size: 1rem; }
 }
@@ -106,10 +106,10 @@ h3 {
   .page,
   .catalog-page,
   .photo-page { padding-top: 1rem; }
-  h1 { font-size: clamp(1.85rem, 8vw, 2.25rem); }
+  h1 { font-size: clamp(1.67rem, 7.2vw, 2.03rem); }
   h2 { font-size: clamp(1.45rem, 6.5vw, 1.9rem); }
-  .home-hero-copy h1 { font-size: clamp(1.95rem, 8.5vw, 2.4rem); }
-  .photo-page > h1 { font-size: clamp(1.85rem, 7.8vw, 2.2rem); }
+  .home-hero-copy h1 { font-size: clamp(1.76rem, 7.65vw, 2.16rem); }
+  .photo-page > h1 { font-size: clamp(1.67rem, 7vw, 1.98rem); }
   .brand-mark { width: 4rem; height: 4rem; }
   .wordmark { font-size: 1.1rem; }
 }
