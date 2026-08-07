@@ -32,7 +32,11 @@ class SiteContract(unittest.TestCase):
             'altText',
             'productStatusNote',
         ):
-            self.assertEqual(len(re.findall(rf'{field}:', DATA)), 6, field)
+            self.assertEqual(
+                len(re.findall(rf"{field}:\s*'", DATA)),
+                6,
+                field,
+            )
 
         prohibited_placeholders = (
             'Approved story and alt text pending',
