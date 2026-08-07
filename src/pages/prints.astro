@@ -7,22 +7,21 @@ const base = import.meta.env.BASE_URL;
 ---
 <Base
   title="Prints from the Red River Gorge"
-  description="Wall-art options for the six Red River Gorge Hiker launch photographs, fulfilled by Fine Art America."
+  description="Wall-art options for six Red River Gorge photographs by Ryan D. Lewis, fulfilled by Fine Art America."
 >
   <div class="page">
-    <p class="eyebrow">Fine-art prints</p>
-    <h1>Prints from the Red River Gorge</h1>
+    <h1>Prints</h1>
     <div class="prose-wide">
-      <p class="lede">All six photographs in the launch collection are available in selected wall-art formats through Fine Art America.</p>
+      <p class="lede">All six photographs are available in selected wall-art formats through Fine Art America.</p>
       <div class="notice">
-        <strong>Ordering:</strong> Fine Art America shows the available sizes and formats, processes payment, produces the order, and handles shipping.
+        <strong>Ordering:</strong> Fine Art America shows available sizes and formats, processes payment, produces the order, and handles shipping.
       </div>
     </div>
 
-    <div class="grid collection-grid">
-      {photographs.map((photo) => (
+    <div class="grid collection-mosaic product-mosaic">
+      {photographs.map((photo, index) => (
         <article class="product-card">
-          <Card photo={photo} />
+          <Card photo={photo} showDescription={false} featured={index === 0} />
           <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
             View print options
             <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
@@ -32,9 +31,9 @@ const base = import.meta.env.BASE_URL;
     </div>
 
     <section class="section prose-wide">
-      <h2>Selected photographs are also available as puzzles</h2>
-      <p>Three photographs are offered as 500-piece puzzles.</p>
-      <a href={`${base}puzzles/`}>View the puzzles</a>
+      <h2>Jigsaw puzzles</h2>
+      <p>Three photographs are also available as 500-piece puzzles.</p>
+      <a href={`${base}puzzles/`}>View puzzles</a>
     </section>
   </div>
 </Base>
