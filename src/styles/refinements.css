@@ -195,13 +195,13 @@ h3 {
   text-underline-offset: .18em;
 }
 
-/* Keep the footer compact: useful links first, then social links, then one concise ownership line. */
+/* Keep the footer compact: utility links and branded social destinations share one row. */
 footer .footer-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: .9rem;
   padding-block: 1.65rem;
   text-align: center;
 }
@@ -211,7 +211,7 @@ footer .footer-nav {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: .4rem 1.35rem;
+  gap: .45rem 1.2rem;
   width: 100%;
 }
 footer .footer-nav a {
@@ -219,34 +219,31 @@ footer .footer-nav a {
   font-weight: 650;
   line-height: 1.3;
 }
-footer .footer-social {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .8rem;
-}
-footer .footer-social a {
+footer .footer-nav .footer-social-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  border: 1px solid rgba(255, 255, 255, .45);
-  border-radius: 50%;
-  color: white;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 1.8rem;
+  padding: 0;
+  border-radius: .42rem;
   text-decoration: none;
+  line-height: 1;
+  transition: transform .15s ease, filter .15s ease;
 }
-footer .footer-social a:hover {
-  border-color: white;
-  background: rgba(255, 255, 255, .1);
+footer .footer-nav .footer-social-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
-footer .footer-social a:focus-visible {
-  outline-color: white;
+footer .footer-nav .footer-social-link:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
 }
-footer .footer-social svg {
-  width: 1.15rem;
-  height: 1.15rem;
-  fill: currentColor;
+footer .footer-social-link svg {
+  display: block;
+  width: 1.55rem;
+  height: 1.55rem;
 }
 footer .footer-credit {
   display: flex;
@@ -265,19 +262,24 @@ footer .footer-credit strong {
 @media (max-width: 600px) {
   footer .footer-inner {
     width: min(var(--content), calc(100% - 1.5rem));
-    gap: .85rem;
-    padding-block: 1.4rem;
+    gap: .75rem;
+    padding-block: 1.35rem;
   }
   footer .footer-nav {
-    gap: .45rem 1rem;
+    gap: .5rem .9rem;
   }
   footer .footer-nav a,
   footer .footer-credit {
     font-size: .84rem;
   }
-  footer .footer-social a {
-    width: 2rem;
-    height: 2rem;
+  footer .footer-nav .footer-social-link {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-basis: 1.75rem;
+  }
+  footer .footer-social-link svg {
+    width: 1.5rem;
+    height: 1.5rem;
   }
   footer .footer-credit {
     flex-direction: column;
