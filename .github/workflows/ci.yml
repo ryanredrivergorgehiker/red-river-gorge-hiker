@@ -161,24 +161,32 @@ jobs:
       - name: Stage only approved public assets
         run: |
           set -euo pipefail
-          rm -rf public/assets
+          rm -rf public/assets/brand public/assets/images public/assets/qr
           rm -f asset-manifest.json
-          cp -R /tmp/rrgh-assets/public/assets public/assets
+          mkdir -p public/assets
+          cp -R /tmp/rrgh-assets/public/assets/brand public/assets/brand
+          cp -R /tmp/rrgh-assets/public/assets/images public/assets/images
+          cp -R /tmp/rrgh-assets/public/assets/qr public/assets/qr
           cp /tmp/rrgh-assets/asset-manifest.json asset-manifest.json
 
-          git add public/assets asset-manifest.json
+          git add public/assets/brand public/assets/images public/assets/qr asset-manifest.json
           git diff --cached --check
 
           changed="$(git diff --cached --name-only)"
           test -n "$changed"
           while IFS= read -r path; do
             case "$path" in
-              asset-manifest.json|public/assets/*) ;;
+              asset-manifest.json|public/assets/brand/*|public/assets/images/*|public/assets/qr/*) ;;
               *) echo "Unexpected staged path: $path" >&2; exit 1 ;;
             esac
           done <<< "$changed"
 
-          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "52"
+          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "55"
+          test "$(git diff --cached --diff-filter=D --name-only | sort)" = "$(printf '%s\n' \
+            public/assets/brand/README.md \
+            public/assets/images/README.md \
+            public/assets/qr/README.md | sort)"
+          test -f public/assets/social/README.md
 
       - name: Commit approved public assets
         run: |
