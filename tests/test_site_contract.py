@@ -70,7 +70,6 @@ class SiteContract(unittest.TestCase):
             'puzzles',
             'about',
             'exploring-the-gorge',
-            'displays-and-partners',
             'photography-use-and-permissions',
             'contact',
             'copyright-and-terms',
@@ -79,6 +78,7 @@ class SiteContract(unittest.TestCase):
         ]
         for route in routes:
             self.assertTrue((ROOT / f'src/pages/{route}.astro').exists(), route)
+        self.assertFalse((ROOT / 'src/pages/displays-and-partners.astro').exists())
 
     def test_no_tracking_or_custom_domain(self):
         self.assertNotIn('google-analytics', ALL.lower())
