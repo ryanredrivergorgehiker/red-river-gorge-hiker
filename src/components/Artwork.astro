@@ -7,6 +7,7 @@ interface Props {
   alt?: string;
   eager?: boolean;
   sizes?: string;
+  showCaption?: boolean;
 }
 
 const {
@@ -14,7 +15,8 @@ const {
   catalogId,
   alt,
   eager = false,
-  sizes = '(max-width: 1120px) calc(100vw - 2rem), 1120px'
+  sizes = '(max-width: 1120px) calc(100vw - 2rem), 1120px',
+  showCaption = true
 } = Astro.props;
 
 const asset = getArtworkAsset(catalogId);
@@ -50,13 +52,12 @@ const hasAsset = Boolean(largestWebp && webpSrcset);
     </picture>
   ) : (
     <div class="asset-note" role="img" aria-label={accessibleDescription}>
-      <span>{catalogId}</span>
       <strong>Approved watermarked image unavailable</strong>
       <small>No substitute image is shown.</small>
     </div>
   )}
   <div class="art-overlay" aria-hidden="true"></div>
-  <figcaption>{title} · Photography by Ryan D. Lewis</figcaption>
+  {showCaption && <figcaption>{title} · Photography by Ryan D. Lewis</figcaption>}
 </figure>
 <script>
   document.querySelectorAll('[data-artwork]').forEach((element) => {
