@@ -49,13 +49,14 @@
     const main = document.querySelector('main');
     if (!main) return;
 
+    const hasExactName = /Granddaddy(?:'|’)s Arch/;
     const exactName = /Granddaddy(?:'|’)s Arch/g;
     const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         if (parent.closest('a, summary, h1, h2, h3, h4, h5, h6')) return NodeFilter.FILTER_REJECT;
-        return exactName.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        return hasExactName.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
       }
     });
 
@@ -66,7 +67,6 @@
       const text = textNode.nodeValue || '';
       const fragment = document.createDocumentFragment();
       let lastIndex = 0;
-      exactName.lastIndex = 0;
 
       for (const match of text.matchAll(exactName)) {
         const index = match.index ?? 0;
