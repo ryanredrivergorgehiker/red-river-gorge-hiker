@@ -8,21 +8,12 @@ on:
       - reopened
       - ready_for_review
   workflow_dispatch:
-    inputs:
-      task:
-        description: Task to run
-        required: true
-        default: test
-        type: choice
-        options:
-          - test
 
 permissions:
   contents: read
 
 jobs:
   contract:
-    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Repository contract
     runs-on: ubuntu-latest
 
@@ -34,7 +25,6 @@ jobs:
         run: python3 -m unittest discover -s tests -p "test*.py" -v
 
   build:
-    if: ${{ github.event_name == 'pull_request' || inputs.task == 'test' }}
     name: Astro build
     runs-on: ubuntu-latest
 
