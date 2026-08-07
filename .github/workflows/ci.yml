@@ -59,21 +59,37 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'generate-lockfile' }}
     name: Generate package lock
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout selected branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Generate complete lockfile
+      - name: Generate and verify complete lockfile
         run: |
           rm -f package-lock.json
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Commit generated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "No lockfile changes to commit."
+          else
+            git commit -m "Generate complete npm lockfile"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
 
       - name: Upload lockfile artifact
         uses: actions/upload-artifact@v4
