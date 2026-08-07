@@ -19,9 +19,16 @@ const path = Astro.url.pathname;
       />
       <span>Red River Gorge Hiker</span>
     </a>
+    <nav class="desktop-nav" aria-label="Primary">
+      <ul>
+        {nav.map(([label,href]) => (
+          <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
+        ))}
+      </ul>
+    </nav>
     <details class="nav-menu">
       <summary>Menu</summary>
-      <nav aria-label="Primary">
+      <nav aria-label="Primary mobile">
         <ul>
           {nav.map(([label,href]) => (
             <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
