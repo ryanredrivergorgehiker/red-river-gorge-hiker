@@ -23,7 +23,7 @@ body { background: var(--parchment); }
 }
 .brand-banner {
   display: block;
-  width: 16rem;
+  width: 17.5rem;
   max-width: 100%;
   height: auto;
   flex: none;
@@ -116,8 +116,8 @@ h3 {
 
 /* Keep the sticky desktop header prominent without sacrificing photograph viewing space. */
 @media (min-width: 851px) {
-  .header-inner { min-height: 6.25rem; }
-  .brand-banner { width: 16rem; }
+  .header-inner { min-height: 6.75rem; }
+  .brand-banner { width: 17.5rem; }
   .desktop-nav a { font-size: 1rem; }
 }
 
@@ -130,8 +130,12 @@ h3 {
     gap: .45rem;
     padding-block: .55rem .7rem;
   }
-  .wordmark { width: 100%; }
-  .brand-banner { width: 15rem; }
+  .wordmark {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .brand-banner { width: min(16rem, 92vw); }
   .mobile-primary-nav {
     display: block;
     width: 100%;
@@ -184,7 +188,7 @@ h3 {
 
 @media (max-width: 850px) and (min-width: 701px) {
   .header-inner { min-height: 0; }
-  .brand-banner { width: 15rem; }
+  .brand-banner { width: min(16rem, 88vw); }
   .page,
   .catalog-page,
   .photo-page { padding-top: 1.1rem; }
@@ -194,9 +198,9 @@ h3 {
   .header-inner {
     min-height: 0;
     gap: .35rem;
-    padding-block: .5rem .65rem;
+    padding-block: .55rem .65rem;
   }
-  .brand-banner { width: 13.5rem; }
+  .brand-banner { width: min(15rem, 92vw); }
   .page,
   .catalog-page,
   .photo-page { padding-top: 1rem; }
