@@ -77,7 +77,7 @@ class SiteContract(unittest.TestCase):
         header = (ROOT / 'src/components/Header.astro').read_text()
         labels = re.findall(r"\['(Collection|Prints|Puzzles|Stories|About)'", header)
         self.assertEqual(labels, ['Collection', 'Prints', 'Puzzles', 'Stories', 'About'])
-        self.assertIn('rrgh-banner-logo-header.png', header)
+        self.assertIn('rrgh-header-exact-highfidelity-v1.webp', header)
 
     def test_social_sharing_metadata(self):
         base = (ROOT / 'src/layouts/Base.astro').read_text()
