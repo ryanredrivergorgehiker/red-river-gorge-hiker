@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Pages site
+    name: Build production Pages site
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,7 +43,7 @@ jobs:
           path: dist
 
   deploy:
-    name: Deploy Pages preview
+    name: Deploy production site
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
