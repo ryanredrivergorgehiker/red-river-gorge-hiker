@@ -1,36 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
-import Artwork from '../components/Artwork.astro';
 import Card from '../components/Card.astro';
 import { photographs } from '../data/products';
 
 const base = import.meta.env.BASE_URL;
-const featuredPhotograph = photographs[0];
-
-if (!featuredPhotograph) {
-  throw new Error('The collection requires at least one photograph.');
-}
 ---
 <Base
   title="Photography from Kentucky’s Red River Gorge"
   description="Landscape photography and stories from Kentucky’s Red River Gorge and Clifty Wilderness by Ryan D. Lewis."
 >
   <section class="home-hero">
-    <div class="home-hero-media">
-      <a
-        class="hero-link"
-        href={`${base}photographs/${featuredPhotograph.slug}/`}
-        aria-label={`Read the story behind ${featuredPhotograph.title}`}
-      >
-        <Artwork
-          title={featuredPhotograph.title}
-          catalogId={featuredPhotograph.catalogId}
-          alt={featuredPhotograph.altText}
-          sizes="(max-width: 1180px) calc(100vw - 3rem), 1180px"
-          eager
-        />
-      </a>
-    </div>
     <div class="home-hero-copy">
       <h1>Photography from Kentucky’s Red River Gorge</h1>
       <p class="lede">Landscape photographs by Ryan D. Lewis, made while hiking, backpacking, camping, and exploring the Red River Gorge and Clifty Wilderness.</p>
@@ -41,11 +20,7 @@ if (!featuredPhotograph) {
     </div>
   </section>
 
-  <section class="section home-collection-section">
-    <div class="section-intro">
-      <h2>The Collection</h2>
-      <p>Photographs from Kentucky’s Red River Gorge and Clifty Wilderness, with stories and available print options.</p>
-    </div>
+  <section class="home-collection-section" aria-label="Photography collection">
     <div class="grid collection-mosaic home-collection-mosaic">
       {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}
     </div>
