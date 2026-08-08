@@ -93,6 +93,24 @@ class SiteContract(unittest.TestCase):
         self.assertIn('rel="icon"', base)
         self.assertIn("replace('-WEB-WM.webp', '-SOCIAL-WM.jpg')", photos)
 
+    def test_legal_copy_and_footer_notice(self):
+        terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text()
+        footer = (ROOT / 'src/components/Footer.astro').read_text()
+        for heading in (
+            'Photography and Copyright',
+            'Outdoor Safety and Location Disclaimer',
+            'Accuracy and Changes',
+            'Prints, Puzzles, and Third-Party Services',
+            'No Warranty',
+            'Limitation of Liability',
+            'Changes to These Terms',
+            'Questions and Permissions',
+        ):
+            self.assertIn(f'<h2>{heading}</h2>', terms)
+        self.assertIn('Backcountry travel is undertaken at your own risk.', footer)
+        self.assertIn('href={`${base}copyright-and-terms/`}>Copyright and Terms</a>', footer)
+        self.assertNotIn('modal', terms.lower())
+
     def test_routes(self):
         routes = [
             'index',
