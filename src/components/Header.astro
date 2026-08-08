@@ -1,23 +1,20 @@
 ---
-import { brandAsset } from '../data/assets';
-
 const nav = [['Collection','/collection/'],['Prints','/prints/'],['Puzzles','/puzzles/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
+const bannerFilename = 'rrgh-banner-logo-header.png';
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
   <div class="header-inner">
     <a class="wordmark" href={base} aria-label="Red River Gorge Hiker home">
       <img
-        class="brand-mark"
-        src={`${base}assets/brand/${brandAsset.publicFilename}`}
-        width={brandAsset.width}
-        height={brandAsset.height}
-        alt=""
-        aria-hidden="true"
+        class="brand-banner"
+        src={`${base}assets/brand/${bannerFilename}`}
+        width="256"
+        height="85"
+        alt="Red River Gorge Hiker"
       />
-      <span>Red River Gorge Hiker</span>
     </a>
     <nav class="desktop-nav" aria-label="Primary">
       <ul>
