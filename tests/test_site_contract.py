@@ -129,11 +129,17 @@ class SiteContract(unittest.TestCase):
             self.assertTrue((ROOT / f'src/pages/{route}.astro').exists(), route)
         self.assertFalse((ROOT / 'src/pages/displays-and-partners.astro').exists())
 
-    def test_production_domain_and_no_tracking(self):
+    def test_production_domain_and_staging_overrides(self):
         config = (ROOT / 'astro.config.mjs').read_text()
-        self.assertIn("site: 'https://redrivergorgehiker.com'", config)
-        self.assertIn("base: '/'", config)
+        workflow = (ROOT / '.github/workflows/deploy-pages.yml').read_text()
+        self.assertIn(
+            "const site = process.env.SITE_URL ?? 'https://redrivergorgehiker.com';",
+            config,
+        )
+        self.assertIn("const base = process.env.BASE_PATH ?? '/';", config)
         self.assertNotIn('github.io', config)
+        self.assertIn('- main', workflow)
+        self.assertNotIn('workflow_dispatch', workflow)
         self.assertNotIn('google-analytics', ALL.lower())
         # Actions-based Pages publishing does not require a repository CNAME file.
         self.assertFalse((ROOT / 'public/CNAME').exists())
