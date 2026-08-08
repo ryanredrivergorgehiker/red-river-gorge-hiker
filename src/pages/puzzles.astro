@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { photographs } from '../data/products';
+
+const puzzles = photographs.filter((photo) => photo.puzzleAvailable);
+---
+<Base
+  title="Red River Gorge Jigsaw Puzzles"
+  description="Three Red River Gorge photographs offered as 500-piece jigsaw puzzles through Fine Art America."
+>
+  <div class="page catalog-page">
+    <h1>Jigsaw Puzzles</h1>
+    <div class="prose-wide">
+      <p class="lede">Three photographs are available as 500-piece puzzles through Fine Art America.</p>
+      <div class="notice">
+        <strong>Each puzzle:</strong> 18 × 24 inches · 500 pieces · horizontal · $59.99 before shipping and tax.
+      </div>
+    </div>
+
+    <div class="grid puzzle-grid">
+      {puzzles.map((photo) => (
+        <article class="product-card">
+          <Card photo={photo} showDescription={false} />
+          <p class="puzzle-spec">18 × 24 inches · 500 pieces</p>
+          <p class="actions">
+            <a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+              View puzzle
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+            <a class="text-link" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+              Print options
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+          </p>
+        </article>
+      ))}
+    </div>
+  </div>
+</Base>

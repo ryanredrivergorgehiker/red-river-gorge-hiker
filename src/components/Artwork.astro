@@ -1,0 +1,70 @@
+---
+import { getArtworkAsset } from '../data/assets';
+
+interface Props {
+  title: string;
+  catalogId: string;
+  alt?: string;
+  eager?: boolean;
+  sizes?: string;
+  showCaption?: boolean;
+}
+
+const {
+  title,
+  catalogId,
+  alt,
+  eager = false,
+  sizes = '(max-width: 1120px) calc(100vw - 2rem), 1120px',
+  showCaption = true
+} = Astro.props;
+
+const asset = getArtworkAsset(catalogId);
+const base = import.meta.env.BASE_URL;
+const imageBase = `${base}assets/images/`;
+const avif = asset?.derivatives.filter((item) => item.format === 'avif') ?? [];
+const webp = asset?.derivatives.filter((item) => item.format === 'webp') ?? [];
+const largestWebp = webp[webp.length - 1];
+const avifSrcset = avif.map((item) => `${imageBase}${item.publicFilename} ${item.width}w`).join(', ');
+const webpSrcset = webp.map((item) => `${imageBase}${item.publicFilename} ${item.width}w`).join(', ');
+const accessibleDescription = alt ?? title;
+const hasAsset = Boolean(largestWebp && webpSrcset);
+---
+<figure
+  class={hasAsset ? 'artwork' : 'artwork unavailable'}
+  data-artwork
+  oncontextmenu="return false"
+>
+  {hasAsset && largestWebp ? (
+    <picture>
+      {avifSrcset && <source type="image/avif" srcset={avifSrcset} sizes={sizes} />}
+      <source type="image/webp" srcset={webpSrcset} sizes={sizes} />
+      <img
+        class="artwork-image"
+        src={`${imageBase}${largestWebp.publicFilename}`}
+        width={largestWebp.width}
+        height={largestWebp.height}
+        alt={accessibleDescription}
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        draggable="false"
+      />
+    </picture>
+  ) : (
+    <div class="asset-note" role="img" aria-label={accessibleDescription}>
+      <strong>Approved watermarked image unavailable</strong>
+      <small>No substitute image is shown.</small>
+    </div>
+  )}
+  <div class="art-overlay" aria-hidden="true"></div>
+  {showCaption && <figcaption>{title} · Photography by Ryan D. Lewis</figcaption>}
+</figure>
+<script>
+  document.querySelectorAll('[data-artwork]').forEach((element) => {
+    element.addEventListener('dragstart', (event) => event.preventDefault());
+  });
+</script>
+<style>
+  picture { display: block; }
+  .artwork-image { display: block; width: 100%; height: auto; object-fit: contain; }
+</style>

@@ -1,0 +1,333 @@
+/* Site-wide visual hierarchy and spacing refinements layered after the base stylesheet. */
+
+/* Light sandstone paper tone with AA-safe supporting colors. */
+:root {
+  --parchment: #e8dcc8;
+  --line: #17372d2b;
+  --muted: #596159;
+  --sunrise: #a95e3a;
+}
+html,
+body { background: var(--parchment); }
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(232, 220, 200, .98);
+  box-shadow: 0 1px 0 var(--line);
+}
+.mobile-primary-nav { display: none; }
+.wordmark {
+  gap: 0;
+  line-height: 0;
+}
+.brand-banner {
+  display: block;
+  width: 17.5rem;
+  max-width: 100%;
+  height: auto;
+  flex: none;
+}
+
+/* All ordinary pages should begin close to the header instead of opening with a blank band. */
+.page { padding-top: 1.25rem; }
+.page > h1:first-child { margin-top: 0; }
+.catalog-page,
+.photo-page { padding-top: 1.25rem; }
+
+/* A quieter, more proportional type scale across the entire site. */
+h1 {
+  font-size: clamp(1.8rem, 2.7vw, 2.43rem);
+  line-height: 1.08;
+  margin: 0 0 .9rem;
+}
+h2 {
+  font-size: clamp(1.45rem, 2.15vw, 1.9rem);
+  line-height: 1.12;
+  margin-bottom: .7rem;
+}
+h3 {
+  font-size: clamp(1.12rem, 1.45vw, 1.4rem);
+  line-height: 1.18;
+}
+.lede {
+  font-size: clamp(1.04rem, 1.25vw, 1.18rem);
+  line-height: 1.52;
+}
+
+/* Homepage: lead with the message and actions, then move directly into the photographs. */
+.home-hero { padding-top: 1.2rem; }
+.home-hero-copy {
+  width: 100%;
+  max-width: none;
+  padding: .15rem 0 1.2rem;
+}
+.home-hero-copy h1 {
+  font-size: clamp(1.89rem, 2.84vw, 2.57rem);
+  line-height: 1.08;
+}
+.home-hero-copy .lede {
+  font-size: clamp(1.04rem, 1.25vw, 1.18rem);
+}
+.home-collection-section {
+  padding: 0 0 2.25rem;
+}
+.home-collection-mosaic {
+  margin-top: .35rem;
+}
+
+/* Collection/product cards should not jump back to the old oversized heading scale. */
+.collection-mosaic > :first-child .card h3,
+.collection-mosaic > .card:first-child h3 {
+  font-size: clamp(1.3rem, 1.8vw, 1.65rem);
+}
+.story-summary-title {
+  font-size: clamp(1.22rem, 1.65vw, 1.5rem);
+}
+.purchase-panel h2 { font-size: 1.28rem; }
+
+/* Photograph titles and introductory copy frame the artwork rather than overpowering it. */
+.photo-page > h1 {
+  font-size: clamp(1.76rem, 2.43vw, 2.3rem);
+  margin-bottom: .65rem;
+}
+.photo-page > .lede {
+  font-size: clamp(1.03rem, 1.2vw, 1.15rem);
+  line-height: 1.48;
+  margin-bottom: .55rem;
+}
+.photo-page > .lede + p {
+  font-size: .96rem;
+  margin-bottom: .75rem;
+}
+
+/* On an individual photograph page, the artwork itself is also a purchase-path link. */
+.photo-artwork-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.photo-artwork-link:hover .artwork-image { filter: brightness(.98); }
+.photo-artwork-link:focus-visible {
+  outline: 3px solid var(--sunrise);
+  outline-offset: 5px;
+}
+
+/* Keep the sticky desktop header prominent without sacrificing photograph viewing space. */
+@media (min-width: 851px) {
+  .header-inner { min-height: 6.75rem; }
+  .brand-banner { width: 17.5rem; }
+  .desktop-nav a { font-size: 1rem; }
+}
+
+/* On tablets and phones, keep the complete primary navigation visible below the banner. */
+@media (max-width: 850px) {
+  .header-inner {
+    width: min(var(--content), calc(100% - 1.5rem));
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .45rem;
+    padding-block: .55rem .7rem;
+  }
+  .wordmark {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .brand-banner { width: min(16rem, 92vw); }
+  .mobile-primary-nav {
+    display: block;
+    width: 100%;
+    border-top: 1px solid var(--line);
+    padding-top: .45rem;
+  }
+  .mobile-primary-nav ul {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    width: 100%;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+  }
+  .mobile-primary-nav li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+  }
+  .mobile-primary-nav li + li::before { content: none; }
+  .mobile-primary-nav li:not(:last-child)::after {
+    content: '·';
+    position: absolute;
+    right: -.08rem;
+    color: var(--pine);
+    font-weight: 800;
+  }
+  .mobile-primary-nav a {
+    color: var(--charcoal);
+    font-size: clamp(.72rem, 3vw, .9rem);
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+  }
+  .mobile-primary-nav a:hover { color: var(--gorge); }
+  .mobile-primary-nav a[aria-current='page'] {
+    color: var(--gorge);
+    text-decoration: underline;
+    text-decoration-color: var(--sunrise);
+    text-decoration-thickness: 2px;
+    text-underline-offset: .24em;
+  }
+}
+
+@media (max-width: 850px) and (min-width: 701px) {
+  .header-inner { min-height: 0; }
+  .brand-banner { width: min(16rem, 88vw); }
+  .page,
+  .catalog-page,
+  .photo-page { padding-top: 1.1rem; }
+}
+
+@media (max-width: 700px) {
+  .header-inner {
+    min-height: 0;
+    gap: .35rem;
+    padding-block: .55rem .65rem;
+  }
+  .brand-banner { width: min(15rem, 92vw); }
+  .page,
+  .catalog-page,
+  .photo-page { padding-top: 1rem; }
+  h1 { font-size: clamp(1.67rem, 7.2vw, 2.03rem); }
+  h2 { font-size: clamp(1.45rem, 6.5vw, 1.9rem); }
+  .home-hero { padding-top: .85rem; }
+  .home-hero-copy {
+    padding: .1rem 0 1.05rem;
+  }
+  .home-hero-copy h1 { font-size: clamp(1.76rem, 7.65vw, 2.16rem); }
+  .home-collection-section { padding-bottom: 1.85rem; }
+  .home-collection-mosaic { margin-top: .2rem; }
+  .photo-page > h1 { font-size: clamp(1.67rem, 7vw, 1.98rem); }
+  .mobile-primary-nav a { font-size: clamp(.7rem, 3.05vw, .84rem); }
+}
+
+/* Inline reference links should read naturally but remain visibly clickable. */
+.story-body .reference-link,
+.about-copy .reference-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+}
+
+/* Keep the footer compact: utility links and branded social destinations share one row. */
+footer .footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .9rem;
+  padding-block: 1.65rem;
+  text-align: center;
+}
+footer .footer-nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem 1.2rem;
+  width: 100%;
+}
+footer .footer-nav a {
+  font-size: .9rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+footer .footer-nav .footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 1.8rem;
+  padding: 0;
+  border-radius: .42rem;
+  text-decoration: none;
+  line-height: 1;
+  transition: transform .15s ease, filter .15s ease;
+}
+footer .footer-nav .footer-social-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+footer .footer-nav .footer-social-link:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+footer .footer-social-link svg {
+  display: block;
+  width: 1.55rem;
+  height: 1.55rem;
+}
+footer .footer-safety-note {
+  max-width: 58rem;
+  margin: -.05rem auto 0;
+  font-size: .78rem;
+  line-height: 1.45;
+  opacity: .78;
+}
+footer .footer-safety-note a {
+  font-weight: 650;
+  text-underline-offset: .16em;
+}
+footer .footer-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: .25rem .75rem;
+  font-size: .9rem;
+  line-height: 1.4;
+}
+footer .footer-credit strong {
+  font-family: var(--serif);
+  font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  footer .footer-inner {
+    width: min(var(--content), calc(100% - 1.5rem));
+    gap: .75rem;
+    padding-block: 1.35rem;
+  }
+  footer .footer-nav {
+    gap: .5rem .9rem;
+  }
+  footer .footer-nav a,
+  footer .footer-credit {
+    font-size: .84rem;
+  }
+  footer .footer-safety-note {
+    font-size: .74rem;
+  }
+  footer .footer-nav .footer-social-link {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-basis: 1.75rem;
+  }
+  footer .footer-social-link svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  footer .footer-credit {
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+  }
+}

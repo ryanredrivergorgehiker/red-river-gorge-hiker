@@ -1,0 +1,29 @@
+---
+import Artwork from './Artwork.astro';
+import type { Photograph } from '../data/products';
+
+interface Props {
+  photo: Photograph;
+  showDescription?: boolean;
+  featured?: boolean;
+}
+
+const { photo, showDescription = true, featured = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const sizes = featured
+  ? '(max-width: 1180px) calc(100vw - 3rem), 1180px'
+  : '(max-width: 700px) calc(100vw - 2rem), (max-width: 1180px) 40vw, 470px';
+---
+<article class="card">
+  <a href={`${base}photographs/${photo.slug}/`}>
+    <Artwork
+      title={photo.title}
+      catalogId={photo.catalogId}
+      alt={photo.altText}
+      sizes={sizes}
+      showCaption={false}
+    />
+    <h3>{photo.title}</h3>
+    {showDescription && <p>{photo.shortDescription}</p>}
+  </a>
+</article>

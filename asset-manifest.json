@@ -1,0 +1,765 @@
+{
+  "releaseVersion": "web-assets-v01",
+  "createdAt": "2026-08-07T01:10:00+00:00",
+  "formats": [
+    "avif",
+    "webp"
+  ],
+  "artworks": [
+    {
+      "catalogId": "RRGH-0001",
+      "orientation": "Panorama",
+      "approvedSourceFilename": "RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-WEB-WM.webp",
+      "sourceDriveFileId": "1_7CgJ6QLzjHBK3TJyCGpIVu85vN5KlNf",
+      "sourceDimensions": {
+        "width": 4000,
+        "height": 1386
+      },
+      "sourceSha256": "976e9f5b7928e089e5b86fca9ecbc0fb514904bdc48b5fd42fc55c21d0a13cd5",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-640-0f0d3f6a99.avif",
+          "width": 640,
+          "height": 222,
+          "format": "avif",
+          "fileSize": 17930,
+          "sha256": "0f0d3f6a99d4a16fe9b435c2663e060b158bef3ba52085b1f566a1a360d9c24d",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-640-d540b5d1c8.webp",
+          "width": 640,
+          "height": 222,
+          "format": "webp",
+          "fileSize": 27230,
+          "sha256": "d540b5d1c81f37bded7e549ae36e986203352372329df3a4a74855713d0651b6",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-960-dc1f8c7cb8.avif",
+          "width": 960,
+          "height": 333,
+          "format": "avif",
+          "fileSize": 38634,
+          "sha256": "dc1f8c7cb8c6c9e221752286f7b1e3e2f6712a63a3497de75f4787b1380e6f3f",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-960-a1bcb63d80.webp",
+          "width": 960,
+          "height": 333,
+          "format": "webp",
+          "fileSize": 59584,
+          "sha256": "a1bcb63d800868fdf312825523aee7e2e878cc0d22bd92412494468767931a10",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-1440-83229f78f1.avif",
+          "width": 1440,
+          "height": 499,
+          "format": "avif",
+          "fileSize": 85501,
+          "sha256": "83229f78f19a30b81b0261230984fb314b890a3660d3d58ff4cd649f2672e9a9",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-1440-965964a4b3.webp",
+          "width": 1440,
+          "height": 499,
+          "format": "webp",
+          "fileSize": 130412,
+          "sha256": "965964a4b3c955549d6da7e170a91dfa4469bf8c906353340bafc53369bd6894",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-1920-8d11a86e78.avif",
+          "width": 1920,
+          "height": 665,
+          "format": "avif",
+          "fileSize": 149354,
+          "sha256": "8d11a86e78bcc776c5d69e9dd36c8b5d9f67dc76beeff38da67345dd2b9f4660",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0001-double-rainbow-1920-b4be0213fa.webp",
+          "width": 1920,
+          "height": 665,
+          "format": "webp",
+          "fileSize": 230034,
+          "sha256": "b4be0213fad9b0632d49ba4e6e753fca10b7abf706b20dbd744e2615510abce7",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "home",
+        "collection",
+        "photographs/double-rainbow",
+        "prints"
+      ],
+      "socialPreviewUses": []
+    },
+    {
+      "catalogId": "RRGH-0004",
+      "orientation": "Landscape",
+      "approvedSourceFilename": "RRGH-0004-Winter_at_Red-byrd_Arch-WEB-WM.webp",
+      "sourceDriveFileId": "1_gd-KgyTGxeowISRYGE-dt4dr5_TEvFz",
+      "sourceDimensions": {
+        "width": 4000,
+        "height": 3000
+      },
+      "sourceSha256": "69773e642f63b3e6fd457fcf9f6eccd05d72336c44e54a186e7121f14e194749",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-480-8b147430cb.avif",
+          "width": 480,
+          "height": 360,
+          "format": "avif",
+          "fileSize": 28634,
+          "sha256": "8b147430cb5836b7c47e8068775056581dd29c58fdc5012f93915efb10789b0e",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-480-4e7dab4cc7.webp",
+          "width": 480,
+          "height": 360,
+          "format": "webp",
+          "fileSize": 46806,
+          "sha256": "4e7dab4cc7d877ac10746b6a20454b071512574158f63c8d4342616dd300c643",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-768-933eb24154.avif",
+          "width": 768,
+          "height": 576,
+          "format": "avif",
+          "fileSize": 70482,
+          "sha256": "933eb2415448fd2e7b61083da3d83bf3e302d0fc05753922aba4780f811f7726",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-768-b027fd3d00.webp",
+          "width": 768,
+          "height": 576,
+          "format": "webp",
+          "fileSize": 118084,
+          "sha256": "b027fd3d00eb9adec6bee2b3345ea836fbb65e0b0152e39c87a945544119a6de",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-1200-70886e3cc9.avif",
+          "width": 1200,
+          "height": 900,
+          "format": "avif",
+          "fileSize": 166446,
+          "sha256": "70886e3cc96f45f6384a7e19f482f4aaa760b3189ec051dc0dfe7e5d61698a35",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-1200-faffa4974f.webp",
+          "width": 1200,
+          "height": 900,
+          "format": "webp",
+          "fileSize": 276842,
+          "sha256": "faffa4974f53ee3871070cc52965676dc3bf6aa0a1296742b0de229b4f6a2213",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-1600-a4adfb79a1.avif",
+          "width": 1600,
+          "height": 1200,
+          "format": "avif",
+          "fileSize": 280745,
+          "sha256": "a4adfb79a192cb5a971ec661ffe661fd26da7aca7c957d2e1bb9a2f10a7efa5e",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0004-winter-red-byrd-1600-7caed0141d.webp",
+          "width": 1600,
+          "height": 1200,
+          "format": "webp",
+          "fileSize": 464794,
+          "sha256": "7caed0141df58b35b68e1136d0d259b1ba6516ee2cf7b294a27c94b4d4fae325",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "collection",
+        "photographs/winter-red-byrd",
+        "prints",
+        "puzzles"
+      ],
+      "socialPreviewUses": []
+    },
+    {
+      "catalogId": "RRGH-0005",
+      "orientation": "Landscape",
+      "approvedSourceFilename": "RRGH-0005-Sunrise_at_Eagles_Nest-WEB-WM.webp",
+      "sourceDriveFileId": "10qBUh6vH9Ir3VHwYjKbpEtd6mcZ4Hc9S",
+      "sourceDimensions": {
+        "width": 4000,
+        "height": 3000
+      },
+      "sourceSha256": "9dc5192741cfee9a5505b394da17e145d00a85468002277ffc9e696185f6d248",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-480-88b6b72b1a.avif",
+          "width": 480,
+          "height": 360,
+          "format": "avif",
+          "fileSize": 22433,
+          "sha256": "88b6b72b1a9a4538aaeb222912f07ecc226c49188c8ad599659b8fab22529a16",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-480-c638b1ac14.webp",
+          "width": 480,
+          "height": 360,
+          "format": "webp",
+          "fileSize": 35206,
+          "sha256": "c638b1ac147073cb3548838fef846f17a58c751e4548b571878791d3bbdbfa9e",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-768-a7452d0faf.avif",
+          "width": 768,
+          "height": 576,
+          "format": "avif",
+          "fileSize": 55716,
+          "sha256": "a7452d0faf1b8cc12507ad88c31c2a98a1bf7835f4a0fcaaac95733cd7f8036d",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-768-003633ebaa.webp",
+          "width": 768,
+          "height": 576,
+          "format": "webp",
+          "fileSize": 87570,
+          "sha256": "003633ebaa8a6f02ccf40508381136c375e5db66d2fdd3bf1dfbbc62e2a62afc",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-1200-77b8de54d9.avif",
+          "width": 1200,
+          "height": 900,
+          "format": "avif",
+          "fileSize": 132208,
+          "sha256": "77b8de54d9132276eb55117d2ffaefb24fc1016edac87a53fb54116f63e0fcce",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-1200-5b85baeaf0.webp",
+          "width": 1200,
+          "height": 900,
+          "format": "webp",
+          "fileSize": 207442,
+          "sha256": "5b85baeaf0c4147565040c6f1aa1e5a13206b055a8f8a64c4bc9bbd71212e329",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-1600-3febe42e51.avif",
+          "width": 1600,
+          "height": 1200,
+          "format": "avif",
+          "fileSize": 225773,
+          "sha256": "3febe42e51c245125da94063d106aedebbbc0e90be64021ea71512363fd3e101",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0005-sunrise-eagles-nest-1600-17a28b0de5.webp",
+          "width": 1600,
+          "height": 1200,
+          "format": "webp",
+          "fileSize": 351430,
+          "sha256": "17a28b0de5cb2aa9f1229cfb2904b404007595905fd6594e5f3ed58a24969a5d",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "collection",
+        "photographs/sunrise-eagles-nest",
+        "prints",
+        "puzzles"
+      ],
+      "socialPreviewUses": []
+    },
+    {
+      "catalogId": "RRGH-0002",
+      "orientation": "Square",
+      "approvedSourceFilename": "RRGH-0002-Dog_Fork_Falls_in_Winter-WEB-WM.webp",
+      "sourceDriveFileId": "1Y1WUiJ7VPjTouNuXwZdoSxc7zHIDMwq_",
+      "sourceDimensions": {
+        "width": 4000,
+        "height": 4000
+      },
+      "sourceSha256": "135586b8e314eda84b314b26b83cb4063aaaac3efbde5f404c8ca9bbdbb0d998",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-480-3fae147cfa.avif",
+          "width": 480,
+          "height": 480,
+          "format": "avif",
+          "fileSize": 46413,
+          "sha256": "3fae147cfaf393e0ae1a85a4bfd06facd9c31f5da9d659d600a891d11614d1e3",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-480-7ac9af6ed6.webp",
+          "width": 480,
+          "height": 480,
+          "format": "webp",
+          "fileSize": 80864,
+          "sha256": "7ac9af6ed67896a19afa0f35ea1ff9c4f1f143c590e9218145bc2af694ccf039",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-768-97ea9bd4e2.avif",
+          "width": 768,
+          "height": 768,
+          "format": "avif",
+          "fileSize": 118318,
+          "sha256": "97ea9bd4e2ebe6841aa05369e1b880c8bb80bdfdda25581743334f8892858614",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-768-340711f6f4.webp",
+          "width": 768,
+          "height": 768,
+          "format": "webp",
+          "fileSize": 205894,
+          "sha256": "340711f6f41828dd242c1d80906db3c220e3fca16ac7e744a7874d618215e6d0",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-1200-aea4cd3671.avif",
+          "width": 1200,
+          "height": 1200,
+          "format": "avif",
+          "fileSize": 284594,
+          "sha256": "aea4cd36711bb6c723c6b02a97a3b3f08ba18edfab9c0315a9d6bc8d3ad04b5a",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-1200-77258a5553.webp",
+          "width": 1200,
+          "height": 1200,
+          "format": "webp",
+          "fileSize": 484510,
+          "sha256": "77258a55533d0cc88f0c844fa6d225e54d4e496a4d2cf2cd8a748d5e795e3152",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-1600-43f6e188c4.avif",
+          "width": 1600,
+          "height": 1600,
+          "format": "avif",
+          "fileSize": 475136,
+          "sha256": "43f6e188c435dc8610b6824e8b92d8a15494477ed3086aaf6977a257281b81b6",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0002-dog-fork-winter-1600-91da55da22.webp",
+          "width": 1600,
+          "height": 1600,
+          "format": "webp",
+          "fileSize": 812412,
+          "sha256": "91da55da221b7a555eb46fe37215fc3688d255ed82efe0c3e8694bae07db00b2",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "collection",
+        "photographs/dog-fork-winter",
+        "prints"
+      ],
+      "socialPreviewUses": []
+    },
+    {
+      "catalogId": "RRGH-0007",
+      "orientation": "Landscape",
+      "approvedSourceFilename": "RRGH-0007-Ice_at_West_of_Copperas_Pillar-WEB-WM.webp",
+      "sourceDriveFileId": "1veFT2f1297J6jfB6qDvzLTpMxMuJaBQt",
+      "sourceDimensions": {
+        "width": 4000,
+        "height": 3000
+      },
+      "sourceSha256": "f2b044124627aabce396ff4c30333224422af87f7e2878bfdbfbcfa92e09aa7e",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-480-b655148416.avif",
+          "width": 480,
+          "height": 360,
+          "format": "avif",
+          "fileSize": 37174,
+          "sha256": "b6551484169dc2e2ff362894ea792cbb6a0ee820b25bfc02c739dc5413a281be",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-480-4570a0c033.webp",
+          "width": 480,
+          "height": 360,
+          "format": "webp",
+          "fileSize": 70460,
+          "sha256": "4570a0c033eb369b95904a9591b8b85570c9f9890195f73dd9d82970c1d1a628",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-768-1f21377e4f.avif",
+          "width": 768,
+          "height": 576,
+          "format": "avif",
+          "fileSize": 91576,
+          "sha256": "1f21377e4f4fc72111a6f00e0e9b8e87ea3a64ec9ad4cc7b0fc5e61fd49cff31",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-768-bd9ec8004e.webp",
+          "width": 768,
+          "height": 576,
+          "format": "webp",
+          "fileSize": 170206,
+          "sha256": "bd9ec8004ed3ed37149887da562caf634f27b57c7f693e13584de930219e7d21",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-1200-55a9ff1f81.avif",
+          "width": 1200,
+          "height": 900,
+          "format": "avif",
+          "fileSize": 209625,
+          "sha256": "55a9ff1f810c3c0d61d0825f1171bfb7811e2a07a8bad4ebcc9b3dc45645189f",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-1200-df9d1b060c.webp",
+          "width": 1200,
+          "height": 900,
+          "format": "webp",
+          "fileSize": 383636,
+          "sha256": "df9d1b060c03d9ad85bf330b18eb5d70a3d754e49a004f19b17e938ed4d608f4",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-1600-35888777f3.avif",
+          "width": 1600,
+          "height": 1200,
+          "format": "avif",
+          "fileSize": 346239,
+          "sha256": "35888777f322a6cd8f4cbf20eaf0aa505a6b4519dfc920f1380a4667edd0434e",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0007-ice-copperas-pillar-1600-6047752d7d.webp",
+          "width": 1600,
+          "height": 1200,
+          "format": "webp",
+          "fileSize": 628942,
+          "sha256": "6047752d7da0aa4b8e688572a2fcf274d348dca5adeffa5a3a941f068615f38e",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "collection",
+        "photographs/ice-copperas-pillar",
+        "prints",
+        "puzzles"
+      ],
+      "socialPreviewUses": []
+    },
+    {
+      "catalogId": "RRGH-0003",
+      "orientation": "Portrait",
+      "approvedSourceFilename": "RRGH-0003-Splatter_Falls-WEB-WM.webp",
+      "sourceDriveFileId": "1q0uhxNMcjifBnBZ7XisGPOuWUnbHWxlU",
+      "sourceDimensions": {
+        "width": 2250,
+        "height": 4000
+      },
+      "sourceSha256": "0e8acce409cc9b841a4985a79f364aa028fb3b0a9b425855ab51d7a8c268c041",
+      "derivatives": [
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-236-b531728174.avif",
+          "width": 236,
+          "height": 420,
+          "targetLongEdge": 420,
+          "format": "avif",
+          "fileSize": 23102,
+          "sha256": "b5317281741b2329b2ba3692db02c6ea1717e39e085be738c19cde0d81579a8a",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-236-9733cba07b.webp",
+          "width": 236,
+          "height": 420,
+          "targetLongEdge": 420,
+          "format": "webp",
+          "fileSize": 40034,
+          "sha256": "9733cba07b27127553b43915c4cdf6d35c3abe4ba70236604f5b59ccddb4fa8c",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-405-09c2017c3f.avif",
+          "width": 405,
+          "height": 720,
+          "targetLongEdge": 720,
+          "format": "avif",
+          "fileSize": 70207,
+          "sha256": "09c2017c3f9f40d5b47fe36f58d9b0a40863c7ee8070f737cb78216bf0a3cad2",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-405-bc0e6fa1d7.webp",
+          "width": 405,
+          "height": 720,
+          "targetLongEdge": 720,
+          "format": "webp",
+          "fileSize": 121900,
+          "sha256": "bc0e6fa1d7df848476df8050f16d4726b08e3ba96244bff38e688ae30a459709",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-608-054f004ab3.avif",
+          "width": 608,
+          "height": 1080,
+          "targetLongEdge": 1080,
+          "format": "avif",
+          "fileSize": 160196,
+          "sha256": "054f004ab31d37e637e9068672d7ba9c111e0a656881945f594094f329b49881",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-608-2f04c2aa5c.webp",
+          "width": 608,
+          "height": 1080,
+          "targetLongEdge": 1080,
+          "format": "webp",
+          "fileSize": 272388,
+          "sha256": "2f04c2aa5c5e8231c00ac003a3b9657e9bfb23eb49e1b94a07ed065743ca8d90",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-810-b390170ecf.avif",
+          "width": 810,
+          "height": 1440,
+          "targetLongEdge": 1440,
+          "format": "avif",
+          "fileSize": 275090,
+          "sha256": "b390170ecf06e974e20a0be7301d62ed02a2897e3c1439b364b94da86e7b6cba",
+          "metadataKeys": [],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        },
+        {
+          "publicFilename": "RRGH-0003-splatter-falls-810-009473463c.webp",
+          "width": 810,
+          "height": 1440,
+          "targetLongEdge": 1440,
+          "format": "webp",
+          "fileSize": 477026,
+          "sha256": "009473463c3f2bb891ba8671fe5d95668f48d62595c7ec158a2b51ee5dda6c8c",
+          "metadataKeys": [
+            "background",
+            "loop"
+          ],
+          "watermarkConfirmed": true,
+          "metadataStripped": true
+        }
+      ],
+      "pageUses": [
+        "collection",
+        "photographs/splatter-falls",
+        "prints"
+      ],
+      "socialPreviewUses": [],
+      "sizingInterpretation": "Approved portrait values applied to the long edge to enforce the 1,440-pixel maximum long edge."
+    }
+  ],
+  "brand": {
+    "sourceDriveFileId": "18BvtfpRezeqqsZTA27rdznWXEfSMYetp",
+    "sourceFilename": "RRGH_Circle_Logo_Profile_Transparent.png",
+    "publicFilename": "rrgh-circle-logo-512-539a2fd23c.png",
+    "width": 512,
+    "height": 512,
+    "format": "png",
+    "fileSize": 338855,
+    "sha256": "539a2fd23cf4b32553f08deb228c7db0b560f94aa28cef6f3da5b36250cb97e3",
+    "transparencyConfirmed": true,
+    "metadataStripped": true
+  },
+  "qr": [
+    {
+      "sourceDriveFileId": "1hwk3j92IdGTdsaFXXuawbEMLD7H3nPO3",
+      "publicFilename": "RRGH-QR-Prints-v01.png",
+      "fileSize": 3485,
+      "sha256": "54b01c2d56889e196e2b38f1e60b5751579f08c194f61a01a318d9b9e443422f",
+      "destination": "https://redrivergorgehiker.com/prints"
+    },
+    {
+      "sourceDriveFileId": "13UL8b239EcIIvtXYnQ0FwxmVROPkVqEb",
+      "publicFilename": "RRGH-QR-Prints-v01.svg",
+      "fileSize": 38463,
+      "sha256": "aaefec7f78196d7f73dd0b047a48151303b8946bf215aa6e17df9a5ab75fbe6f",
+      "destination": "https://redrivergorgehiker.com/prints"
+    }
+  ]
+}

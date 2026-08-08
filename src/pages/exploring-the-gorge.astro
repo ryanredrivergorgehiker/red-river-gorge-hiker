@@ -1,0 +1,297 @@
+---
+import Base from '../layouts/Base.astro';
+
+const waterfallReferences = {
+  lili: 'https://kywaterfalls.com/cumberland-plateau/lilis-leap-falls',
+  fletcher: 'https://kywaterfalls.com/cumberland-plateau/fletcher-ridge-falls',
+  parachute: 'https://kywaterfalls.com/cumberland-plateau/parachute-falls',
+  tallTwin: 'https://kywaterfalls.com/cumberland-plateau/tall-twin-falls',
+  frontierDouble: 'https://kywaterfalls.com/cumberland-plateau/frontier-double-falls'
+} as const;
+
+const externalLink = (label: string, url: string) =>
+  `<a class="reference-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+
+const stories = [
+  {
+    title: 'Lili’s Leap',
+    id: 'lilis-leap',
+    summary: 'Sick, exhausted, and alone in the backcountry, Ryan left the known route anyway—and found a 94-foot waterfall he would name for his daughter.',
+    paragraphs: [
+      `I had barely slept.`,
+      `It was March 2023, and the temperature had fallen to around 20 degrees during the night. Cold was expected. What wasn't expected was spending much of the night sick.`,
+      `Very sick.`,
+      `At the time, I wondered whether I had Giardia. Whatever it was, by morning I was exhausted, cold, alone in the backcountry and dealing with stomach problems that had kept me awake for much of the night.`,
+      `There was an obvious decision available to me: get out.`,
+      `Another was to ask for help.`,
+      `Instead, I packed up and continued north.`,
+      `My destination that day was the Mariba Fork area, but there was something else on my mind. I had been studying the terrain and wondered whether a drainage I had been looking at might contain something that wasn't documented.`,
+      `That had become something of a game for me in the Gorge. The maps told me where people had already been. The tributaries and cliff lines without names told me where I wanted to go.`,
+      `So despite the night I'd just had, I left the known route and went looking.`,
+      `It was a leap of faith.`,
+      `And there it was.`,
+      `A waterfall.`,
+      `I measured it later at approximately 94 feet 3 inches. But standing there that day, measurements weren't really what mattered.`,
+      `I had been miserable for hours. I was still sick. I was alone.`,
+      `And suddenly I was incredibly happy.`,
+      `I named it ${externalLink('Lili’s Leap Falls', waterfallReferences.lili)}, for my daughter Lili—and because finding it had required exactly that: a leap.`,
+      `Finding the waterfall wasn't the end of the day.`,
+      `Bushwhacking back out, I eventually found myself traversing down approximately a 20-foot wall. I was solo. I had no rope.`,
+      `There wasn't much to do except get myself down it.`,
+      `So I did.`,
+      `Then I kept walking.`,
+      `By the time I reached the Copperas Creek canoe launch, I had hiked roughly another 14 miles and was finally finished.`,
+      `At the time, Lili’s Leap was simply a place I had gone looking for and found.`,
+      `It didn't stay that way.`,
+      `The waterfall entered the Kentucky waterfall record. And eventually, the name <strong>Lili’s Leap Falls appeared on a USGS map</strong>.`,
+      `That may be my favorite part of the story.`,
+      `Somewhere in Clifty Wilderness is a waterfall that once existed only as a possibility I saw in the terrain.`,
+      `I got sick.`,
+      `I went looking anyway.`,
+      `I found it.`,
+      `I gave it my daughter's name.`,
+      `And now the map knows it too.`
+    ]
+  },
+  {
+    title: 'The Day the Gorge Took 13 Hours',
+    id: 'the-day-the-gorge-took-13-hours',
+    summary: 'A 31.87-mile Sheltowee Trace day began with a rattlesnake in a convenience store and became thirteen hours of walking through the Gorge in rain.',
+    paragraphs: [
+      `I woke up around 4:45 in the morning because I knew the rain was coming.`,
+      `The goal was simple: get everything packed while it was still dry.`,
+      `I was in Frenchburg during my solo Sheltowee Trace thru-hike, and this was going to be a big day. I packed up, started moving and eventually made my way to Dave's Minute Mart.`,
+      `I needed calories.`,
+      `At that point on the Sheltowee, food had become less about meals and more about getting enough energy into my body to keep it moving. So I was sitting inside Dave's eating a honey bun and trying to load up before leaving.`,
+      `Then the woman near the register looked down.`,
+      `“Snake! Snake!”`,
+      `There was a rattlesnake under the counter.`,
+      `I had never seen one before.`,
+      `Apparently this wasn't going to be treated as much of an emergency, because an old-timer basically kicked the thing out the door.`,
+      `First rattlesnake of my life.`,
+      `I finished eating.`,
+      `And when I headed outside, the rain started.`,
+      `That was the beginning.`,
+      `The destination was Hemlock Lodge.`,
+      `Between Frenchburg and there was the Red River Gorge—and <strong>31.87 miles</strong> of walking.`,
+      `The rain didn't politely pass through.`,
+      `I walked through it.`,
+      `Hour after hour.`,
+      `By then the Sheltowee had already been taking its toll. Over the entire trip there would be wet boots for days, blisters, lost toenails, cold, deep water crossings and four days spent walking in pouring rain. My post-hike tally eventually included nine blisters, three lost toenails and six days in wet boots.`,
+      `But this was <em>the</em> day.`,
+      `The Gorge was familiar country to me. I had spent years coming here, exploring its arches, drainages, waterfalls and cliff lines.`,
+      `That familiarity didn't make 31 miles disappear.`,
+      `It almost made the experience stranger.`,
+      `Normally I came into the Gorge looking for something.`,
+      `An arch.`,
+      `A waterfall.`,
+      `A tributary that interested me.`,
+      `That day I didn't need the Gorge to reveal anything.`,
+      `I just needed to get through it.`,
+      `I kept walking.`,
+      `Thirty-one point eight seven miles.`,
+      `Approximately thirteen hours.`,
+      `In the rain.`,
+      `From Frenchburg all the way to Hemlock Lodge.`,
+      `When I later summarized the entire 340.77-mile thru-hike, I called it my one <strong>“EPIC day”</strong>: 31.87 miles over 13 hours through the Gorge in the rain. Dave's Minute Mart made the food list. The rattlesnake made the animal list.`,
+      `But lists don't really capture that day.`,
+      `What I remember is waking before five because I wanted to beat the rain.`,
+      `Sitting in a little Kentucky store eating a honey bun.`,
+      `Someone yelling about a snake.`,
+      `An old man kicking my first rattlesnake out the door.`,
+      `Then stepping outside.`,
+      `And realizing I hadn't beaten the rain at all.`,
+      `The Gorge took thirteen hours.`
+    ]
+  },
+  {
+    title: 'The Blank Places on the Map',
+    id: 'the-blank-places-on-the-map',
+    summary: 'Years of studying cliff lines, drainages, and empty topo-map spaces turned exploration into a game of asking what the map had missed.',
+    paragraphs: [
+      `At some point, exploring the Red River Gorge became a game.`,
+      `I knew the places everyone went.`,
+      `That wasn't enough.`,
+      `I wanted to find the arches that were already documented, partly because finding them taught me how the landscape worked. Cliff lines started making sense. Drainages made sense. Certain rock formations, benches and tributaries began looking different to me.`,
+      `Then I started asking another question.`,
+      `<strong>What about the places where nobody had marked anything?</strong>`,
+      `Those became more interesting.`,
+      `If a tributary looked difficult to reach, that wasn't necessarily a reason to avoid it.`,
+      `Sometimes it was a reason to go there.`,
+      `I deliberately chose places other people weren't likely to visit. I followed drainages without attractions marked on them. I worked along cliff lines. I went into terrain that required bushwhacking simply because the difficulty increased the odds that nobody had bothered looking very closely.`,
+      `That was the game.`,
+      `Find what was known.`,
+      `Then look beyond it.`,
+      `The first time you find something substantial that isn't on the map, the map changes in your mind.`,
+      `A blank space stops meaning <strong>nothing is there</strong>.`,
+      `It starts meaning <strong>nobody has told me what's there yet.</strong>`,
+      `And that is dangerous for someone with my personality.`,
+      `Every tributary becomes a possibility.`,
+      `Every cliff line becomes a question.`,
+      `Every contour on a topo map starts suggesting something.`,
+      `The result was that I began documenting features all over the Gorge and Clifty Wilderness—arches, waterfalls, overlooks and other formations.`,
+      `Some were small.`,
+      `Some were significant.`,
+      `Some eventually became recognized features.`,
+      `Granddaddy's Arch came out of that process.`,
+      `${externalLink("Lili's Leap", waterfallReferences.lili)} came out of it.`,
+      `${externalLink('Fletcher Ridge Falls', waterfallReferences.fletcher)} came out of it.`,
+      `So did ${externalLink('Parachute Falls', waterfallReferences.parachute)}, ${externalLink('Tall Twin Falls', waterfallReferences.tallTwin)}, ${externalLink('Frontier Double Falls', waterfallReferences.frontierDouble)} and others.`,
+      `Eventually I wasn't just visiting the Gorge anymore.`,
+      `I was investigating it.`,
+      `And the competition wasn't really with another person.`,
+      `It was with the map.`,
+      `I wanted to know what it didn't know.`,
+      `Years later, toward the end of my Sheltowee Trace thru-hike, I realized something about that game.`,
+      `I was tired of playing it.`,
+      `In the account I wrote after finishing the trail, I said that I would no longer be “running to find the next arch to document or the next competition.” I wanted the next stage to be about taking Lili with me and showing her these places.`,
+      `That doesn't mean I regret the game.`,
+      `The game is why I know the Gorge the way I do.`,
+      `It made me go to places I otherwise never would have seen.`,
+      `And every once in a while, I walked into one of those blank places and discovered that the map really was missing something.`,
+      `Those were the best days.`
+    ]
+  },
+  {
+    title: 'The Fletcher Ridge Hunt',
+    id: 'the-fletcher-ridge-hunt',
+    summary: 'A blank drainage and a hunch led Ryan to document a 133-foot waterfall and a corridor of other previously undocumented features.',
+    paragraphs: [
+      `The waterfall existed before I found it.`,
+      `That distinction matters.`,
+      `I didn't create ${externalLink('Fletcher Ridge Falls', waterfallReferences.fletcher)}. I didn't discover some untouched place that no human being had ever seen.`,
+      `What I did was look at the terrain, believe something significant might be there, go looking for it, document it and bring it into a modern record where it had not previously existed.`,
+      `And what I found was much larger than I expected.`,
+      `Fletcher Ridge Falls drops approximately <strong>133 feet</strong>.`,
+      `My own records place the discovery and documentation during the February 3–6, 2023 trip in Clifty Wilderness.`,
+      `The interesting part for me wasn't simply standing underneath a tall waterfall.`,
+      `It was proving the idea.`,
+      `By then I had spent enough time studying the Gorge that I was beginning to recognize what the landscape might contain before physically seeing it.`,
+      `Water has to go somewhere.`,
+      `Topography tells stories.`,
+      `A drainage above a substantial cliff line can sometimes tell you that there <em>should</em> be a waterfall even when no waterfall appears on your map.`,
+      `Then you have to go find out whether you're right.`,
+      `Fletcher Ridge was part of a much larger period of doing exactly that.`,
+      `The area began producing more discoveries: ${externalLink('Parachute Falls', waterfallReferences.parachute)}. ${externalLink('Tall Twin Falls', waterfallReferences.tallTwin)}. ${externalLink('Frontier Double Falls', waterfallReferences.frontierDouble)}. Other unnamed or undocumented features.`,
+      `Eventually what had begun as individual discoveries started looking like an entire corridor.`,
+      `And Fletcher Ridge stood above them.`,
+      `There is also a historical symmetry that I didn't understand when I first walked into that drainage.`,
+      `Daniel Boone is my ancestor.`,
+      `Kentucky's wilderness was part of his world, and today an enormous portion of the landscape I explore carries his name: <strong>Daniel Boone National Forest</strong>.`,
+      `For years, Yahoo Falls—at 113 feet—has been identified by the National Park Service as Kentucky's highest waterfall. The historical record does <strong>not</strong> support saying that Boone discovered Yahoo Falls, and I don't intend to turn family history into mythology just because it makes a better sentence. The distinction between documented history and legend matters.`,
+      `The parallel is simpler than that.`,
+      `Daniel Boone explored Kentucky wilderness.`,
+      `Generations later, one of his descendants spent years exploring remote drainages in the national forest that bears his name.`,
+      `And in one of those drainages, I documented a free-falling waterfall approximately twenty feet taller than Yahoo Falls.`,
+      `KYWaterfalls.com eventually accepted Fletcher Ridge Falls into its documentation.`,
+      `That's enough of a story for me.`,
+      `I went looking because the terrain suggested something might be there.`,
+      `The map was blank.`,
+      `The waterfall wasn't.`
+    ]
+  },
+  {
+    title: 'Granddaddy’s Arch',
+    id: 'granddaddys-arch',
+    summary: 'An off-trail search produced an arch Ryan named for family history—and marked a shift from using other people’s records to contributing his own.',
+    paragraphs: [
+      `I went looking in the places people usually passed by.`,
+      `That was the game by then.`,
+      `I had learned where known arches tended to occur, and once you understand enough of the geology and terrain, you start wondering what might exist farther along the same cliff line.`,
+      `That's how I found the arch I eventually named <strong>Granddaddy's Arch</strong>.`,
+      `It sits in Clifty Wilderness in Corbin Sandstone.`,
+      `I documented it, photographed it, recorded the location and measured it. The opening is roughly twenty feet across and about five feet high. Nearby are tafoni formations and another smaller window or tube in the rock.`,
+      `But its significance to me wasn't its dimensions.`,
+      `It was the name.`,
+      `<strong>Granddaddy's Arch</strong> connected two pieces of family history.`,
+      `My grandfather.`,
+      `And Daniel Boone.`,
+      `I wanted the feature to carry that connection.`,
+      `Naming something informally in the backcountry is easy. Getting that knowledge beyond yourself is different.`,
+      `Eventually the arch entered the broader arch-documentation world, including Bill Patrick's collection, using material I had produced.`,
+      `That was satisfying in a way that simply checking another waypoint never could be.`,
+      `For years I had used other people's records to explore.`,
+      `Someone had gone before me, measured something, described it, mapped it or photographed it.`,
+      `That information allowed me to find the place.`,
+      `Now the exchange was beginning to work in the other direction.`,
+      `Someone else could encounter Granddaddy's Arch because I had gone looking first.`,
+      `That was when the game started becoming something more permanent.`
+    ]
+  },
+  {
+    title: 'Walking Home',
+    id: 'walking-home',
+    summary: 'After 340.77 miles on the Sheltowee Trace, the biggest change was not physical; it was deciding that the next chapter should be about sharing the Gorge with his daughter.',
+    paragraphs: [
+      `By the time I reached familiar country, I had already been walking for a very long time.`,
+      `The Sheltowee Trace had once seemed impossible to me.`,
+      `Then in 2025 I did it.`,
+      `<strong>340.77 miles.</strong>`,
+      `My post-hike account recorded 779,817 steps across Kentucky and Tennessee. There were blisters, wet boots, lost toenails, cold rain, deep water crossings, lodge stays, convenience-store resupplies, hitchhiking around a tornado and more than a few moments when I questioned why anybody would voluntarily do this.`,
+      `But the physical difficulty wasn't what ultimately got to me.`,
+      `My family did.`,
+      `I had spent years treating the woods as a place to go farther.`,
+      `Find another arch.`,
+      `Look at another drainage.`,
+      `Document another waterfall.`,
+      `Take another trip.`,
+      `There was always another objective.`,
+      `The Sheltowee took that mentality about as far as it could go.`,
+      `After enough days, life becomes remarkably simple.`,
+      `Where am I sleeping?`,
+      `Where am I getting food?`,
+      `What hurts?`,
+      `How many miles until the next place?`,
+      `Eventually I joked that I had become effectively homeless, existing for little more than the next mile.`,
+      `And somewhere in all of that, the things I normally valued in the backcountry began losing their importance.`,
+      `I didn't cry because my feet hurt.`,
+      `I didn't cry because it was raining.`,
+      `I didn't cry because I was cold.`,
+      `I cried because I missed my family.`,
+      `In the account I wrote afterward, I said that was the only thing that brought tears to my eyes.`,
+      `And I wrote something else:`,
+      `I was finished running to find the next arch.`,
+      `Finished looking for the next competition.`,
+      `From now on, Lili would be hiking with me.`,
+      `At the end of the trail, a man who could hardly walk saw his family waiting at Burnt Mill Bridge in Tennessee.`,
+      `And I ran.`,
+      `That's what the Sheltowee gave me.`,
+      `Not proof that I could walk 340 miles.`,
+      `I already knew I was stubborn.`,
+      `It showed me what I wanted to walk <strong>toward</strong>.`
+    ]
+  }
+];
+---
+<Base
+  title="Stories"
+  description="Long-form stories from Ryan D. Lewis’s years hiking, backpacking, and exploring Kentucky’s Red River Gorge and Clifty Wilderness."
+>
+  <div class="page stories-page">
+    <h1>Stories</h1>
+    <p class="stories-intro">Six stories from years spent hiking, backpacking, and exploring the Gorge. Choose a story to open the full account.</p>
+
+    <div class="story-accordion-grid">
+      {stories.map((story) => (
+        <details class="story-accordion" id={story.id}>
+          <summary>
+            <span class="story-summary-title">{story.title}</span>
+            <span class="story-summary-copy">{story.summary}</span>
+            <span class="story-summary-action" aria-hidden="true">
+              <span class="when-closed">Read story…</span>
+              <span class="when-open">Close story</span>
+            </span>
+          </summary>
+          <div class="story-body">
+            {story.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+
+  <script is:inline>
+    const story = document.querySelector(window.location.hash);
+    if (story instanceof HTMLDetailsElement) story.open = true;
+  </script>
+</Base>

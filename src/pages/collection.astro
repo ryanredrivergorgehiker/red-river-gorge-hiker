@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { photographs } from '../data/products';
+---
+<Base
+  title="The Collection"
+  description="Six photographs made in Kentucky’s Red River Gorge and Clifty Wilderness by Ryan D. Lewis."
+>
+  <div class="page catalog-page">
+    <h1>The Collection</h1>
+    <div class="prose-wide">
+      <p class="lede">Six photographs made in Kentucky’s Red River Gorge and Clifty Wilderness.</p>
+      <p>Open any photograph to see the full image, its story, capture details, and available print or puzzle options.</p>
+    </div>
+    <div class="grid collection-mosaic">
+      {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}
+    </div>
+  </div>
+</Base>
