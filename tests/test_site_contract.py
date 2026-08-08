@@ -53,6 +53,11 @@ class SiteContract(unittest.TestCase):
         for placeholder in prohibited_placeholders:
             self.assertNotIn(placeholder, ALL)
 
+        self.assertNotIn(
+            'The photograph is intended for a special physical display at The Hungry Hiker, but it has not yet been printed or delivered.',
+            DATA,
+        )
+
     def test_sunrise_timeline(self):
         self.assertIn("captureDate: 'December 21, 2025'", DATA)
         self.assertIn('On December 20, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
@@ -77,7 +82,7 @@ class SiteContract(unittest.TestCase):
         header = (ROOT / 'src/components/Header.astro').read_text()
         labels = re.findall(r"\['(Collection|Prints|Puzzles|Stories|About)'", header)
         self.assertEqual(labels, ['Collection', 'Prints', 'Puzzles', 'Stories', 'About'])
-        self.assertIn('rrgh-header-exact-highfidelity-v1.webp', header)
+        self.assertIn('rrgh-banner-logo-profile-v2.svg', header)
 
     def test_social_sharing_metadata(self):
         base = (ROOT / 'src/layouts/Base.astro').read_text()
