@@ -275,6 +275,17 @@ footer .footer-social-link svg {
   width: 1.55rem;
   height: 1.55rem;
 }
+footer .footer-safety-note {
+  max-width: 58rem;
+  margin: -.05rem auto 0;
+  font-size: .78rem;
+  line-height: 1.45;
+  opacity: .78;
+}
+footer .footer-safety-note a {
+  font-weight: 650;
+  text-underline-offset: .16em;
+}
 footer .footer-credit {
   display: flex;
   flex-wrap: wrap;
@@ -301,6 +312,9 @@ footer .footer-credit strong {
   footer .footer-nav a,
   footer .footer-credit {
     font-size: .84rem;
+  }
+  footer .footer-safety-note {
+    font-size: .74rem;
   }
   footer .footer-nav .footer-social-link {
     width: 1.75rem;
