@@ -129,8 +129,13 @@ class SiteContract(unittest.TestCase):
             self.assertTrue((ROOT / f'src/pages/{route}.astro').exists(), route)
         self.assertFalse((ROOT / 'src/pages/displays-and-partners.astro').exists())
 
-    def test_no_tracking_or_custom_domain(self):
+    def test_production_domain_and_no_tracking(self):
+        config = (ROOT / 'astro.config.mjs').read_text()
+        self.assertIn("site: 'https://redrivergorgehiker.com'", config)
+        self.assertIn("base: '/'", config)
+        self.assertNotIn('github.io', config)
         self.assertNotIn('google-analytics', ALL.lower())
+        # Actions-based Pages publishing does not require a repository CNAME file.
         self.assertFalse((ROOT / 'public/CNAME').exists())
 
 
