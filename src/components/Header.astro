@@ -2,7 +2,7 @@
 const nav = [['Collection','/collection/'],['Prints','/prints/'],['Puzzles','/puzzles/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
-const bannerFilename = 'rrgh-header-exact-highfidelity-v1.webp';
+const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
@@ -11,8 +11,8 @@ const bannerFilename = 'rrgh-header-exact-highfidelity-v1.webp';
       <img
         class="brand-banner"
         src={`${base}assets/brand/${bannerFilename}`}
-        width="600"
-        height="225"
+        width="448"
+        height="151"
         alt="Red River Gorge Hiker"
       />
     </a>
