@@ -1,0 +1,155 @@
+---
+interface Props {
+  title: string;
+  url: string;
+}
+
+const { title, url } = Astro.props;
+const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+---
+<div
+  class="share-controls"
+  data-share-controls
+  data-share-title={title}
+  data-share-url={url}
+  aria-label="Share this page"
+>
+  <button type="button" data-native-share>Share ↗</button>
+  <span class="share-separator" aria-hidden="true">|</span>
+  <a
+    href={facebookShareUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label={`Share ${title} on Facebook (opens in a new tab)`}
+  >Facebook</a>
+  <span class="share-separator" aria-hidden="true">|</span>
+  <button type="button" data-copy-link>Copy Link</button>
+  <span class="share-status" data-share-status role="status" aria-live="polite"></span>
+</div>
+
+<script>
+  const fallbackCopy = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  };
+
+  const flashCopied = (button: HTMLButtonElement, status: HTMLElement | null) => {
+    const original = button.textContent ?? '';
+    button.textContent = 'Copied!';
+    if (status) status.textContent = 'Link copied.';
+    window.setTimeout(() => {
+      button.textContent = original;
+      if (status) status.textContent = '';
+    }, 1800);
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-share-controls]').forEach((controls) => {
+    if (controls.dataset.shareBound === 'true') return;
+    controls.dataset.shareBound = 'true';
+
+    const title = controls.dataset.shareTitle ?? document.title;
+    const url = controls.dataset.shareUrl ?? window.location.href;
+    const shareButton = controls.querySelector<HTMLButtonElement>('[data-native-share]');
+    const copyButton = controls.querySelector<HTMLButtonElement>('[data-copy-link]');
+    const status = controls.querySelector<HTMLElement>('[data-share-status]');
+
+    shareButton?.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title, url });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+
+      try {
+        if (await fallbackCopy(url)) flashCopied(shareButton, status);
+      } catch {
+        if (status) status.textContent = 'Copy this page URL from the address bar.';
+      }
+    });
+
+    copyButton?.addEventListener('click', async () => {
+      try {
+        if (await fallbackCopy(url)) flashCopied(copyButton, status);
+      } catch {
+        if (status) status.textContent = 'Copy this page URL from the address bar.';
+      }
+    });
+  });
+</script>
+
+<style>
+  .share-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .18rem .5rem;
+    margin: .85rem 0 1.15rem;
+    color: var(--gorge);
+    font-size: .9rem;
+    font-weight: 700;
+  }
+  .share-controls button,
+  .share-controls a {
+    min-height: 2.55rem;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: .42rem .18rem;
+    border: 0;
+    background: transparent;
+    color: var(--gorge);
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: .2em;
+  }
+  .share-controls button:hover,
+  .share-controls a:hover {
+    color: var(--pine);
+  }
+  .share-controls button:focus-visible,
+  .share-controls a:focus-visible {
+    outline: 2px solid var(--sunrise);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  .share-separator {
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .share-status {
+    flex-basis: 100%;
+    min-height: 1em;
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  @media (max-width: 520px) {
+    .share-controls {
+      gap: .1rem .4rem;
+      font-size: .92rem;
+    }
+    .share-controls button,
+    .share-controls a {
+      min-height: 2.75rem;
+      padding-inline: .12rem;
+    }
+  }
+</style>
