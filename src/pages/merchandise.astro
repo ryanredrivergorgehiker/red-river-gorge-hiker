@@ -1,0 +1,77 @@
+---
+import Base from '../layouts/Base.astro';
+import { merchandiseProducts } from '../data/merchandise';
+import '../styles/merchandise.css';
+
+const base = import.meta.env.BASE_URL;
+---
+<Base
+  title="Red River Gorge Hiker Merchandise"
+  description="Red River Gorge Hiker logo merchandise inspired by Kentucky’s Red River Gorge and Clifty Wilderness, produced and fulfilled through Fine Art America."
+>
+  <div class="page merchandise-page">
+    <header class="merch-hero">
+      <p class="eyebrow">Red River Gorge Hiker goods</p>
+      <h1>Merchandise</h1>
+      <p class="lede merch-intro">
+        Red River Gorge Hiker logo merchandise inspired by Kentucky’s Red River Gorge and Clifty Wilderness.
+      </p>
+      <p class="merch-fulfillment">
+        Orders are produced and fulfilled through Fine Art America, which handles product options, checkout, payment, production, shipping, and returns.
+      </p>
+    </header>
+
+    <section class="merchandise-catalog" aria-labelledby="merchandise-catalog-heading">
+      <h2 id="merchandise-catalog-heading" class="sr-only">Available merchandise</h2>
+      <div class="merch-grid">
+        {merchandiseProducts.map((product, index) => (
+          <article class="merch-card">
+            <a
+              class="merch-image-link"
+              href={product.fineArtAmericaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`View ${product.title} on Fine Art America`}
+            >
+              <div class="merch-image-stage">
+                <img
+                  src={`${base}${product.image.webp}`}
+                  width={product.image.width}
+                  height={product.image.height}
+                  alt={product.image.alt}
+                  loading={index < 3 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
+              </div>
+            </a>
+
+            <div class="merch-card-body">
+              <div class="merch-card-heading">
+                <h2>{product.title}</h2>
+                <p class="merch-price">{product.priceLabel}</p>
+              </div>
+              <p class="merch-spec">{product.specification}</p>
+              {product.optionNote && <p class="merch-option">{product.optionNote}</p>}
+              <a
+                class="button merch-button"
+                href={product.fineArtAmericaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View on Fine Art America
+                <span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="merch-ordering" aria-labelledby="merch-ordering-heading">
+      <h2 id="merch-ordering-heading">Ordering</h2>
+      <p>
+        RedRiverGorgeHiker.com presents the collection and sends you to the corresponding Fine Art America product page. Fine Art America controls current product options, availability, checkout, payment, production, fulfillment, shipping, and returns.
+      </p>
+    </section>
+  </div>
+</Base>
