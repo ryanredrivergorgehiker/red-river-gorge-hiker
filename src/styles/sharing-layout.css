@@ -1,9 +1,37 @@
-.photo-page > .share-controls {
+.photo-context-share-row {
+  display: block;
+}
+
+.photo-context-line {
   margin-bottom: .25rem;
 }
 
-.photo-page > .share-controls + .photo-artwork-stage {
+.photo-context-share-row .share-controls {
+  margin-bottom: .25rem;
+}
+
+.photo-context-share-row .share-controls + .photo-artwork-stage {
   margin-top: .4rem;
+}
+
+@media (min-width: 701px) {
+  .photo-context-share-row {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin-bottom: .4rem;
+  }
+
+  .photo-context-share-row .photo-context-line {
+    order: 2;
+    margin: 0;
+  }
+
+  .photo-context-share-row .share-controls {
+    order: 1;
+    flex: 0 0 auto;
+    margin: 0;
+  }
 }
 
 .puzzle-grid .share-controls {
