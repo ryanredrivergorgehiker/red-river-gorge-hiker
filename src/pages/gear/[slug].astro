@@ -1,0 +1,70 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShareControls from '../../components/ShareControls.astro';
+import { merchandiseProducts, type MerchandiseProduct } from '../../data/merchandise';
+import '../../styles/merchandise.css';
+
+export function getStaticPaths() {
+  return merchandiseProducts.map((product) => ({
+    params: { slug: product.slug },
+    props: { product }
+  }));
+}
+
+interface Props {
+  product: MerchandiseProduct;
+}
+
+const { product } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+<Base
+  title={product.title}
+  description={product.description}
+  socialImagePath={product.image.avif}
+  socialImageType="image/avif"
+  socialImageAlt={product.image.alt}
+  ogType="product"
+>
+  <div class="page gear-product-page">
+    <p class="eyebrow">Red River Gorge Hiker gear</p>
+    <p class="gear-product-back"><a href={`${base}gear/`}>← All gear</a></p>
+
+    <div class="gear-product-detail">
+      <div class="gear-product-media">
+        <img
+          src={`${base}${product.image.avif}`}
+          width={product.image.width}
+          height={product.image.height}
+          alt={product.image.alt}
+          decoding="async"
+          draggable="false"
+        />
+      </div>
+
+      <section class="gear-product-info" aria-labelledby="gear-product-title">
+        <h1 id="gear-product-title">{product.title}</h1>
+        <p class="gear-product-price">{product.priceLabel}</p>
+        <p class="gear-product-spec">{product.specification}</p>
+        <p>{product.description}</p>
+        {product.optionNote && <p class="gear-product-option">{product.optionNote}</p>}
+
+        <ShareControls title={product.title} url={canonical} />
+
+        <a
+          class="button gear-product-button"
+          href={product.fineArtAmericaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View on Fine Art America
+          <span class="sr-only"> (opens in a new tab)</span>
+        </a>
+        <p class="gear-product-fulfillment">
+          Fine Art America handles current product options, checkout, payment, production, fulfillment, shipping, and returns.
+        </p>
+      </section>
+    </div>
+  </div>
+</Base>
