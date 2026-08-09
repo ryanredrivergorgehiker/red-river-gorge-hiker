@@ -1,0 +1,20 @@
+.photo-page > .share-controls {
+  margin-bottom: .25rem;
+}
+
+.photo-page > .share-controls + .photo-artwork-stage {
+  margin-top: .4rem;
+}
+
+.puzzle-grid .share-controls {
+  margin: .45rem 0 .4rem;
+}
+
+.puzzle-grid .actions {
+  margin-top: .35rem;
+}
+
+.gear-product-info .share-controls {
+  margin-top: .35rem;
+  margin-bottom: .45rem;
+}
