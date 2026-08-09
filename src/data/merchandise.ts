@@ -27,9 +27,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Optional buyer-entered inside message available during ordering.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=greeting-card',
     image: {
-      avif: `${assetBase}rrgh-merch-greeting-card-3837d305.avif`,
-      width: 420,
-      height: 280,
+      avif: `${assetBase}rrgh-merch-greeting-card-415e37be.avif`,
+      width: 1000,
+      height: 750,
       alt: 'Red River Gorge Hiker logo greeting card displayed as a folded green card mockup.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -42,9 +42,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Without insert $19 · With insert $24.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=throw-pillow',
     image: {
-      avif: `${assetBase}rrgh-merch-throw-pillow-434f2955.avif`,
-      width: 420,
-      height: 315,
+      avif: `${assetBase}rrgh-merch-throw-pillow-50251954.avif`,
+      width: 1000,
+      height: 750,
       alt: 'Green Red River Gorge Hiker logo throw pillow on a light-colored sofa.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -56,9 +56,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '18 × 18 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tote-bag',
     image: {
-      avif: `${assetBase}rrgh-merch-tote-bag-d6edba01.avif`,
-      width: 336,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-tote-bag-bc2e6737.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Person carrying a green Red River Gorge Hiker logo tote bag outdoors.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -70,9 +70,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '32 × 64 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
     image: {
-      avif: `${assetBase}rrgh-merch-towel-bath-7b9638b5.avif`,
-      width: 336,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-towel-bath-051a15a3.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Green Red River Gorge Hiker logo bath towel hanging on a bathroom towel bar.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -84,9 +84,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '32 × 64 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
     image: {
-      avif: `${assetBase}rrgh-merch-towel-beach-61e11fec.avif`,
-      width: 256,
-      height: 320,
+      avif: `${assetBase}rrgh-merch-towel-beach-35a77bd5.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -98,9 +98,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: 'Large 15 oz. · White',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=coffee-mug-large',
     image: {
-      avif: `${assetBase}rrgh-merch-coffee-mug-ef4b0724.avif`,
-      width: 280,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-coffee-mug-0d15378a.avif`,
+      width: 800,
+      height: 1000,
       alt: 'White 15-ounce coffee mug printed with the Red River Gorge Hiker logo.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -112,9 +112,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '6 × 8 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=spiral-notebook',
     image: {
-      avif: `${assetBase}rrgh-merch-spiral-notebook-8ee997a0.avif`,
-      width: 336,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-spiral-notebook-62906115.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Green spiral notebook with the Red River Gorge Hiker logo being held and written in.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -126,9 +126,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '3 × 3 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=sticker',
     image: {
-      avif: `${assetBase}rrgh-merch-sticker-675366d4.avif`,
-      width: 413,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-sticker-218cc04a.avif`,
+      width: 983,
+      height: 1000,
       alt: 'Red River Gorge Hiker logo sticker applied to the rear of a vehicle.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -140,9 +140,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: 'Red River Gorge Hiker logo ornament',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
     image: {
-      avif: `${assetBase}rrgh-merch-ornament-31f4a6e1.avif`,
-      width: 240,
-      height: 320,
+      avif: `${assetBase}rrgh-merch-ornament-2c0c7784.avif`,
+      width: 750,
+      height: 1000,
       alt: 'Green Red River Gorge Hiker logo ornament hanging on an evergreen Christmas tree.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -155,9 +155,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Plush Fleece $45.50 · Sherpa Fleece $48.50.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
     image: {
-      avif: `${assetBase}rrgh-merch-fleece-blanket-277ccd05.avif`,
-      width: 336,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-fleece-blanket-c5e93147.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Person wrapped in a green Red River Gorge Hiker logo fleece blanket beside a fireplace.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -170,9 +170,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Sizes below 2XL verified at $25 · 2XL verified at $28.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt',
     image: {
-      avif: `${assetBase}rrgh-merch-tshirt-chest-29a80851.avif`,
-      width: 420,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-tshirt-chest-70ec579b.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Charcoal T-shirt with a large Red River Gorge Hiker logo centered on the chest.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -185,9 +185,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Select the Pocket design location on Fine Art America. Sizes below 2XL verified at $25 · 2XL at $28.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt',
     image: {
-      avif: `${assetBase}rrgh-merch-tshirt-pocket-dedbd635.avif`,
-      width: 420,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-tshirt-pocket-305a009a.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Charcoal T-shirt with a small Red River Gorge Hiker logo at the pocket position.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
@@ -200,9 +200,9 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     optionNote: 'Regular Bottom $22 · Optional T-style Bottom $22.50.',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pouch',
     image: {
-      avif: `${assetBase}rrgh-merch-zip-pouch-54dbc251.avif`,
-      width: 336,
-      height: 420,
+      avif: `${assetBase}rrgh-merch-zip-pouch-04134418.avif`,
+      width: 800,
+      height: 1000,
       alt: 'Green Red River Gorge Hiker logo zip pouch held at waist height.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
