@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import Card from '../components/Card.astro';
+import ShareControls from '../components/ShareControls.astro';
 import { photographs } from '../data/products';
 
+const base = import.meta.env.BASE_URL;
+const siteOrigin = Astro.site ?? Astro.url.origin;
 const puzzles = photographs.filter((photo) => photo.puzzleAvailable);
 ---
 <Base
@@ -19,22 +22,26 @@ const puzzles = photographs.filter((photo) => photo.puzzleAvailable);
     </div>
 
     <div class="grid puzzle-grid">
-      {puzzles.map((photo) => (
-        <article class="product-card">
-          <Card photo={photo} showDescription={false} />
-          <p class="puzzle-spec">18 × 24 inches · 500 pieces</p>
-          <p class="actions">
-            <a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
-              View puzzle
-              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
-            </a>
-            <a class="text-link" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-              Print options
-              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
-            </a>
-          </p>
-        </article>
-      ))}
+      {puzzles.map((photo) => {
+        const artworkShareUrl = new URL(`${base}photographs/${photo.slug}/`, siteOrigin).href;
+        return (
+          <article class="product-card">
+            <Card photo={photo} showDescription={false} />
+            <p class="puzzle-spec">18 × 24 inches · 500 pieces</p>
+            <ShareControls title={photo.title} url={artworkShareUrl} />
+            <p class="actions">
+              <a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+                View puzzle
+                <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+              </a>
+              <a class="text-link" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+                Print options
+                <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+              </a>
+            </p>
+          </article>
+        );
+      })}
     </div>
   </div>
 </Base>
