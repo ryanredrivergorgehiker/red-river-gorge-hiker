@@ -1,0 +1,414 @@
+/* Search & Rescue is a permanent RRGH brand extension: gorge green, sandstone paper,
+   restrained rescue orange, trail/topographic cues, and the Gorge itself as the hero. */
+
+.sar-page {
+  --sar-orange: #c96432;
+  --sar-orange-dark: #a64b25;
+  --sar-cream: #f4ead8;
+  --sar-deep: #102c24;
+  --sar-topo: rgba(196, 164, 119, .13);
+  overflow: hidden;
+}
+
+.sar-shell {
+  width: min(var(--content), calc(100% - 3rem));
+  margin-inline: auto;
+}
+
+.sar-section-kicker,
+.sar-eyebrow {
+  color: var(--sar-orange-dark);
+  font-size: .75rem;
+  font-weight: 850;
+  letter-spacing: .13em;
+  line-height: 1.25;
+  margin: 0 0 .65rem;
+  text-transform: uppercase;
+}
+
+.sar-section-kicker-light { color: #e9c59d; }
+
+.sar-section-heading { max-width: 58rem; margin-bottom: 1.6rem; }
+.sar-section-heading-wide { max-width: 72rem; }
+.sar-section-heading > p:last-child,
+.sar-story-copy p,
+.sar-direct-support > div > p { line-height: 1.65; }
+
+.sar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: .72rem 1rem;
+  border: 1px solid transparent;
+  font-size: .9rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+}
+.sar-button:hover { transform: translateY(-1px); }
+.sar-button-primary { color: #fff; background: var(--gorge); border-color: var(--gorge); }
+.sar-button-primary:hover { color: #fff; background: var(--pine); }
+.sar-button-light { color: var(--gorge); background: var(--sar-cream); border-color: rgba(244,234,216,.75); }
+.sar-button-light:hover { color: var(--gorge); background: #fff7e9; }
+.sar-button-orange { color: #fff; background: var(--sar-orange); border-color: var(--sar-orange); }
+.sar-button-orange:hover { color: #fff; background: var(--sar-orange-dark); }
+.sar-button-outline { color: var(--gorge); background: transparent; border-color: var(--gorge); }
+.sar-button-outline:hover { color: #fff; background: var(--gorge); }
+
+/* Hero */
+.sar-hero {
+  position: relative;
+  min-height: clamp(31rem, 58vw, 43rem);
+  display: grid;
+  align-items: end;
+  color: #fff;
+  background: var(--gorge);
+  isolation: isolate;
+}
+.sar-hero-media,
+.sar-hero-shade { position: absolute; inset: 0; }
+.sar-hero-media { z-index: -3; }
+.sar-hero-media .artwork,
+.sar-hero-media picture { height: 100%; margin: 0; }
+.sar-hero-media .artwork-image {
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center 47%;
+}
+.sar-hero-shade {
+  z-index: -2;
+  background:
+    linear-gradient(90deg, rgba(9,35,28,.92) 0%, rgba(9,35,28,.76) 38%, rgba(9,35,28,.32) 67%, rgba(9,35,28,.12) 100%),
+    linear-gradient(0deg, rgba(9,35,28,.86) 0%, transparent 42%);
+}
+.sar-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 12% 66%, transparent 0 7rem, rgba(232,220,200,.12) 7.08rem 7.15rem, transparent 7.23rem),
+    radial-gradient(ellipse at 7% 72%, transparent 0 10rem, rgba(232,220,200,.09) 10.08rem 10.15rem, transparent 10.23rem);
+}
+.sar-hero-content {
+  width: min(var(--content), calc(100% - 3rem));
+  margin-inline: auto;
+  padding: clamp(3.2rem, 8vw, 7rem) 0 clamp(2.7rem, 6vw, 4.8rem);
+}
+.sar-hero-content h1 {
+  max-width: 56rem;
+  color: #fff;
+  font-size: clamp(2.5rem, 5.4vw, 4.8rem);
+  line-height: .98;
+  margin-bottom: 1.15rem;
+  text-wrap: balance;
+}
+.sar-hero .sar-eyebrow { color: #f0c28d; }
+.sar-hero-lede {
+  max-width: 49rem;
+  color: #fff7ea;
+  font-family: var(--serif);
+  font-size: clamp(1.12rem, 1.7vw, 1.45rem);
+  line-height: 1.5;
+}
+.sar-hero-commitment {
+  max-width: 48rem;
+  color: #f7d6b5;
+  font-size: clamp(1rem, 1.35vw, 1.15rem);
+  letter-spacing: .01em;
+}
+.sar-hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.45rem; }
+
+/* Support paths */
+.sar-direct-support {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.55fr);
+  gap: 3rem;
+  padding-block: 4rem;
+}
+.sar-support-paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.sar-support-paths article {
+  position: relative;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--sandstone);
+  background: rgba(255,255,255,.28);
+}
+.sar-support-paths .sar-support-direct { border-top-color: var(--sar-orange); background: rgba(255,255,255,.45); }
+.sar-path-number {
+  display: block;
+  color: var(--sar-orange-dark);
+  font-family: var(--serif);
+  font-size: .85rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+}
+.sar-support-paths h3 { font-size: 1.38rem; }
+.sar-support-paths p { line-height: 1.55; }
+.sar-support-paths a { font-weight: 800; }
+
+/* Why */
+.sar-story {
+  display: grid;
+  grid-template-columns: minmax(15rem, .75fr) minmax(0, 1.6fr);
+  gap: 3.25rem;
+  padding: 3.25rem 0 4.3rem;
+  border-top: 1px solid var(--line);
+}
+.sar-story-heading h2 { font-size: clamp(1.9rem, 3.3vw, 2.8rem); }
+.sar-story-copy { max-width: 54rem; }
+.sar-independent-note {
+  padding: 1rem 1.1rem;
+  border-left: 3px solid var(--sar-orange);
+  background: rgba(255,255,255,.34);
+  font-size: .91rem;
+}
+
+/* Meter and reporting */
+.sar-match-section { padding: 4rem 0 4.5rem; border-top: 1px solid var(--line); }
+.sar-financial-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.sar-stat {
+  min-height: 10.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.32);
+}
+.sar-stat > span { color: var(--muted); font-size: .77rem; font-weight: 800; letter-spacing: .06em; line-height: 1.35; text-transform: uppercase; }
+.sar-stat strong { color: var(--gorge); font-family: var(--serif); font-size: clamp(1.75rem, 3vw, 2.55rem); margin: .55rem 0 auto; }
+.sar-stat small { color: var(--muted); line-height: 1.45; }
+.sar-stat-accent { border-top: 3px solid var(--sar-orange); }
+.sar-stat-benchmark { border-top: 3px solid var(--sandstone); }
+.sar-lifetime-details {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.2);
+}
+.sar-lifetime-details summary { cursor: pointer; padding: .85rem 1rem; color: var(--gorge); font-weight: 800; }
+.sar-lifetime-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.sar-lifetime-grid p { display: flex; flex-direction: column; gap: .25rem; margin: 0; padding: 1rem; border-right: 1px solid var(--line); }
+.sar-lifetime-grid p:last-child { border-right: 0; }
+.sar-lifetime-grid span { color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.sar-lifetime-grid strong { color: var(--gorge); font-family: var(--serif); font-size: 1.5rem; }
+.sar-data-note {
+  margin-top: 1rem;
+  padding: 1.05rem 1.15rem;
+  border-left: 3px solid var(--sar-orange);
+  background: rgba(255,255,255,.38);
+  font-size: .88rem;
+}
+.sar-data-note p { margin: .35rem 0 0; line-height: 1.55; }
+
+/* Full-width dark bands */
+.sar-wcsart,
+.sar-emergency,
+.sar-education {
+  color: #f4ead8;
+  background:
+    radial-gradient(ellipse at 85% 25%, transparent 0 8rem, var(--sar-topo) 8.08rem 8.15rem, transparent 8.23rem),
+    radial-gradient(ellipse at 88% 31%, transparent 0 11rem, rgba(196,164,119,.09) 11.08rem 11.15rem, transparent 11.23rem),
+    var(--sar-deep);
+}
+.sar-wcsart h2,
+.sar-emergency h2,
+.sar-emergency h3,
+.sar-education h2,
+.sar-education h3 { color: #fff7ea; }
+.sar-wcsart-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(17rem, .65fr);
+  gap: 3rem;
+  align-items: center;
+  padding-block: 4.5rem;
+}
+.sar-wcsart-inner p { max-width: 52rem; line-height: 1.65; }
+.sar-source-note { color: #d8cdbc; font-size: .86rem; }
+.sar-wcsart-actions { display: grid; gap: .75rem; }
+
+/* Preparedness */
+.sar-prep { padding-block: 4.7rem; }
+.sar-prep-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.sar-prep-card {
+  min-height: 13.5rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.3);
+}
+.sar-card-icon {
+  width: 3.15rem;
+  height: 3.15rem;
+  display: inline-grid;
+  place-items: center;
+  margin-bottom: 1.1rem;
+  border: 1px solid var(--sandstone);
+  border-radius: 50%;
+  color: var(--sar-orange-dark);
+  background: rgba(255,255,255,.35);
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+.sar-prep-card h3 { font-size: 1.2rem; }
+.sar-prep-card p { color: #353d37; font-size: .9rem; line-height: 1.55; margin: 0; }
+.sar-source-actions { display: flex; flex-wrap: wrap; gap: .7rem 1.5rem; margin-top: 1.25rem; }
+.sar-source-actions a { font-size: .88rem; font-weight: 750; }
+
+/* Emergency */
+.sar-emergency-grid { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.3fr); gap: 3rem; padding-block: 4.5rem; }
+.sar-emergency-callout h2 { font-size: clamp(2rem, 4vw, 3.2rem); }
+.sar-emergency-callout p { color: #eadfcf; }
+.sar-emergency-details { padding-left: 2rem; border-left: 1px solid rgba(232,220,200,.25); }
+.sar-emergency-details ul { margin: 1rem 0 1.2rem; padding-left: 1.15rem; columns: 2; column-gap: 2.5rem; }
+.sar-emergency-details li { break-inside: avoid; margin: 0 0 .55rem; color: #eadfcf; }
+.sar-emergency-details p { color: #d8cdbc; font-size: .88rem; }
+
+/* Maps and official resources */
+.sar-resources { padding-block: 4.7rem; }
+.sar-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.sar-resource-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 13rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--sandstone);
+  background: rgba(255,255,255,.28);
+}
+.sar-resource-card > span { color: var(--sar-orange-dark); font-size: .68rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.sar-resource-card h3 { margin-top: .5rem; }
+.sar-resource-card p { line-height: 1.55; }
+.sar-resource-card a { margin-top: auto; font-weight: 800; }
+
+/* Camping */
+.sar-camping { padding: 0 0 4.7rem; }
+.sar-camping-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(17rem, .7fr);
+  gap: 2.5rem;
+  align-items: center;
+  padding: 2rem;
+  border: 1px solid var(--sandstone);
+  border-left: 5px solid var(--sar-orange);
+  background:
+    radial-gradient(ellipse at 95% 110%, transparent 0 8rem, rgba(46,74,60,.09) 8.08rem 8.18rem, transparent 8.25rem),
+    rgba(255,255,255,.38);
+}
+.sar-camping-copy p { max-width: 52rem; line-height: 1.6; }
+.sar-reviewed { color: var(--muted); font-size: .82rem; }
+.sar-camping-action { display: grid; gap: .8rem; }
+.sar-camping-action > a:not(.sar-button) { font-size: .86rem; font-weight: 750; }
+
+/* Conditions */
+.sar-conditions { padding: 0 0 4.8rem; }
+.sar-condition-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.sar-condition-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 12.5rem;
+  padding: 1.15rem;
+  color: var(--charcoal);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.28);
+  text-decoration: none;
+}
+.sar-condition-card:hover { border-color: var(--sandstone); }
+.sar-condition-card h3 { font-size: 1.18rem; }
+.sar-condition-card p { font-size: .88rem; line-height: 1.55; }
+.sar-condition-card span { margin-top: auto; color: var(--gorge); font-size: .79rem; font-weight: 800; }
+
+/* Education */
+.sar-education .sar-shell { padding-block: 4.7rem; }
+.sar-education .sar-section-heading p { color: #e4d8c7; }
+.sar-education-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.sar-education-grid article { padding: 1.1rem; border-top: 2px solid var(--sar-orange); background: rgba(255,255,255,.05); }
+.sar-education-grid p { color: #ded2c1; font-size: .89rem; line-height: 1.55; }
+
+/* Final giving paths */
+.sar-final-support { padding-block: 4.8rem; }
+.sar-final-heading { max-width: 48rem; margin-bottom: 1.6rem; }
+.sar-final-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.sar-final-grid article { min-height: 18rem; display: flex; flex-direction: column; padding: 1.5rem; border: 1px solid var(--line); background: rgba(255,255,255,.3); }
+.sar-final-grid .sar-final-direct { border: 2px solid var(--sar-orange); background: rgba(255,255,255,.48); }
+.sar-option-label { color: var(--sar-orange-dark); font-size: .68rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.sar-final-grid h3 { margin-top: .6rem; font-size: clamp(1.4rem, 2.3vw, 1.9rem); }
+.sar-final-grid p { line-height: 1.6; }
+.sar-final-grid article > .sar-button { margin-top: auto; align-self: flex-start; }
+.sar-final-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: auto; }
+
+.sar-governance { padding: 1.2rem 0 3.8rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .82rem; }
+.sar-governance p { margin: .35rem 0; }
+
+@media (max-width: 1000px) {
+  .sar-prep-grid,
+  .sar-condition-grid,
+  .sar-education-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sar-financial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sar-lifetime-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sar-lifetime-grid p:nth-child(2) { border-right: 0; }
+  .sar-lifetime-grid p:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+}
+
+@media (max-width: 780px) {
+  .sar-shell,
+  .sar-hero-content { width: min(var(--content), calc(100% - 2rem)); }
+  .sar-hero { min-height: 38rem; }
+  .sar-hero-shade {
+    background:
+      linear-gradient(0deg, rgba(9,35,28,.95) 0%, rgba(9,35,28,.72) 58%, rgba(9,35,28,.3) 100%);
+  }
+  .sar-hero-content { padding-bottom: 2.4rem; }
+  .sar-direct-support,
+  .sar-story,
+  .sar-wcsart-inner,
+  .sar-emergency-grid,
+  .sar-camping-panel { grid-template-columns: 1fr; gap: 1.6rem; }
+  .sar-direct-support { padding-block: 3.2rem; }
+  .sar-story { padding-bottom: 3.6rem; }
+  .sar-wcsart-inner,
+  .sar-emergency-grid { padding-block: 3.7rem; }
+  .sar-emergency-details { padding: 1.5rem 0 0; border-left: 0; border-top: 1px solid rgba(232,220,200,.25); }
+  .sar-emergency-details ul { columns: 1; }
+  .sar-camping-panel { padding: 1.35rem; }
+}
+
+@media (max-width: 620px) {
+  .sar-hero { min-height: 40rem; }
+  .sar-hero-content h1 { font-size: clamp(2.35rem, 12vw, 3.45rem); }
+  .sar-hero-actions,
+  .sar-source-actions,
+  .sar-final-actions { flex-direction: column; align-items: stretch; }
+  .sar-hero-actions .sar-button,
+  .sar-final-actions .sar-button { width: 100%; }
+  .sar-support-paths,
+  .sar-financial-grid,
+  .sar-prep-grid,
+  .sar-resource-grid,
+  .sar-condition-grid,
+  .sar-education-grid,
+  .sar-final-grid,
+  .sar-lifetime-grid { grid-template-columns: 1fr; }
+  .sar-lifetime-grid p { border-right: 0; border-bottom: 1px solid var(--line) !important; }
+  .sar-lifetime-grid p:last-child { border-bottom: 0 !important; }
+  .sar-stat { min-height: 9.3rem; }
+  .sar-prep-card { min-height: 0; }
+  .sar-condition-card { min-height: 10rem; }
+  .sar-final-grid article { min-height: 0; }
+  .sar-final-grid article > .sar-button,
+  .sar-camping-action .sar-button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sar-button { transition: none; }
+  .sar-button:hover { transform: none; }
+}
