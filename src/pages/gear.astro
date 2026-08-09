@@ -5,8 +5,9 @@ import { merchandiseProducts } from '../data/merchandise';
 import '../styles/merchandise.css';
 
 const base = import.meta.env.BASE_URL;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const siteOrigin = Astro.site ?? Astro.url.origin;
 const featuredProduct = merchandiseProducts[0]!;
+const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, siteOrigin).href;
 ---
 <Base
   title="Red River Gorge Hiker Gear"
@@ -25,57 +26,63 @@ const featuredProduct = merchandiseProducts[0]!;
       <p class="merch-fulfillment">
         Orders are produced and fulfilled through Fine Art America, which handles product options, checkout, payment, production, shipping, and returns.
       </p>
-      <ShareControls title="Red River Gorge Hiker Gear" url={canonical} />
     </header>
 
     <section class="merchandise-catalog" aria-labelledby="gear-catalog-heading">
       <h2 id="gear-catalog-heading" class="sr-only">Available gear</h2>
       <div class="merch-grid">
-        {merchandiseProducts.map((product, index) => (
-          <article class="merch-card" data-product={product.slug}>
-            <button
-              class="merch-image-button"
-              type="button"
-              data-merch-lightbox-trigger
-              data-image-src={`${base}${product.image.avif}`}
-              data-image-alt={product.image.alt}
-              data-product-title={product.title}
-              data-product-url={product.fineArtAmericaUrl}
-              aria-label={`View a larger image of ${product.title}`}
-            >
-              <div class="merch-image-stage">
-                <img
-                  src={`${base}${product.image.avif}`}
-                  width={product.image.width}
-                  height={product.image.height}
-                  alt={product.image.alt}
-                  loading={index < 3 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  draggable="false"
-                />
-                <span class="merch-enlarge-hint" aria-hidden="true">View larger</span>
-              </div>
-            </button>
-
-            <div class="merch-card-body">
-              <div class="merch-card-heading">
-                <h2><a href={`${base}gear/${product.slug}/`}>{product.title}</a></h2>
-                <p class="merch-price">{product.priceLabel}</p>
-              </div>
-              <p class="merch-spec">{product.specification}</p>
-              {product.optionNote && <p class="merch-option">{product.optionNote}</p>}
-              <a
-                class="button merch-button"
-                href={product.fineArtAmericaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+        {merchandiseProducts.map((product, index) => {
+          const productShareUrl = new URL(`${base}gear/${product.slug}/`, siteOrigin).href;
+          return (
+            <article class="merch-card" data-product={product.slug}>
+              <button
+                class="merch-image-button"
+                type="button"
+                data-merch-lightbox-trigger
+                data-image-src={`${base}${product.image.avif}`}
+                data-image-alt={product.image.alt}
+                data-product-title={product.title}
+                data-product-url={product.fineArtAmericaUrl}
+                data-product-share-url={productShareUrl}
+                aria-label={`View a larger image of ${product.title}`}
               >
-                View on Fine Art America
-                <span class="sr-only"> (opens in a new tab)</span>
-              </a>
-            </div>
-          </article>
-        ))}
+                <div class="merch-image-stage">
+                  <img
+                    src={`${base}${product.image.avif}`}
+                    width={product.image.width}
+                    height={product.image.height}
+                    alt={product.image.alt}
+                    loading={index < 3 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    draggable="false"
+                  />
+                  <span class="merch-enlarge-hint" aria-hidden="true">View larger</span>
+                </div>
+              </button>
+
+              <div class="merch-card-body">
+                <div class="merch-card-heading">
+                  <h2><a href={`${base}gear/${product.slug}/`}>{product.title}</a></h2>
+                  <p class="merch-price">{product.priceLabel}</p>
+                </div>
+                <p class="merch-spec">{product.specification}</p>
+                {product.optionNote && <p class="merch-option">{product.optionNote}</p>}
+                <div class="merch-card-actions">
+                  <ShareControls title={product.title} url={productShareUrl} />
+                  <a
+                    class="button merch-button"
+                    href={product.fineArtAmericaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Fine Art America
+                    <span class="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
 
@@ -99,6 +106,7 @@ const featuredProduct = merchandiseProducts[0]!;
         <img id="merch-lightbox-image" src="" alt="" draggable="false" />
       </div>
       <div class="merch-lightbox-action">
+        <ShareControls title={featuredProduct.title} url={featuredProductShareUrl} />
         <a
           id="merch-lightbox-link"
           class="button"
@@ -118,23 +126,32 @@ const featuredProduct = merchandiseProducts[0]!;
     const dialogImage = document.querySelector<HTMLImageElement>('#merch-lightbox-image');
     const dialogTitle = document.querySelector<HTMLElement>('#merch-lightbox-title');
     const dialogLink = document.querySelector<HTMLAnchorElement>('#merch-lightbox-link');
+    const dialogShareControls = dialog?.querySelector<HTMLElement>('[data-share-controls]');
+    const dialogFacebookLink = dialog?.querySelector<HTMLAnchorElement>('[data-facebook-share]');
     const closeButton = document.querySelector<HTMLButtonElement>('.merch-lightbox-close');
 
     document.querySelectorAll<HTMLButtonElement>('[data-merch-lightbox-trigger]').forEach((trigger) => {
       trigger.addEventListener('click', () => {
-        if (!dialog || !dialogImage || !dialogTitle || !dialogLink) return;
+        if (!dialog || !dialogImage || !dialogTitle || !dialogLink || !dialogShareControls) return;
 
         const imageSrc = trigger.dataset.imageSrc;
         const imageAlt = trigger.dataset.imageAlt;
         const productTitle = trigger.dataset.productTitle;
         const productUrl = trigger.dataset.productUrl;
+        const productShareUrl = trigger.dataset.productShareUrl;
 
-        if (!imageSrc || !imageAlt || !productTitle || !productUrl) return;
+        if (!imageSrc || !imageAlt || !productTitle || !productUrl || !productShareUrl) return;
 
         dialogImage.src = imageSrc;
         dialogImage.alt = imageAlt;
         dialogTitle.textContent = productTitle;
         dialogLink.href = productUrl;
+        dialogShareControls.dataset.shareTitle = productTitle;
+        dialogShareControls.dataset.shareUrl = productShareUrl;
+        if (dialogFacebookLink) {
+          dialogFacebookLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productShareUrl)}`;
+          dialogFacebookLink.setAttribute('aria-label', `Share ${productTitle} on Facebook (opens in a new tab)`);
+        }
         dialog.showModal();
       });
     });
