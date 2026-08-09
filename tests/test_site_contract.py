@@ -31,7 +31,7 @@ class SiteContract(unittest.TestCase):
     def test_merchandise_catalog(self):
         self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 13)
         self.assertEqual(len(re.findall(r"fineArtAmericaUrl:\s*'https://", MERCH)), 13)
-        self.assertEqual(MERCH.count('.webp`'), 13)
+        self.assertEqual(MERCH.count('.avif`'), 13)
         self.assertNotIn('ARCHIVE', MERCH)
         self.assertNotIn('.png', MERCH.lower())
         self.assertIn("title: 'Bath Towel'", MERCH)
@@ -40,7 +40,7 @@ class SiteContract(unittest.TestCase):
         self.assertIn("title: 'T-Shirt — Pocket Logo'", MERCH)
         self.assertIn('Select the Pocket design location on Fine Art America.', MERCH)
         self.assertEqual(MERCH.count('?product=adult-tshirt'), 2)
-        assets = list((ROOT / 'public/assets/merchandise').glob('*.webp'))
+        assets = list((ROOT / 'public/assets/merchandise').glob('*.avif'))
         self.assertEqual(len(assets), 13)
 
     def test_approved_content_fields(self):
