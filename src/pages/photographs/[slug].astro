@@ -63,8 +63,10 @@ const artworkSchema = {
   <div class="page photo-page">
     <h1>{photo.title}</h1>
     <p class="lede">{photo.shortDescription}</p>
-    <p>{photo.contextLine}</p>
-    <ShareControls title={photo.title} url={canonical} />
+    <div class="photo-context-share-row">
+      <p class="photo-context-line">{photo.contextLine}</p>
+      <ShareControls title={photo.title} url={canonical} />
+    </div>
 
     <div class:list={['photo-artwork-stage', `photo-artwork-${orientationClass}`]}>
       <a
