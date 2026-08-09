@@ -8,19 +8,26 @@ interface Props {
   title: string;
   description: string;
   socialImage?: string;
+  socialImagePath?: string;
+  socialImageType?: string;
   socialImageAlt?: string;
+  ogType?: string;
 }
 
 const {
   title,
   description,
   socialImage = 'RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg',
-  socialImageAlt = 'Double rainbow above the Red River Gorge after a summer storm.'
+  socialImagePath,
+  socialImageType = socialImagePath?.endsWith('.avif') ? 'image/avif' : 'image/jpeg',
+  socialImageAlt = 'Double rainbow above the Red River Gorge after a summer storm.',
+  ogType = 'website'
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 const fullTitle = `${title} | Red River Gorge Hiker`;
 const base = import.meta.env.BASE_URL;
-const socialImageUrl = new URL(`${base}assets/social/${socialImage}`, Astro.site ?? Astro.url.origin);
+const resolvedSocialImagePath = socialImagePath ?? `assets/social/${socialImage}`;
+const socialImageUrl = new URL(`${base}${resolvedSocialImagePath}`, Astro.site ?? Astro.url.origin);
 const faviconUrl = `${base}assets/brand/rrgh-circle-logo-512-539a2fd23c.png`;
 const schema = {
   '@context': 'https://schema.org',
@@ -41,16 +48,18 @@ const schema = {
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" sizes="512x512" href={faviconUrl} />
     <link rel="apple-touch-icon" href={faviconUrl} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="Red River Gorge Hiker" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={socialImageUrl.href} />
-    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:type" content={socialImageType} />
     <meta property="og:image:alt" content={socialImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:url" content={canonical} />
     <meta name="twitter:image" content={socialImageUrl.href} />
     <meta name="twitter:image:alt" content={socialImageAlt} />
     <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)}></script>
