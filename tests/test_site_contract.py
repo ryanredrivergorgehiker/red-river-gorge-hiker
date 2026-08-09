@@ -102,8 +102,18 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn('On December 21, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
 
     def test_prohibited_photo(self):
+        # The retired sunset photograph must never return to controlled photo data or public assets.
+        # General safety prose may legitimately use the ordinary word "sunset" (for example,
+        # advising hikers to plan around sunset), so public Astro copy is guarded by the retired
+        # catalog ID rather than a blanket ban on that common word.
         self.assertNotRegex(DATA.lower(), r'rrgh-0006|sunset')
-        self.assertNotRegex(PUBLIC_ASTRO.lower(), r'rrgh-0006|sunset')
+        self.assertNotIn('rrgh-0006', PUBLIC_ASTRO.lower())
+        public_paths = '\n'.join(
+            str(path.relative_to(ROOT / 'public')).lower()
+            for path in (ROOT / 'public').rglob('*')
+            if path.is_file()
+        )
+        self.assertNotIn('rrgh-0006', public_paths)
 
     def test_public_copy_is_timeless_and_catalog_ids_are_internal(self):
         self.assertNotRegex(PUBLIC_ASTRO, r'>\s*RRGH-\d{4}\s*<')
