@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Artwork from '../../components/Artwork.astro';
+import ShareControls from '../../components/ShareControls.astro';
 import { photographs, type Photograph } from '../../data/products';
 
 export function getStaticPaths() {
@@ -28,6 +29,7 @@ const imageSizes = photo.orientation === 'Panorama'
       ? '(max-width: 700px) calc(100vw - 2rem), 860px'
       : '(max-width: 700px) calc(100vw - 2rem), 1040px';
 const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg');
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
 
 const splatterReference = photo.slug === 'splatter-falls'
   ? {
@@ -62,6 +64,7 @@ const artworkSchema = {
     <h1>{photo.title}</h1>
     <p class="lede">{photo.shortDescription}</p>
     <p>{photo.contextLine}</p>
+    <ShareControls title={photo.title} url={canonical} />
 
     <div class:list={['photo-artwork-stage', `photo-artwork-${orientationClass}`]}>
       <a
