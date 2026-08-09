@@ -1,5 +1,5 @@
 ---
-const nav = [['Collection','/collection/'],['Prints','/prints/'],['Puzzles','/puzzles/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
+const nav = [['Collection','/collection/'],['Prints','/prints/'],['Puzzles','/puzzles/'],['Merchandise','/merchandise/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
 const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
@@ -32,3 +32,29 @@ const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
     </nav>
   </div>
 </header>
+
+<style>
+  @media (max-width: 850px) {
+    .site-header .mobile-primary-nav ul {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 520px) {
+    .site-header .mobile-primary-nav ul {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      row-gap: .42rem;
+    }
+    .site-header .mobile-primary-nav li::after { content: none !important; }
+    .site-header .mobile-primary-nav li:not(:nth-child(3n))::after {
+      content: '·' !important;
+      position: absolute;
+      right: -.08rem;
+      color: var(--pine);
+      font-weight: 800;
+    }
+    .site-header .mobile-primary-nav a {
+      font-size: clamp(.72rem, 3.15vw, .84rem);
+    }
+  }
+</style>
