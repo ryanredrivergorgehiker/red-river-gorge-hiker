@@ -1,0 +1,32 @@
+.merch-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: auto;
+}
+
+.merch-card-actions .share-controls {
+  align-self: flex-start;
+  margin: .35rem 0 .45rem;
+}
+
+.merch-card-actions .merch-button {
+  margin-top: 0;
+}
+
+.merch-lightbox-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .45rem;
+}
+
+.merch-lightbox-action .share-controls {
+  margin: 0;
+}
+
+@media (max-width: 620px) {
+  .merch-card-actions .share-controls {
+    margin-bottom: .4rem;
+  }
+}
