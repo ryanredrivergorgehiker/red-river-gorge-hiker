@@ -1,5 +1,6 @@
 ---
-import { sar } from '../data/sar';
+import { sar, SAR_PUBLIC_CSV_URL, SAR_PUBLIC_FIELDS } from '../data/sar';
+import '../styles/sar-polish.css';
 
 interface Props {
   variant?: 'header' | 'full';
@@ -25,22 +26,25 @@ const stateLabel = exceeded
     ? `Match achieved · ${generated} generated for SAR`
     : `${generated} of ${target} matched · ${sar.matchPercentage.toFixed(0)}%`;
 const nodeAmounts = [0, 100, 200, 300, 400, 500];
+const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed0141d.webp`;
 ---
 
 <a
   class:list={['sar-meter', `sar-meter--${variant}`, { 'is-achieved': achieved, 'is-exceeded': exceeded }]}
   href={targetHref}
+  data-sar-meter
+  data-sar-meter-variant={variant}
   aria-label={`Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`}
 >
   <span class="sar-meter-copy">
     <span class="sar-meter-kicker">Search &amp; Rescue</span>
     <span class="sar-meter-status">
       {exceeded ? (
-        <><strong>{generated} generated</strong><span>Match goal surpassed</span></>
+        <><strong data-sar-meter-primary>{generated} generated</strong><span data-sar-meter-detail>Match goal surpassed</span></>
       ) : achieved ? (
-        <><strong>Match achieved</strong><span>{generated} generated for SAR</span></>
+        <><strong data-sar-meter-primary>Match achieved</strong><span data-sar-meter-detail>{generated} generated for SAR</span></>
       ) : (
-        <><strong>RRGH Match: {generated} / {target}</strong><span>{sar.matchPercentage.toFixed(0)}% of annual milestone</span></>
+        <><strong data-sar-meter-primary>RRGH Match: {generated} / {target}</strong><span data-sar-meter-detail>{sar.matchPercentage.toFixed(0)}% of annual milestone</span></>
       )}
     </span>
   </span>
@@ -52,6 +56,7 @@ const nodeAmounts = [0, 100, 200, 300, 400, 500];
       <path class="sar-trail-base" pathLength="100" d="M28 49 C82 15 112 70 167 43 S252 20 309 47 S402 72 457 40 S514 32 536 43" />
       <path
         class="sar-trail-progress"
+        data-sar-meter-progress
         pathLength="100"
         d="M28 49 C82 15 112 70 167 43 S252 20 309 47 S402 72 457 40 S514 32 536 43"
         style={`stroke-dasharray:${progress} ${100 - progress}`}
@@ -64,7 +69,7 @@ const nodeAmounts = [0, 100, 200, 300, 400, 500];
       </g>
     </svg>
     {variant === 'full' && (
-      <span class="sar-meter-nodes">
+      <span class="sar-meter-nodes" data-sar-meter-nodes>
         {nodeAmounts.map((amount) => <span>{currency.format(amount)}</span>)}
       </span>
     )}
@@ -73,58 +78,279 @@ const nodeAmounts = [0, 100, 200, 300, 400, 500];
   <span class="sar-meter-action">{variant === 'full' ? 'Explore the SAR commitment' : 'SAR details'} <span aria-hidden="true">→</span></span>
 </a>
 
+<script is:inline define:vars={{ sarFeedUrl: SAR_PUBLIC_CSV_URL, sarFallback: sar, requiredSarFields: SAR_PUBLIC_FIELDS, mobileHero }}>
+  (() => {
+    if (window.__rrghSarFeedInstalled) return;
+    window.__rrghSarFeedInstalled = true;
+
+    const cacheKey = 'rrgh-sar-public-data-v1';
+    const moneyFields = new Set([
+      'personalAnnualCommitment',
+      'rrghSarGenerated',
+      'rrghSarDonated',
+      'outstandingCommitment',
+      'annualCombinedSupport',
+      'historicalPersonalSupport',
+      'lifetimePersonalSupport',
+      'lifetimeRrghSupport',
+      'combinedLifetimeSupport'
+    ]);
+
+    const formatCurrency = (value) => new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    }).format(value);
+
+    function parseCsvRows(text) {
+      const rows = [];
+      let row = [];
+      let field = '';
+      let quoted = false;
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        if (quoted) {
+          if (char === '"' && text[i + 1] === '"') {
+            field += '"';
+            i += 1;
+          } else if (char === '"') {
+            quoted = false;
+          } else {
+            field += char;
+          }
+        } else if (char === '"') {
+          quoted = true;
+        } else if (char === ',') {
+          row.push(field);
+          field = '';
+        } else if (char === '\n') {
+          row.push(field.replace(/\r$/, ''));
+          rows.push(row);
+          row = [];
+          field = '';
+        } else {
+          field += char;
+        }
+      }
+      if (field.length || row.length) {
+        row.push(field.replace(/\r$/, ''));
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function numberFromPublicValue(value) {
+      const number = Number(String(value ?? '').replace(/[$,%\s,]/g, ''));
+      return Number.isFinite(number) ? number : NaN;
+    }
+
+    function normalizePublicData(raw) {
+      const normalized = {};
+      for (const field of requiredSarFields) {
+        if (!(field in raw)) throw new Error(`Missing SAR field: ${field}`);
+      }
+      normalized.reportingYear = Number.parseInt(String(raw.reportingYear), 10);
+      normalized.lastUpdated = String(raw.lastUpdated).trim();
+      normalized.matchPercentage = numberFromPublicValue(raw.matchPercentage);
+      for (const field of moneyFields) normalized[field] = numberFromPublicValue(raw[field]);
+
+      if (!Number.isInteger(normalized.reportingYear) || normalized.reportingYear < 2000) throw new Error('Invalid reportingYear');
+      if (!normalized.lastUpdated || Number.isNaN(Date.parse(normalized.lastUpdated))) throw new Error('Invalid lastUpdated');
+      if (!Number.isFinite(normalized.matchPercentage) || normalized.matchPercentage < 0) throw new Error('Invalid matchPercentage');
+      for (const field of moneyFields) {
+        if (!Number.isFinite(normalized[field]) || normalized[field] < 0) throw new Error(`Invalid SAR value: ${field}`);
+      }
+      return normalized;
+    }
+
+    function parsePublicCsv(text) {
+      const rows = parseCsvRows(text).filter((row) => row.some((cell) => String(cell).trim() !== ''));
+      if (!rows.length || rows[0][0]?.trim() !== 'field' || rows[0][1]?.trim() !== 'value') {
+        throw new Error('Unexpected SAR CSV header');
+      }
+      const raw = {};
+      for (const row of rows.slice(1)) {
+        const key = String(row[0] ?? '').trim();
+        if (key) raw[key] = String(row[1] ?? '').trim();
+      }
+      return normalizePublicData(raw);
+    }
+
+    function updateMeter(meter, data) {
+      const generated = formatCurrency(data.rrghSarGenerated);
+      const target = formatCurrency(data.personalAnnualCommitment);
+      const percentRounded = data.matchPercentage.toFixed(0);
+      const progress = Math.min(Math.max(data.matchPercentage, 0), 100);
+      const exceeded = data.matchPercentage > 100;
+      const achieved = data.matchPercentage >= 100;
+      const primary = meter.querySelector('[data-sar-meter-primary]');
+      const detail = meter.querySelector('[data-sar-meter-detail]');
+      const progressPath = meter.querySelector('[data-sar-meter-progress]');
+      const variant = meter.dataset.sarMeterVariant;
+
+      meter.classList.toggle('is-achieved', achieved);
+      meter.classList.toggle('is-exceeded', exceeded);
+      if (progressPath) progressPath.style.strokeDasharray = `${progress} ${100 - progress}`;
+
+      let stateLabel;
+      if (exceeded) {
+        primary.textContent = `${generated} generated`;
+        detail.textContent = 'Match goal surpassed';
+        stateLabel = `${generated} generated · match goal surpassed`;
+      } else if (achieved) {
+        primary.textContent = 'Match achieved';
+        detail.textContent = `${generated} generated for SAR`;
+        stateLabel = `Match achieved · ${generated} generated for SAR`;
+      } else {
+        primary.textContent = `RRGH Match: ${generated} / ${target}`;
+        detail.textContent = `${percentRounded}% of annual milestone`;
+        stateLabel = `${generated} of ${target} matched · ${percentRounded}%`;
+      }
+      meter.setAttribute('aria-label', `Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`);
+
+      if (variant === 'full') {
+        const nodes = meter.querySelectorAll('[data-sar-meter-nodes] span');
+        nodes.forEach((node, index) => {
+          const denominator = Math.max(nodes.length - 1, 1);
+          node.textContent = formatCurrency(data.personalAnnualCommitment * (index / denominator));
+        });
+      }
+    }
+
+    function updateSarPage(data) {
+      const page = document.querySelector('.sar-page');
+      if (!page) return;
+
+      const hero = page.querySelector('.sar-hero');
+      if (hero) {
+        hero.style.setProperty('--sar-mobile-hero', `url("${mobileHero}")`);
+        hero.classList.add('sar-mobile-hero-ready');
+      }
+
+      page.querySelectorAll('.sar-path-number').forEach((node) => node.remove());
+      const historicalStory = page.querySelector('.sar-story-copy > p:first-child');
+      if (historicalStory && historicalStory.textContent.includes('personally supported Wolfe County')) historicalStory.remove();
+
+      const match = page.querySelector('#sar-match');
+      if (!match) return;
+      const kicker = match.querySelector('.sar-section-heading .sar-section-kicker');
+      if (kicker) kicker.textContent = `${data.reportingYear} public reporting`;
+      const matchIntro = match.querySelector('.sar-section-heading > p:last-child');
+      if (matchIntro) matchIntro.textContent = `The ${formatCurrency(data.personalAnnualCommitment)} target is a milestone, not a cap. RRGH support keeps accumulating when the match is reached or exceeded.`;
+
+      const stats = match.querySelectorAll('#sar-match-details .sar-stat');
+      const statValues = [
+        data.personalAnnualCommitment,
+        data.rrghSarGenerated,
+        data.rrghSarDonated,
+        data.outstandingCommitment,
+        data.annualCombinedSupport,
+        data.historicalPersonalSupport
+      ];
+      stats.forEach((stat, index) => {
+        const strong = stat.querySelector('strong');
+        if (strong && Number.isFinite(statValues[index])) strong.textContent = formatCurrency(statValues[index]);
+      });
+      const generatedNote = stats[1]?.querySelector('small');
+      if (generatedNote) generatedNote.textContent = `${data.matchPercentage.toFixed(1)}% of the annual match milestone`;
+
+      const lifetime = match.querySelectorAll('.sar-lifetime-grid p');
+      if (lifetime[0]?.querySelector('strong')) lifetime[0].querySelector('strong').textContent = formatCurrency(data.lifetimePersonalSupport);
+      if (lifetime[1]?.querySelector('strong')) lifetime[1].querySelector('strong').textContent = formatCurrency(data.lifetimeRrghSupport);
+      if (lifetime[3]?.querySelector('strong')) lifetime[3].querySelector('strong').textContent = formatCurrency(data.combinedLifetimeSupport);
+      if (lifetime[2]) lifetime[2].remove();
+
+      const updated = match.querySelector('.sar-data-note time');
+      if (updated) {
+        updated.textContent = data.lastUpdated;
+        updated.setAttribute('datetime', data.lastUpdated);
+      }
+    }
+
+    function applyPublicData(data, source) {
+      document.querySelectorAll('[data-sar-meter]').forEach((meter) => updateMeter(meter, data));
+      updateSarPage(data);
+      document.documentElement.dataset.sarDataSource = source;
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      let fallback = normalizePublicData(sarFallback);
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached) fallback = normalizePublicData(cached);
+      } catch (_) {
+        // Ignore unavailable or invalid local storage and use the embedded last-known-good snapshot.
+      }
+      applyPublicData(fallback, 'fallback');
+
+      try {
+        const response = await fetch(sarFeedUrl, { cache: 'no-store', credentials: 'omit' });
+        if (!response.ok) throw new Error(`SAR feed request failed: ${response.status}`);
+        const fresh = parsePublicCsv(await response.text());
+        applyPublicData(fresh, 'live');
+        try { localStorage.setItem(cacheKey, JSON.stringify(fresh)); } catch (_) {}
+      } catch (error) {
+        console.warn('RRGH SAR public feed unavailable; retaining last-known-good values.', error);
+      }
+    }, { once: true });
+  })();
+</script>
+
 <style>
   .sar-meter {
     --sar-orange: #c96432;
     --sar-cream: #f2e8d6;
     display: grid;
     color: var(--sar-cream);
-    background:
-      radial-gradient(circle at 12% 20%, rgba(196,164,119,.2), transparent 30%),
-      linear-gradient(110deg, #17372d, #24483a 62%, #17372d);
+    background: linear-gradient(110deg, #17372d, #24483a 62%, #17372d);
     border: 1px solid rgba(196,164,119,.75);
     text-decoration: none;
-    box-shadow: 0 8px 24px rgba(23,55,45,.14);
+    box-shadow: 0 5px 18px rgba(23,55,45,.12);
     overflow: hidden;
   }
   .sar-meter:hover { color: #fff; border-color: var(--sar-orange); }
   .sar-meter:focus-visible { outline: 3px solid var(--sar-orange); outline-offset: 3px; }
   .sar-meter-copy { min-width: 0; }
   .sar-meter-kicker {
-    display: block;
     color: #e8c99d;
-    font-size: .69rem;
+    font-size: .66rem;
     font-weight: 850;
     letter-spacing: .13em;
-    line-height: 1.2;
+    line-height: 1.1;
     text-transform: uppercase;
+    white-space: nowrap;
   }
-  .sar-meter-status { display: flex; flex-direction: column; gap: .08rem; margin-top: .24rem; line-height: 1.18; }
-  .sar-meter-status strong { color: #fff; font-size: .88rem; }
-  .sar-meter-status span { color: #eadfcf; font-size: .72rem; }
+  .sar-meter-status { min-width: 0; line-height: 1.1; }
+  .sar-meter-status strong { color: #fff; font-size: .82rem; }
+  .sar-meter-status span { color: #eadfcf; font-size: .68rem; }
   .sar-meter-visual { position: relative; min-width: 0; }
   .sar-meter-visual svg { display: block; width: 100%; height: auto; }
-  .sar-contour { fill: none; stroke: rgba(232,220,200,.14); stroke-width: 1.2; }
+  .sar-contour { fill: none; stroke: rgba(232,220,200,.12); stroke-width: 1.2; }
   .sar-trail-base,
   .sar-trail-progress { fill: none; stroke-linecap: round; stroke-width: 7; }
-  .sar-trail-base { stroke: rgba(232,220,200,.28); stroke-dasharray: 1 3; }
+  .sar-trail-base { stroke: rgba(232,220,200,.26); stroke-dasharray: 1 3; }
   .sar-trail-progress { stroke: var(--sar-orange); }
   .sar-trail-start { fill: var(--sar-orange); stroke: #f2e8d6; stroke-width: 4; }
   .sar-beacon path { fill: var(--sar-orange); }
   .sar-beacon .sar-beacon-ray { fill: none; stroke: var(--sar-orange); stroke-linecap: round; stroke-width: 2.5; }
-  .sar-meter-action { color: #f1d3a9; font-size: .76rem; font-weight: 800; white-space: nowrap; }
+  .sar-meter-action { color: #f1d3a9; font-size: .73rem; font-weight: 800; white-space: nowrap; }
   .sar-meter:hover .sar-meter-action { color: #fff; }
 
   .sar-meter--header {
-    grid-template-columns: minmax(12rem, .9fr) minmax(15rem, 1.25fr) auto;
+    grid-template-columns: auto minmax(10rem, .8fr) minmax(11rem, 1fr) auto;
     align-items: center;
-    gap: .85rem 1.25rem;
+    gap: .55rem .8rem;
     width: min(var(--content), calc(100% - 3rem));
-    margin: 0 auto .6rem;
-    padding: .58rem .8rem;
+    margin: 0 auto .42rem;
+    padding: .34rem .66rem;
     border-radius: .35rem;
   }
-  .sar-meter--header .sar-meter-visual svg { max-height: 3.4rem; }
+  .sar-meter--header .sar-meter-copy { display: contents; }
+  .sar-meter--header .sar-meter-status { display: flex; align-items: baseline; gap: .42rem; white-space: nowrap; }
+  .sar-meter--header .sar-meter-status span::before { content: '· '; }
+  .sar-meter--header .sar-meter-visual svg { max-height: 1.85rem; }
+  .sar-meter--header .sar-meter-action { font-size: 0; }
+  .sar-meter--header .sar-meter-action span { font-size: .95rem; }
 
   .sar-meter--full {
     grid-template-columns: minmax(15rem, .75fr) minmax(20rem, 1.6fr);
@@ -133,7 +359,8 @@ const nodeAmounts = [0, 100, 200, 300, 400, 500];
     padding: 1.35rem 1.5rem 1.15rem;
     border-radius: .5rem;
   }
-  .sar-meter--full .sar-meter-kicker { font-size: .8rem; }
+  .sar-meter--full .sar-meter-kicker { display: block; font-size: .8rem; margin-bottom: .25rem; }
+  .sar-meter--full .sar-meter-status { display: flex; flex-direction: column; gap: .08rem; }
   .sar-meter--full .sar-meter-status strong { font-family: var(--serif); font-size: clamp(1.35rem, 2.5vw, 2rem); }
   .sar-meter--full .sar-meter-status span { font-size: .92rem; }
   .sar-meter--full .sar-meter-action { grid-column: 1 / -1; justify-self: end; font-size: .86rem; }
@@ -143,30 +370,27 @@ const nodeAmounts = [0, 100, 200, 300, 400, 500];
   .sar-meter-nodes span:last-child { text-align: right; color: #f19a67; }
 
   .is-achieved .sar-trail-progress { stroke: #e18b53; }
-  .is-exceeded { box-shadow: 0 0 0 1px rgba(201,100,50,.25), 0 10px 28px rgba(23,55,45,.18); }
+  .is-exceeded { box-shadow: 0 0 0 1px rgba(201,100,50,.25), 0 8px 24px rgba(23,55,45,.16); }
 
   @media (max-width: 850px) {
     .sar-meter--header {
       grid-template-columns: auto 1fr auto;
       width: min(var(--content), calc(100% - 1.5rem));
-      margin-bottom: .5rem;
-      padding: .48rem .65rem;
+      margin-bottom: .38rem;
+      padding: .32rem .58rem;
     }
-    .sar-meter--header .sar-meter-kicker { font-size: .62rem; }
-    .sar-meter--header .sar-meter-status strong { font-size: .78rem; }
+    .sar-meter--header .sar-meter-copy { display: contents; }
+    .sar-meter--header .sar-meter-kicker { font-size: .6rem; }
+    .sar-meter--header .sar-meter-status { gap: 0; }
+    .sar-meter--header .sar-meter-status strong { font-size: .75rem; }
     .sar-meter--header .sar-meter-status span { display: none; }
-    .sar-meter--header .sar-meter-visual svg { max-height: 2.45rem; }
-    .sar-meter--header .sar-meter-action { font-size: 0; }
-    .sar-meter--header .sar-meter-action span { font-size: 1rem; }
+    .sar-meter--header .sar-meter-visual { display: none; }
   }
 
   @media (max-width: 620px) {
-    .sar-meter--header { grid-template-columns: 1fr auto; gap: .5rem; }
-    .sar-meter--header .sar-meter-copy { display: flex; align-items: center; gap: .55rem; }
-    .sar-meter--header .sar-meter-kicker { flex: 0 0 auto; }
-    .sar-meter--header .sar-meter-status { margin: 0; }
-    .sar-meter--header .sar-meter-visual { display: none; }
-    .sar-meter--header .sar-meter-status strong { font-size: .75rem; }
+    .sar-meter--header { grid-template-columns: auto 1fr auto; gap: .45rem; }
+    .sar-meter--header .sar-meter-kicker { font-size: .57rem; letter-spacing: .1em; }
+    .sar-meter--header .sar-meter-status strong { font-size: .72rem; }
     .sar-meter--full { grid-template-columns: 1fr; padding: 1rem; }
     .sar-meter--full .sar-meter-action { grid-column: auto; justify-self: start; }
     .sar-meter-nodes { font-size: .58rem; margin-inline: .35rem; }
