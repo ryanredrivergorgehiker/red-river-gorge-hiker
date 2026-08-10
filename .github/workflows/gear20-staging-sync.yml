@@ -1,4 +1,4 @@
-name: Gear 20 staging sync
+name: Gear 20 staging asset sync
 
 on:
   push:
@@ -11,272 +11,68 @@ permissions:
   contents: write
 
 jobs:
-  sync:
+  sync-assets:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out staging branch
+      - name: Check out staging source branch
         uses: actions/checkout@v4
         with:
           ref: feature/sar-camping-guide-staging
           fetch-depth: 0
 
-      - name: Apply controlled 20-card Gear update
+      - name: Install AVIF tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick libavif-bin
+
+      - name: Build approved Gear web derivatives from Drive sources
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/gear20-assets.tar.gz.b64 <<'B64'
-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[... ELLIPSIZATION ...]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
-B64
-          base64 -d /tmp/gear20-assets.tar.gz.b64 > /tmp/gear20-assets.tar.gz
-          mkdir -p public/assets/merchandise
-          tar -xzf /tmp/gear20-assets.tar.gz -C public/assets/merchandise
-          rm -f \
-            public/assets/merchandise/rrgh-merch-coffee-mug-0d15378a.avif \
-            public/assets/merchandise/rrgh-merch-greeting-card-415e37be.avif \
-            public/assets/merchandise/rrgh-merch-tshirt-chest-70ec579b.avif \
-            public/assets/merchandise/rrgh-merch-tshirt-pocket-305a009a.avif
+          mkdir -p public/assets/merchandise /tmp/rrgh-gear
 
-          cat > src/data/merchandise.ts <<'EOF'
-export const MERCHANDISE_VERIFICATION_DATE = '2026-08-10' as const;
-
-export interface MerchandiseProduct {
-  slug: string;
-  title: string;
-  description: string;
-  priceLabel: string;
-  specification: string;
-  optionNote?: string;
-  fineArtAmericaUrl: string;
-  image: {
-    avif: string;
-    width: number;
-    height: number;
-    alt: string;
-  };
-  lastVerified: typeof MERCHANDISE_VERIFICATION_DATE;
-}
-
-const assetBase = 'assets/merchandise/' as const;
-
-export const merchandiseProducts: readonly MerchandiseProduct[] = [
-  {
-    slug: 'tshirt-chest-logo',
-    title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo',
-    description: 'Charcoal athletic-fit men’s Red River Gorge Hiker T-shirt with the logo centered on the chest.',
-    priceLabel: 'From $25',
-    specification: 'Men’s T-Shirt · Athletic Fit · Chest Logo',
-    optionNote: 'Sizes below 2XL verified at $25 · 2XL verified at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]',
-    image: { avif: `${assetBase}rrgh-merch-tshirt-chest-392d9fd6.avif`, width: 900, height: 900, alt: 'Charcoal athletic-fit men’s T-shirt with the Red River Gorge Hiker logo centered on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'sticker', title: 'Sticker',
-    description: 'A 3 × 3-inch Red River Gorge Hiker logo sticker for hikers and fans of Kentucky’s Red River Gorge.',
-    priceLabel: '$3.50', specification: '3 × 3 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=sticker',
-    image: { avif: `${assetBase}rrgh-merch-sticker-218cc04a.avif`, width: 983, height: 1000, alt: 'Red River Gorge Hiker logo sticker applied to the rear of a vehicle.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'tote-bag', title: 'Tote Bag', description: 'An 18 × 18-inch green tote bag featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$23.50', specification: '18 × 18 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tote-bag',
-    image: { avif: `${assetBase}rrgh-merch-tote-bag-bc2e6737.avif`, width: 800, height: 1000, alt: 'Person carrying a green Red River Gorge Hiker logo tote bag outdoors.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'mens-tshirt-regular-fit', title: 'Men’s T-Shirt (Regular Fit)',
-    description: 'Regular-fit men’s Red River Gorge Hiker T-shirt with the logo presented on the chest.',
-    priceLabel: 'From $23', specification: 'Men’s T-Shirt · Regular Fit', optionNote: '$23 through XL · $26 at 2XL · $28 at 3XL.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=regular-tshirt',
-    image: { avif: `${assetBase}rrgh-merch-mens-tshirt-regular-4934da22.avif`, width: 720, height: 900, alt: 'Men’s regular-fit Red River Gorge Hiker T-shirt with the logo on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'coffee-mug', title: 'Coffee Mug', description: 'A large white 15-ounce coffee mug printed with the Red River Gorge Hiker logo.',
-    priceLabel: '$16', specification: 'Large 15 oz. · White',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=coffee-mug-large',
-    image: { avif: `${assetBase}rrgh-merch-coffee-mug-6cb8e20d.avif`, width: 600, height: 900, alt: 'White 15-ounce coffee mug printed with the Red River Gorge Hiker logo.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'womens-tshirt', title: 'Women’s T-Shirt', description: 'Women’s Red River Gorge Hiker T-shirt presented with the logo on the chest.',
-    priceLabel: 'From $25', specification: 'Women’s T-Shirt · Chest presentation', optionNote: '$25 through XL · $28 at 2XL. RedRiverGorgeHiker.com promotes the Chest presentation only.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
-    image: { avif: `${assetBase}rrgh-merch-womens-tshirt-55652f0b.avif`, width: 720, height: 900, alt: 'Women’s Red River Gorge Hiker T-shirt with the logo on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'sweatshirt', title: 'Sweatshirt', description: 'Red River Gorge Hiker sweatshirt presented with the logo on the chest.',
-    priceLabel: 'From $45', specification: 'Sweatshirt · Chest presentation', optionNote: '$45 below 2XL · $51 at 2XL · $57 at 3XL. RedRiverGorgeHiker.com promotes the Chest presentation only.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
-    image: { avif: `${assetBase}rrgh-merch-sweatshirt-427c6025.avif`, width: 720, height: 900, alt: 'Red River Gorge Hiker sweatshirt with the logo on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'tshirt-pocket-logo', title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
-    description: 'Charcoal athletic-fit men’s Red River Gorge Hiker T-shirt with a small logo at the pocket position.',
-    priceLabel: 'From $25', specification: 'Men’s T-Shirt · Athletic Fit · Pocket Logo', optionNote: 'Dedicated Pocket presentation. Sizes below 2XL verified at $25 · 2XL verified at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[430]-imageheight[430]-targetx[0]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]-designlocation[pocket]',
-    image: { avif: `${assetBase}rrgh-merch-tshirt-pocket-v3-ad2cb2e6.avif`, width: 720, height: 900, alt: 'Charcoal athletic-fit men’s T-shirt with a small Red River Gorge Hiker logo at the pocket position.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'throw-pillow', title: 'Throw Pillow', description: 'A 14 × 14-inch green throw pillow featuring the Red River Gorge Hiker logo, available with or without an insert.',
-    priceLabel: 'From $19', specification: '14 × 14 inches', optionNote: 'Without insert $19 · With insert $24.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=throw-pillow',
-    image: { avif: `${assetBase}rrgh-merch-throw-pillow-50251954.avif`, width: 1000, height: 750, alt: 'Green Red River Gorge Hiker logo throw pillow on a light-colored sofa.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'womens-tank-top', title: 'Women’s Tank Top', description: 'Women’s Red River Gorge Hiker tank top presented with the logo on the chest.',
-    priceLabel: 'From $25', specification: 'Women’s Tank Top · Chest presentation', optionNote: '$25 across the verified sizes. RedRiverGorgeHiker.com promotes the Chest presentation only.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
-    image: { avif: `${assetBase}rrgh-merch-womens-tank-7fa9ad7b.avif`, width: 675, height: 900, alt: 'Women’s Red River Gorge Hiker tank top with the logo on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'zip-pouch', title: 'Zip Pouch', description: 'A medium 9.5 × 6-inch green Red River Gorge Hiker logo zip pouch with regular or T-style bottom options.',
-    priceLabel: 'From $22', specification: 'Medium · 9.5 × 6 inches', optionNote: 'Regular Bottom $22 · Optional T-style Bottom $22.50.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pouch',
-    image: { avif: `${assetBase}rrgh-merch-zip-pouch-04134418.avif`, width: 800, height: 1000, alt: 'Green Red River Gorge Hiker logo zip pouch held at waist height.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'fleece-sherpa-blanket', title: 'Fleece / Sherpa Blanket', description: 'A 50 × 60-inch Red River Gorge Hiker logo blanket available in Plush Fleece or Sherpa Fleece.',
-    priceLabel: 'From $45.50', specification: '50 × 60 inches', optionNote: 'Plush Fleece $45.50 · Sherpa Fleece $48.50.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
-    image: { avif: `${assetBase}rrgh-merch-fleece-blanket-c5e93147.avif`, width: 800, height: 1000, alt: 'Person wrapped in a green Red River Gorge Hiker logo fleece blanket beside a fireplace.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'youth-tshirt', title: 'Youth T-Shirt', description: 'Youth Red River Gorge Hiker T-shirt featuring the logo.',
-    priceLabel: 'From $21', specification: 'Youth T-Shirt', optionNote: '$21 across the verified sizes.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=youth-tshirt',
-    image: { avif: `${assetBase}rrgh-merch-youth-tshirt-13c4358d.avif`, width: 720, height: 900, alt: 'Youth Red River Gorge Hiker T-shirt featuring the logo.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'spiral-notebook', title: 'Spiral Notebook', description: 'A 6 × 8-inch green spiral notebook featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$16', specification: '6 × 8 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=spiral-notebook',
-    image: { avif: `${assetBase}rrgh-merch-spiral-notebook-62906115.avif`, width: 800, height: 1000, alt: 'Green spiral notebook with the Red River Gorge Hiker logo being held and written in.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'bath-towel', title: 'Bath Towel', description: 'A 32 × 64-inch green bath towel featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$32.50', specification: '32 × 64 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
-    image: { avif: `${assetBase}rrgh-merch-towel-bath-051a15a3.avif`, width: 800, height: 1000, alt: 'Green Red River Gorge Hiker logo bath towel hanging on a bathroom towel bar.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'beach-towel', title: 'Beach Towel', description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$32.50', specification: '32 × 64 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
-    image: { avif: `${assetBase}rrgh-merch-towel-beach-35a77bd5.avif`, width: 800, height: 1000, alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'kids-tshirt', title: 'Kids T-Shirt', description: 'Kids Red River Gorge Hiker T-shirt presented with the logo on the chest.',
-    priceLabel: 'From $19', specification: 'Kids T-Shirt · Chest presentation', optionNote: '$19 across the verified sizes. RedRiverGorgeHiker.com promotes the Chest presentation only.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
-    image: { avif: `${assetBase}rrgh-merch-kids-tshirt-1e1f102d.avif`, width: 720, height: 900, alt: 'Kids Red River Gorge Hiker T-shirt with the logo on the chest.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'greeting-cards', title: 'Greeting Cards', description: 'A pack of 10 Red River Gorge Hiker logo greeting cards with an optional buyer-entered inside message.',
-    priceLabel: '$30 per pack of 10', specification: 'Pack of 10', optionNote: 'Buyer may enter an optional inside message on Fine Art America.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=greeting-card',
-    image: { avif: `${assetBase}rrgh-merch-greeting-card-3e8519f7.avif`, width: 900, height: 600, alt: 'Red River Gorge Hiker logo greeting card displayed as a folded green card mockup.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'baby-one-piece', title: 'Baby One-Piece', description: 'Red River Gorge Hiker baby one-piece featuring the logo.',
-    priceLabel: 'From $23', specification: 'Baby One-Piece', optionNote: '$23 across the verified sizes.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
-    image: { avif: `${assetBase}rrgh-merch-baby-one-piece-69853ef4.avif`, width: 720, height: 900, alt: 'Red River Gorge Hiker baby one-piece featuring the logo.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'ornament', title: 'Ornament', description: 'A green Red River Gorge Hiker logo ornament for the holiday season.',
-    priceLabel: '$9.50', specification: 'Red River Gorge Hiker logo ornament',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
-    image: { avif: `${assetBase}rrgh-merch-ornament-2c0c7784.avif`, width: 750, height: 1000, alt: 'Green Red River Gorge Hiker logo ornament hanging on an evergreen Christmas tree.' },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  }
-] as const;
-EOF
-
-          python3 - <<'PY'
-from pathlib import Path
-import re
-p = Path('tests/test_site_contract.py')
-s = p.read_text()
-start = s.index('    def test_gear_catalog(self):')
-end = s.index('\n    def test_approved_content_fields', start)
-replacement = '''    def test_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\\s*'", MERCH)), 20)
-        self.assertEqual(len(re.findall(r"description:\\s*'", MERCH)), 20)
-        self.assertEqual(len(re.findall(r"fineArtAmericaUrl:\\s*'https://", MERCH)), 20)
-        self.assertEqual(MERCH.count('.avif`'), 20)
-        self.assertNotIn('ARCHIVE', MERCH)
-        self.assertNotIn('.png', MERCH.lower())
-        self.assertIn('completeProductSku=artworkid[70456163]', MERCH)
-        self.assertIn('designlocation[pocket]', MERCH)
-        self.assertIn('?product=regular-tshirt', MERCH)
-        self.assertIn('?product=womens-tshirt', MERCH)
-        self.assertIn('?product=pull-over-hoodie-sweatshirt', MERCH)
-        self.assertIn('?product=womens-tank-top', MERCH)
-        self.assertIn('?product=youth-tshirt', MERCH)
-        self.assertIn('?product=kids-tshirt', MERCH)
-        self.assertIn('?product=one-piece', MERCH)
-        self.assertNotIn('rrgh-merch-tshirt-pocket-305a009a.avif', MERCH)
-        assets = list((ROOT / 'public/assets/merchandise').glob('*.avif'))
-        self.assertEqual(len(assets), 20)
-
-        titles = re.findall(r"title:\\s*'([^']+)'", MERCH)
-        self.assertEqual(
-            titles,
-            [
-                'Men’s T-Shirt (Athletic Fit) — Chest Logo',
-                'Sticker',
-                'Tote Bag',
-                'Men’s T-Shirt (Regular Fit)',
-                'Coffee Mug',
-                'Women’s T-Shirt',
-                'Sweatshirt',
-                'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
-                'Throw Pillow',
-                'Women’s Tank Top',
-                'Zip Pouch',
-                'Fleece / Sherpa Blanket',
-                'Youth T-Shirt',
-                'Spiral Notebook',
-                'Bath Towel',
-                'Beach Towel',
-                'Kids T-Shirt',
-                'Greeting Cards',
-                'Baby One-Piece',
-                'Ornament',
-            ],
-        )
-'''
-p.write_text(s[:start] + replacement + s[end:])
+          make_avif() {
+            local id="$1"
+            local output="$2"
+            local source="/tmp/rrgh-gear/${output%.avif}.png"
+            local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
+            curl -L --fail --retry 3 --retry-delay 2 \
+              -A 'Mozilla/5.0' \
+              -o "$source" \
+              "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+            python3 - "$source" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+b = p.read_bytes()
+if len(b) < 10000 or b[:8] != b'\x89PNG\r\n\x1a\n':
+    raise SystemExit(f'Not a valid approved PNG: {p} ({len(b)} bytes)')
 PY
+            convert "$source" -resize '900x900>' -strip "$resized"
+            avifenc --speed 6 --min 24 --max 34 "$resized" "public/assets/merchandise/$output"
+          }
 
-          npm ci
-          npm test
-          npm run build
+          make_avif '1535QBb1x5kxyJ4cFPwMjITZoW1L8wCpH' 'rrgh-merch-mens-tshirt-regular-4934da22.avif'
+          make_avif '15wOiurAKUS58z_rJQOrcQa63SyOREAcu' 'rrgh-merch-womens-tshirt-55652f0b.avif'
+          make_avif '1K_yBSM1xB7aBBNDgw2zRpmG4P177QI5D' 'rrgh-merch-sweatshirt-427c6025.avif'
+          make_avif '1Obiv94ljYfWneY-VFcPlng6YAfm8BtCW' 'rrgh-merch-tshirt-pocket-v3-ad2cb2e6.avif'
+          make_avif '1_0vMwCMtqGqepSwcMQUPNUANIDkPiVPR' 'rrgh-merch-womens-tank-7fa9ad7b.avif'
+          make_avif '1rjj28ITCTPH0x0VcTxOCF_AMJXmSjr4D' 'rrgh-merch-youth-tshirt-13c4358d.avif'
+          make_avif '1H5H80Bs1e1D4aqJVpxVHO4vIkr4c9DcW' 'rrgh-merch-kids-tshirt-1e1f102d.avif'
+          make_avif '1tOMTqSkX_64w0cNgGyWX03jguPUu3FF6' 'rrgh-merch-baby-one-piece-69853ef4.avif'
 
-      - name: Commit Gear staging update and remove temporary workflow
+          rm -f public/assets/merchandise/rrgh-merch-tshirt-pocket-305a009a.avif
+
+          test "$(find public/assets/merchandise -maxdepth 1 -type f -name '*.avif' | wc -l)" -eq 20
+          for f in public/assets/merchandise/*.avif; do test -s "$f"; done
+
+      - name: Commit clean Gear asset set
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf .gear20-transfer
           rm -f .github/workflows/gear20-staging-sync.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m "Expand Gear catalog to 20 products"
+          git commit -m 'Add approved Gear 20 web assets'
           git push origin HEAD:feature/sar-camping-guide-staging
