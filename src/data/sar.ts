@@ -29,12 +29,12 @@ export const sar = {
   outstandingCommitment: 0,
   matchPercentage: 0,
   annualCombinedSupport: 0,
-  historicalPersonalSupport: 1000,
-  lifetimePersonalSupport: 1000,
+  historicalPersonalSupport: 500,
+  lifetimePersonalSupport: 500,
   lifetimeRrghSupport: 0,
   lifetimeRrghTransferred: 0,
-  combinedLifetimeSupport: 1000,
-  lastUpdated: '2026-08-09T19:34:00-04:00',
+  combinedLifetimeSupport: 500,
+  lastUpdated: '2026-08-10T12:08:00-04:00',
   source: SAR_REPORTING_SOURCE
 } as const;
 
