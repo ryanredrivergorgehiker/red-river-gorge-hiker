@@ -48,9 +48,11 @@ jobs:
             local expected="$3"
             local source="/tmp/rrgh-gear/${output%.avif}-source.png"
             local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
+            local log
 
-            if ! gdown --fuzzy "https://drive.google.com/file/d/${id}/view" -O "$source"; then
-              echo "::error title=Approved Drive image fetch failed::gdown could not fetch ${output} from controlling Drive file ${id}."
+            if ! log="$(gdown "$id" -O "$source" 2>&1)"; then
+              log="$(printf '%s' "$log" | tail -c 900 | tr '\n' ' ')"
+              echo "::error title=Approved Drive image fetch failed::${output}: ${log}"
               return 1
             fi
             if ! identify "$source" >/dev/null 2>&1; then
