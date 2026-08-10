@@ -29,37 +29,48 @@ class SiteContract(unittest.TestCase):
             self.assertIn(catalog_id, DATA)
 
     def test_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 13)
-        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 13)
-        self.assertEqual(len(re.findall(r"fineArtAmericaUrl:\s*'https://", MERCH)), 13)
-        self.assertEqual(MERCH.count('.avif`'), 13)
+        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
+        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 20)
+        self.assertEqual(len(re.findall(r"fineArtAmericaUrl:\s*'https://", MERCH)), 20)
+        self.assertEqual(MERCH.count('.avif`'), 20)
         self.assertNotIn('ARCHIVE', MERCH)
         self.assertNotIn('.png', MERCH.lower())
-        self.assertIn("title: 'Bath Towel'", MERCH)
-        self.assertIn("title: 'Beach Towel'", MERCH)
-        self.assertIn("title: 'T-Shirt — Chest Logo'", MERCH)
-        self.assertIn("title: 'T-Shirt — Pocket Logo'", MERCH)
-        self.assertIn('Select the Pocket design location on Fine Art America.', MERCH)
-        self.assertEqual(MERCH.count('?product=adult-tshirt'), 2)
+        self.assertIn('completeProductSku=artworkid[70456163]', MERCH)
+        self.assertIn('designlocation[pocket]', MERCH)
+        self.assertIn('?product=regular-tshirt', MERCH)
+        self.assertIn('?product=womens-tshirt', MERCH)
+        self.assertIn('?product=pull-over-hoodie-sweatshirt', MERCH)
+        self.assertIn('?product=womens-tank-top', MERCH)
+        self.assertIn('?product=youth-tshirt', MERCH)
+        self.assertIn('?product=kids-tshirt', MERCH)
+        self.assertIn('?product=one-piece', MERCH)
+        self.assertNotIn('rrgh-merch-tshirt-pocket-305a009a.avif', MERCH)
         assets = list((ROOT / 'public/assets/merchandise').glob('*.avif'))
-        self.assertEqual(len(assets), 13)
+        self.assertEqual(len(assets), 20)
 
         titles = re.findall(r"title:\s*'([^']+)'", MERCH)
         self.assertEqual(
             titles,
             [
-                'T-Shirt — Chest Logo',
+                'Men’s T-Shirt (Athletic Fit) — Chest Logo',
                 'Sticker',
                 'Tote Bag',
+                'Men’s T-Shirt (Regular Fit)',
                 'Coffee Mug',
-                'T-Shirt — Pocket Logo',
+                'Women’s T-Shirt',
+                'Sweatshirt',
+                'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
                 'Throw Pillow',
-                'Fleece / Sherpa Blanket',
+                'Women’s Tank Top',
                 'Zip Pouch',
+                'Fleece / Sherpa Blanket',
+                'Youth T-Shirt',
                 'Spiral Notebook',
                 'Bath Towel',
                 'Beach Towel',
+                'Kids T-Shirt',
                 'Greeting Cards',
+                'Baby One-Piece',
                 'Ornament',
             ],
         )
