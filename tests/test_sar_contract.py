@@ -21,16 +21,25 @@ class SarContract(unittest.TestCase):
             'outstandingCommitment': '0',
             'matchPercentage': '0',
             'annualCombinedSupport': '0',
-            'historicalPersonalSupport': '1000',
-            'lifetimePersonalSupport': '1000',
+            'historicalPersonalSupport': '500',
+            'lifetimePersonalSupport': '500',
             'lifetimeRrghSupport': '0',
-            'combinedLifetimeSupport': '1000',
+            'combinedLifetimeSupport': '500',
         }
         for field, value in expected.items():
             self.assertRegex(SAR_DATA, rf'{field}:\s*{value}\b', field)
-        self.assertIn("lastUpdated: '2026-08-09T19:34:00-04:00'", SAR_DATA)
+        self.assertIn("lastUpdated: '2026-08-10T12:08:00-04:00'", SAR_DATA)
         self.assertIn('Last-known-good public snapshot', SAR_DATA)
         self.assertIn('Bookkeeping Ledger / SAR Public Reporting', SAR_DATA)
+
+    def test_historical_support_correction_has_no_stale_website_claims(self):
+        combined = f'{SAR_DATA}\n{SAR_PAGE}'
+        self.assertNotIn('548.32', combined)
+        self.assertNotIn('1,048.32', combined)
+        self.assertNotIn('He donated $500 in 2024', SAR_PAGE)
+        self.assertNotRegex(SAR_DATA, r'historicalPersonalSupport:\s*1000\b')
+        self.assertNotRegex(SAR_DATA, r'lifetimePersonalSupport:\s*1000\b')
+        self.assertNotRegex(SAR_DATA, r'combinedLifetimeSupport:\s*1000\b')
 
     def test_published_csv_is_runtime_display_source(self):
         self.assertIn('SAR_PUBLIC_CSV_URL', SAR_DATA)
