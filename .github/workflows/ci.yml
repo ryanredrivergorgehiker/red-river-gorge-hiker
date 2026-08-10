@@ -30,10 +30,11 @@ jobs:
           ref: feature/sar-camping-guide-staging
           fetch-depth: 0
 
-      - name: Install AVIF tools
+      - name: Install image and Drive tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq imagemagick libavif-bin
+          python3 -m pip install --quiet gdown
 
       - name: Generate approved Drive-backed derivatives
         shell: bash
@@ -45,23 +46,15 @@ jobs:
             local id="$1"
             local output="$2"
             local expected="$3"
-            local source="/tmp/rrgh-gear/${output%.avif}-source"
+            local source="/tmp/rrgh-gear/${output%.avif}-source.png"
             local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
-            local fetched=0
 
-            for url in \
-              "https://drive.google.com/thumbnail?id=${id}&sz=w1600" \
-              "https://drive.google.com/uc?export=download&id=${id}" \
-              "https://lh3.googleusercontent.com/d/${id}=w1600"; do
-              rm -f "$source"
-              if curl -L --fail --retry 2 --retry-delay 1 -A 'Mozilla/5.0' -o "$source" "$url" && identify "$source" >/dev/null 2>&1; then
-                fetched=1
-                break
-              fi
-            done
-
-            if [ "$fetched" -ne 1 ]; then
-              echo "::error title=Approved Drive image fetch failed::Could not fetch a readable image for ${output} from controlling Drive file ${id}."
+            if ! gdown --fuzzy "https://drive.google.com/file/d/${id}/view" -O "$source"; then
+              echo "::error title=Approved Drive image fetch failed::gdown could not fetch ${output} from controlling Drive file ${id}."
+              return 1
+            fi
+            if ! identify "$source" >/dev/null 2>&1; then
+              echo "::error title=Approved Drive image unreadable::Downloaded controlling file ${id} is not a readable image."
               return 1
             fi
 
