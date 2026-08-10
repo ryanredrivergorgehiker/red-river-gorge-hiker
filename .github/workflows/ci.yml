@@ -48,19 +48,9 @@ jobs:
             local source="/tmp/rrgh-gear/${output%.avif}.png"
             local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
 
-            curl -L --fail --retry 3 --retry-delay 2 \
-              -A 'Mozilla/5.0' \
-              -o "$source" \
-              "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
-
-            python3 - "$source" <<'PY'
-import pathlib, sys
-p = pathlib.Path(sys.argv[1])
-b = p.read_bytes()
-if len(b) < 10000 or b[:8] != b'\x89PNG\r\n\x1a\n':
-    raise SystemExit(f'Approved Drive image fetch did not return a valid PNG: {p} ({len(b)} bytes)')
-PY
-
+            curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o "$source" "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+            test "$(stat -c%s "$source")" -gt 10000
+            file "$source" | grep -q 'PNG image data'
             convert "$source" -resize '900x900>' -strip "$resized"
             actual="$(identify -format '%wx%h' "$resized")"
             test "$actual" = "$expected"
