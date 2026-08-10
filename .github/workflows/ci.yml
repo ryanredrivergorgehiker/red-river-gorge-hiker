@@ -47,14 +47,35 @@ jobs:
             local expected="$3"
             local source="/tmp/rrgh-gear/${output%.avif}-source"
             local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
+            local fetched=0
 
-            curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o "$source" "https://drive.google.com/thumbnail?id=${id}&sz=w1600"
-            test "$(stat -c%s "$source")" -gt 10000
-            file "$source" | grep -Eq 'image data|JPEG image|PNG image|Web/P image'
+            for url in \
+              "https://drive.google.com/thumbnail?id=${id}&sz=w1600" \
+              "https://drive.google.com/uc?export=download&id=${id}" \
+              "https://lh3.googleusercontent.com/d/${id}=w1600"; do
+              rm -f "$source"
+              if curl -L --fail --retry 2 --retry-delay 1 -A 'Mozilla/5.0' -o "$source" "$url" && identify "$source" >/dev/null 2>&1; then
+                fetched=1
+                break
+              fi
+            done
+
+            if [ "$fetched" -ne 1 ]; then
+              echo "::error title=Approved Drive image fetch failed::Could not fetch a readable image for ${output} from controlling Drive file ${id}."
+              return 1
+            fi
+
             convert "$source" -resize '900x900>' -strip "$resized"
             actual="$(identify -format '%wx%h' "$resized")"
-            test "$actual" = "$expected"
-            avifenc --speed 6 --min 24 --max 34 "$resized" "public/assets/merchandise/$output"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error title=Unexpected Gear image dimensions::${output} expected ${expected}, got ${actual}."
+              return 1
+            fi
+
+            if ! avifenc --speed 6 --min 24 --max 34 "$resized" "public/assets/merchandise/$output"; then
+              echo "::error title=AVIF encoding failed::avifenc failed for ${output}."
+              return 1
+            fi
             test -s "public/assets/merchandise/$output"
           }
 
