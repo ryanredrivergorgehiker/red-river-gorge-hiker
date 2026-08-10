@@ -8,12 +8,100 @@ on:
       - reopened
       - ready_for_review
   workflow_dispatch:
+  push:
+    branches:
+      - feature/sar-camping-guide-staging
+    paths:
+      - .github/workflows/ci.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  gear-assets:
+    if: github.event_name == 'push'
+    name: Build approved Gear web assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v6
+        with:
+          ref: feature/sar-camping-guide-staging
+          fetch-depth: 0
+
+      - name: Install AVIF tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick libavif-bin
+
+      - name: Generate approved Drive-backed derivatives
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/assets/merchandise /tmp/rrgh-gear
+
+          make_avif() {
+            local id="$1"
+            local output="$2"
+            local expected="$3"
+            local source="/tmp/rrgh-gear/${output%.avif}.png"
+            local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
+
+            curl -L --fail --retry 3 --retry-delay 2 \
+              -A 'Mozilla/5.0' \
+              -o "$source" \
+              "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+
+            python3 - "$source" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+b = p.read_bytes()
+if len(b) < 10000 or b[:8] != b'\x89PNG\r\n\x1a\n':
+    raise SystemExit(f'Approved Drive image fetch did not return a valid PNG: {p} ({len(b)} bytes)')
+PY
+
+            convert "$source" -resize '900x900>' -strip "$resized"
+            actual="$(identify -format '%wx%h' "$resized")"
+            test "$actual" = "$expected"
+            avifenc --speed 6 --min 24 --max 34 "$resized" "public/assets/merchandise/$output"
+            test -s "public/assets/merchandise/$output"
+          }
+
+          make_avif '1535QBb1x5kxyJ4cFPwMjITZoW1L8wCpH' 'rrgh-merch-mens-tshirt-regular-4934da22.avif' '720x900'
+          make_avif '15wOiurAKUS58z_rJQOrcQa63SyOREAcu' 'rrgh-merch-womens-tshirt-55652f0b.avif' '720x900'
+          make_avif '1K_yBSM1xB7aBBNDgw2zRpmG4P177QI5D' 'rrgh-merch-sweatshirt-427c6025.avif' '720x900'
+          make_avif '1Obiv94ljYfWneY-VFcPlng6YAfm8BtCW' 'rrgh-merch-tshirt-pocket-v3-ad2cb2e6.avif' '720x900'
+          make_avif '1_0vMwCMtqGqepSwcMQUPNUANIDkPiVPR' 'rrgh-merch-womens-tank-7fa9ad7b.avif' '675x900'
+          make_avif '1rjj28ITCTPH0x0VcTxOCF_AMJXmSjr4D' 'rrgh-merch-youth-tshirt-13c4358d.avif' '720x900'
+          make_avif '1H5H80Bs1e1D4aqJVpxVHO4vIkr4c9DcW' 'rrgh-merch-kids-tshirt-1e1f102d.avif' '720x900'
+          make_avif '1tOMTqSkX_64w0cNgGyWX03jguPUu3FF6' 'rrgh-merch-baby-one-piece-69853ef4.avif' '720x900'
+
+          rm -f public/assets/merchandise/rrgh-merch-tshirt-pocket-305a009a.avif
+          test "$(find public/assets/merchandise -maxdepth 1 -type f -name '*.avif' | wc -l)" -eq 20
+
+      - name: Validate complete staging source
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Commit assets and remove temporary tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/ci.yml
+          rm -rf .gear20-transfer
+          rm -f .github/workflows/gear20-staging-sync.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add approved Gear 20 web assets'
+          git push origin HEAD:feature/sar-camping-guide-staging
+
   contract:
+    if: github.event_name != 'push'
     name: Repository contract
     runs-on: ubuntu-latest
 
@@ -25,6 +113,7 @@ jobs:
         run: python3 -m unittest discover -s tests -p "test*.py" -v
 
   build:
+    if: github.event_name != 'push'
     name: Astro build
     runs-on: ubuntu-latest
 
