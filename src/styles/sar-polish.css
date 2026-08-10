@@ -1,5 +1,33 @@
 /* UAT polish requested 2026-08-09. Keep SAR copy/links intact; tighten presentation only. */
 
+/* Desktop header meter: keep the trail visually attached to the percentage instead of
+   floating in the middle of the strip, while reserving the far-right edge for the CTA. */
+@media (min-width: 851px) {
+  .sar-meter--header {
+    grid-template-columns: auto auto minmax(10rem, 13rem) 1fr !important;
+    column-gap: .55rem !important;
+  }
+
+  .sar-meter--header .sar-meter-visual {
+    justify-self: start;
+    width: 100%;
+    max-width: 13rem;
+  }
+
+  .sar-meter--header .sar-meter-action {
+    justify-self: end;
+  }
+}
+
+/* The compact header action should read as an invitation, not an unexplained arrow. */
+.sar-meter--header .sar-meter-action::before {
+  content: 'See More';
+  display: inline-block;
+  margin-right: .3rem;
+  font-size: .73rem;
+  font-weight: 800;
+}
+
 /* Remove the decorative hero rings and preserve the right edge of the desktop panorama
    so the embedded RRGH watermark is not awkwardly clipped. */
 .sar-page .sar-hero::after {
@@ -21,10 +49,11 @@
   padding-top: 1.05rem;
 }
 
-/* Ryan asked for the historical-personal-support paragraph to be removed from this narrative.
-   The feed script removes it from the live DOM; this prevents a flash before DOMContentLoaded. */
-.sar-page .sar-story-copy > p:first-child {
-  display: none;
+/* Hide only the original historical-giving paragraph before the runtime cleanup. The
+   nth-last-child guard matters: once that paragraph is removed, the desired sentence
+   beginning “When Red River Gorge Hiker launched…” becomes the first paragraph and stays visible. */
+.sar-page .sar-story-copy > p:first-child:nth-last-child(4) {
+  display: none !important;
 }
 
 .sar-page .sar-story-copy > p:nth-child(2) {
@@ -72,7 +101,12 @@
   border-right: 1px solid var(--line);
 }
 
-@media (max-width: 780px) {
+@media (max-width: 850px) {
+  .sar-meter--header .sar-meter-action::before {
+    font-size: .67rem;
+    margin-right: .22rem;
+  }
+
   /* Once the feed script supplies the base-aware Red-byrd image URL, mobile swaps from the
      panorama to the approved Winter at Red-byrd Arch website derivative. */
   .sar-page .sar-hero.sar-mobile-hero-ready {
