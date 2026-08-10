@@ -118,7 +118,13 @@ class SarContract(unittest.TestCase):
         self.assertIn('300 feet of any developed road or trail', SAR_PAGE)
         self.assertIn('600 feet of Gray’s Arch', SAR_PAGE)
         self.assertIn('Rule summary last reviewed', SAR_PAGE)
-        self.assertIn('Check current Forest Service rules before your trip', SAR_PAGE)
+        self.assertIn('The controlling Forest Service information for the Red River Gorge Geological Area', SAR_PAGE)
+        self.assertIn('Download the 2026 DBNF dispersed camping guide (PDF)', SAR_PAGE)
+        self.assertIn('uc?export=download&id=1oNv50oiBLOFnzLO4q4GFwPkcKYSLBS4t', SAR_PAGE)
+        self.assertNotIn('Check current Forest Service rules before your trip', SAR_PAGE)
+        self.assertIn('This site deliberately links to authoritative sources', SAR_PAGE)
+        self.assertNotIn('This launch version deliberately links', SAR_PAGE)
+        self.assertNotIn('Its publicly described capabilities include', SAR_PAGE)
 
     def test_no_wcsart_brand_asset_is_committed(self):
         public_files = [str(path).lower() for path in (ROOT / 'public').rglob('*') if path.is_file()]
