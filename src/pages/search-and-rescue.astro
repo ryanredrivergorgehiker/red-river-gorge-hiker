@@ -1,0 +1,377 @@
+---
+import Base from '../layouts/Base.astro';
+import Artwork from '../components/Artwork.astro';
+import SarMatchMeter from '../components/SarMatchMeter.astro';
+import { sar, sarContentReview, sarLinks } from '../data/sar';
+import '../styles/sar.css';
+
+const base = import.meta.env.BASE_URL;
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0
+});
+const fmt = (value: number) => currency.format(value);
+const reviewed = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+}).format(new Date(`${sarContentReview.campingRules}T12:00:00`));
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const pageDescription = 'Red River Gorge search and rescue support, hiking safety, official camping-rule links, maps, preparedness resources, current-condition links, and the Red River Gorge Hiker SAR Match-O-Meter.';
+
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Search & Rescue in the Red River Gorge',
+  description: pageDescription,
+  url: canonical,
+  dateModified: sar.lastUpdated,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Red River Gorge Hiker',
+    url: Astro.site?.toString()
+  },
+  about: [
+    { '@type': 'Thing', name: 'Red River Gorge hiking safety' },
+    { '@type': 'Thing', name: 'Wolfe County Search & Rescue' },
+    { '@type': 'Thing', name: 'Red River Gorge backcountry camping' }
+  ]
+};
+
+const prepCards = [
+  ['PLAN', 'Leave a trip plan', 'Tell a trusted person where you are going, your planned route, who is with you, and when you expect to return.'],
+  ['MAP', 'Know your route', 'Study the route before departure. Carry or download offline navigation and know how to use it; do not rely on cellular service.'],
+  ['LIGHT', 'Carry illumination', 'Bring a headlamp or flashlight even for a planned daytime hike, plus adequate battery power for the trip.'],
+  ['WATER', 'Bring water and food', 'Carry enough water, appropriate food, and additional supplies for unexpected delays or changing conditions.'],
+  ['LAYERS', 'Prepare for weather', 'Check the forecast and carry layers or rain protection appropriate for changing conditions.'],
+  ['AID', 'Carry basic emergency gear', 'Bring first-aid supplies and emergency essentials appropriate to your route, season, group, and trip length.'],
+  ['TIME', 'Know daylight and turnaround time', 'Plan around sunset and seasonal daylight. Turn around before a day hike becomes an unplanned night hike.'],
+  ['LIMITS', 'Respect terrain and your limits', 'Use extra care around cliffs, wet sandstone, roots, leaves, ice, steep slopes, and terrain beyond your experience.']
+] as const;
+
+const helpDetails = [
+  'Your location, trail, landmark, or GPS coordinates if available',
+  'The nature of the injury, emergency, or problem',
+  'How many people are involved',
+  'Whether the person can move or is in a hazardous location',
+  'Remaining phone battery and your best callback number',
+  'Clothing, gear, nearby hazards, or other details that may help responders locate the group'
+] as const;
+
+const resourceCards = [
+  {
+    eyebrow: 'Official Forest Service',
+    title: 'Daniel Boone maps & guides',
+    body: 'Start with the land manager for official Forest Service maps and trip-planning information.',
+    href: sarLinks.forestServiceMaps,
+    action: 'Open official maps & guides'
+  },
+  {
+    eyebrow: 'Red River Gorge / Clifty',
+    title: 'Clifty Wilderness',
+    body: 'Official Forest Service information for the rugged wilderness that forms a large part of the RRGH photography and hiking landscape.',
+    href: sarLinks.cliftyWilderness,
+    action: 'View Clifty Wilderness information'
+  },
+  {
+    eyebrow: 'Local visitor information',
+    title: 'Gladie Visitor Center',
+    body: 'Official Red River Gorge visitor information, trip-planning help, and current Forest Service context from the Gorge.',
+    href: sarLinks.gladieVisitorCenter,
+    action: 'Visit Gladie information'
+  },
+  {
+    eyebrow: 'Kentucky State Parks',
+    title: 'Natural Bridge State Resort Park',
+    body: 'Natural Bridge is managed separately from National Forest land. Use Kentucky State Parks for its trails, maps, camping, and park notices.',
+    href: sarLinks.naturalBridge,
+    action: 'Open Natural Bridge information'
+  }
+] as const;
+
+const conditionCards = [
+  ['Forest Service alerts & closures', 'Check current Daniel Boone National Forest alerts, special orders, closures, and advisories before leaving home.', sarLinks.forestServiceAlerts],
+  ['Weather near Slade', 'Use the National Weather Service point forecast for the Red River Gorge gateway area and reassess plans when conditions change.', sarLinks.nwsSlade],
+  ['Kentucky road conditions', 'GoKY provides Kentucky Transportation Cabinet road, hazard, work-zone, weather, and traffic information.', sarLinks.goKy],
+  ['State-park notices', 'If your trip includes Natural Bridge State Resort Park, check the park’s own information because its management and rules are separate.', sarLinks.naturalBridge]
+] as const;
+---
+
+<Base
+  title="Search & Rescue in the Red River Gorge"
+  description={pageDescription}
+  socialImage="RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg"
+  socialImageAlt="Double rainbow over the Red River Gorge from Eagle’s Point Buttress Overlook."
+>
+  <div class="sar-page">
+    <section class="sar-hero" aria-labelledby="sar-title">
+      <div class="sar-hero-media" aria-hidden="true">
+        <Artwork
+          title="Double Rainbow at Eagle’s Point Buttress"
+          catalogId="RRGH-0001"
+          alt=""
+          eager={true}
+          sizes="100vw"
+          showCaption={false}
+        />
+      </div>
+      <div class="sar-hero-shade" aria-hidden="true"></div>
+      <div class="sar-hero-content">
+        <p class="sar-eyebrow">Support local · Stay ready · Hike responsibly</p>
+        <h1 id="sar-title">Search &amp; Rescue in the Red River Gorge</h1>
+        <p class="sar-hero-lede">We experience this place, photograph it, explore it, and share it. We also believe in supporting the people who respond when hikers need help.</p>
+        <p class="sar-hero-commitment"><strong>20% of Red River Gorge Hiker profits are allocated to Wolfe County Search &amp; Rescue.</strong></p>
+        <div class="sar-hero-actions">
+          <a class="sar-button sar-button-primary" href="#sar-match">See the SAR match</a>
+          <a class="sar-button sar-button-light" href={sarLinks.donate} target="_blank" rel="noopener noreferrer">Donate directly to WCSART <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sar-direct-support sar-shell" aria-labelledby="direct-support-title">
+      <div>
+        <p class="sar-section-kicker">Two separate ways to help</p>
+        <h2 id="direct-support-title">Support Search &amp; Rescue</h2>
+        <p>Buying from Red River Gorge Hiker and donating directly to Wolfe County Search &amp; Rescue are intentionally different paths.</p>
+      </div>
+      <div class="sar-support-paths">
+        <article>
+          <span class="sar-path-number">01</span>
+          <h3>Buy from RRGH</h3>
+          <p>20% of RRGH business profit is allocated to Wolfe County Search &amp; Rescue.</p>
+          <a href={`${base}gear/`}>Explore RRGH Gear →</a>
+        </article>
+        <article class="sar-support-direct">
+          <span class="sar-path-number">02</span>
+          <h3>Donate directly</h3>
+          <p>Your donation goes directly to Wolfe County Search &amp; Rescue through its own system. RRGH does not collect or relay it.</p>
+          <a href={sarLinks.donate} target="_blank" rel="noopener noreferrer">Donate directly to Wolfe County SAR ↗</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="sar-story sar-shell" aria-labelledby="why-title">
+      <div class="sar-story-heading">
+        <p class="sar-section-kicker">Why RRGH supports SAR</p>
+        <h2 id="why-title">Giving back was part of the idea from the beginning</h2>
+      </div>
+      <div class="sar-story-copy">
+        <p>Ryan D. Lewis personally supported Wolfe County Search &amp; Rescue before Red River Gorge Hiker existed. He donated $500 in 2024 and $500 in 2025 — <strong>{fmt(sar.historicalPersonalSupport)} in historical personal support</strong> — and has committed to continue giving at least {fmt(sar.personalAnnualCommitment)} personally each calendar year.</p>
+        <p>When Red River Gorge Hiker launched, Ryan decided the business itself should give back too. Separately from his personal commitment, <strong>20% of RRGH business profit is allocated to Wolfe County Search &amp; Rescue.</strong></p>
+        <p>Red River Gorge Hiker is meant to be an identity hikers can share. The idea is simple: <em>“I’m a Red River Gorge Hiker.”</em> Supporting the people who come looking when hikers need help is a natural extension of what that identity should stand for.</p>
+        <p class="sar-independent-note">RRGH supports Wolfe County Search &amp; Rescue independently. This is not a partnership, sponsorship, endorsement, or commercial arrangement, and this page does not speak on WCSART’s behalf.</p>
+      </div>
+    </section>
+
+    <section class="sar-match-section sar-shell" id="sar-match" aria-labelledby="match-title">
+      <div class="sar-section-heading">
+        <p class="sar-section-kicker">{sar.reportingYear} public reporting</p>
+        <h2 id="match-title">SAR Match-O-Meter</h2>
+        <p>The {fmt(sar.personalAnnualCommitment)} target is a milestone, not a cap. RRGH support keeps accumulating when the match is reached or exceeded.</p>
+      </div>
+      <SarMatchMeter variant="full" href="#sar-match-details" />
+
+      <div class="sar-financial-grid" id="sar-match-details">
+        <article class="sar-stat sar-stat-benchmark">
+          <span>Ryan’s personal annual commitment</span>
+          <strong>{fmt(sar.personalAnnualCommitment)}</strong>
+          <small>Separate personal commitment</small>
+        </article>
+        <article class="sar-stat sar-stat-accent">
+          <span>RRGH generated for SAR this year</span>
+          <strong>{fmt(sar.rrghSarGenerated)}</strong>
+          <small>{sar.matchPercentage.toFixed(1)}% of the annual match milestone</small>
+        </article>
+        <article class="sar-stat">
+          <span>RRGH actually donated / transferred</span>
+          <strong>{fmt(sar.rrghSarDonated)}</strong>
+          <small>Money actually transferred to WCSART</small>
+        </article>
+        <article class="sar-stat">
+          <span>Outstanding committed amount</span>
+          <strong>{fmt(sar.outstandingCommitment)}</strong>
+          <small>Generated allocation not yet transferred</small>
+        </article>
+        <article class="sar-stat">
+          <span>Total current-year support</span>
+          <strong>{fmt(sar.annualCombinedSupport)}</strong>
+          <small>Actual current-year RRGH transfers + actual Ryan personal contributions</small>
+        </article>
+        <article class="sar-stat">
+          <span>Historical personal support</span>
+          <strong>{fmt(sar.historicalPersonalSupport)}</strong>
+          <small>Ryan’s personal support before the RRGH program</small>
+        </article>
+      </div>
+
+      <details class="sar-lifetime-details">
+        <summary>View lifetime support figures</summary>
+        <div class="sar-lifetime-grid">
+          <p><span>Lifetime personal support</span><strong>{fmt(sar.lifetimePersonalSupport)}</strong></p>
+          <p><span>Lifetime RRGH generated / committed</span><strong>{fmt(sar.lifetimeRrghSupport)}</strong></p>
+          <p><span>Lifetime RRGH actually transferred</span><strong>{fmt(sar.lifetimeRrghTransferred)}</strong></p>
+          <p><span>Combined lifetime actual support</span><strong>{fmt(sar.combinedLifetimeSupport)}</strong></p>
+        </div>
+      </details>
+
+      <div class="sar-data-note">
+        <strong>Generated is not the same as donated.</strong>
+        <p>When the 20%-of-profit commitment creates an obligation, the website calls that amount <em>generated</em>, <em>allocated</em>, or <em>committed</em> until money is actually transferred. “Donated” or “transferred” is used only for money actually sent to WCSART.</p>
+        <p>Public figures come from the approved Google Drive ledger reporting output; the website does not calculate RRGH business profit. Last updated <time datetime={sar.lastUpdated}>{sar.lastUpdated}</time>.</p>
+      </div>
+    </section>
+
+    <section class="sar-wcsart" aria-labelledby="wcsart-title">
+      <div class="sar-shell sar-wcsart-inner">
+        <div>
+          <p class="sar-section-kicker sar-section-kicker-light">The team RRGH supports</p>
+          <h2 id="wcsart-title">About Wolfe County Search &amp; Rescue</h2>
+          <p>Wolfe County Search &amp; Rescue is a volunteer search-and-rescue team serving Wolfe County and the greater Red River Gorge area. Its publicly described capabilities include wilderness searches, high-angle rope rescue, swift-water rescue, and dive/recovery work.</p>
+          <p>The cliffs, steep valleys, rock shelters, waterways, climbing areas, trails, and backcountry terrain that make the Gorge extraordinary can also make a rescue difficult. Supporting local rescue capacity is one way the RRGH community can give back to the place it enjoys.</p>
+          <p class="sar-source-note">This summary is based on WCSART’s public information. WCSART has not been represented as reviewing, approving, sponsoring, or endorsing this RRGH page.</p>
+        </div>
+        <div class="sar-wcsart-actions">
+          <a class="sar-button sar-button-light" href={sarLinks.wcsart} target="_blank" rel="noopener noreferrer">Visit Wolfe County Search &amp; Rescue ↗</a>
+          <a class="sar-button sar-button-orange" href={sarLinks.donate} target="_blank" rel="noopener noreferrer">Donate directly to Wolfe County SAR ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sar-prep sar-shell" aria-labelledby="prep-title">
+      <div class="sar-section-heading sar-section-heading-wide">
+        <p class="sar-section-kicker">Before you hike</p>
+        <h2 id="prep-title">A little preparation can change the whole outcome</h2>
+        <p>These are general wilderness-preparedness practices, informed by public National Park Service guidance. Your route, weather, land manager, season, and group may require more.</p>
+      </div>
+      <div class="sar-prep-grid">
+        {prepCards.map(([icon, title, body]) => (
+          <article class="sar-prep-card">
+            <span class="sar-card-icon" aria-hidden="true">{icon}</span>
+            <h3>{title}</h3>
+            <p>{body}</p>
+          </article>
+        ))}
+      </div>
+      <div class="sar-source-actions">
+        <a href={sarLinks.npsTenEssentials} target="_blank" rel="noopener noreferrer">National Park Service: Ten Essentials ↗</a>
+        <a href={sarLinks.npsHikeSmart} target="_blank" rel="noopener noreferrer">National Park Service: Hike Smart ↗</a>
+      </div>
+    </section>
+
+    <section class="sar-emergency" aria-labelledby="emergency-title">
+      <div class="sar-shell sar-emergency-grid">
+        <div class="sar-emergency-callout">
+          <p class="sar-section-kicker sar-section-kicker-light">If you need help</p>
+          <h2 id="emergency-title">If this is an active emergency: call 911.</h2>
+          <p><strong>Red River Gorge Hiker is not an emergency service.</strong> Do not use this website to request rescue assistance.</p>
+        </div>
+        <div class="sar-emergency-details">
+          <h3>Be ready to communicate what you know</h3>
+          <ul>
+            {helpDetails.map((item) => <li>{item}</li>)}
+          </ul>
+          <p>Follow the dispatcher’s instructions. Do not invent a route out, move an injured person, or change location solely because of information on this page.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sar-resources sar-shell" aria-labelledby="maps-title">
+      <div class="sar-section-heading sar-section-heading-wide">
+        <p class="sar-section-kicker">Maps &amp; navigation</p>
+        <h2 id="maps-title">Know which source governs the ground you are on</h2>
+        <p>The Red River Gorge area includes National Forest and wilderness lands as well as separately managed Kentucky State Park property. Use the controlling land manager’s current information for maps, rules, trail access, and camping.</p>
+      </div>
+      <div class="sar-resource-grid">
+        {resourceCards.map((resource) => (
+          <article class="sar-resource-card">
+            <span>{resource.eyebrow}</span>
+            <h3>{resource.title}</h3>
+            <p>{resource.body}</p>
+            <a href={resource.href} target="_blank" rel="noopener noreferrer">{resource.action} ↗</a>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="sar-camping sar-shell" aria-labelledby="camping-title">
+      <div class="sar-camping-panel">
+        <div class="sar-camping-copy">
+          <p class="sar-section-kicker">Backcountry / dispersed camping</p>
+          <h2 id="camping-title">Check the Forest Service rule before you pick a campsite</h2>
+          <p>The current Forest Service camping restriction for the Red River Gorge Geological Area says that, except at designated sites, camping is prohibited within <strong>300 feet of any developed road or trail</strong> and within <strong>600 feet of Gray’s Arch</strong>.</p>
+          <p>Rules, special orders, closures, fire restrictions, access conditions, and fees can change. This summary is not a substitute for the controlling Forest Service information.</p>
+          <p class="sar-reviewed">Rule summary last reviewed: <time datetime={sarContentReview.campingRules}>{reviewed}</time></p>
+        </div>
+        <div class="sar-camping-action">
+          <a class="sar-button sar-button-orange" href={sarLinks.forestServiceAlerts} target="_blank" rel="noopener noreferrer">Check current Forest Service rules before your trip ↗</a>
+          <a href={sarLinks.gladieVisitorCenter} target="_blank" rel="noopener noreferrer">Get Red River Gorge visitor information ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="sar-conditions sar-shell" aria-labelledby="conditions-title">
+      <div class="sar-section-heading sar-section-heading-wide">
+        <p class="sar-section-kicker">Plan before you go</p>
+        <h2 id="conditions-title">Current conditions are part of the route</h2>
+        <p>This launch version deliberately links to authoritative sources instead of pretending to maintain a second set of live closure, weather, or road data.</p>
+      </div>
+      <div class="sar-condition-grid">
+        {conditionCards.map(([title, body, href]) => (
+          <a class="sar-condition-card" href={href} target="_blank" rel="noopener noreferrer">
+            <h3>{title}</h3>
+            <p>{body}</p>
+            <span>Check the official source ↗</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="sar-education" aria-labelledby="education-title">
+      <div class="sar-shell">
+        <div class="sar-section-heading sar-section-heading-wide">
+          <p class="sar-section-kicker sar-section-kicker-light">Search &amp; rescue education</p>
+          <h2 id="education-title">Make yourself easier to help</h2>
+          <p>Wilderness rescue can involve distance, cliffs, darkness, weather, water, technical terrain, and limited communications. These general principles are not WCSART-specific operating procedures.</p>
+        </div>
+        <div class="sar-education-grid">
+          <article><h3>Location precision matters</h3><p>A trail name, landmark, route, map location, or coordinates can help responders understand where to start looking.</p></article>
+          <article><h3>Night changes the problem</h3><p>Illumination, warm layers, power, and a realistic turnaround time matter even when the original plan is only a daytime outing.</p></article>
+          <article><h3>Conserve useful information</h3><p>If you have phone service, preserve battery and be ready to communicate a clear location, condition, group size, and callback number.</p></article>
+          <article><h3>Avoid making the situation bigger</h3><p>If lost or injured, stop and assess before wandering farther into steep, unfamiliar, or hazardous terrain. Follow emergency-dispatch instructions when contact is established.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="sar-final-support sar-shell" aria-labelledby="support-title">
+      <div class="sar-final-heading">
+        <p class="sar-section-kicker">Support the people who support hikers</p>
+        <h2 id="support-title">Two paths. One shared place.</h2>
+      </div>
+      <div class="sar-final-grid">
+        <article>
+          <span class="sar-option-label">Option 1 · Support through RRGH</span>
+          <h3>Shop Red River Gorge Hiker</h3>
+          <p>When you purchase RRGH photography or Gear, 20% of RRGH business profit is allocated to Wolfe County Search &amp; Rescue.</p>
+          <div class="sar-final-actions">
+            <a class="sar-button sar-button-primary" href={`${base}prints/`}>Shop photography</a>
+            <a class="sar-button sar-button-outline" href={`${base}gear/`}>Shop Gear</a>
+          </div>
+        </article>
+        <article class="sar-final-direct">
+          <span class="sar-option-label">Option 2 · Give directly</span>
+          <h3>Send your support straight to WCSART</h3>
+          <p>Want your contribution to go directly to Wolfe County Search &amp; Rescue instead? Use WCSART’s own donation system. The donation does not pass through RRGH.</p>
+          <a class="sar-button sar-button-orange" href={sarLinks.donate} target="_blank" rel="noopener noreferrer">Donate directly to Wolfe County Search &amp; Rescue ↗</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="sar-governance sar-shell" aria-label="Source and relationship notes">
+      <p><strong>Official-information note:</strong> Regulations, permits, closures, weather, road conditions, and land-management rules are controlled by the linked public agencies, not Red River Gorge Hiker. Check the official source before your trip.</p>
+      <p><strong>Relationship note:</strong> Red River Gorge Hiker independently supports Wolfe County Search &amp; Rescue. No formal partnership, sponsorship, endorsement, or commercial relationship is implied.</p>
+    </section>
+  </div>
+
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(webPageSchema)} />
+</Base>
