@@ -1,0 +1,260 @@
+/* UAT polish requested 2026-08-09. Keep SAR copy/links intact; tighten presentation only. */
+
+/* Remove the decorative hero rings and preserve the right edge of the desktop panorama
+   so the embedded RRGH watermark is not awkwardly clipped. */
+.sar-page .sar-hero::after {
+  display: none !important;
+  content: none !important;
+}
+
+.sar-page .sar-hero-media .artwork-image {
+  object-position: right 47% !important;
+}
+
+/* Number labels are intentionally removed from the two support paths. The JS feed layer
+   removes them from the live DOM as well; this prevents any pre-script flash. */
+.sar-page .sar-path-number {
+  display: none !important;
+}
+
+.sar-page .sar-support-paths article {
+  padding-top: 1.05rem;
+}
+
+/* Ryan asked for the historical-personal-support paragraph to be removed from this narrative.
+   The feed script removes it from the live DOM; this prevents a flash before DOMContentLoaded. */
+.sar-page .sar-story-copy > p:first-child {
+  display: none;
+}
+
+.sar-page .sar-story-copy > p:nth-child(2) {
+  margin-top: 0;
+}
+
+/* Preparedness badges and headings share one compact row. */
+.sar-page .sar-prep-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: .8rem;
+  row-gap: .75rem;
+  align-items: center;
+}
+
+.sar-page .sar-prep-card .sar-card-icon {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+}
+
+.sar-page .sar-prep-card h3 {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+}
+
+.sar-page .sar-prep-card p {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+/* The public CSV contract does not expose a separate lifetime-transferred field. Do not
+   leave a stale hard-coded fourth financial concept visible. */
+.sar-page .sar-lifetime-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sar-page .sar-lifetime-grid p:nth-child(3) {
+  display: none;
+}
+
+.sar-page .sar-lifetime-grid p:nth-child(2) {
+  border-right: 1px solid var(--line);
+}
+
+@media (max-width: 780px) {
+  /* Once the feed script supplies the base-aware Red-byrd image URL, mobile swaps from the
+     panorama to the approved Winter at Red-byrd Arch website derivative. */
+  .sar-page .sar-hero.sar-mobile-hero-ready {
+    background-color: var(--gorge);
+    background-image: var(--sar-mobile-hero);
+    background-size: cover;
+    background-position: center 45%;
+    background-repeat: no-repeat;
+  }
+
+  .sar-page .sar-hero.sar-mobile-hero-ready .sar-hero-media {
+    display: none;
+  }
+
+  .sar-page .sar-hero-shade {
+    background:
+      linear-gradient(0deg, rgba(9,35,28,.96) 0%, rgba(9,35,28,.78) 56%, rgba(9,35,28,.38) 100%) !important;
+  }
+
+  .sar-page .sar-direct-support,
+  .sar-page .sar-story,
+  .sar-page .sar-wcsart-inner,
+  .sar-page .sar-emergency-grid,
+  .sar-page .sar-camping-panel {
+    gap: 1.2rem;
+  }
+
+  .sar-page .sar-direct-support {
+    padding-block: 2.4rem;
+  }
+
+  .sar-page .sar-story {
+    padding-top: 2.2rem;
+    padding-bottom: 2.7rem;
+  }
+
+  .sar-page .sar-wcsart-inner,
+  .sar-page .sar-emergency-grid {
+    padding-block: 2.7rem;
+  }
+
+  .sar-page .sar-prep,
+  .sar-page .sar-resources,
+  .sar-page .sar-education .sar-shell {
+    padding-block: 3rem;
+  }
+
+  .sar-page .sar-camping {
+    padding-bottom: 3rem;
+  }
+
+  .sar-page .sar-conditions {
+    padding-bottom: 3rem;
+  }
+
+  .sar-page .sar-final-support {
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+  }
+
+  .sar-page .sar-governance {
+    padding-top: .8rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .sar-page .sar-section-heading,
+  .sar-page .sar-final-heading {
+    margin-bottom: 1.15rem;
+  }
+
+  .sar-page .sar-emergency-details {
+    padding-top: 1.15rem;
+  }
+
+  .sar-page .sar-emergency-details > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .sar-page .sar-education-grid {
+    align-items: start;
+  }
+
+  .sar-page .sar-education-grid article {
+    padding: .95rem 1rem;
+  }
+
+  .sar-page .sar-education-grid h3 {
+    margin: 0 0 .45rem;
+  }
+
+  .sar-page .sar-education-grid p {
+    margin: 0;
+  }
+
+  .sar-page .sar-final-grid article {
+    padding: 1.2rem;
+  }
+
+  .sar-page .sar-final-grid p:last-of-type {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .sar-page .sar-hero {
+    min-height: 34rem;
+  }
+
+  .sar-page .sar-hero-content {
+    padding-top: 2.5rem;
+    padding-bottom: 1.8rem;
+  }
+
+  .sar-page .sar-hero-content h1 {
+    margin-bottom: .85rem;
+  }
+
+  .sar-page .sar-hero-lede,
+  .sar-page .sar-hero-commitment {
+    margin-block: .75rem;
+  }
+
+  .sar-page .sar-hero-actions {
+    margin-top: 1rem;
+    gap: .55rem;
+  }
+
+  .sar-page .sar-support-paths {
+    gap: .75rem;
+  }
+
+  .sar-page .sar-support-paths article {
+    padding: 1rem;
+  }
+
+  .sar-page .sar-prep-grid,
+  .sar-page .sar-resource-grid,
+  .sar-page .sar-condition-grid,
+  .sar-page .sar-education-grid,
+  .sar-page .sar-final-grid {
+    gap: .75rem;
+  }
+
+  .sar-page .sar-prep-card {
+    padding: 1rem;
+    row-gap: .65rem;
+  }
+
+  .sar-page .sar-card-icon {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+
+  .sar-page .sar-lifetime-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sar-page .sar-lifetime-grid p:nth-child(2) {
+    border-right: 0;
+  }
+
+  .sar-page .sar-emergency-grid {
+    padding-top: 2.35rem;
+    padding-bottom: 2.15rem;
+  }
+
+  .sar-page .sar-resources {
+    padding-top: 2.6rem;
+    padding-bottom: 2.6rem;
+  }
+
+  .sar-page .sar-education .sar-shell {
+    padding-top: 2.6rem;
+    padding-bottom: 2.6rem;
+  }
+
+  .sar-page .sar-final-support {
+    padding-top: 2.6rem;
+    padding-bottom: 1.65rem;
+  }
+
+  .sar-page .sar-governance {
+    padding-top: .55rem;
+  }
+}
