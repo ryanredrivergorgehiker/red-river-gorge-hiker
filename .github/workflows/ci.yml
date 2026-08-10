@@ -45,12 +45,12 @@ jobs:
             local id="$1"
             local output="$2"
             local expected="$3"
-            local source="/tmp/rrgh-gear/${output%.avif}.png"
+            local source="/tmp/rrgh-gear/${output%.avif}-source"
             local resized="/tmp/rrgh-gear/${output%.avif}-900.png"
 
-            curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o "$source" "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+            curl -L --fail --retry 3 --retry-delay 2 -A 'Mozilla/5.0' -o "$source" "https://drive.google.com/thumbnail?id=${id}&sz=w1600"
             test "$(stat -c%s "$source")" -gt 10000
-            file "$source" | grep -q 'PNG image data'
+            file "$source" | grep -Eq 'image data|JPEG image|PNG image|Web/P image'
             convert "$source" -resize '900x900>' -strip "$resized"
             actual="$(identify -format '%wx%h' "$resized")"
             test "$actual" = "$expected"
