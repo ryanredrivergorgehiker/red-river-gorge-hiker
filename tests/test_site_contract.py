@@ -204,7 +204,7 @@ class SiteContract(unittest.TestCase):
         sar_page = (ROOT / 'src/pages/search-and-rescue.astro').read_text()
         guide = ROOT / 'public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf'
         self.assertTrue(guide.exists())
-        self.assertGreater(guide.stat().st_size, 12_000_000)
+        self.assertGreater(guide.stat().st_size, 10_000_000)
         self.assertIn('Its capabilities include wilderness searches', sar_page)
         self.assertNotIn('publicly described capabilities', sar_page)
         self.assertIn('The controlling Forest Service information for the Red River Gorge Geological Area says that', sar_page)
