@@ -21,6 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           old=caa4ec9097751079e56eb85b01a8462e39928ea5
+          git fetch origin "$old"
           : > /tmp/gear20.b64
           for i in $(seq -w 1 11); do
             path=.gear20-transfer/chunk-$i.b64
