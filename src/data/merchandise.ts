@@ -1,4 +1,4 @@
-export const MERCHANDISE_VERIFICATION_DATE = '2026-08-09' as const;
+export const MERCHANDISE_VERIFICATION_DATE = '2026-08-10' as const;
 
 export interface MerchandiseProduct {
   slug: string;
@@ -22,12 +22,12 @@ const assetBase = 'assets/merchandise/' as const;
 export const merchandiseProducts: readonly MerchandiseProduct[] = [
   {
     slug: 'tshirt-chest-logo',
-    title: 'T-Shirt — Chest Logo',
-    description: 'Charcoal Red River Gorge Hiker T-shirt with the logo centered on the chest, inspired by Kentucky’s Red River Gorge and Clifty Wilderness.',
+    title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+    description: 'Athletic-fit Red River Gorge Hiker T-shirt with the logo centered on the chest.',
     priceLabel: 'From $25',
-    specification: 'Men’s T-Shirt · Charcoal',
-    optionNote: 'Sizes below 2XL verified at $25 · 2XL verified at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt',
+    specification: 'Men’s T-Shirt · Athletic Fit',
+    optionNote: 'Chest Logo configuration · Sizes below 2XL verified at $25 · 2XL verified at $28.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-chest-70ec579b.avif`,
       width: 800,
@@ -67,6 +67,22 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
+    slug: 'tshirt-regular-fit',
+    title: 'Men’s T-Shirt (Regular Fit)',
+    description: 'Regular-fit Red River Gorge Hiker T-shirt with the logo centered on the chest.',
+    priceLabel: 'From $23',
+    specification: 'Men’s T-Shirt · Regular Fit',
+    optionNote: 'Through XL $23 · 2XL $26 · 3XL $28.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=regular-tshirt',
+    image: {
+      avif: `${assetBase}rrgh-merch-tshirt-regular-ece83fde.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Man wearing a green regular-fit Red River Gorge Hiker logo T-shirt outdoors in the Red River Gorge.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
     slug: 'coffee-mug',
     title: 'Coffee Mug',
     description: 'A large white 15-ounce coffee mug printed with the Red River Gorge Hiker logo.',
@@ -82,18 +98,50 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
-    slug: 'tshirt-pocket-logo',
-    title: 'T-Shirt — Pocket Logo',
-    description: 'Charcoal Red River Gorge Hiker T-shirt with a small logo at the pocket position.',
+    slug: 'womens-tshirt',
+    title: 'Women’s T-Shirt',
+    description: 'Women’s Red River Gorge Hiker T-shirt with the logo presented on the chest.',
     priceLabel: 'From $25',
-    specification: 'Men’s T-Shirt · Charcoal',
-    optionNote: 'Select the Pocket design location on Fine Art America. Sizes below 2XL verified at $25 · 2XL at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt',
+    specification: 'Women’s T-Shirt · Chest Logo',
+    optionNote: 'Through XL $25 · 2XL $28 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
     image: {
-      avif: `${assetBase}rrgh-merch-tshirt-pocket-305a009a.avif`,
+      avif: `${assetBase}rrgh-merch-tshirt-womens-d77d1bbf.avif`,
       width: 800,
       height: 1000,
-      alt: 'Charcoal T-shirt with a small Red River Gorge Hiker logo at the pocket position.'
+      alt: 'Woman wearing a navy Red River Gorge Hiker logo T-shirt with the logo centered on the chest.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
+    slug: 'sweatshirt',
+    title: 'Sweatshirt',
+    description: 'Red River Gorge Hiker pullover sweatshirt with the logo presented on the chest.',
+    priceLabel: 'From $45',
+    specification: 'Pullover sweatshirt · Chest Logo',
+    optionNote: 'Below 2XL $45 · 2XL $51 · 3XL $57 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
+    image: {
+      avif: `${assetBase}rrgh-merch-sweater-df6f24ea.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Man wearing a dark Red River Gorge Hiker logo pullover sweatshirt outdoors in autumn.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
+    slug: 'tshirt-pocket-logo',
+    title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+    description: 'Athletic-fit Red River Gorge Hiker T-shirt with a small logo at the pocket position.',
+    priceLabel: 'From $25',
+    specification: 'Men’s T-Shirt · Athletic Fit',
+    optionNote: 'Pocket Logo configuration · Sizes below 2XL verified at $25 · 2XL verified at $28.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[430]-imageheight[430]-targetx[0]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]-designlocation[pocket]',
+    image: {
+      avif: `${assetBase}rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Man wearing a navy athletic-fit T-shirt with a small Red River Gorge Hiker logo at the pocket position.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
@@ -114,18 +162,18 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
-    slug: 'fleece-sherpa-blanket',
-    title: 'Fleece / Sherpa Blanket',
-    description: 'A 50 × 60-inch Red River Gorge Hiker logo blanket available in Plush Fleece or Sherpa Fleece.',
-    priceLabel: 'From $45.50',
-    specification: '50 × 60 inches',
-    optionNote: 'Plush Fleece $45.50 · Sherpa Fleece $48.50.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
+    slug: 'womens-tank-top',
+    title: 'Women’s Tank Top',
+    description: 'Women’s Red River Gorge Hiker tank top with the logo presented on the chest.',
+    priceLabel: 'From $25',
+    specification: 'Women’s Tank Top · Chest Logo',
+    optionNote: 'Verified at $25 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
     image: {
-      avif: `${assetBase}rrgh-merch-fleece-blanket-c5e93147.avif`,
-      width: 800,
+      avif: `${assetBase}rrgh-merch-tshirt-womens-tank-9998df0a.avif`,
+      width: 750,
       height: 1000,
-      alt: 'Person wrapped in a green Red River Gorge Hiker logo fleece blanket beside a fireplace.'
+      alt: 'Woman wearing a white Red River Gorge Hiker logo tank top outdoors in the Red River Gorge.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
@@ -142,6 +190,38 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
       width: 800,
       height: 1000,
       alt: 'Green Red River Gorge Hiker logo zip pouch held at waist height.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
+    slug: 'fleece-sherpa-blanket',
+    title: 'Fleece / Sherpa Blanket',
+    description: 'A 50 × 60-inch Red River Gorge Hiker logo blanket available in Plush Fleece or Sherpa Fleece.',
+    priceLabel: 'From $45.50',
+    specification: '50 × 60 inches',
+    optionNote: 'Plush Fleece $45.50 · Sherpa Fleece $48.50.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
+    image: {
+      avif: `${assetBase}rrgh-merch-fleece-blanket-c5e93147.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Person wrapped in a green Red River Gorge Hiker logo fleece blanket beside a fireplace.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
+    slug: 'youth-tshirt',
+    title: 'Youth T-Shirt',
+    description: 'Youth Red River Gorge Hiker T-shirt featuring the logo on the chest.',
+    priceLabel: 'From $21',
+    specification: 'Youth T-Shirt',
+    optionNote: 'Verified at $21 across sizes.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=youth-tshirt',
+    image: {
+      avif: `${assetBase}rrgh-merch-tshirt-youth-f9cdcdd6.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Boy wearing a green Red River Gorge Hiker logo youth T-shirt on a wooded trail.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
@@ -191,6 +271,22 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
+    slug: 'kids-tshirt',
+    title: 'Kids T-Shirt',
+    description: 'Kids Red River Gorge Hiker T-shirt with the logo presented on the chest.',
+    priceLabel: 'From $19',
+    specification: 'Kids T-Shirt · Chest Logo',
+    optionNote: 'Verified at $19 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
+    image: {
+      avif: `${assetBase}rrgh-merch-tshirt-kids-813c4eae.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Girl wearing a dark Red River Gorge Hiker logo kids T-shirt outdoors at a gorge overlook.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
     slug: 'greeting-cards',
     title: 'Greeting Cards',
     description: 'A pack of 10 Red River Gorge Hiker logo greeting cards with an optional buyer-entered inside message.',
@@ -207,11 +303,27 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
+    slug: 'baby-one-piece',
+    title: 'Baby One-Piece',
+    description: 'Baby one-piece featuring the Red River Gorge Hiker logo on the chest.',
+    priceLabel: 'From $23',
+    specification: 'Baby One-Piece',
+    optionNote: 'Verified at $23 across sizes.',
+    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
+    image: {
+      avif: `${assetBase}rrgh-merch-one-piece-37bc434d.avif`,
+      width: 800,
+      height: 1000,
+      alt: 'Baby wearing a dark Red River Gorge Hiker logo one-piece while being held by an adult.'
+    },
+    lastVerified: MERCHANDISE_VERIFICATION_DATE
+  },
+  {
     slug: 'ornament',
     title: 'Ornament',
     description: 'A green Red River Gorge Hiker logo ornament for the holiday season.',
     priceLabel: '$9.50',
-    specification: 'Red River Gorge Hiker logo ornament',
+    specification: 'Oval Red River Gorge Hiker logo ornament',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
     image: {
       avif: `${assetBase}rrgh-merch-ornament-2c0c7784.avif`,

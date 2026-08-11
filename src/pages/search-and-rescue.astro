@@ -226,7 +226,7 @@ const conditionCards = [
         <div>
           <p class="sar-section-kicker sar-section-kicker-light">The team RRGH supports</p>
           <h2 id="wcsart-title">About Wolfe County Search &amp; Rescue</h2>
-          <p>Wolfe County Search &amp; Rescue is a volunteer search-and-rescue team serving Wolfe County and the greater Red River Gorge area. Its publicly described capabilities include wilderness searches, high-angle rope rescue, swift-water rescue, and dive/recovery work.</p>
+          <p>Wolfe County Search &amp; Rescue is a volunteer search-and-rescue team serving Wolfe County and the greater Red River Gorge area. Its capabilities include wilderness searches, high-angle rope rescue, swift-water rescue, and dive/recovery work.</p>
           <p>The cliffs, steep valleys, rock shelters, waterways, climbing areas, trails, and backcountry terrain that make the Gorge extraordinary can also make a rescue difficult. Supporting local rescue capacity is one way the RRGH community can give back to the place it enjoys.</p>
           <p class="sar-source-note">This summary is based on WCSART’s public information. WCSART has not been represented as reviewing, approving, sponsoring, or endorsing this RRGH page.</p>
         </div>
@@ -298,12 +298,12 @@ const conditionCards = [
         <div class="sar-camping-copy">
           <p class="sar-section-kicker">Backcountry / dispersed camping</p>
           <h2 id="camping-title">Check the Forest Service rule before you pick a campsite</h2>
-          <p>The current Forest Service camping restriction for the Red River Gorge Geological Area says that, except at designated sites, camping is prohibited within <strong>300 feet of any developed road or trail</strong> and within <strong>600 feet of Gray’s Arch</strong>.</p>
+          <p>The controlling Forest Service information for the Red River Gorge Geological Area says that, except at designated sites, camping is prohibited within <strong>300 feet of any developed road or trail</strong> and within <strong>600 feet of Gray’s Arch</strong>.</p>
           <p>Rules, special orders, closures, fire restrictions, access conditions, and fees can change. This summary is not a substitute for the controlling Forest Service information.</p>
           <p class="sar-reviewed">Rule summary last reviewed: <time datetime={sarContentReview.campingRules}>{reviewed}</time></p>
         </div>
         <div class="sar-camping-action">
-          <a class="sar-button sar-button-orange" href={sarLinks.forestServiceAlerts} target="_blank" rel="noopener noreferrer">Check current Forest Service rules before your trip ↗</a>
+          <a class="sar-button sar-button-orange" href={`${base}downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf`} download>Download 2026 DBNF dispersed camping guide ↓</a>
           <a href={sarLinks.gladieVisitorCenter} target="_blank" rel="noopener noreferrer">Get Red River Gorge visitor information ↗</a>
         </div>
       </div>
@@ -313,7 +313,7 @@ const conditionCards = [
       <div class="sar-section-heading sar-section-heading-wide">
         <p class="sar-section-kicker">Plan before you go</p>
         <h2 id="conditions-title">Current conditions are part of the route</h2>
-        <p>This launch version deliberately links to authoritative sources instead of pretending to maintain a second set of live closure, weather, or road data.</p>
+        <p>This site deliberately links to authoritative sources instead of pretending to maintain a second set of live closure, weather, or road data.</p>
       </div>
       <div class="sar-condition-grid">
         {conditionCards.map(([title, body, href]) => (
