@@ -1,0 +1,43 @@
+name: Diagnose preserved Gear 20 transfer
+
+on:
+  push:
+    branches:
+      - feature/gear-20-card-refresh
+    paths:
+      - .github/workflows/diagnose-gear20-transfer.yml
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Inspect and repair preserved transfer
+        run: |
+          set -euo pipefail
+          old=caa4ec9097751079e56eb85b01a8462e39928ea5
+          : > /tmp/gear20.b64
+          for i in $(seq -w 1 11); do
+            path=.gear20-transfer/chunk-$i.b64
+            bytes=$(git cat-file -s "$old:$path")
+            echo "$path bytes=$bytes"
+            git show "$old:$path" >> /tmp/gear20.b64
+          done
+          echo "combined_base64_bytes=$(wc -c < /tmp/gear20.b64)"
+          base64 --decode /tmp/gear20.b64 > /tmp/gear20.partial.zip
+          echo "decoded_bytes=$(wc -c < /tmp/gear20.partial.zip)"
+          sha256sum /tmp/gear20.partial.zip
+          unzip -l /tmp/gear20.partial.zip || true
+          rm -f /tmp/gear20-repaired.zip
+          yes | zip -FF /tmp/gear20.partial.zip --out /tmp/gear20-repaired.zip || true
+          if test -f /tmp/gear20-repaired.zip; then
+            echo '--- repaired listing ---'
+            unzip -l /tmp/gear20-repaired.zip || true
+            echo '--- repaired integrity ---'
+            unzip -t /tmp/gear20-repaired.zip || true
+          fi
