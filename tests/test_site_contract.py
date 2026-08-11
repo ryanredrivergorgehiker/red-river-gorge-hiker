@@ -200,6 +200,20 @@ class SiteContract(unittest.TestCase):
         self.assertIn('href={`${base}copyright-and-terms/`}>Copyright and Terms</a>', footer)
         self.assertNotIn('modal', terms.lower())
 
+    def test_sar_camping_guide_download_and_copy(self):
+        sar_page = (ROOT / 'src/pages/search-and-rescue.astro').read_text()
+        guide = ROOT / 'public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf'
+        self.assertTrue(guide.exists())
+        self.assertGreater(guide.stat().st_size, 12_000_000)
+        self.assertIn('Its capabilities include wilderness searches', sar_page)
+        self.assertNotIn('publicly described capabilities', sar_page)
+        self.assertIn('The controlling Forest Service information for the Red River Gorge Geological Area says that', sar_page)
+        self.assertIn('Download 2026 DBNF dispersed camping guide', sar_page)
+        self.assertIn('downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', sar_page)
+        self.assertNotIn('Check current Forest Service rules before your trip', sar_page)
+        self.assertIn('This site deliberately links to authoritative sources', sar_page)
+        self.assertNotIn('This launch version deliberately links', sar_page)
+
     def test_routes(self):
         routes = [
             'index',
