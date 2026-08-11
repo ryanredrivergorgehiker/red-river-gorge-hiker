@@ -37,8 +37,6 @@ jobs:
           data = Path('/tmp/dbnf-guide.pdf').read_bytes()
           if not data.startswith(b'%PDF-'):
               raise RuntimeError('Transport is not a PDF')
-          if b'Red River Gorge Hiker' not in data and b'RedRiverGorgeHiker.com' not in data:
-              print('PDF text is compressed; binary signature/hash validation is authoritative.')
           print('Vetted DBNF guide transport validated.')
           PY
 
@@ -86,6 +84,17 @@ jobs:
           if 'def test_sar_camping_guide_download_and_copy' in tests:
               raise RuntimeError('SAR guide regression test already exists')
           tests_path.write_text(tests.replace(marker, block + marker, 1))
+
+          sar_tests_path = Path('tests/test_sar_contract.py')
+          sar_tests = sar_tests_path.read_text()
+          old = "        self.assertIn('Check current Forest Service rules before your trip', SAR_PAGE)\n"
+          new = (
+              "        self.assertIn('Download 2026 DBNF dispersed camping guide', SAR_PAGE)\n"
+              "        self.assertIn('downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', SAR_PAGE)\n"
+          )
+          if sar_tests.count(old) != 1:
+              raise RuntimeError('Could not update the existing SAR authoritative-source contract')
+          sar_tests_path.write_text(sar_tests.replace(old, new, 1))
           PY
 
       - name: Set up Node
@@ -103,7 +112,7 @@ jobs:
       - name: Stage only approved SAR refinement and importer cleanup
         run: |
           set -euo pipefail
-          git add src/pages/search-and-rescue.astro tests/test_site_contract.py public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf
+          git add src/pages/search-and-rescue.astro tests/test_site_contract.py tests/test_sar_contract.py public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf
           git rm .github/workflows/import-dbnf-guide-and-refine-sar.yml
           git diff --cached --check
           python3 - <<'PY'
@@ -112,12 +121,13 @@ jobs:
               '.github/workflows/import-dbnf-guide-and-refine-sar.yml',
               'src/pages/search-and-rescue.astro',
               'tests/test_site_contract.py',
+              'tests/test_sar_contract.py',
               'public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf',
           }
           actual = set(subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines())
           if actual != expected:
               raise RuntimeError(f'Unexpected staged paths: {sorted(actual ^ expected)}')
-          print('Staged change set is limited to the approved SAR refinement, vetted guide, test, and workflow cleanup.')
+          print('Staged change set is limited to the approved SAR refinement, vetted guide, regression contracts, and workflow cleanup.')
           PY
 
       - name: Commit tested staging refinement
