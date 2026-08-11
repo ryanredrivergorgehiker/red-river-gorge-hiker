@@ -1,0 +1,186 @@
+name: Import approved Gear 20 package
+
+on:
+  push:
+    branches:
+      - feature/gear-20-card-refresh
+    paths:
+      - .github/workflows/import-gear20-from-drive.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import-gear20:
+    name: Validate, install, test, and clean up
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feature/gear-20-card-refresh
+          fetch-depth: 0
+
+      - name: Download verified public Drive transport
+        env:
+          ARCHIVE_URL: https://drive.google.com/uc?export=download&id=1yMlbOUtBQN-vWjwlWfDE5ui1ziVZrkWg
+          ARCHIVE_SHA256: c81588b3eec34e22a30fef78733dbdf324cab42c05cea4e684328076e313decd
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output /tmp/gear20-transfer.zip "$ARCHIVE_URL"
+          echo "$ARCHIVE_SHA256  /tmp/gear20-transfer.zip" | sha256sum --check --strict
+          unzip -t /tmp/gear20-transfer.zip
+
+      - name: Validate approved package
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/gear20-transfer
+          mkdir -p /tmp/gear20-transfer
+          unzip -q /tmp/gear20-transfer.zip -d /tmp/gear20-transfer
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import re
+
+          root = Path('/tmp/gear20-transfer')
+          expected = {
+              'merchandise.ts',
+              'test_site_contract.py',
+              'rrgh-merch-one-piece-37bc434d.avif',
+              'rrgh-merch-sweater-df6f24ea.avif',
+              'rrgh-merch-tshirt-kids-813c4eae.avif',
+              'rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif',
+              'rrgh-merch-tshirt-regular-ece83fde.avif',
+              'rrgh-merch-tshirt-womens-d77d1bbf.avif',
+              'rrgh-merch-tshirt-womens-tank-9998df0a.avif',
+              'rrgh-merch-tshirt-youth-f9cdcdd6.avif',
+          }
+          actual = {p.name for p in root.iterdir() if p.is_file()}
+          if actual != expected:
+              raise RuntimeError(f'Unexpected package paths: {sorted(actual ^ expected)}')
+
+          for path in root.glob('*.avif'):
+              match = re.search(r'-([0-9a-f]{8})\.avif$', path.name)
+              if not match:
+                  raise RuntimeError(f'Missing hash suffix: {path.name}')
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if not digest.startswith(match.group(1)):
+                  raise RuntimeError(f'Asset hash mismatch: {path.name} -> {digest}')
+
+          merch = (root / 'merchandise.ts').read_text()
+          titles = re.findall(r"title:\s*'([^']+)'", merch)
+          approved_titles = [
+              'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+              'Sticker',
+              'Tote Bag',
+              'Men’s T-Shirt (Regular Fit)',
+              'Coffee Mug',
+              'Women’s T-Shirt',
+              'Sweatshirt',
+              'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+              'Throw Pillow',
+              'Women’s Tank Top',
+              'Zip Pouch',
+              'Fleece / Sherpa Blanket',
+              'Youth T-Shirt',
+              'Spiral Notebook',
+              'Bath Towel',
+              'Beach Towel',
+              'Kids T-Shirt',
+              'Greeting Cards',
+              'Baby One-Piece',
+              'Ornament',
+          ]
+          if titles != approved_titles:
+              raise RuntimeError(f'Gear order mismatch: {titles}')
+          if merch.count("slug: '") != 20:
+              raise RuntimeError('Expected exactly 20 Gear products')
+
+          required = [
+              "MERCHANDISE_VERIFICATION_DATE = '2026-08-10'",
+              '?product=adult-tshirt&completeProductSku=',
+              '-designlocation[pocket]',
+              'rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif',
+              '?product=regular-tshirt',
+              '?product=womens-tshirt',
+              '?product=pull-over-hoodie-sweatshirt',
+              '?product=womens-tank-top',
+              '?product=youth-tshirt',
+              '?product=kids-tshirt',
+              '?product=one-piece',
+          ]
+          for token in required:
+              if token not in merch:
+                  raise RuntimeError(f'Missing approved Gear token: {token}')
+
+          tests = (root / 'test_site_contract.py').read_text()
+          if "self.assertEqual(len(re.findall(r\"slug:\\s*'\", MERCH)), 20)" not in tests:
+              raise RuntimeError('20-card repository contract is missing')
+
+          print('Approved Gear 20 package validated.')
+          PY
+
+      - name: Install approved Gear files
+        run: |
+          set -euo pipefail
+          cp /tmp/gear20-transfer/merchandise.ts src/data/merchandise.ts
+          cp /tmp/gear20-transfer/test_site_contract.py tests/test_site_contract.py
+          cp /tmp/gear20-transfer/*.avif public/assets/merchandise/
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full website checks
+        run: npm run check
+
+      - name: Stage only Gear 20 implementation and importer cleanup
+        run: |
+          set -euo pipefail
+          git add src/data/merchandise.ts tests/test_site_contract.py \
+            public/assets/merchandise/rrgh-merch-one-piece-37bc434d.avif \
+            public/assets/merchandise/rrgh-merch-sweater-df6f24ea.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-kids-813c4eae.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-regular-ece83fde.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-womens-d77d1bbf.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-womens-tank-9998df0a.avif \
+            public/assets/merchandise/rrgh-merch-tshirt-youth-f9cdcdd6.avif
+          git rm .github/workflows/import-gear20-from-drive.yml .github/workflows/diagnose-gear20-transfer.yml
+          git diff --cached --check
+
+          python3 - <<'PY'
+          import subprocess
+          expected = {
+              '.github/workflows/import-gear20-from-drive.yml',
+              '.github/workflows/diagnose-gear20-transfer.yml',
+              'src/data/merchandise.ts',
+              'tests/test_site_contract.py',
+              'public/assets/merchandise/rrgh-merch-one-piece-37bc434d.avif',
+              'public/assets/merchandise/rrgh-merch-sweater-df6f24ea.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-kids-813c4eae.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-regular-ece83fde.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-womens-d77d1bbf.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-womens-tank-9998df0a.avif',
+              'public/assets/merchandise/rrgh-merch-tshirt-youth-f9cdcdd6.avif',
+          }
+          actual = set(subprocess.check_output(['git', 'diff', '--cached', '--name-only'], text=True).splitlines())
+          if actual != expected:
+              raise RuntimeError(f'Unexpected staged paths: {sorted(actual ^ expected)}')
+          print('Staged change set is limited to the approved Gear 20 implementation and temporary workflow cleanup.')
+          PY
+
+      - name: Commit tested staging implementation
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Stage approved 20-card Gear catalog"
+          git push origin HEAD:feature/gear-20-card-refresh
