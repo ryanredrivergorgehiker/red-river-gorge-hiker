@@ -24,13 +24,15 @@ const siteOrigin = Astro.site ?? Astro.url.origin;
       {photographs.map((photo, index) => {
         const artworkShareUrl = new URL(`${base}photographs/${photo.slug}/`, siteOrigin).href;
         return (
-          <article class="product-card">
+          <article class="product-card print-product-card">
             <Card photo={photo} showDescription={false} featured={index === 0} />
-            <ShareControls title={photo.title} url={artworkShareUrl} />
-            <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-              View print options
-              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
-            </a>
+            <div class="print-action-row">
+              <ShareControls title={photo.title} url={artworkShareUrl} />
+              <a class="button print-faa-button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+                View on Fine Art America
+                <span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
           </article>
         );
       })}
@@ -42,4 +44,41 @@ const siteOrigin = Astro.site ?? Astro.url.origin;
       <a href={`${base}puzzles/`}>View puzzles</a>
     </section>
   </div>
+
+  <style is:global>
+    .print-product-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .print-action-row {
+      display: flex;
+      align-items: stretch;
+      gap: .55rem;
+      margin-top: .85rem;
+    }
+    .print-action-row .share-controls {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 .55rem;
+    }
+    .print-action-row .share-controls button,
+    .print-action-row .print-faa-button {
+      min-height: 3.15rem;
+    }
+    .print-action-row .share-controls button { height: 100%; }
+    .print-action-row .print-faa-button {
+      display: inline-flex;
+      flex: 1 1 auto;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      text-align: center;
+    }
+    @media (max-width: 420px) {
+      .print-action-row { gap: .45rem; }
+      .print-action-row .share-controls { padding-inline: .45rem; }
+      .print-action-row .print-faa-button { padding-inline: .7rem; }
+    }
+  </style>
 </Base>

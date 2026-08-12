@@ -42,11 +42,12 @@ const puzzleImages = {
 
     <div class="grid puzzle-grid">
       {puzzles.map((photo) => {
-        const artworkShareUrl = new URL(`${base}photographs/${photo.slug}/`, siteOrigin).href;
+        const puzzleDetailPath = `${base}puzzles/${photo.slug}/`;
+        const puzzleShareUrl = new URL(puzzleDetailPath, siteOrigin).href;
         const puzzleImage = puzzleImages[photo.slug as keyof typeof puzzleImages];
         return (
           <article class="product-card puzzle-product-card">
-            <a class="puzzle-product-image" href={`${base}photographs/${photo.slug}/`} aria-label={`View the story behind ${photo.title}`}>
+            <a class="puzzle-product-image" href={puzzleDetailPath} aria-label={`View ${photo.title} puzzle details`}>
               <img
                 src={`${base}${puzzleImage.src}`}
                 width={puzzleImage.width}
@@ -56,26 +57,33 @@ const puzzleImages = {
                 decoding="async"
               />
             </a>
-            <h3><a href={`${base}photographs/${photo.slug}/`}>{photo.title}</a></h3>
+            <h3><a href={puzzleDetailPath}>{photo.title}</a></h3>
             <p class="puzzle-spec">18 × 24 inches · 500 pieces</p>
-            <ShareControls title={photo.title} url={artworkShareUrl} />
-            <p class="actions">
-              <a class="button" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+            <div class="puzzle-action-row">
+              <ShareControls title={`${photo.title} jigsaw puzzle`} url={puzzleShareUrl} />
+              <a class="button puzzle-primary-action" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
                 View puzzle
                 <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
               </a>
-              <a class="text-link" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+              <a class="button secondary puzzle-print-action" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
                 Print options
                 <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
               </a>
-            </p>
+            </div>
           </article>
         );
       })}
     </div>
   </div>
 
-  <style>
+  <style is:global>
+    .puzzle-grid { align-items: stretch; }
+    .puzzle-product-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      height: 100%;
+    }
     .puzzle-product-image {
       aspect-ratio: 3 / 2;
       display: grid;
@@ -93,5 +101,45 @@ const puzzleImages = {
     .puzzle-product-card h3 { margin-bottom: .35rem; }
     .puzzle-product-card h3 a { color: inherit; text-decoration: none; }
     .puzzle-product-card h3 a:hover { text-decoration: underline; }
+    .puzzle-product-card .puzzle-spec { margin: 0 0 .85rem; }
+    .puzzle-action-row {
+      display: flex;
+      align-items: stretch;
+      gap: .5rem;
+      margin-top: auto;
+    }
+    .puzzle-action-row .share-controls {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 .5rem;
+    }
+    .puzzle-action-row .share-controls button,
+    .puzzle-action-row .button {
+      min-height: 3.15rem;
+    }
+    .puzzle-action-row .share-controls button { height: 100%; }
+    .puzzle-action-row .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .puzzle-action-row .puzzle-primary-action {
+      flex: 1 1 auto;
+      padding-inline: .8rem;
+    }
+    .puzzle-action-row .puzzle-print-action {
+      flex: 0 0 auto;
+      padding-inline: .75rem;
+    }
+    @media (max-width: 430px) {
+      .puzzle-action-row { gap: .38rem; }
+      .puzzle-action-row .share-controls { padding-inline: .38rem; }
+      .puzzle-action-row .puzzle-primary-action { padding-inline: .55rem; }
+      .puzzle-action-row .puzzle-print-action { padding-inline: .5rem; }
+      .puzzle-action-row .button { font-size: .86rem; }
+    }
   </style>
 </Base>

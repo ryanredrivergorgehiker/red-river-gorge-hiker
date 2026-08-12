@@ -1,0 +1,154 @@
+---
+import Base from '../../layouts/Base.astro';
+import ShareControls from '../../components/ShareControls.astro';
+import { photographs, type Photograph } from '../../data/products';
+
+const puzzleImages = {
+  'winter-at-red-byrd-arch': {
+    src: 'assets/puzzles/winter-at-red-byrd-arch-puzzle.avif',
+    width: 1200,
+    height: 800,
+    alt: '500-piece jigsaw puzzle showing Winter at Red-byrd Arch with the photographed ice formation and Red River Gorge Hiker artist mark.'
+  },
+  'sunrise-at-eagles-nest': {
+    src: 'assets/puzzles/sunrise-at-eagles-nest-puzzle.avif',
+    width: 1200,
+    height: 800,
+    alt: '500-piece jigsaw puzzle showing Sunrise at Eagle’s Nest with a vivid winter sunrise and Red River Gorge Hiker artist mark.'
+  },
+  'ice-at-west-of-copperas-pillar': {
+    src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
+    width: 1200,
+    height: 1200,
+    alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
+  }
+} as const;
+
+export function getStaticPaths() {
+  return photographs
+    .filter((photo) => photo.puzzleAvailable && photo.puzzleUrl)
+    .map((photo) => ({ params: { slug: photo.slug }, props: { photo } }));
+}
+
+interface Props {
+  photo: Photograph;
+}
+
+const { photo } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const puzzleImage = puzzleImages[photo.slug as keyof typeof puzzleImages];
+const puzzleUrl = photo.puzzleUrl!;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+<Base
+  title={`${photo.title} Jigsaw Puzzle`}
+  description={`${photo.title} as an 18 × 24-inch, 500-piece jigsaw puzzle through Fine Art America.`}
+  socialImagePath={puzzleImage.src}
+  socialImageType="image/avif"
+  socialImageAlt={puzzleImage.alt}
+>
+  <div class="page puzzle-detail-page">
+    <p class="eyebrow">500-piece jigsaw puzzle</p>
+    <h1>{photo.title}</h1>
+    <p class="lede">18 × 24 inches · 500 pieces · horizontal · available through Fine Art America.</p>
+
+    <div class="puzzle-detail-image-stage">
+      <a
+        href={puzzleUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`View ${photo.title} puzzle on Fine Art America (opens in a new tab)`}
+      >
+        <img
+          src={`${base}${puzzleImage.src}`}
+          width={puzzleImage.width}
+          height={puzzleImage.height}
+          alt={puzzleImage.alt}
+          loading="eager"
+          decoding="async"
+        />
+      </a>
+    </div>
+
+    <div class="puzzle-detail-actions">
+      <ShareControls title={`${photo.title} jigsaw puzzle`} url={canonical} />
+      <a class="button puzzle-detail-primary" href={puzzleUrl} target="_blank" rel="noopener noreferrer">
+        View this puzzle
+        <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+      </a>
+      <a class="button secondary puzzle-detail-print" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+        Print options
+        <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+      </a>
+    </div>
+
+    <section class="puzzle-detail-story prose-wide">
+      <h2>About the photograph</h2>
+      <p>{photo.shortDescription}</p>
+      <a href={`${base}photographs/${photo.slug}/`}>Read the story behind the photograph</a>
+    </section>
+  </div>
+
+  <style is:global>
+    .puzzle-detail-page > .lede { margin-bottom: 1.1rem; }
+    .puzzle-detail-image-stage {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 1rem 0 1.1rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.32);
+    }
+    .puzzle-detail-image-stage > a {
+      display: block;
+      max-width: 1100px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .puzzle-detail-image-stage img {
+      width: auto;
+      max-width: 100%;
+      max-height: 760px;
+      margin-inline: auto;
+      object-fit: contain;
+    }
+    .puzzle-detail-actions {
+      display: flex;
+      align-items: stretch;
+      gap: .55rem;
+      max-width: 42rem;
+      margin-bottom: 2rem;
+    }
+    .puzzle-detail-actions .share-controls {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 .55rem;
+    }
+    .puzzle-detail-actions .share-controls button,
+    .puzzle-detail-actions .button {
+      min-height: 3.15rem;
+    }
+    .puzzle-detail-actions .share-controls button { height: 100%; }
+    .puzzle-detail-actions .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      text-align: center;
+    }
+    .puzzle-detail-primary { flex: 1 1 auto; }
+    .puzzle-detail-print { flex: 0 0 auto; }
+    .puzzle-detail-story {
+      max-width: 52rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+    }
+    @media (max-width: 520px) {
+      .puzzle-detail-image-stage { padding: .55rem; }
+      .puzzle-detail-actions { gap: .4rem; }
+      .puzzle-detail-actions .share-controls { padding-inline: .4rem; }
+      .puzzle-detail-actions .button { padding-inline: .6rem; font-size: .86rem; }
+    }
+  </style>
+</Base>
