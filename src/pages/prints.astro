@@ -1,9 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import Card from '../components/Card.astro';
+import ShareControls from '../components/ShareControls.astro';
 import { photographs } from '../data/products';
 
 const base = import.meta.env.BASE_URL;
+const siteOrigin = Astro.site ?? Astro.url.origin;
 ---
 <Base
   title="Prints from the Red River Gorge"
@@ -19,15 +21,19 @@ const base = import.meta.env.BASE_URL;
     </div>
 
     <div class="grid collection-mosaic product-mosaic">
-      {photographs.map((photo, index) => (
-        <article class="product-card">
-          <Card photo={photo} showDescription={false} featured={index === 0} />
-          <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-            View print options
-            <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
-          </a>
-        </article>
-      ))}
+      {photographs.map((photo, index) => {
+        const artworkShareUrl = new URL(`${base}photographs/${photo.slug}/`, siteOrigin).href;
+        return (
+          <article class="product-card">
+            <Card photo={photo} showDescription={false} featured={index === 0} />
+            <ShareControls title={photo.title} url={artworkShareUrl} />
+            <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
+              View print options
+              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+            </a>
+          </article>
+        );
+      })}
     </div>
 
     <section class="section prose-wide">
