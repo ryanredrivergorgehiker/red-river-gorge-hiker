@@ -36,7 +36,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('width: min(100%, 40rem);', prints)
         self.assertIn('margin-inline: auto;', prints)
 
-    def test_puzzle_cards_use_three_button_row_and_standardized_overview_derivatives(self):
+    def test_puzzle_cards_use_three_button_row_and_v2_assets(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
         detail_path = ROOT / 'src/pages/puzzles/[slug].astro'
         self.assertTrue(detail_path.exists())
@@ -54,16 +54,17 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertNotIn('cardScale', puzzles)
         self.assertNotIn('--puzzle-card-scale', puzzles)
         self.assertNotIn('transform: scale(', puzzles)
+        self.assertNotIn('-puzzle-overview.webp', puzzles)
         self.assertNotIn('background: rgba(255,255,255,.3);', puzzles)
         self.assertNotIn('border: 1px solid var(--line);', puzzles)
 
         for filename in (
-            'winter-at-red-byrd-arch-puzzle-overview.webp',
-            'sunrise-at-eagles-nest-puzzle-overview.webp',
-            'ice-at-west-of-copperas-pillar-puzzle-overview.webp',
+            'winter-at-red-byrd-arch-puzzle.avif',
+            'sunrise-at-eagles-nest-puzzle.avif',
+            'ice-at-west-of-copperas-pillar-puzzle.avif',
         ):
             self.assertIn(filename, puzzles)
-            self.assertTrue((ROOT / 'public/assets/puzzles/overview' / filename).exists(), filename)
+            self.assertTrue((ROOT / 'public/assets/puzzles' / filename).exists(), filename)
 
         for filename in (
             'winter-at-red-byrd-arch-puzzle.avif',
@@ -82,7 +83,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn("dialog?.showModal()", detail)
         self.assertIn('width: min(100%, 76rem);', detail)
         self.assertIn('.puzzle-detail-image-stage img', detail)
-        self.assertIn('aspect-ratio: 3 / 2;', detail)
+        self.assertIn('aspect-ratio: 4 / 3;', detail)
         self.assertIn('object-fit: cover;', detail)
         self.assertIn('background: transparent;', detail)
         self.assertNotIn('radial-gradient', detail)

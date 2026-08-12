@@ -6,20 +6,20 @@ import { photographs, type Photograph } from '../../data/products';
 const puzzleImages = {
   'winter-at-red-byrd-arch': {
     src: 'assets/puzzles/winter-at-red-byrd-arch-puzzle.avif',
-    width: 1200,
-    height: 800,
+    width: 1448,
+    height: 1086,
     alt: '500-piece jigsaw puzzle showing Winter at Red-byrd Arch with the photographed ice formation and Red River Gorge Hiker artist mark.'
   },
   'sunrise-at-eagles-nest': {
     src: 'assets/puzzles/sunrise-at-eagles-nest-puzzle.avif',
-    width: 1200,
-    height: 800,
+    width: 1448,
+    height: 1086,
     alt: '500-piece jigsaw puzzle showing Sunrise at Eagle’s Nest with a vivid winter sunrise and Red River Gorge Hiker artist mark.'
   },
   'ice-at-west-of-copperas-pillar': {
     src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
-    width: 1200,
-    height: 800,
+    width: 1448,
+    height: 1086,
     alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
   }
 } as const;
@@ -153,7 +153,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     .puzzle-detail-image-stage img {
       display: block;
       width: 100%;
-      aspect-ratio: 3 / 2;
+      aspect-ratio: 4 / 3;
       height: auto;
       margin: 0;
       object-fit: cover;
@@ -271,7 +271,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     }
     .puzzle-lightbox-media img {
       width: min(100%, 88rem);
-      aspect-ratio: 3 / 2;
+      aspect-ratio: 4 / 3;
       height: auto;
       max-height: 100%;
       object-fit: cover;

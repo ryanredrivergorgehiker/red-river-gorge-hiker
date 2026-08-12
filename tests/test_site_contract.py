@@ -199,14 +199,15 @@ class SiteContract(unittest.TestCase):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
         detail = (ROOT / 'src/pages/puzzles/[slug].astro').read_text()
         expected = {
-            'winter-at-red-byrd-arch-puzzle.avif': 'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8',
-            'sunrise-at-eagles-nest-puzzle.avif': '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193',
-            'ice-at-west-of-copperas-pillar-puzzle.avif': '93b26d8d9ec7f99d7bc36d4eebda3695a3b509e50066397bdb366471395fc4dc',
+            'winter-at-red-byrd-arch-puzzle.avif': '159260924b088e95fde244249c3eebaf2887d93631814c2896a2366264afa209',
+            'sunrise-at-eagles-nest-puzzle.avif': '0b91a3cf3c35be91e7727589ea3a10692f5c944bb7607d6b093003f3b6334db8',
+            'ice-at-west-of-copperas-pillar-puzzle.avif': 'f8ce23ac9fd7a4fafc21e8683192dd68d640896fb3c7efd9bd08e608b300d074',
         }
         for filename, expected_hash in expected.items():
             path = ROOT / 'public/assets/puzzles' / filename
             self.assertTrue(path.exists(), filename)
             self.assertEqual(sha256(path), expected_hash)
+            self.assertIn(filename, puzzles)
             self.assertIn(filename, detail)
 
     def test_legal_copy_and_footer_notice(self):
