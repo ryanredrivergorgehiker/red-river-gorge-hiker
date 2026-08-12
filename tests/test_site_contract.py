@@ -197,6 +197,7 @@ class SiteContract(unittest.TestCase):
 
     def test_puzzle_product_images(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
+        detail = (ROOT / 'src/pages/puzzles/[slug].astro').read_text()
         expected = {
             'winter-at-red-byrd-arch-puzzle.avif': 'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8',
             'sunrise-at-eagles-nest-puzzle.avif': '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193',
@@ -206,7 +207,7 @@ class SiteContract(unittest.TestCase):
             path = ROOT / 'public/assets/puzzles' / filename
             self.assertTrue(path.exists(), filename)
             self.assertEqual(sha256(path), expected_hash)
-            self.assertIn(filename, puzzles)
+            self.assertIn(filename, detail)
 
     def test_legal_copy_and_footer_notice(self):
         terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text()
