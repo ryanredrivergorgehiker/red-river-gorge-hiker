@@ -11,18 +11,21 @@ const puzzleImages = {
     src: 'assets/puzzles/winter-at-red-byrd-arch-puzzle.avif',
     width: 1200,
     height: 800,
+    cardScale: 1.053,
     alt: '500-piece jigsaw puzzle showing Winter at Red-byrd Arch with the photographed ice formation and Red River Gorge Hiker artist mark.'
   },
   'sunrise-at-eagles-nest': {
     src: 'assets/puzzles/sunrise-at-eagles-nest-puzzle.avif',
     width: 1200,
     height: 800,
+    cardScale: 1.017,
     alt: '500-piece jigsaw puzzle showing Sunrise at Eagle’s Nest with a vivid winter sunrise and Red River Gorge Hiker artist mark.'
   },
   'ice-at-west-of-copperas-pillar': {
     src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
     width: 1200,
     height: 800,
+    cardScale: 1,
     alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
   }
 } as const;
@@ -47,7 +50,12 @@ const puzzleImages = {
         const puzzleImage = puzzleImages[photo.slug as keyof typeof puzzleImages];
         return (
           <article class="product-card puzzle-product-card">
-            <a class="puzzle-product-image" href={puzzleDetailPath} aria-label={`View ${photo.title} puzzle details`}>
+            <a
+              class="puzzle-product-image"
+              href={puzzleDetailPath}
+              aria-label={`View ${photo.title} puzzle details`}
+              style={`--puzzle-card-scale: ${puzzleImage.cardScale};`}
+            >
               <img
                 src={`${base}${puzzleImage.src}`}
                 width={puzzleImage.width}
@@ -97,6 +105,8 @@ const puzzleImages = {
       height: 100%;
       object-fit: cover;
       object-position: 50% 50%;
+      transform: scale(var(--puzzle-card-scale, 1));
+      transform-origin: 50% 50%;
     }
     .puzzle-product-card h3 { margin-bottom: .35rem; }
     .puzzle-product-card h3 a { color: inherit; text-decoration: none; }
