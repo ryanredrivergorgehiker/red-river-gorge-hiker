@@ -29,6 +29,10 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
       </p>
     </header>
 
+    <div class="notice merch-pricing-notice" role="note">
+      <strong>Pricing Notice:</strong> Prices shown on RedRiverGorgeHiker.com are provided for reference and may change. Final product pricing is determined by Fine Art America and will be displayed before purchase.
+    </div>
+
     <section class="merchandise-catalog" aria-labelledby="gear-catalog-heading">
       <h2 id="gear-catalog-heading" class="sr-only">Available gear</h2>
       <div class="merch-grid">
@@ -128,7 +132,6 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
     const dialogTitle = document.querySelector<HTMLElement>('#merch-lightbox-title');
     const dialogLink = document.querySelector<HTMLAnchorElement>('#merch-lightbox-link');
     const dialogShareControls = dialog?.querySelector<HTMLElement>('[data-share-controls]');
-    const dialogFacebookLink = dialog?.querySelector<HTMLAnchorElement>('[data-facebook-share]');
     const closeButton = document.querySelector<HTMLButtonElement>('.merch-lightbox-close');
 
     document.querySelectorAll<HTMLButtonElement>('[data-merch-lightbox-trigger]').forEach((trigger) => {
@@ -149,10 +152,6 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
         dialogLink.href = productUrl;
         dialogShareControls.dataset.shareTitle = productTitle;
         dialogShareControls.dataset.shareUrl = productShareUrl;
-        if (dialogFacebookLink) {
-          dialogFacebookLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productShareUrl)}`;
-          dialogFacebookLink.setAttribute('aria-label', `Share ${productTitle} on Facebook (opens in a new tab)`);
-        }
         dialog.showModal();
       });
     });

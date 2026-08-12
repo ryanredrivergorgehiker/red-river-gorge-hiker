@@ -17,49 +17,66 @@ const socialLinks = {
 <footer>
   <div class="footer-inner">
     <nav class="footer-nav" aria-label="Footer">
-      {footerLinks.map(([label, href]) => (
-        <a href={`${base}${href}`}>{label}</a>
-      ))}
-      <a href="mailto:Ryan@RedRiverGorgeHiker.com">Email</a>
-      <a
-        class="footer-social-link instagram-link"
-        href={socialLinks.instagram}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Red River Gorge Hiker on Instagram"
-        title="Instagram"
-      >
-        <svg class="instagram-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <defs>
-            <radialGradient id="instagram-gradient" cx="30%" cy="107%" r="150%">
-              <stop offset="0%" stop-color="#ffd600" />
-              <stop offset="28%" stop-color="#ff7a00" />
-              <stop offset="50%" stop-color="#ff0169" />
-              <stop offset="72%" stop-color="#d300c5" />
-              <stop offset="100%" stop-color="#7638fa" />
-            </radialGradient>
-          </defs>
-          <rect width="32" height="32" rx="8" fill="url(#instagram-gradient)" />
-          <rect x="7.25" y="7.25" width="17.5" height="17.5" rx="5.2" fill="none" stroke="#fff" stroke-width="2.4" />
-          <circle cx="16" cy="16" r="4.25" fill="none" stroke="#fff" stroke-width="2.4" />
-          <circle cx="22.3" cy="9.8" r="1.45" fill="#fff" />
-        </svg>
-        <span class="sr-only">Instagram</span>
-      </a>
-      <a
-        class="footer-social-link facebook-link"
-        href={socialLinks.facebook}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Red River Gorge Hiker on Facebook"
-        title="Facebook"
-      >
-        <svg class="facebook-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-          <circle cx="16" cy="16" r="16" fill="#1877F2" />
-          <path fill="#fff" d="M18.2 27V17.2h3.3l.5-3.8h-3.8V11c0-1.1.3-1.9 1.9-1.9h2V5.7c-.35-.05-1.55-.15-2.95-.15-2.92 0-4.92 1.78-4.92 5.05v2.8H11v3.8h3.23V27h3.97Z" />
-        </svg>
-        <span class="sr-only">Facebook</span>
-      </a>
+      <div class="footer-utility-links">
+        {footerLinks.map(([label, href]) => (
+          <a href={`${base}${href}`}>{label}</a>
+        ))}
+        <button type="button" class="footer-privacy-choice" data-analytics-privacy-settings>Analytics choices</button>
+      </div>
+
+      <div class="footer-contact-links" aria-label="Email and social media">
+        <a
+          class="footer-social-link email-link"
+          href="mailto:Ryan@RedRiverGorgeHiker.com"
+          aria-label="Email Red River Gorge Hiker"
+          title="Email"
+        >
+          <svg class="email-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <rect x="3.5" y="6.5" width="25" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4" />
+            <path d="M5 8.5 16 17l11-8.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="sr-only">Email</span>
+        </a>
+        <a
+          class="footer-social-link instagram-link"
+          href={socialLinks.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Red River Gorge Hiker on Instagram"
+          title="Instagram"
+        >
+          <svg class="instagram-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <defs>
+              <radialGradient id="instagram-gradient" cx="30%" cy="107%" r="150%">
+                <stop offset="0%" stop-color="#ffd600" />
+                <stop offset="28%" stop-color="#ff7a00" />
+                <stop offset="50%" stop-color="#ff0169" />
+                <stop offset="72%" stop-color="#d300c5" />
+                <stop offset="100%" stop-color="#7638fa" />
+              </radialGradient>
+            </defs>
+            <rect width="32" height="32" rx="8" fill="url(#instagram-gradient)" />
+            <rect x="7.25" y="7.25" width="17.5" height="17.5" rx="5.2" fill="none" stroke="#fff" stroke-width="2.4" />
+            <circle cx="16" cy="16" r="4.25" fill="none" stroke="#fff" stroke-width="2.4" />
+            <circle cx="22.3" cy="9.8" r="1.45" fill="#fff" />
+          </svg>
+          <span class="sr-only">Instagram</span>
+        </a>
+        <a
+          class="footer-social-link facebook-link"
+          href={socialLinks.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Red River Gorge Hiker on Facebook"
+          title="Facebook"
+        >
+          <svg class="facebook-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <circle cx="16" cy="16" r="16" fill="#1877F2" />
+            <path fill="#fff" d="M18.2 27V17.2h3.3l.5-3.8h-3.8V11c0-1.1.3-1.9 1.9-1.9h2V5.7c-.35-.05-1.55-.15-2.95-.15-2.92 0-4.92 1.78-4.92 5.05v2.8H11v3.8h3.23V27h3.97Z" />
+          </svg>
+          <span class="sr-only">Facebook</span>
+        </a>
+      </div>
     </nav>
 
     <p class="footer-safety-note">
@@ -72,3 +89,53 @@ const socialLinks = {
     </div>
   </div>
 </footer>
+
+<style is:global>
+  footer .footer-inner > .footer-nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem 1.25rem;
+  }
+  footer .footer-utility-links,
+  footer .footer-contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+  footer .footer-utility-links { gap: .45rem 1.2rem; }
+  footer .footer-contact-links {
+    flex-wrap: nowrap;
+    gap: .7rem;
+  }
+  footer .footer-nav .footer-privacy-choice {
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+  footer .footer-nav .footer-privacy-choice:hover { color: #fff; }
+  footer .footer-nav .email-link {
+    color: #fff;
+    border-radius: 0;
+  }
+  footer .footer-nav .email-link svg {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+  @media (max-width: 600px) {
+    footer .footer-inner > .footer-nav {
+      flex-direction: column;
+      gap: .75rem;
+    }
+    footer .footer-utility-links {
+      width: 100%;
+      gap: .5rem .9rem;
+    }
+    footer .footer-contact-links { gap: .85rem; }
+    footer .footer-nav .footer-privacy-choice { font-size: .84rem; }
+  }
+</style>

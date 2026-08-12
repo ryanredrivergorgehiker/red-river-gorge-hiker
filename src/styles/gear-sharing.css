@@ -1,32 +1,51 @@
 .merch-card-actions {
   display: flex;
-  flex-direction: column;
   align-items: stretch;
+  gap: .55rem;
   margin-top: auto;
 }
 
 .merch-card-actions .share-controls {
-  align-self: flex-start;
-  margin: .35rem 0 .45rem;
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin: 0;
+  padding: 0 .55rem;
+}
+
+.merch-card-actions .share-controls button {
+  min-height: 3.15rem;
+  height: 100%;
 }
 
 .merch-card-actions .merch-button {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.15rem;
   margin-top: 0;
+  text-align: center;
 }
 
 .merch-lightbox-action {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .45rem;
+  align-items: stretch;
+  justify-content: center;
+  gap: .55rem;
 }
 
 .merch-lightbox-action .share-controls {
   margin: 0;
+  padding: 0 .55rem;
 }
 
-@media (max-width: 620px) {
-  .merch-card-actions .share-controls {
-    margin-bottom: .4rem;
-  }
+.merch-lightbox-action .share-controls button,
+.merch-lightbox-action .button {
+  min-height: 3rem;
+}
+
+@media (max-width: 420px) {
+  .merch-card-actions { gap: .45rem; }
+  .merch-card-actions .share-controls { padding-inline: .45rem; }
+  .merch-card-actions .merch-button { padding-inline: .7rem; }
 }

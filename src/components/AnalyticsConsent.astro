@@ -1,0 +1,209 @@
+---
+const base = import.meta.env.BASE_URL;
+const measurementId = 'G-HM48NST64P';
+---
+
+<div
+  class="analytics-consent"
+  data-analytics-consent
+  data-measurement-id={measurementId}
+  role="dialog"
+  aria-labelledby="analytics-consent-title"
+  aria-describedby="analytics-consent-copy"
+  hidden
+>
+  <div class="analytics-consent-inner">
+    <div class="analytics-consent-copy">
+      <strong id="analytics-consent-title">Optional website analytics</strong>
+      <p id="analytics-consent-copy">
+        Red River Gorge Hiker uses optional Google Analytics to understand site traffic, improve the website, evaluate campaigns, and measure actions such as outbound clicks to Fine Art America. Analytics stays off until you allow it.
+        <a href={`${base}privacy/`}>Privacy details</a>
+      </p>
+    </div>
+    <div class="analytics-consent-actions">
+      <button type="button" class="button analytics-allow" data-analytics-allow>Allow analytics</button>
+      <button type="button" class="button secondary analytics-decline" data-analytics-decline>Decline</button>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const consent = document.querySelector('[data-analytics-consent]');
+    if (!consent) return;
+
+    const measurementId = consent.getAttribute('data-measurement-id');
+    if (!measurementId) return;
+
+    const storageKey = 'rrgh-analytics-consent-v1';
+    const allowButton = consent.querySelector('[data-analytics-allow]');
+    const declineButton = consent.querySelector('[data-analytics-decline]');
+    let analyticsLoaded = false;
+
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+
+    window.gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied'
+    });
+
+    const readChoice = () => {
+      try { return window.localStorage.getItem(storageKey); }
+      catch { return null; }
+    };
+
+    const saveChoice = (choice) => {
+      try { window.localStorage.setItem(storageKey, choice); }
+      catch { /* A blocked storage preference simply means the banner may return later. */ }
+    };
+
+    const setVisible = (visible) => {
+      consent.hidden = !visible;
+    };
+
+    const clearAnalyticsCookies = () => {
+      const cookieNames = document.cookie
+        .split(';')
+        .map((entry) => entry.trim().split('=')[0])
+        .filter((name) => name === '_ga' || name.startsWith('_ga_'));
+      const hostname = window.location.hostname.replace(/^www\./, '');
+      cookieNames.forEach((name) => {
+        document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+        if (hostname.includes('.')) {
+          document.cookie = `${name}=; Max-Age=0; path=/; domain=.${hostname}; SameSite=Lax`;
+        }
+      });
+    };
+
+    const loadAnalytics = () => {
+      if (analyticsLoaded) return;
+      analyticsLoaded = true;
+
+      window.gtag('consent', 'update', {
+        analytics_storage: 'granted',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied'
+      });
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+      document.head.appendChild(script);
+
+      window.gtag('js', new Date());
+      window.gtag('config', measurementId, {
+        send_page_view: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+        debug_mode: window.location.hostname.endsWith('github.io')
+      });
+    };
+
+    const allowAnalytics = () => {
+      saveChoice('granted');
+      setVisible(false);
+      loadAnalytics();
+    };
+
+    const declineAnalytics = () => {
+      const hadLoadedAnalytics = analyticsLoaded;
+      saveChoice('denied');
+      window.gtag('consent', 'update', {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied'
+      });
+      clearAnalyticsCookies();
+      setVisible(false);
+      if (hadLoadedAnalytics) window.location.reload();
+    };
+
+    allowButton?.addEventListener('click', allowAnalytics);
+    declineButton?.addEventListener('click', declineAnalytics);
+
+    document.querySelectorAll('[data-analytics-privacy-settings]').forEach((control) => {
+      control.addEventListener('click', () => setVisible(true));
+    });
+
+    const existingChoice = readChoice();
+    if (existingChoice === 'granted') loadAnalytics();
+    else if (existingChoice !== 'denied') setVisible(true);
+  })();
+</script>
+
+<style is:global>
+  .analytics-consent[hidden] { display: none; }
+  .analytics-consent {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: .8rem;
+    background: rgba(23, 55, 45, .97);
+    color: var(--parchment);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, .18);
+  }
+  .analytics-consent-inner {
+    width: min(var(--content), calc(100% - 1rem));
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+  }
+  .analytics-consent-copy { max-width: 55rem; }
+  .analytics-consent-copy strong {
+    display: block;
+    margin-bottom: .2rem;
+    color: #fff;
+    font-family: var(--serif);
+    font-size: 1.08rem;
+  }
+  .analytics-consent-copy p { margin: 0; font-size: .9rem; line-height: 1.5; }
+  .analytics-consent-copy a { color: #fff; font-weight: 700; }
+  .analytics-consent-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: .55rem;
+  }
+  .analytics-consent .button {
+    min-width: 8rem;
+    border-color: var(--parchment);
+    background: var(--parchment);
+    color: var(--gorge);
+    cursor: pointer;
+  }
+  .analytics-consent .button:hover { background: #fff; }
+  .analytics-consent .button.secondary {
+    background: transparent;
+    color: #fff;
+  }
+  .analytics-consent .button.secondary:hover { background: rgba(255, 255, 255, .1); }
+  .footer-privacy-choice {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--gorge);
+    cursor: pointer;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+  }
+  .footer-privacy-choice:hover { text-decoration-thickness: 2px; }
+  .footer-privacy-choice:focus-visible {
+    outline: 3px solid var(--sunrise);
+    outline-offset: 4px;
+  }
+  @media (max-width: 760px) {
+    .analytics-consent { padding: .85rem .55rem; }
+    .analytics-consent-inner { width: min(100%, calc(100% - .5rem)); display: block; }
+    .analytics-consent-actions { margin-top: .75rem; }
+    .analytics-consent .button { flex: 1 1 0; min-width: 0; text-align: center; }
+  }
+</style>
