@@ -1,3 +1,4 @@
+import hashlib
 import re
 import unittest
 from pathlib import Path
@@ -14,6 +15,14 @@ PUBLIC_ASTRO = '\n'.join(
     path.read_text(errors='ignore')
     for path in (ROOT / 'src').rglob('*.astro')
 )
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 class SiteContract(unittest.TestCase):
@@ -148,6 +157,9 @@ class SiteContract(unittest.TestCase):
         base = (ROOT / 'src/layouts/Base.astro').read_text()
         photos = (ROOT / 'src/pages/photographs/[slug].astro').read_text()
         gear_product = (ROOT / 'src/pages/gear/[slug].astro').read_text()
+        gear = (ROOT / 'src/pages/gear.astro').read_text()
+        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
+        prints = (ROOT / 'src/pages/prints.astro').read_text()
         share = (ROOT / 'src/components/ShareControls.astro').read_text()
 
         for token in (
@@ -168,18 +180,33 @@ class SiteContract(unittest.TestCase):
         self.assertIn("replace('-WEB-WM.webp', '-SOCIAL-WM.jpg')", photos)
         self.assertIn('ShareControls', photos)
         self.assertIn('ShareControls', gear_product)
+        self.assertIn('ShareControls', gear)
+        self.assertIn('ShareControls', puzzles)
+        self.assertIn('ShareControls', prints)
         self.assertIn('socialImagePath={product.image.avif}', gear_product)
         self.assertIn('getStaticPaths()', gear_product)
 
         self.assertIn('Share ↗', share)
-        self.assertIn('Facebook', share)
-        self.assertIn('Copy Link', share)
-        self.assertIn('Copied!', share)
         self.assertIn('navigator.share', share)
-        self.assertIn('navigator.clipboard', share)
-        self.assertIn('facebook.com/sharer/sharer.php', share)
+        self.assertNotIn('Facebook', share)
+        self.assertNotIn('Copy Link', share)
+        self.assertNotIn('navigator.clipboard', share)
+        self.assertNotIn('facebook.com/sharer/sharer.php', share)
         self.assertNotIn('Favorite', share)
         self.assertNotIn('heart', share.lower())
+
+    def test_puzzle_product_images(self):
+        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
+        expected = {
+            'winter-at-red-byrd-arch-puzzle.avif': 'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8',
+            'sunrise-at-eagles-nest-puzzle.avif': '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193',
+            'ice-at-west-of-copperas-pillar-puzzle.avif': '93b26d8d9ec7f99d7bc36d4eebda3695a3b509e50066397bdb366471395fc4dc',
+        }
+        for filename, expected_hash in expected.items():
+            path = ROOT / 'public/assets/puzzles' / filename
+            self.assertTrue(path.exists(), filename)
+            self.assertEqual(sha256(path), expected_hash)
+            self.assertIn(filename, puzzles)
 
     def test_legal_copy_and_footer_notice(self):
         terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text()
@@ -189,6 +216,7 @@ class SiteContract(unittest.TestCase):
             'Outdoor Safety and Location Disclaimer',
             'Accuracy and Changes',
             'Prints, Puzzles, Gear, and Third-Party Services',
+            'Merchandise Pricing',
             'No Warranty',
             'Limitation of Liability',
             'Changes to These Terms',
@@ -196,6 +224,7 @@ class SiteContract(unittest.TestCase):
         ):
             self.assertIn(f'<h2>{heading}</h2>', terms)
         self.assertIn('gear purchases linked from Red River Gorge Hiker', terms)
+        self.assertIn('The price displayed by Fine Art America at the time of purchase is the final and controlling price for the transaction.', terms)
         self.assertIn('Backcountry travel is undertaken at your own risk.', footer)
         self.assertIn('href={`${base}copyright-and-terms/`}>Copyright and Terms</a>', footer)
         self.assertNotIn('modal', terms.lower())
@@ -204,7 +233,8 @@ class SiteContract(unittest.TestCase):
         sar_page = (ROOT / 'src/pages/search-and-rescue.astro').read_text()
         guide = ROOT / 'public/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf'
         self.assertTrue(guide.exists())
-        self.assertGreater(guide.stat().st_size, 10_000_000)
+        self.assertEqual(guide.stat().st_size, 11_285_653)
+        self.assertEqual(sha256(guide), '7e209485be3081e2630029b3b4f970c349d22179c10d530f648e60f64781111e')
         self.assertIn('Its capabilities include wilderness searches', sar_page)
         self.assertNotIn('publicly described capabilities', sar_page)
         self.assertIn('The controlling Forest Service information for the Red River Gorge Geological Area says that', sar_page)
@@ -213,6 +243,49 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn('Check current Forest Service rules before your trip', sar_page)
         self.assertIn('This site deliberately links to authoritative sources', sar_page)
         self.assertNotIn('This launch version deliberately links', sar_page)
+
+    def test_google_analytics_consent_and_privacy(self):
+        analytics = (ROOT / 'src/components/AnalyticsConsent.astro').read_text()
+        base = (ROOT / 'src/layouts/Base.astro').read_text()
+        privacy = (ROOT / 'src/pages/privacy.astro').read_text()
+        footer = (ROOT / 'src/components/Footer.astro').read_text()
+
+        self.assertEqual(analytics.count('G-HM48NST64P'), 1)
+        self.assertIn('googletagmanager.com/gtag/js', analytics)
+        self.assertIn("analytics_storage: 'denied'", analytics)
+        self.assertIn("analytics_storage: 'granted'", analytics)
+        self.assertIn("ad_storage: 'denied'", analytics)
+        self.assertIn("ad_user_data: 'denied'", analytics)
+        self.assertIn("ad_personalization: 'denied'", analytics)
+        self.assertIn('allow_google_signals: false', analytics)
+        self.assertIn('allow_ad_personalization_signals: false', analytics)
+        self.assertIn("window.location.hostname.endsWith('github.io')", analytics)
+        self.assertIn('AnalyticsConsent', base)
+        self.assertIn('data-analytics-privacy-settings', footer)
+
+        for text in (
+            'Google Analytics 4 (GA4)',
+            'page views and site interactions',
+            'referring source or campaign information',
+            'outbound-link activity',
+            'approximate geographic information',
+            'browser, device, and related technical information',
+            'pseudonymous first-party Analytics identifiers or cookies',
+            'does not receive or store visitors’ raw IP addresses through GA4',
+            'does not use GA4 to identify individual visitors by name',
+            'Analytics storage is denied by default',
+            'European Economic Area, United Kingdom, or Switzerland',
+            'Meta Pixel',
+            'Roku tracking pixels',
+            'Google Ads remarketing',
+            'Google Tag Manager',
+        ):
+            self.assertIn(text, privacy)
+        self.assertIn('https://policies.google.com/technologies/partner-sites', privacy)
+
+        self.assertNotIn('connect.facebook.net', ALL.lower())
+        self.assertNotIn('googletagmanager.com/gtm.js', ALL.lower())
+        self.assertNotIn('googleads.g.doubleclick.net', ALL.lower())
 
     def test_routes(self):
         routes = [
@@ -243,6 +316,8 @@ class SiteContract(unittest.TestCase):
         self.assertIn('<h1>Gear</h1>', gear)
         self.assertIn('Red River Gorge Hiker gear', gear)
         self.assertIn('gear/${product.slug}/', gear)
+        self.assertIn('<strong>Pricing Notice:</strong>', gear)
+        self.assertIn('Final product pricing is determined by Fine Art America and will be displayed before purchase.', gear)
         self.assertIn('width: 100%;\n  max-width: none;\n  margin-top: 2.5rem;', css)
 
     def test_production_domain_and_staging_overrides(self):
@@ -256,7 +331,6 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn('github.io', config)
         self.assertIn('- main', workflow)
         self.assertNotIn('workflow_dispatch', workflow)
-        self.assertNotIn('google-analytics', ALL.lower())
         self.assertFalse((ROOT / 'public/CNAME').exists())
 
 
