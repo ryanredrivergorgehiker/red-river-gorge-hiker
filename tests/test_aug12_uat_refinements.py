@@ -36,7 +36,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('width: min(100%, 40rem);', prints)
         self.assertIn('margin-inline: auto;', prints)
 
-    def test_puzzle_cards_use_three_button_row_and_unframed_equal_image_surfaces(self):
+    def test_puzzle_cards_use_three_button_row_and_standardized_overview_derivatives(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
         detail_path = ROOT / 'src/pages/puzzles/[slug].astro'
         self.assertTrue(detail_path.exists())
@@ -49,10 +49,21 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('Print options', puzzles)
         self.assertIn('puzzles/${photo.slug}/', puzzles)
         self.assertIn('.puzzle-product-image img {', puzzles)
-        self.assertIn('aspect-ratio: 3 / 2;', puzzles)
+        self.assertIn('aspect-ratio: 4 / 3;', puzzles)
         self.assertIn('object-fit: cover;', puzzles)
+        self.assertNotIn('cardScale', puzzles)
+        self.assertNotIn('--puzzle-card-scale', puzzles)
+        self.assertNotIn('transform: scale(', puzzles)
         self.assertNotIn('background: rgba(255,255,255,.3);', puzzles)
         self.assertNotIn('border: 1px solid var(--line);', puzzles)
+
+        for filename in (
+            'winter-at-red-byrd-arch-puzzle-overview.webp',
+            'sunrise-at-eagles-nest-puzzle-overview.webp',
+            'ice-at-west-of-copperas-pillar-puzzle-overview.webp',
+        ):
+            self.assertIn(filename, puzzles)
+            self.assertTrue((ROOT / 'public/assets/puzzles/overview' / filename).exists(), filename)
 
         for filename in (
             'winter-at-red-byrd-arch-puzzle.avif',
