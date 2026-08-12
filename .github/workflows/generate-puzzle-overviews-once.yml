@@ -1,0 +1,84 @@
+name: Generate standardized puzzle overview derivatives once
+
+on:
+  push:
+    branches:
+      - feature/aug12-analytics-pricing-puzzles-sharing
+    paths:
+      - .github/workflows/generate-puzzle-overviews-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feature/aug12-analytics-pricing-puzzles-sharing
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install image tools
+        run: python -m pip install --disable-pip-version-check pillow pillow-avif-plugin
+
+      - name: Generate standardized 4:3 puzzle overview images
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import pillow_avif  # registers AVIF support
+
+          root = Path('public/assets/puzzles')
+          out = root / 'overview'
+          out.mkdir(parents=True, exist_ok=True)
+
+          # Crop rectangles are normalized from the approved source PNGs so the
+          # actual puzzle face—not the inconsistent transparent source canvas—
+          # fills the same 4:3 overview surface. Anchors preserve each artist mark.
+          specs = {
+              'winter-at-red-byrd-arch-puzzle.avif': (
+                  'winter-at-red-byrd-arch-puzzle-overview.webp',
+                  (0.037760, 0.031250, 0.880859, 0.979492),
+              ),
+              'sunrise-at-eagles-nest-puzzle.avif': (
+                  'sunrise-at-eagles-nest-puzzle-overview.webp',
+                  (0.124349, 0.019531, 0.985677, 0.988281),
+              ),
+              'ice-at-west-of-copperas-pillar-puzzle.avif': (
+                  'ice-at-west-of-copperas-pillar-puzzle-overview.webp',
+                  (0.011164, 0.116427, 0.989633, 0.850080),
+              ),
+          }
+
+          for source_name, (output_name, box) in specs.items():
+              source = root / source_name
+              image = Image.open(source).convert('RGB')
+              width, height = image.size
+              left = round(box[0] * width)
+              top = round(box[1] * height)
+              right = round(box[2] * width)
+              bottom = round(box[3] * height)
+              cropped = image.crop((left, top, right, bottom))
+              cropped = cropped.resize((1200, 900), Image.Resampling.LANCZOS)
+              destination = out / output_name
+              cropped.save(destination, 'WEBP', quality=84, method=6)
+              if cropped.size != (1200, 900):
+                  raise RuntimeError(f'Unexpected output size for {destination}')
+              print(destination, destination.stat().st_size)
+          PY
+
+      - name: Commit generated overview derivatives
+        run: |
+          git config user.name 'ryanredrivergorgehiker'
+          git config user.email 'ryan@redrivergorgehiker.com'
+          git add public/assets/puzzles/overview/*.webp
+          git diff --cached --quiet && { echo 'No generated changes'; exit 0; }
+          git commit -m 'Add standardized puzzle overview derivatives'
+          git push origin HEAD:feature/aug12-analytics-pricing-puzzles-sharing
