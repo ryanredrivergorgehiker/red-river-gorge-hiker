@@ -22,7 +22,7 @@ const puzzleImages = {
   'ice-at-west-of-copperas-pillar': {
     src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
     width: 1200,
-    height: 1200,
+    height: 800,
     alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
   }
 } as const;
@@ -85,17 +85,14 @@ const puzzleImages = {
       height: 100%;
     }
     .puzzle-product-image {
-      aspect-ratio: 3 / 2;
       display: block;
-      overflow: hidden;
       margin-bottom: .85rem;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.3);
     }
     .puzzle-product-image img {
       display: block;
       width: 100%;
-      height: 100%;
+      aspect-ratio: 3 / 2;
+      height: auto;
       object-fit: cover;
       object-position: 50% 50%;
     }
