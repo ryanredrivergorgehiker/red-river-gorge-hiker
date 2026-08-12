@@ -110,6 +110,7 @@ const measurementId = 'G-HM48NST64P';
     };
 
     const declineAnalytics = () => {
+      const hadLoadedAnalytics = analyticsLoaded;
       saveChoice('denied');
       window.gtag('consent', 'update', {
         analytics_storage: 'denied',
@@ -119,6 +120,7 @@ const measurementId = 'G-HM48NST64P';
       });
       clearAnalyticsCookies();
       setVisible(false);
+      if (hadLoadedAnalytics) window.location.reload();
     };
 
     allowButton?.addEventListener('click', allowAnalytics);
