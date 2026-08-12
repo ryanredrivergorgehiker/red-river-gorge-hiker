@@ -8,24 +8,21 @@ const siteOrigin = Astro.site ?? Astro.url.origin;
 const puzzles = photographs.filter((photo) => photo.puzzleAvailable);
 const puzzleImages = {
   'winter-at-red-byrd-arch': {
-    src: 'assets/puzzles/winter-at-red-byrd-arch-puzzle.avif',
+    src: 'assets/puzzles/overview/winter-at-red-byrd-arch-puzzle-overview.webp',
     width: 1200,
-    height: 800,
-    cardScale: 1.053,
+    height: 900,
     alt: '500-piece jigsaw puzzle showing Winter at Red-byrd Arch with the photographed ice formation and Red River Gorge Hiker artist mark.'
   },
   'sunrise-at-eagles-nest': {
-    src: 'assets/puzzles/sunrise-at-eagles-nest-puzzle.avif',
+    src: 'assets/puzzles/overview/sunrise-at-eagles-nest-puzzle-overview.webp',
     width: 1200,
-    height: 800,
-    cardScale: 1.017,
+    height: 900,
     alt: '500-piece jigsaw puzzle showing Sunrise at Eagle’s Nest with a vivid winter sunrise and Red River Gorge Hiker artist mark.'
   },
   'ice-at-west-of-copperas-pillar': {
-    src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
+    src: 'assets/puzzles/overview/ice-at-west-of-copperas-pillar-puzzle-overview.webp',
     width: 1200,
-    height: 800,
-    cardScale: 1,
+    height: 900,
     alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
   }
 } as const;
@@ -54,7 +51,6 @@ const puzzleImages = {
               class="puzzle-product-image"
               href={puzzleDetailPath}
               aria-label={`View ${photo.title} puzzle details`}
-              style={`--puzzle-card-scale: ${puzzleImage.cardScale};`}
             >
               <img
                 src={`${base}${puzzleImage.src}`}
@@ -95,7 +91,7 @@ const puzzleImages = {
     .puzzle-product-image {
       display: block;
       width: 100%;
-      aspect-ratio: 3 / 2;
+      aspect-ratio: 4 / 3;
       overflow: hidden;
       margin-bottom: .85rem;
     }
@@ -105,8 +101,6 @@ const puzzleImages = {
       height: 100%;
       object-fit: cover;
       object-position: 50% 50%;
-      transform: scale(var(--puzzle-card-scale, 1));
-      transform-origin: 50% 50%;
     }
     .puzzle-product-card h3 { margin-bottom: .35rem; }
     .puzzle-product-card h3 a { color: inherit; text-decoration: none; }
