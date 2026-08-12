@@ -53,11 +53,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     <p class="lede">18 × 24 inches · 500 pieces · horizontal · available through Fine Art America.</p>
 
     <div class="puzzle-detail-image-stage">
-      <a
-        href={puzzleUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`View ${photo.title} puzzle on Fine Art America (opens in a new tab)`}
+      <button
+        class="puzzle-detail-image-button"
+        type="button"
+        data-puzzle-lightbox-trigger
+        aria-label={`View a larger image of the ${photo.title} puzzle`}
       >
         <img
           src={`${base}${puzzleImage.src}`}
@@ -66,15 +66,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
           alt={puzzleImage.alt}
           loading="eager"
           decoding="async"
+          draggable="false"
         />
-      </a>
+        <span class="puzzle-enlarge-hint" aria-hidden="true">View larger</span>
+      </button>
     </div>
 
     <div class="puzzle-detail-actions">
       <ShareControls title={`${photo.title} jigsaw puzzle`} url={canonical} />
       <a class="button puzzle-detail-primary" href={puzzleUrl} target="_blank" rel="noopener noreferrer">
-        View this puzzle
-        <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+        View on Fine Art America
+        <span class="sr-only"> (opens in a new tab)</span>
       </a>
       <a class="button secondary puzzle-detail-print" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
         Print options
@@ -89,29 +91,90 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     </section>
   </div>
 
+  <dialog class="puzzle-lightbox" id="puzzle-lightbox" aria-labelledby="puzzle-lightbox-title">
+    <div class="puzzle-lightbox-shell">
+      <header class="puzzle-lightbox-header">
+        <h2 id="puzzle-lightbox-title">{photo.title} puzzle</h2>
+        <button class="puzzle-lightbox-close" type="button" aria-label="Close enlarged puzzle image">
+          <span aria-hidden="true">×</span>
+        </button>
+      </header>
+      <div class="puzzle-lightbox-media">
+        <img src={`${base}${puzzleImage.src}`} width={puzzleImage.width} height={puzzleImage.height} alt={puzzleImage.alt} draggable="false" />
+      </div>
+      <div class="puzzle-lightbox-action">
+        <ShareControls title={`${photo.title} jigsaw puzzle`} url={canonical} />
+        <a class="button" href={puzzleUrl} target="_blank" rel="noopener noreferrer">
+          View on Fine Art America
+          <span class="sr-only"> (opens in a new tab)</span>
+        </a>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const dialog = document.querySelector<HTMLDialogElement>('#puzzle-lightbox');
+    const trigger = document.querySelector<HTMLButtonElement>('[data-puzzle-lightbox-trigger]');
+    const closeButton = document.querySelector<HTMLButtonElement>('.puzzle-lightbox-close');
+
+    trigger?.addEventListener('click', () => dialog?.showModal());
+    closeButton?.addEventListener('click', () => dialog?.close());
+
+    dialog?.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  </script>
+
   <style is:global>
     .puzzle-detail-page > .lede { margin-bottom: 1.1rem; }
     .puzzle-detail-image-stage {
-      display: flex;
-      justify-content: center;
-      width: 100%;
+      width: min(100%, 76rem);
       margin: 1rem 0 1.1rem;
       padding: 1rem;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.32);
     }
-    .puzzle-detail-image-stage > a {
+    .puzzle-detail-image-button {
+      position: relative;
       display: block;
-      max-width: 1100px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
       color: inherit;
-      text-decoration: none;
+      cursor: zoom-in;
+      font: inherit;
+    }
+    .puzzle-detail-image-button:focus-visible {
+      outline: 3px solid var(--sunrise);
+      outline-offset: 3px;
     }
     .puzzle-detail-image-stage img {
-      width: auto;
-      max-width: 100%;
-      max-height: 760px;
-      margin-inline: auto;
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 0;
       object-fit: contain;
+    }
+    .puzzle-enlarge-hint {
+      position: absolute;
+      right: .7rem;
+      bottom: .7rem;
+      padding: .3rem .55rem;
+      border-radius: 999px;
+      background: rgba(23,55,45,.9);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 750;
+      opacity: 0;
+      transform: translateY(.25rem);
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .puzzle-detail-image-button:hover .puzzle-enlarge-hint,
+    .puzzle-detail-image-button:focus-visible .puzzle-enlarge-hint {
+      opacity: 1;
+      transform: translateY(0);
     }
     .puzzle-detail-actions {
       display: flex;
@@ -144,11 +207,112 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
       padding-top: 1.5rem;
       border-top: 1px solid var(--line);
     }
+
+    .puzzle-lightbox {
+      width: 100dvw;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: var(--parchment);
+      color: var(--charcoal);
+    }
+    .puzzle-lightbox::backdrop { background: rgba(15,28,23,.8); }
+    .puzzle-lightbox[open] { display: block; }
+    .puzzle-lightbox-shell {
+      width: 100%;
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+    .puzzle-lightbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: max(.8rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) .75rem max(1rem, env(safe-area-inset-left));
+      border-bottom: 1px solid var(--line);
+      background: rgba(243,239,230,.98);
+    }
+    .puzzle-lightbox-header h2 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2.5vw, 1.65rem);
+    }
+    .puzzle-lightbox-close {
+      width: 2.6rem;
+      height: 2.6rem;
+      display: grid;
+      place-items: center;
+      flex: none;
+      border: 1px solid var(--gorge);
+      border-radius: 50%;
+      background: var(--gorge);
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+    .puzzle-lightbox-close:hover { background: var(--pine); }
+    .puzzle-lightbox-close:focus-visible {
+      outline: 3px solid var(--sunrise);
+      outline-offset: 3px;
+    }
+    .puzzle-lightbox-media {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      padding: 1rem;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(255,255,255,.3) 62%),
+        var(--parchment);
+    }
+    .puzzle-lightbox-media img {
+      width: auto;
+      max-width: min(100%, 88rem);
+      height: auto;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: 0 1rem 3rem rgba(23,55,45,.2);
+    }
+    .puzzle-lightbox-action {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: .55rem;
+      padding: .8rem max(1rem, env(safe-area-inset-right)) max(.8rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      border-top: 1px solid var(--line);
+      background: rgba(243,239,230,.98);
+    }
+    .puzzle-lightbox-action .share-controls {
+      flex: 0 0 auto;
+      margin: 0;
+      padding: 0 .55rem;
+    }
+    .puzzle-lightbox-action .share-controls button,
+    .puzzle-lightbox-action .button { min-height: 3.15rem; }
+    .puzzle-lightbox-action .share-controls button { height: 100%; }
+    .puzzle-lightbox-action .button {
+      width: min(100%, 30rem);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      text-align: center;
+    }
+
     @media (max-width: 520px) {
       .puzzle-detail-image-stage { padding: .55rem; }
+      .puzzle-enlarge-hint { opacity: .92; transform: none; }
       .puzzle-detail-actions { gap: .4rem; }
       .puzzle-detail-actions .share-controls { padding-inline: .4rem; }
       .puzzle-detail-actions .button { padding-inline: .6rem; font-size: .86rem; }
+      .puzzle-lightbox-media { padding: .6rem; }
+      .puzzle-lightbox-action { gap: .4rem; }
+      .puzzle-lightbox-action .share-controls { padding-inline: .4rem; }
+      .puzzle-lightbox-action .button { padding-inline: .65rem; font-size: .86rem; }
     }
   </style>
 </Base>
