@@ -118,10 +118,9 @@ jobs:
           path.write_text(text)
           PY
 
-      - name: Verify exact V2 asset dimensions and hashes
+      - name: Verify exact V2 asset hashes and geometry contract
         run: |
           python - <<'PY'
-          from PIL import Image
           from pathlib import Path
           import hashlib
 
@@ -135,12 +134,18 @@ jobs:
               got = hashlib.sha256(p.read_bytes()).hexdigest()
               if got != wanted:
                   raise RuntimeError(f'Hash mismatch for {filename}: {got}')
-              with Image.open(p) as im:
-                  if im.size != (1448, 1086):
-                      raise RuntimeError(f'Unexpected dimensions for {filename}: {im.size}')
+
+          puzzles = Path('src/pages/puzzles.astro').read_text()
+          detail = Path('src/pages/puzzles/[slug].astro').read_text()
+          if puzzles.count('width: 1448,') != 3 or puzzles.count('height: 1086,') != 3:
+              raise RuntimeError('Overview does not use the verified V2 1448x1086 geometry')
+          if detail.count('width: 1448,') != 3 or detail.count('height: 1086,') != 3:
+              raise RuntimeError('Detail pages do not use the verified V2 1448x1086 geometry')
+          if detail.count('aspect-ratio: 4 / 3;') != 2:
+              raise RuntimeError('Detail/lightbox does not use the V2 4:3 geometry')
           if Path('public/assets/puzzles/overview').exists():
               raise RuntimeError('Obsolete puzzle overview derivative directory still exists')
-          print('All three V2 puzzle assets verified at 1448x1086')
+          print('All three exact V2-derived assets and 1448x1086 geometry contract verified')
           PY
 
       - name: Install and run full checks
