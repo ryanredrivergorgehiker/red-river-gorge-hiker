@@ -23,14 +23,17 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('.merch-card-actions .merch-button', css)
         self.assertIn('View on Fine Art America', gear)
 
-    def test_print_actions_are_clear_and_aligned(self):
+    def test_print_actions_are_clear_aligned_and_featured_width_is_bounded(self):
         prints = (ROOT / 'src/pages/prints.astro').read_text()
         self.assertIn('class="print-action-row"', prints)
         self.assertIn('View on Fine Art America', prints)
         self.assertNotIn('View print options', prints)
         self.assertIn('min-height: 3.15rem;', prints)
+        self.assertIn('@media (min-width: 761px)', prints)
+        self.assertIn('.print-product-card:first-child .print-action-row', prints)
+        self.assertIn('width: min(100%, 40rem);', prints)
 
-    def test_puzzle_cards_use_three_button_row_and_detail_routes(self):
+    def test_puzzle_cards_use_three_button_row_and_consistent_image_viewport(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
         detail_path = ROOT / 'src/pages/puzzles/[slug].astro'
         self.assertTrue(detail_path.exists())
@@ -42,6 +45,8 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('View puzzle', puzzles)
         self.assertIn('Print options', puzzles)
         self.assertIn('puzzles/${photo.slug}/', puzzles)
+        self.assertIn('aspect-ratio: 3 / 2;', puzzles)
+        self.assertIn('object-fit: cover;', puzzles)
 
         for filename in (
             'winter-at-red-byrd-arch-puzzle.avif',
@@ -50,9 +55,19 @@ class TestAug12UatRefinements(unittest.TestCase):
         ):
             self.assertIn(filename, detail)
         self.assertIn('socialImagePath={puzzleImage.src}', detail)
-        self.assertIn('View this puzzle', detail)
-        self.assertIn('Print options', detail)
         self.assertIn('Read the story behind the photograph', detail)
+
+    def test_puzzle_detail_image_is_large_and_opens_local_lightbox(self):
+        detail = (ROOT / 'src/pages/puzzles/[slug].astro').read_text()
+        self.assertIn('data-puzzle-lightbox-trigger', detail)
+        self.assertIn('id="puzzle-lightbox"', detail)
+        self.assertIn("dialog?.showModal()", detail)
+        self.assertIn('width: min(100%, 76rem);', detail)
+        self.assertIn('.puzzle-detail-image-stage img', detail)
+        self.assertIn('width: 100%;', detail)
+        self.assertIn('View larger', detail)
+        self.assertIn('View on Fine Art America', detail)
+        self.assertNotIn('aria-label={`View ${photo.title} puzzle on Fine Art America', detail)
 
 
 if __name__ == '__main__':
