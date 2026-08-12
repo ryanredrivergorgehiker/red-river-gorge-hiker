@@ -76,8 +76,12 @@ const siteOrigin = Astro.site ?? Astro.url.origin;
       text-align: center;
     }
     @media (min-width: 761px) {
+      .print-product-card:first-child .card h3 {
+        text-align: center;
+      }
       .print-product-card:first-child .print-action-row {
         width: min(100%, 40rem);
+        margin-inline: auto;
       }
     }
     @media (max-width: 420px) {
