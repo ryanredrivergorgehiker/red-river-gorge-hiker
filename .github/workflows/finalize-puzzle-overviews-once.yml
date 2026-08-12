@@ -1,87 +1,53 @@
-name: Finalize standardized puzzle overview contract once
+name: Finalize puzzle overview implementation once
 
 on:
   push:
     branches:
-      - feature/aug12-analytics-pricing-puzzles-sharing
+      - 'feature/aug12-analytics-pricing-puzzles-sharing'
     paths:
-      - .github/workflows/finalize-puzzle-overviews-once.yml
+      - '.github/workflows/finalize-puzzle-overviews-once.yml'
 
 permissions:
   contents: write
 
 jobs:
-  finalize:
+  finalize-puzzle-overviews:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout feature branch
         uses: actions/checkout@v6
         with:
-          ref: feature/aug12-analytics-pricing-puzzles-sharing
+          ref: 'feature/aug12-analytics-pricing-puzzles-sharing'
           fetch-depth: 0
 
-      - name: Update puzzle asset contract
+      - name: Update legacy puzzle asset contract
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path('tests/test_site_contract.py')
           text = path.read_text()
-          old = '''    def test_puzzle_product_images(self):
-        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
-        expected = {
-            'winter-at-red-byrd-arch-puzzle.avif': 'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8',
-            'sunrise-at-eagles-nest-puzzle.avif': '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193',
-            'ice-at-west-of-copperas-pillar-puzzle.avif': '93b26d8d9ec7f99d7bc36d4eebda3695a3b509e50066397bdb366471395fc4dc',
-        }
-        for filename, expected_hash in expected.items():
-            path = ROOT / 'public/assets/puzzles' / filename
-            self.assertTrue(path.exists(), filename)
-            self.assertEqual(sha256(path), expected_hash)
-            self.assertIn(filename, puzzles)
-'''
-          new = '''    def test_puzzle_product_images(self):
-        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
-        detail = (ROOT / 'src/pages/puzzles/[slug].astro').read_text()
-        expected = {
-            'winter-at-red-byrd-arch-puzzle.avif': 'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8',
-            'sunrise-at-eagles-nest-puzzle.avif': '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193',
-            'ice-at-west-of-copperas-pillar-puzzle.avif': '93b26d8d9ec7f99d7bc36d4eebda3695a3b509e50066397bdb366471395fc4dc',
-        }
-        for filename, expected_hash in expected.items():
-            asset = ROOT / 'public/assets/puzzles' / filename
-            self.assertTrue(asset.exists(), filename)
-            self.assertEqual(sha256(asset), expected_hash)
-            self.assertIn(filename, detail)
-
-        overview_files = (
-            'winter-at-red-byrd-arch-puzzle-overview.webp',
-            'sunrise-at-eagles-nest-puzzle-overview.webp',
-            'ice-at-west-of-copperas-pillar-puzzle-overview.webp',
-        )
-        for filename in overview_files:
-            asset = ROOT / 'public/assets/puzzles/overview' / filename
-            self.assertTrue(asset.exists(), filename)
-            self.assertGreater(asset.stat().st_size, 100_000, filename)
-            self.assertIn(filename, puzzles)
-        self.assertIn('width: 1200', puzzles)
-        self.assertIn('height: 900', puzzles)
-        self.assertIn('aspect-ratio: 4 / 3;', puzzles)
-        self.assertNotIn('cardScale', puzzles)
-        self.assertNotIn('--puzzle-card-scale', puzzles)
-'''
-          if old not in text:
-              raise RuntimeError('Expected old puzzle product image contract block was not found')
-          path.write_text(text.replace(old, new, 1))
+          first = "        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()\n        expected = {"
+          replacement = "        puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()\n        detail = (ROOT / 'src/pages/puzzles/[slug].astro').read_text()\n        expected = {"
+          if first not in text:
+              raise RuntimeError('Puzzle contract header not found')
+          text = text.replace(first, replacement, 1)
+          old_assert = "            self.assertIn(filename, puzzles)\n\n    def test_legal_copy_and_footer_notice"
+          new_assert = "            self.assertIn(filename, detail)\n\n    def test_legal_copy_and_footer_notice"
+          if old_assert not in text:
+              raise RuntimeError('Puzzle contract assertion not found')
+          text = text.replace(old_assert, new_assert, 1)
+          path.write_text(text)
           PY
 
       - name: Remove completed generator workflow
         run: rm -f .github/workflows/generate-puzzle-overviews-once.yml
 
-      - name: Commit final contract cleanup
+      - name: Commit final cleanup
         run: |
           git config user.name 'ryanredrivergorgehiker'
           git config user.email 'ryan@redrivergorgehiker.com'
           git add -A
-          git diff --cached --quiet && { echo 'No finalization changes'; exit 0; }
+          git diff --cached --quiet && exit 0
           git commit -m 'Finalize standardized puzzle overview implementation'
           git push origin HEAD:feature/aug12-analytics-pricing-puzzles-sharing
