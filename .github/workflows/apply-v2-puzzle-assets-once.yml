@@ -1,0 +1,159 @@
+name: Apply V2 puzzle assets once
+
+on:
+  push:
+    branches:
+      - feature/aug12-analytics-pricing-puzzles-sharing
+    paths:
+      - .github/workflows/apply-v2-puzzle-assets-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-v2-puzzles:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: feature/aug12-analytics-pricing-puzzles-sharing
+          fetch-depth: 0
+
+      - name: Download verified V2 puzzle asset package
+        run: |
+          set -euo pipefail
+          curl -fL --retry 4 --retry-delay 2 \
+            -o /tmp/RRGH-V2-Puzzle-Assets.tar.gz \
+            'https://drive.usercontent.google.com/download?id=1yMlbOUtBQN-vWjwlWfDE5ui1ziVZrkWg&export=download&confirm=t'
+          echo '7d351d60f108ccf07b23171a9c55759228b80df57060e4870668a416c089bc03  /tmp/RRGH-V2-Puzzle-Assets.tar.gz' | sha256sum -c -
+          mkdir -p /tmp/rrgh-v2-puzzles
+          tar -xzf /tmp/RRGH-V2-Puzzle-Assets.tar.gz -C /tmp/rrgh-v2-puzzles
+          cd /tmp/rrgh-v2-puzzles
+          sha256sum -c SHA256SUMS.txt
+
+      - name: Replace all website puzzle images with V2-derived assets
+        run: |
+          set -euo pipefail
+          install -m 0644 /tmp/rrgh-v2-puzzles/winter-at-red-byrd-arch-puzzle.avif public/assets/puzzles/winter-at-red-byrd-arch-puzzle.avif
+          install -m 0644 /tmp/rrgh-v2-puzzles/sunrise-at-eagles-nest-puzzle.avif public/assets/puzzles/sunrise-at-eagles-nest-puzzle.avif
+          install -m 0644 /tmp/rrgh-v2-puzzles/ice-at-west-of-copperas-pillar-puzzle.avif public/assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif
+          rm -rf public/assets/puzzles/overview
+
+      - name: Make overview and detail pages use the same V2 assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          puzzles = Path('src/pages/puzzles.astro')
+          text = puzzles.read_text()
+          replacements = {
+              'assets/puzzles/overview/winter-at-red-byrd-arch-puzzle-overview.webp': 'assets/puzzles/winter-at-red-byrd-arch-puzzle.avif',
+              'assets/puzzles/overview/sunrise-at-eagles-nest-puzzle-overview.webp': 'assets/puzzles/sunrise-at-eagles-nest-puzzle.avif',
+              'assets/puzzles/overview/ice-at-west-of-copperas-pillar-puzzle-overview.webp': 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
+              'width: 1200,': 'width: 1448,',
+              'height: 900,': 'height: 1086,',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise RuntimeError(f'Missing expected puzzles.astro token: {old}')
+              text = text.replace(old, new)
+          puzzles.write_text(text)
+
+          detail = Path('src/pages/puzzles/[slug].astro')
+          text = detail.read_text()
+          if text.count('width: 1200,') != 3 or text.count('height: 800,') != 3:
+              raise RuntimeError('Unexpected detail-page image geometry before V2 update')
+          text = text.replace('width: 1200,', 'width: 1448,')
+          text = text.replace('height: 800,', 'height: 1086,')
+          if text.count('aspect-ratio: 3 / 2;') != 2:
+              raise RuntimeError('Unexpected detail/lightbox aspect-ratio contract')
+          text = text.replace('aspect-ratio: 3 / 2;', 'aspect-ratio: 4 / 3;')
+          detail.write_text(text)
+          PY
+
+      - name: Update regression contracts for V2 assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('tests/test_site_contract.py')
+          text = path.read_text()
+          hashes = {
+              'c4336382629bd9cd3872717a567f0f33e21e2a4811b66bac02eab80d0a70f1e8': '159260924b088e95fde244249c3eebaf2887d93631814c2896a2366264afa209',
+              '356090877c397b2d2e61bcc27287b09ddc85c2a0cab72b60c0f1f99398d7f193': '0b91a3cf3c35be91e7727589ea3a10692f5c944bb7607d6b093003f3b6334db8',
+              '93b26d8d9ec7f99d7bc36d4eebda3695a3b509e50066397bdb366471395fc4dc': 'f8ce23ac9fd7a4fafc21e8683192dd68d640896fb3c7efd9bd08e608b300d074',
+          }
+          for old, new in hashes.items():
+              if old not in text:
+                  raise RuntimeError(f'Missing old puzzle hash {old}')
+              text = text.replace(old, new)
+          old = '            self.assertIn(filename, detail)\n\n    def test_legal_copy_and_footer_notice'
+          new = '            self.assertIn(filename, puzzles)\n            self.assertIn(filename, detail)\n\n    def test_legal_copy_and_footer_notice'
+          if old not in text:
+              raise RuntimeError('Could not add overview reference to puzzle product contract')
+          path.write_text(text.replace(old, new, 1))
+
+          path = Path('tests/test_aug12_uat_refinements.py')
+          text = path.read_text()
+          text = text.replace(
+              'test_puzzle_cards_use_three_button_row_and_standardized_overview_derivatives',
+              'test_puzzle_cards_use_three_button_row_and_v2_assets'
+          )
+          replacements = {
+              'winter-at-red-byrd-arch-puzzle-overview.webp': 'winter-at-red-byrd-arch-puzzle.avif',
+              'sunrise-at-eagles-nest-puzzle-overview.webp': 'sunrise-at-eagles-nest-puzzle.avif',
+              'ice-at-west-of-copperas-pillar-puzzle-overview.webp': 'ice-at-west-of-copperas-pillar-puzzle.avif',
+              "ROOT / 'public/assets/puzzles/overview' / filename": "ROOT / 'public/assets/puzzles' / filename",
+              "self.assertIn('aspect-ratio: 3 / 2;', detail)": "self.assertIn('aspect-ratio: 4 / 3;', detail)",
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise RuntimeError(f'Missing expected UAT contract token: {old}')
+              text = text.replace(old, new)
+          marker = "        self.assertNotIn('transform: scale(', puzzles)\n"
+          if marker not in text:
+              raise RuntimeError('Missing puzzle scaling-removal marker')
+          text = text.replace(marker, marker + "        self.assertNotIn('-puzzle-overview.webp', puzzles)\n", 1)
+          path.write_text(text)
+          PY
+
+      - name: Verify exact V2 asset dimensions and hashes
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import hashlib
+
+          expected = {
+              'winter-at-red-byrd-arch-puzzle.avif': '159260924b088e95fde244249c3eebaf2887d93631814c2896a2366264afa209',
+              'sunrise-at-eagles-nest-puzzle.avif': '0b91a3cf3c35be91e7727589ea3a10692f5c944bb7607d6b093003f3b6334db8',
+              'ice-at-west-of-copperas-pillar-puzzle.avif': 'f8ce23ac9fd7a4fafc21e8683192dd68d640896fb3c7efd9bd08e608b300d074',
+          }
+          for filename, wanted in expected.items():
+              p = Path('public/assets/puzzles') / filename
+              got = hashlib.sha256(p.read_bytes()).hexdigest()
+              if got != wanted:
+                  raise RuntimeError(f'Hash mismatch for {filename}: {got}')
+              with Image.open(p) as im:
+                  if im.size != (1448, 1086):
+                      raise RuntimeError(f'Unexpected dimensions for {filename}: {im.size}')
+          if Path('public/assets/puzzles/overview').exists():
+              raise RuntimeError('Obsolete puzzle overview derivative directory still exists')
+          print('All three V2 puzzle assets verified at 1448x1086')
+          PY
+
+      - name: Install and run full checks
+        run: |
+          npm ci
+          npm run check
+
+      - name: Remove one-time workflow and commit
+        run: |
+          rm -f .github/workflows/apply-v2-puzzle-assets-once.yml
+          git config user.name 'ryanredrivergorgehiker'
+          git config user.email 'ryan@redrivergorgehiker.com'
+          git add -A
+          git diff --cached --stat
+          git commit -m 'Replace all puzzle imagery with standardized V2 assets'
+          git push origin HEAD:feature/aug12-analytics-pricing-puzzles-sharing
