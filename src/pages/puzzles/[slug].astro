@@ -19,7 +19,7 @@ const puzzleImages = {
   'ice-at-west-of-copperas-pillar': {
     src: 'assets/puzzles/ice-at-west-of-copperas-pillar-puzzle.avif',
     width: 1200,
-    height: 1200,
+    height: 800,
     alt: '500-piece jigsaw puzzle showing Ice at West of Copperas Pillar with long icicles and the Red River Gorge Hiker artist mark.'
   }
 } as const;
@@ -130,9 +130,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     .puzzle-detail-image-stage {
       width: min(100%, 76rem);
       margin: 1rem 0 1.1rem;
-      padding: 1rem;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.32);
+      padding: 0;
+      border: 0;
+      background: transparent;
     }
     .puzzle-detail-image-button {
       position: relative;
@@ -153,9 +153,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     .puzzle-detail-image-stage img {
       display: block;
       width: 100%;
+      aspect-ratio: 3 / 2;
       height: auto;
       margin: 0;
-      object-fit: contain;
+      object-fit: cover;
+      object-position: 50% 50%;
     }
     .puzzle-enlarge-hint {
       position: absolute;
@@ -264,18 +266,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
       display: grid;
       place-items: center;
       overflow: auto;
-      padding: 1rem;
-      background:
-        radial-gradient(circle at 50% 40%, rgba(255,255,255,.9), rgba(255,255,255,.3) 62%),
-        var(--parchment);
+      padding: .75rem;
+      background: var(--parchment);
     }
     .puzzle-lightbox-media img {
-      width: auto;
-      max-width: min(100%, 88rem);
+      width: min(100%, 88rem);
+      aspect-ratio: 3 / 2;
       height: auto;
       max-height: 100%;
-      object-fit: contain;
-      box-shadow: 0 1rem 3rem rgba(23,55,45,.2);
+      object-fit: cover;
+      object-position: 50% 50%;
+      box-shadow: none;
     }
     .puzzle-lightbox-action {
       display: flex;
@@ -304,12 +305,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
     }
 
     @media (max-width: 520px) {
-      .puzzle-detail-image-stage { padding: .55rem; }
       .puzzle-enlarge-hint { opacity: .92; transform: none; }
       .puzzle-detail-actions { gap: .4rem; }
       .puzzle-detail-actions .share-controls { padding-inline: .4rem; }
       .puzzle-detail-actions .button { padding-inline: .6rem; font-size: .86rem; }
-      .puzzle-lightbox-media { padding: .6rem; }
+      .puzzle-lightbox-media { padding: .35rem; }
       .puzzle-lightbox-action { gap: .4rem; }
       .puzzle-lightbox-action .share-controls { padding-inline: .4rem; }
       .puzzle-lightbox-action .button { padding-inline: .65rem; font-size: .86rem; }
