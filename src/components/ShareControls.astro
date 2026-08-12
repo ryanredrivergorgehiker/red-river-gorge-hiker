@@ -5,7 +5,6 @@ interface Props {
 }
 
 const { title, url } = Astro.props;
-const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
 ---
 <div
   class="share-controls"
@@ -13,117 +12,41 @@ const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeU
   data-share-title={title}
   data-share-url={url}
   aria-label="Share this page"
+  hidden
 >
   <button type="button" data-native-share>Share ↗</button>
-  <span class="share-separator" aria-hidden="true">|</span>
-  <a
-    class="share-facebook"
-    href={facebookShareUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    data-facebook-share
-    aria-label={`Share ${title} on Facebook (opens in a new tab)`}
-    title="Facebook"
-  >
-    <svg class="share-facebook-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <circle cx="16" cy="16" r="16" fill="#1877F2" />
-      <path fill="#fff" d="M18.2 27V17.2h3.3l.5-3.8h-3.8V11c0-1.1.3-1.9 1.9-1.9h2V5.7c-.35-.05-1.55-.15-2.95-.15-2.92 0-4.92 1.78-4.92 5.05v2.8H11v3.8h3.23V27h3.97Z" />
-    </svg>
-    <span class="sr-only">Facebook</span>
-  </a>
-  <span class="share-separator" aria-hidden="true">|</span>
-  <button type="button" data-copy-link>Copy Link</button>
-  <span class="share-status" data-share-status role="status" aria-live="polite"></span>
 </div>
 
 <script>
-  const fallbackCopy = async (text: string) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    const copied = document.execCommand('copy');
-    textarea.remove();
-    return copied;
-  };
-
-  const flashCopied = (button: HTMLButtonElement, status: HTMLElement | null) => {
-    const original = button.textContent ?? '';
-    button.textContent = 'Copied!';
-    if (status) status.textContent = 'Link copied.';
-    window.setTimeout(() => {
-      button.textContent = original;
-      if (status) status.textContent = '';
-    }, 1800);
-  };
-
   document.querySelectorAll<HTMLElement>('[data-share-controls]').forEach((controls) => {
     if (controls.dataset.shareBound === 'true') return;
     controls.dataset.shareBound = 'true';
 
     const shareButton = controls.querySelector<HTMLButtonElement>('[data-native-share]');
-    const facebookLink = controls.querySelector<HTMLAnchorElement>('[data-facebook-share]');
-    const copyButton = controls.querySelector<HTMLButtonElement>('[data-copy-link]');
-    const status = controls.querySelector<HTMLElement>('[data-share-status]');
+    if (!shareButton || !navigator.share) {
+      controls.hidden = true;
+      return;
+    }
 
-    const getShareData = () => ({
-      title: controls.dataset.shareTitle ?? document.title,
-      url: controls.dataset.shareUrl ?? window.location.href
-    });
-
-    const syncFacebookUrl = () => {
-      if (!facebookLink) return;
-      const { url } = getShareData();
-      facebookLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-    };
-
-    facebookLink?.addEventListener('pointerdown', syncFacebookUrl);
-    facebookLink?.addEventListener('focus', syncFacebookUrl);
-    facebookLink?.addEventListener('click', syncFacebookUrl);
-
-    shareButton?.addEventListener('click', async () => {
-      const { title, url } = getShareData();
-      if (navigator.share) {
-        try {
-          await navigator.share({ title, url });
-          return;
-        } catch (error) {
-          if (error instanceof DOMException && error.name === 'AbortError') return;
-        }
-      }
+    controls.hidden = false;
+    shareButton.addEventListener('click', async () => {
+      const title = controls.dataset.shareTitle ?? document.title;
+      const url = controls.dataset.shareUrl ?? window.location.href;
 
       try {
-        if (await fallbackCopy(url)) flashCopied(shareButton, status);
-      } catch {
-        if (status) status.textContent = 'Copy this page URL from the address bar.';
-      }
-    });
-
-    copyButton?.addEventListener('click', async () => {
-      const { url } = getShareData();
-      try {
-        if (await fallbackCopy(url)) flashCopied(copyButton, status);
-      } catch {
-        if (status) status.textContent = 'Copy this page URL from the address bar.';
+        await navigator.share({ title, url });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
       }
     });
   });
 </script>
 
 <style>
+  .share-controls[hidden] { display: none; }
   .share-controls {
     display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: .08rem .42rem;
     margin: .35rem 0 .65rem;
     padding: .3rem .55rem;
     border: 1px solid rgba(23,55,45,.2);
@@ -134,8 +57,7 @@ const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeU
     font-weight: 750;
     line-height: 1.2;
   }
-  .share-controls button,
-  .share-controls a {
+  .share-controls button {
     min-height: 2rem;
     display: inline-flex;
     align-items: center;
@@ -151,54 +73,18 @@ const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeU
     text-decoration-thickness: 1px;
     text-underline-offset: .2em;
   }
-  .share-controls button:hover,
-  .share-controls a:hover {
-    color: var(--pine);
-  }
-  .share-controls button:focus-visible,
-  .share-controls a:focus-visible {
+  .share-controls button:hover { color: var(--pine); }
+  .share-controls button:focus-visible {
     outline: 2px solid var(--sunrise);
     outline-offset: 2px;
     border-radius: 3px;
   }
-  .share-controls .share-facebook {
-    width: 1.75rem;
-    min-height: 1.75rem;
-    height: 1.75rem;
-    flex: 0 0 1.75rem;
-    padding: 0;
-    border-radius: 50%;
-    text-decoration: none;
-  }
-  .share-facebook-icon {
-    display: block;
-    width: 1.45rem;
-    height: 1.45rem;
-  }
-  .share-separator {
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .share-status:empty {
-    display: none;
-  }
-  .share-status:not(:empty) {
-    flex-basis: 100%;
-    color: var(--muted);
-    font-size: .74rem;
-    font-weight: 650;
-    line-height: 1.3;
-  }
   @media (max-width: 520px) {
     .share-controls {
-      gap: .06rem .38rem;
       margin-block: .3rem .55rem;
       padding: .32rem .5rem;
       font-size: .9rem;
     }
-    .share-controls button,
-    .share-controls a {
-      min-height: 2.15rem;
-    }
+    .share-controls button { min-height: 2.15rem; }
   }
 </style>
