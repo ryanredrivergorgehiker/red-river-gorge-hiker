@@ -75,6 +75,11 @@ const siteOrigin = Astro.site ?? Astro.url.origin;
       margin: 0;
       text-align: center;
     }
+    @media (min-width: 761px) {
+      .print-product-card:first-child .print-action-row {
+        width: min(100%, 40rem);
+      }
+    }
     @media (max-width: 420px) {
       .print-action-row { gap: .45rem; }
       .print-action-row .share-controls { padding-inline: .45rem; }
