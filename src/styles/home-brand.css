@@ -165,6 +165,17 @@
     min-height: 38rem;
   }
 
+  .home-panorama-media {
+    background-image: url('https://redrivergorgehiker.com/assets/images/RRGH-0004-winter-red-byrd-1200-faffa4974f.webp');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  .home-panorama-media .artwork {
+    display: none;
+  }
+
   .home-panorama-shade {
     background: linear-gradient(0deg, rgba(9,35,28,.95) 0%, rgba(9,35,28,.72) 58%, rgba(9,35,28,.3) 100%);
   }
