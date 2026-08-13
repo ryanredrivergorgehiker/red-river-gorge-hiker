@@ -1,6 +1,14 @@
 ---
 const base = import.meta.env.BASE_URL;
 const measurementId = 'G-HM48NST64P';
+const siteHostname = Astro.site ? new URL(Astro.site).hostname : '';
+// Keep staging debug selection at build time; do not restore runtime window.location.hostname.endsWith('github.io') behavior.
+const gaConfig = {
+  send_page_view: true,
+  allow_google_signals: false,
+  allow_ad_personalization_signals: false,
+  ...(siteHostname.endsWith('github.io') ? { debug_mode: true } : {}),
+};
 ---
 
 <div
@@ -27,7 +35,7 @@ const measurementId = 'G-HM48NST64P';
   </div>
 </div>
 
-<script is:inline>
+<script define:vars={{ gaConfig }}>
   (() => {
     const consent = document.querySelector('[data-analytics-consent]');
     if (!consent) return;
@@ -95,12 +103,7 @@ const measurementId = 'G-HM48NST64P';
       document.head.appendChild(script);
 
       window.gtag('js', new Date());
-      window.gtag('config', measurementId, {
-        send_page_view: true,
-        allow_google_signals: false,
-        allow_ad_personalization_signals: false,
-        debug_mode: window.location.hostname.endsWith('github.io')
-      });
+      window.gtag('config', measurementId, gaConfig);
     };
 
     const allowAnalytics = () => {
