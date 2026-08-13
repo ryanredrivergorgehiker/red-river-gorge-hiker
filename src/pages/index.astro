@@ -4,6 +4,7 @@ import Artwork from '../components/Artwork.astro';
 import Card from '../components/Card.astro';
 import { photographs } from '../data/products';
 import { merchandiseProducts } from '../data/merchandise';
+import '../styles/sar.css';
 import '../styles/home-brand.css';
 
 const base = import.meta.env.BASE_URL;
@@ -20,29 +21,29 @@ const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPho
   titleTag="Red River Gorge Hiker | Photography, Gear & Stories from Kentucky’s Red River Gorge"
   description="Photography, gear, and stories rooted in Kentucky’s Red River Gorge, with original imagery from the Gorge and Clifty Wilderness and proud support for Wolfe County Search & Rescue."
 >
-  <div class="home-panorama-wrap">
-    <section class="home-panorama-hero" aria-labelledby="home-title">
-      <div class="home-panorama-media" aria-hidden="true">
+  <div class="sar-page home-hero-wrap">
+    <section class="sar-hero home-hero" aria-labelledby="home-title">
+      <div class="sar-hero-media" aria-hidden="true">
         <Artwork
-          title={heroPhoto.title}
-          catalogId={heroPhoto.catalogId}
+          title="Double Rainbow at Eagle’s Point Buttress"
+          catalogId="RRGH-0001"
           alt=""
           eager={true}
           sizes="100vw"
           showCaption={false}
         />
       </div>
-      <div class="home-panorama-shade" aria-hidden="true"></div>
-      <div class="home-panorama-content">
-        <p class="home-panorama-eyebrow">Kentucky’s Red River Gorge</p>
+      <div class="sar-hero-shade" aria-hidden="true"></div>
+      <div class="sar-hero-content home-hero-content">
+        <p class="sar-eyebrow">Kentucky’s Red River Gorge</p>
         <h1 id="home-title">Red River Gorge Hiker</h1>
-        <p class="home-panorama-primary">For the people who hike it, love it, and keep coming back.</p>
-        <p class="home-panorama-supporting">Gear, original photography, stories, and proud support for Wolfe County Search &amp; Rescue.</p>
-        <div class="home-panorama-actions">
-          <a class="home-hero-button home-hero-button-primary" href={`${base}gear/`}>Shop Gear</a>
-          <a class="home-hero-button home-hero-button-light" href={`${base}collection/`}>Explore Photography</a>
+        <p class="sar-hero-lede">For the people who hike it, love it, and keep coming back.</p>
+        <p class="sar-hero-commitment">Gear, original photography, stories, and proud support for Wolfe County Search &amp; Rescue.</p>
+        <div class="sar-hero-actions">
+          <a class="sar-button sar-button-primary" href={`${base}gear/`}>Shop Gear</a>
+          <a class="sar-button sar-button-light" href={`${base}collection/`}>Explore Photography</a>
         </div>
-        <a class="home-panorama-support-link" href={`${base}search-and-rescue/`}>How We Support SAR →</a>
+        <a class="home-sar-link" href={`${base}search-and-rescue/`}>How We Support SAR →</a>
       </div>
     </section>
   </div>
