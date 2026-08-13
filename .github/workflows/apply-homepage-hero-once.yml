@@ -1,0 +1,31 @@
+name: Apply homepage hero once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-homepage-hero-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: feature/homepage-brand-repositioning-search
+      - name: Apply prepared homepage files
+        run: |
+          cp src/pages/index-pass2.tmp src/pages/index.astro
+          cp src/styles/home-brand-pass3.tmp src/styles/home-brand.css
+          rm src/pages/index-pass2.tmp
+          rm src/styles/home-brand-pass3.tmp
+          rm .github/workflows/apply-homepage-hero-once.yml
+      - name: Commit feature-branch revision
+        run: |
+          git config user.name 'ryanredrivergorgehiker'
+          git config user.email 'ryan@redrivergorgehiker.com'
+          git add src/pages/index.astro src/styles/home-brand.css src/pages/index-pass2.tmp src/styles/home-brand-pass3.tmp .github/workflows/apply-homepage-hero-once.yml
+          git commit -m 'Apply homepage panorama hero revision'
+          git push origin HEAD:feature/homepage-brand-repositioning-search
