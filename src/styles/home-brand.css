@@ -1,3 +1,8 @@
+.sar-page .sar-hero.home-hero {
+  padding-top: 0 !important;
+  align-items: end !important;
+}
+
 .home-sar-link {
   display: inline-block;
   margin-top: 1rem;
