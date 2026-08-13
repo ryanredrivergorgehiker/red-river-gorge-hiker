@@ -1,9 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
+import Card from '../components/Card.astro';
+import { photographs } from '../data/products';
 import '../styles/home-brand.css';
 const base = import.meta.env.BASE_URL;
 ---
-<Base title="Red River Gorge Hiker" titleTag="Red River Gorge Hiker | Photography, Gear & Stories from Kentucky’s Red River Gorge" description="Photography, gear, and stories rooted in Kentucky’s Red River Gorge — created by Ryan D. Lewis and proudly supporting Wolfe County Search & Rescue.">
+<Base
+  title="Red River Gorge Hiker"
+  titleTag="Red River Gorge Hiker | Photography, Gear & Stories from Kentucky’s Red River Gorge"
+  description="Photography, gear, and stories rooted in Kentucky’s Red River Gorge — created by Ryan D. Lewis and proudly supporting Wolfe County Search & Rescue."
+>
   <section class="home-brand-hero">
     <div class="home-brand-copy">
       <p class="eyebrow">Kentucky’s Red River Gorge</p>
@@ -16,15 +22,55 @@ const base = import.meta.env.BASE_URL;
       </div>
     </div>
     <article class="featured-sticker">
-      <a href={`${base}gear/sticker/`}>
+      <a class="featured-sticker-image" href={`${base}gear/sticker/`}>
         <img src={`${base}assets/merchandise/rrgh-merch-sticker-218cc04a.avif`} width="983" height="1000" alt="Red River Gorge Hiker logo sticker applied to the rear of a vehicle." loading="eager" />
       </a>
       <div>
         <p class="eyebrow">Featured Gear</p>
         <h2>Red River Gorge Hiker Sticker</h2>
-        <p>3 × 3 inches · $3.50</p>
-        <a class="button" href={`${base}gear/sticker/`}>View Sticker</a>
+        <p><strong>$3.50</strong> · 3 × 3 inches</p>
+        <p>A Red River Gorge Hiker logo sticker for hikers and fans of Kentucky’s Red River Gorge.</p>
+        <div class="actions"><a class="button" href={`${base}gear/sticker/`}>View Sticker</a><a class="text-link" href={`${base}gear/`}>Browse all Gear</a></div>
       </div>
+    </article>
+  </section>
+
+  <section class="section home-collection-section">
+    <div class="section-intro">
+      <p class="eyebrow">Original photography</p>
+      <h2>Ryan D. Lewis’s Red River Gorge photography</h2>
+      <p>Ryan’s photographs come from time spent hiking, backpacking, camping, and exploring the Red River Gorge and Clifty Wilderness.</p>
+      <a class="text-link" href={`${base}collection/`}>Explore the photography collection →</a>
+    </div>
+    <div class="grid collection-mosaic home-collection-mosaic">
+      {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}
+    </div>
+  </section>
+
+  <section class="section feature-grid home-feature-grid">
+    <article>
+      <p class="eyebrow">Community support</p>
+      <h2>Proud support for Wolfe County Search &amp; Rescue</h2>
+      <p>Red River Gorge Hiker supports Wolfe County Search &amp; Rescue independently. Learn more about the support program and hiking-safety resources.</p>
+      <a href={`${base}search-and-rescue/`}>How We Support SAR</a>
+    </article>
+    <article>
+      <p class="eyebrow">Stories &amp; exploration</p>
+      <h2>Stories from the Gorge</h2>
+      <p>The photographs are rooted in the days that produced them — storms clearing, winter travel, waterfalls, and changing light.</p>
+      <a href={`${base}exploring-the-gorge/`}>Read the stories</a>
+    </article>
+    <article>
+      <p class="eyebrow">Photography products</p>
+      <h2>Prints &amp; puzzles</h2>
+      <p>Original photographs are available in selected wall-art formats, with three photographs also offered as 500-piece jigsaw puzzles.</p>
+      <div class="simple-links"><a href={`${base}prints/`}>View prints</a><a href={`${base}puzzles/`}>View puzzles</a></div>
+    </article>
+    <article>
+      <p class="eyebrow">Behind the brand</p>
+      <h2>About Ryan</h2>
+      <p>Ryan D. Lewis is an explorer and photographer whose work centers on Kentucky’s Red River Gorge and Clifty Wilderness.</p>
+      <a href={`${base}about/`}>About Ryan</a>
     </article>
   </section>
 </Base>
