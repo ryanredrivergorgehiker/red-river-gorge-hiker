@@ -9,6 +9,7 @@ import '../styles/sharing-layout.css';
 interface Props {
   title: string;
   description: string;
+  titleTag?: string;
   socialImage?: string;
   socialImagePath?: string;
   socialImageType?: string;
@@ -19,6 +20,7 @@ interface Props {
 const {
   title,
   description,
+  titleTag,
   socialImage = 'RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg',
   socialImagePath,
   socialImageType = socialImagePath?.endsWith('.avif') ? 'image/avif' : 'image/jpeg',
@@ -26,7 +28,7 @@ const {
   ogType = 'website'
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const fullTitle = `${title} | Red River Gorge Hiker`;
+const fullTitle = titleTag ?? `${title} | Red River Gorge Hiker`;
 const base = import.meta.env.BASE_URL;
 const resolvedSocialImagePath = socialImagePath ?? `assets/social/${socialImage}`;
 const socialImageUrl = new URL(`${base}${resolvedSocialImagePath}`, Astro.site ?? Astro.url.origin);
