@@ -36,3 +36,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 620px) {
+  .sar-page .sar-hero.home-hero .sar-hero-actions {
+    align-items: flex-start;
+  }
+
+  .sar-page .sar-hero.home-hero .sar-hero-actions .sar-button {
+    width: min(13rem, 100%);
+  }
+}
