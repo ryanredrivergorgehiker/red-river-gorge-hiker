@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import ShareControls from '../../components/ShareControls.astro';
 import { merchandiseProducts, type MerchandiseProduct } from '../../data/merchandise';
 import '../../styles/merchandise.css';
+import '../../styles/gear-sharing.css';
 
 export function getStaticPaths() {
   return merchandiseProducts.map((product) => ({
