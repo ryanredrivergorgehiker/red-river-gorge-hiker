@@ -74,7 +74,9 @@ class TestAug12UatRefinements(unittest.TestCase):
         ):
             self.assertIn(filename, detail)
         self.assertIn("'ice-at-west-of-copperas-pillar': {", detail)
-        self.assertIn('socialImagePath={puzzleImage.src}', detail)
+        self.assertIn("replace('-WEB-WM.webp', '-SOCIAL-WM.jpg')", detail)
+        self.assertIn('socialImage={socialImage}', detail)
+        self.assertIn('socialImageType="image/jpeg"', detail)
         self.assertIn('Read the story behind the photograph', detail)
 
     def test_puzzle_detail_image_is_large_unframed_and_opens_local_lightbox(self):
