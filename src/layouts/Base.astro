@@ -1,4 +1,6 @@
 ---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import AnalyticsConsent from '../components/AnalyticsConsent.astro';
@@ -15,6 +17,8 @@ interface Props {
   socialImagePath?: string;
   socialImageType?: string;
   socialImageAlt?: string;
+  socialImageWidth?: number;
+  socialImageHeight?: number;
   ogType?: string;
 }
 
@@ -24,16 +28,69 @@ const {
   titleTag,
   socialImage = 'RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg',
   socialImagePath,
-  socialImageType = socialImagePath?.endsWith('.avif') ? 'image/avif' : 'image/jpeg',
+  socialImageType: suppliedSocialImageType,
   socialImageAlt = 'Double rainbow above the Red River Gorge after a summer storm.',
+  socialImageWidth,
+  socialImageHeight,
   ogType = 'website'
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
 const fullTitle = titleTag ?? `${title} | Red River Gorge Hiker`;
 const base = import.meta.env.BASE_URL;
 const resolvedSocialImagePath = socialImagePath ?? `assets/social/${socialImage}`;
+const socialImageType = suppliedSocialImageType
+  ?? (resolvedSocialImagePath.endsWith('.avif') ? 'image/avif'
+    : resolvedSocialImagePath.endsWith('.png') ? 'image/png'
+      : resolvedSocialImagePath.endsWith('.webp') ? 'image/webp'
+        : 'image/jpeg');
 const socialImageUrl = new URL(`${base}${resolvedSocialImagePath}`, Astro.site ?? Astro.url.origin);
 const faviconUrl = `${base}assets/brand/rrgh-circle-logo-512-539a2fd23c.png`;
+
+const readJpegDimensions = (publicPath: string) => {
+  const filePath = join(process.cwd(), 'public', publicPath.replace(/^\/+/, ''));
+  const buffer = readFileSync(filePath);
+  if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+    throw new Error(`Social preview is not a JPEG: ${publicPath}`);
+  }
+
+  const sofMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+  let offset = 2;
+  while (offset < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    while (offset < buffer.length && buffer[offset] === 0xff) offset += 1;
+    if (offset >= buffer.length) break;
+
+    const marker = buffer[offset]!;
+    offset += 1;
+    if (marker === 0xd8 || marker === 0xd9 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 1 >= buffer.length) break;
+
+    const segmentLength = buffer.readUInt16BE(offset);
+    if (sofMarkers.has(marker)) {
+      if (offset + 6 >= buffer.length) break;
+      return {
+        height: buffer.readUInt16BE(offset + 3),
+        width: buffer.readUInt16BE(offset + 5)
+      };
+    }
+    if (segmentLength < 2) break;
+    offset += segmentLength;
+  }
+
+  throw new Error(`Could not read JPEG dimensions: ${publicPath}`);
+};
+
+let resolvedSocialImageWidth = socialImageWidth;
+let resolvedSocialImageHeight = socialImageHeight;
+if (socialImageType === 'image/jpeg' && (!resolvedSocialImageWidth || !resolvedSocialImageHeight)) {
+  const dimensions = readJpegDimensions(resolvedSocialImagePath);
+  resolvedSocialImageWidth = dimensions.width;
+  resolvedSocialImageHeight = dimensions.height;
+}
+
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -60,6 +117,8 @@ const schema = {
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={socialImageUrl.href} />
     <meta property="og:image:type" content={socialImageType} />
+    {resolvedSocialImageWidth && <meta property="og:image:width" content={String(resolvedSocialImageWidth)} />}
+    {resolvedSocialImageHeight && <meta property="og:image:height" content={String(resolvedSocialImageHeight)} />}
     <meta property="og:image:alt" content={socialImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
