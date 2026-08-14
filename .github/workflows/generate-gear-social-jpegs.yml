@@ -1,0 +1,70 @@
+name: Generate Gear social preview JPEGs
+
+on:
+  push:
+    branches:
+      - fix/sitewide-social-sharing-previews
+    paths:
+      - .github/workflows/generate-gear-social-jpegs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v6
+        with:
+          ref: fix/sitewide-social-sharing-previews
+
+      - name: Install JPEG conversion tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate active Gear JPEG previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t names < <(grep -oE 'rrgh-merch-[A-Za-z0-9._-]+\.avif' src/data/merchandise.ts | sort -u)
+          if [ "${#names[@]}" -ne 20 ]; then
+            echo "Expected 20 active Gear AVIF assets; found ${#names[@]}" >&2
+            exit 1
+          fi
+
+          for name in "${names[@]}"; do
+            src="public/assets/merchandise/${name}"
+            dst="${src%.avif}-share.jpg"
+            test -s "$src"
+            ffmpeg -hide_banner -loglevel error -y -i "$src" -frames:v 1 -q:v 2 "$dst"
+            test -s "$dst"
+            file "$dst" | grep -q 'JPEG image data'
+
+            src_dims="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$src")"
+            dst_dims="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$dst")"
+            if [ "$src_dims" != "$dst_dims" ]; then
+              echo "Dimension mismatch for $name: $src_dims -> $dst_dims" >&2
+              exit 1
+            fi
+          done
+
+          count="$(find public/assets/merchandise -maxdepth 1 -type f -name '*-share.jpg' | wc -l | tr -d ' ')"
+          if [ "$count" -ne 20 ]; then
+            echo "Expected 20 generated JPEG previews; found $count" >&2
+            exit 1
+          fi
+
+      - name: Commit generated preview assets
+        run: |
+          set -euo pipefail
+          git config user.name "ryanredrivergorgehiker"
+          git config user.email "ryan@redrivergorgehiker.com"
+          git add public/assets/merchandise/*-share.jpg
+          if git diff --cached --quiet; then
+            echo "Gear social preview JPEGs already current."
+            exit 0
+          fi
+          git commit -m "Add Gear JPEG social preview derivatives"
+          git push origin HEAD:fix/sitewide-social-sharing-previews
