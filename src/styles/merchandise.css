@@ -1,16 +1,17 @@
 /* Gear presentation within the existing RRGH visual system. */
 .merchandise-page {
+  padding-top: 1.5rem;
   padding-bottom: 4.5rem;
 }
 
 .merch-hero {
   width: 100%;
   max-width: none;
-  padding-bottom: 1.4rem;
-  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
+  border-bottom: 0;
 }
-.merch-hero .eyebrow {
-  margin-bottom: .45rem;
+.merch-hero h1 {
+  margin: 0;
 }
 .merch-intro {
   width: 100%;
@@ -29,7 +30,7 @@
 }
 
 .merchandise-catalog {
-  margin-top: 1.75rem;
+  margin-top: 1.25rem;
 }
 .merch-grid {
   display: grid;
@@ -184,6 +185,9 @@
 }
 .merch-ordering p:last-child {
   margin-bottom: 0;
+}
+.merch-policy-notices {
+  margin-top: 1.5rem;
 }
 
 /* Full-screen gear viewer. Product mockups may enlarge; photography artwork rules are unchanged. */
