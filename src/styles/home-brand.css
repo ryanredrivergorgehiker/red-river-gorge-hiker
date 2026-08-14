@@ -30,6 +30,12 @@
   display: none;
 }
 
+@media (min-width: 701px) {
+  .home-mosaic > .card:first-child {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .featured-sticker {
     grid-template-columns: 1fr 1fr;
