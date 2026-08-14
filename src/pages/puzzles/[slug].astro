@@ -39,13 +39,14 @@ const base = import.meta.env.BASE_URL;
 const puzzleImage = puzzleImages[photo.slug as keyof typeof puzzleImages];
 const puzzleUrl = photo.puzzleUrl!;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg');
 ---
 <Base
   title={`${photo.title} Jigsaw Puzzle`}
   description={`${photo.title} as an 18 × 24-inch, 500-piece jigsaw puzzle through Fine Art America.`}
-  socialImagePath={puzzleImage.src}
-  socialImageType="image/avif"
-  socialImageAlt={puzzleImage.alt}
+  socialImage={socialImage}
+  socialImageType="image/jpeg"
+  socialImageAlt={photo.altText}
 >
   <div class="page puzzle-detail-page">
     <p class="eyebrow">500-piece jigsaw puzzle</p>
