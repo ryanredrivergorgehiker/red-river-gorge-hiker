@@ -25,11 +25,9 @@
   object-fit: contain;
 }
 
-/* The Double Rainbow leads the mobile photography list, while desktop keeps its approved mosaic unchanged. */
-@media (min-width: 701px) {
-  .home-mosaic > .card:first-child {
-    display: none;
-  }
+/* Desktop keeps the approved five-photo production mosaic exactly as-is. */
+.home-mosaic-mobile {
+  display: none;
 }
 
 @media (max-width: 900px) {
@@ -41,6 +39,15 @@
 @media (max-width: 700px) {
   .featured-sticker {
     grid-template-columns: 1fr;
+  }
+
+  /* Mobile alone gets the Double Rainbow first, followed by the production order. */
+  .home-mosaic-desktop {
+    display: none;
+  }
+
+  .home-mosaic-mobile {
+    display: grid;
   }
 }
 
