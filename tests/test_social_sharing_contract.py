@@ -58,7 +58,7 @@ class SocialSharingContractTests(unittest.TestCase):
             )
 
         gear = (ROOT / 'src/pages/gear/[slug].astro').read_text(encoding='utf-8')
-        self.assertIn("replace(/\\.avif$/, '-share.jpg')", gear)
+        self.assertIn("replace(/\.avif$/, '-share.jpg')", gear)
         self.assertIn('socialImageType="image/jpeg"', gear)
         self.assertIn('socialImageWidth={product.image.width}', gear)
         self.assertIn('socialImageHeight={product.image.height}', gear)
