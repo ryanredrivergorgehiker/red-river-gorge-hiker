@@ -14,7 +14,10 @@ const featuredGear = merchandiseProducts.find((product) => product.slug === 'sti
 if (!heroPhoto) throw new Error('Homepage hero photograph missing.');
 if (!featuredGear) throw new Error('Featured Gear product missing.');
 
-const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPhoto.slug);
+const homepagePhotographs = photographs;
+// Preserve the approved production desktop mosaic exactly. Mobile uses the full
+// photography order so Double Rainbow can lead without shifting desktop nth-child layout.
+const desktopHomepagePhotographs = homepagePhotographs.filter((photo) => photo.slug !== heroPhoto.slug);
 ---
 <Base
   title="Red River Gorge Hiker"
@@ -41,7 +44,7 @@ const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPho
         <p class="sar-hero-commitment">Gear, original photography, stories, and proud support for Wolfe County Search &amp; Rescue.</p>
         <div class="sar-hero-actions">
           <a class="sar-button sar-button-primary" href={`${base}gear/`}>Shop Gear</a>
-          <a class="sar-button sar-button-light" href={`${base}collection/`}>Explore Photography</a>
+          <a class="sar-button sar-button-light" href={`${base}photography/`}>Explore Photography</a>
         </div>
         <a class="home-sar-link" href={`${base}search-and-rescue/`}>How We Support SAR →</a>
       </div>
@@ -77,9 +80,14 @@ const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPho
       <p class="eyebrow">Original photography</p>
       <h2>The Red River Gorge, captured.</h2>
       <p class="lede">Original photography from the Gorge and Clifty Wilderness.</p>
-      <a class="text-link" href={`${base}collection/`}>Explore the Photography →</a>
+      <a class="text-link" href={`${base}photography/`}>Explore the Photography →</a>
     </div>
-    <div class="grid home-mosaic">
+
+    <div class="grid home-mosaic home-mosaic-desktop" aria-label="Original photography">
+      {desktopHomepagePhotographs.map((photo) => <Card photo={photo} showDescription={false} />)}
+    </div>
+
+    <div class="grid home-mosaic home-mosaic-mobile" aria-label="Original photography">
       {homepagePhotographs.map((photo) => <Card photo={photo} showDescription={false} />)}
     </div>
   </section>
@@ -92,10 +100,10 @@ const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPho
       <a href={`${base}exploring-the-gorge/`}>Read the Stories</a>
     </article>
     <article>
-      <p class="eyebrow">Photography products</p>
-      <h2>Prints</h2>
-      <p>Bring an original Red River Gorge photograph into your own space.</p>
-      <a href={`${base}prints/`}>View Prints</a>
+      <p class="eyebrow">About RRGH</p>
+      <h2>Our Story</h2>
+      <p>The story behind Red River Gorge Hiker and its photography, exploration, and gear.</p>
+      <a href={`${base}about/`}>About Red River Gorge Hiker →</a>
     </article>
     <article>
       <p class="eyebrow">Photography products</p>

@@ -1,7 +1,7 @@
 ---
 import SarMatchMeter from './SarMatchMeter.astro';
 
-const nav = [['Collection','/collection/'],['Prints','/prints/'],['Puzzles','/puzzles/'],['Gear','/gear/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
+const nav = [['Photography','/photography/'],['Puzzles','/puzzles/'],['Gear','/gear/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
 const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
@@ -39,17 +39,26 @@ const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
 <style>
   @media (max-width: 850px) {
     .site-header .mobile-primary-nav ul {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 520px) {
+  /* Portrait phones: three centered items on row one, two centered items on row two. */
+  @media (max-width: 560px) {
     .site-header .mobile-primary-nav ul {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       row-gap: .42rem;
     }
+    .site-header .mobile-primary-nav li:nth-child(1) { grid-column: 1 / span 2; }
+    .site-header .mobile-primary-nav li:nth-child(2) { grid-column: 3 / span 2; }
+    .site-header .mobile-primary-nav li:nth-child(3) { grid-column: 5 / span 2; }
+    .site-header .mobile-primary-nav li:nth-child(4) { grid-column: 2 / span 2; }
+    .site-header .mobile-primary-nav li:nth-child(5) { grid-column: 4 / span 2; }
+
     .site-header .mobile-primary-nav li::after { content: none !important; }
-    .site-header .mobile-primary-nav li:not(:nth-child(3n))::after {
+    .site-header .mobile-primary-nav li:nth-child(1)::after,
+    .site-header .mobile-primary-nav li:nth-child(2)::after,
+    .site-header .mobile-primary-nav li:nth-child(4)::after {
       content: '·' !important;
       position: absolute;
       right: -.08rem;

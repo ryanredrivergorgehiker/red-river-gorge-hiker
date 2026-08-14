@@ -124,9 +124,8 @@ const artworkSchema = {
           <section class="puzzle-panel">
             <h2>Available as a 500-piece puzzle</h2>
             <p>This photograph is available as an 18 × 24-inch horizontal puzzle with 500 pieces. The current customer price is $59.99 before shipping and tax.</p>
-            <a class="button secondary" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
+            <a class="button secondary" href={`${base}puzzles/${photo.slug}/`}>
               View this puzzle
-              <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
             </a>
           </section>
         )}

@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import ShareControls from '../../components/ShareControls.astro';
 import { merchandiseProducts, type MerchandiseProduct } from '../../data/merchandise';
 import '../../styles/merchandise.css';
+import '../../styles/gear-sharing.css';
 
 export function getStaticPaths() {
   return merchandiseProducts.map((product) => ({
@@ -50,17 +51,18 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
         <p>{product.description}</p>
         {product.optionNote && <p class="gear-product-option">{product.optionNote}</p>}
 
-        <ShareControls title={product.title} url={canonical} />
-
-        <a
-          class="button gear-product-button"
-          href={product.fineArtAmericaUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          View on Fine Art America
-          <span class="sr-only"> (opens in a new tab)</span>
-        </a>
+        <div class="gear-product-action-row">
+          <ShareControls title={product.title} url={canonical} />
+          <a
+            class="button gear-product-button"
+            href={product.fineArtAmericaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on Fine Art America
+            <span class="sr-only"> (opens in a new tab)</span>
+          </a>
+        </div>
         <p class="gear-product-fulfillment">
           Fine Art America handles current product options, checkout, payment, production, fulfillment, shipping, and returns.
         </p>

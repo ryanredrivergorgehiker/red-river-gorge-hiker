@@ -12,26 +12,15 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
 ---
 <Base
   title="Red River Gorge Hiker Gear"
-  description="Red River Gorge Hiker logo gear inspired by Kentucky’s Red River Gorge and Clifty Wilderness, produced and fulfilled through Fine Art America."
+  description="Red River Gorge Hiker gear inspired by Kentucky’s Red River Gorge and Clifty Wilderness, produced and fulfilled through Fine Art America."
   socialImagePath={featuredProduct.image.avif}
   socialImageType="image/avif"
   socialImageAlt={featuredProduct.image.alt}
 >
   <div class="page merchandise-page">
     <header class="merch-hero">
-      <p class="eyebrow">Red River Gorge Hiker gear</p>
       <h1>Gear</h1>
-      <p class="lede merch-intro">
-        Red River Gorge Hiker logo gear inspired by Kentucky’s Red River Gorge and Clifty Wilderness.
-      </p>
-      <p class="merch-fulfillment">
-        Orders are produced and fulfilled through Fine Art America, which handles product options, checkout, payment, production, shipping, and returns.
-      </p>
     </header>
-
-    <div class="notice merch-pricing-notice" role="note">
-      <strong>Pricing Notice:</strong> Prices shown on RedRiverGorgeHiker.com are provided for reference and may change. Final product pricing is determined by Fine Art America and will be displayed before purchase.
-    </div>
 
     <section class="merchandise-catalog" aria-labelledby="gear-catalog-heading">
       <h2 id="gear-catalog-heading" class="sr-only">Available gear</h2>
@@ -94,9 +83,19 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
     <section class="merch-ordering" aria-labelledby="gear-ordering-heading">
       <h2 id="gear-ordering-heading">Ordering</h2>
       <p>
-        RedRiverGorgeHiker.com presents the gear collection and sends you to the corresponding Fine Art America product page. Fine Art America controls current product options, availability, checkout, payment, production, fulfillment, shipping, and returns.
+        RedRiverGorgeHiker.com presents the gear collection and sends you to the corresponding Fine Art America product page. Choose any product above to review its current purchase options.
       </p>
     </section>
+
+    <div class="merch-policy-notices" aria-label="Ordering and pricing information">
+      <p class="merch-fulfillment">
+        Orders are produced and fulfilled through Fine Art America, which handles product options, checkout, payment, production, shipping, and returns.
+      </p>
+
+      <div class="notice merch-pricing-notice" role="note">
+        <strong>Pricing Notice:</strong> Prices shown on RedRiverGorgeHiker.com are provided for reference and may change. Final product pricing is determined by Fine Art America and will be displayed before purchase.
+      </div>
+    </div>
   </div>
 
   <dialog class="merch-lightbox" id="merch-lightbox" aria-labelledby="merch-lightbox-title">

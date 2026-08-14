@@ -25,6 +25,17 @@
   object-fit: contain;
 }
 
+/* Desktop keeps the approved five-photo production mosaic exactly as-is. */
+.home-mosaic-mobile {
+  display: none;
+}
+
+@media (min-width: 701px) {
+  .home-mosaic > .card:first-child {
+    min-width: 0;
+  }
+}
+
 @media (max-width: 900px) {
   .featured-sticker {
     grid-template-columns: 1fr 1fr;
@@ -34,6 +45,15 @@
 @media (max-width: 700px) {
   .featured-sticker {
     grid-template-columns: 1fr;
+  }
+
+  /* Mobile alone gets the Double Rainbow first, followed by the production order. */
+  .home-mosaic-desktop {
+    display: none;
+  }
+
+  .home-mosaic-mobile {
+    display: grid;
   }
 }
 

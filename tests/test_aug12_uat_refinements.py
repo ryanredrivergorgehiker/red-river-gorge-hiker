@@ -18,23 +18,24 @@ class TestAug12UatRefinements(unittest.TestCase):
     def test_gear_actions_share_and_faa_are_one_row(self):
         css = (ROOT / 'src/styles/gear-sharing.css').read_text()
         gear = (ROOT / 'src/pages/gear.astro').read_text()
+        detail = (ROOT / 'src/pages/gear/[slug].astro').read_text()
         self.assertIn('display: flex;', css)
         self.assertIn('align-items: stretch;', css)
         self.assertIn('.merch-card-actions .merch-button', css)
+        self.assertIn('.gear-product-action-row', css)
+        self.assertIn('class="gear-product-action-row"', detail)
+        self.assertIn('View on Fine Art America', detail)
         self.assertIn('View on Fine Art America', gear)
 
-    def test_print_actions_are_clear_aligned_bounded_and_featured_content_is_centered(self):
+    def test_photography_replaces_standalone_prints_destination(self):
+        photography = (ROOT / 'src/pages/photography.astro').read_text()
         prints = (ROOT / 'src/pages/prints.astro').read_text()
-        self.assertIn('class="print-action-row"', prints)
-        self.assertIn('View on Fine Art America', prints)
-        self.assertNotIn('View print options', prints)
-        self.assertIn('min-height: 3.15rem;', prints)
-        self.assertIn('@media (min-width: 761px)', prints)
-        self.assertIn('.print-product-card:first-child .card h3', prints)
-        self.assertIn('text-align: center;', prints)
-        self.assertIn('.print-product-card:first-child .print-action-row', prints)
-        self.assertIn('width: min(100%, 40rem);', prints)
-        self.assertIn('margin-inline: auto;', prints)
+        collection = (ROOT / 'src/pages/collection.astro').read_text()
+        self.assertIn('<h1>Photography</h1>', photography)
+        self.assertIn('Original photographs from Kentucky’s Red River Gorge and Clifty Wilderness.', photography)
+        self.assertIn("Astro.redirect(`${base}photography/`, 301)", prints)
+        self.assertIn("Astro.redirect(`${base}photography/`, 301)", collection)
+        self.assertNotIn('View on Fine Art America', prints)
 
     def test_puzzle_cards_use_three_button_row_and_v2_assets(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()

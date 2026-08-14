@@ -147,8 +147,11 @@ class SiteContract(unittest.TestCase):
 
     def test_navigation_order(self):
         header = (ROOT / 'src/components/Header.astro').read_text()
-        labels = re.findall(r"\['(Collection|Prints|Puzzles|Gear|Stories|About)'", header)
-        self.assertEqual(labels, ['Collection', 'Prints', 'Puzzles', 'Gear', 'Stories', 'About'])
+        labels = re.findall(r"\['(Photography|Puzzles|Gear|Stories|About)'", header)
+        self.assertEqual(labels, ['Photography', 'Puzzles', 'Gear', 'Stories', 'About'])
+        self.assertIn("['Photography','/photography/']", header)
+        self.assertNotIn("['Collection','/collection/']", header)
+        self.assertNotIn("['Prints','/prints/']", header)
         self.assertIn("['Gear','/gear/']", header)
         self.assertNotIn("['Merchandise','/merchandise/']", header)
         self.assertIn('rrgh-banner-logo-profile-v2.svg', header)
@@ -159,7 +162,7 @@ class SiteContract(unittest.TestCase):
         gear_product = (ROOT / 'src/pages/gear/[slug].astro').read_text()
         gear = (ROOT / 'src/pages/gear.astro').read_text()
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
-        prints = (ROOT / 'src/pages/prints.astro').read_text()
+        photography = (ROOT / 'src/pages/photography.astro').read_text()
         share = (ROOT / 'src/components/ShareControls.astro').read_text()
 
         for token in (
@@ -182,7 +185,7 @@ class SiteContract(unittest.TestCase):
         self.assertIn('ShareControls', gear_product)
         self.assertIn('ShareControls', gear)
         self.assertIn('ShareControls', puzzles)
-        self.assertIn('ShareControls', prints)
+        self.assertIn('<h1>Photography</h1>', photography)
         self.assertIn('socialImagePath={product.image.avif}', gear_product)
         self.assertIn('getStaticPaths()', gear_product)
 
@@ -292,6 +295,7 @@ class SiteContract(unittest.TestCase):
     def test_routes(self):
         routes = [
             'index',
+            'photography',
             'collection',
             'prints',
             'puzzles',
@@ -308,19 +312,62 @@ class SiteContract(unittest.TestCase):
         for route in routes:
             self.assertTrue((ROOT / f'src/pages/{route}.astro').exists(), route)
         self.assertTrue((ROOT / 'src/pages/gear/[slug].astro').exists())
+        collection_redirect = (ROOT / 'src/pages/collection.astro').read_text()
+        prints_redirect = (ROOT / 'src/pages/prints.astro').read_text()
         merchandise_redirect = (ROOT / 'src/pages/merchandise.astro').read_text()
+        self.assertIn("Astro.redirect(`${base}photography/`, 301)", collection_redirect)
+        self.assertIn("Astro.redirect(`${base}photography/`, 301)", prints_redirect)
         self.assertIn("Astro.redirect(`${base}gear/`, 301)", merchandise_redirect)
         self.assertFalse((ROOT / 'src/pages/displays-and-partners.astro').exists())
 
+    def test_photography_information_architecture(self):
+        home = (ROOT / 'src/pages/index.astro').read_text()
+        photography = (ROOT / 'src/pages/photography.astro').read_text()
+        photos = (ROOT / 'src/pages/photographs/[slug].astro').read_text()
+        home_css = (ROOT / 'src/styles/home-brand.css').read_text()
+        config = (ROOT / 'astro.config.mjs').read_text()
+        about = (ROOT / 'src/pages/about.astro').read_text()
+
+        self.assertIn('<h1>Photography</h1>', photography)
+        self.assertNotIn('The Collection', photography)
+        self.assertNotIn('${base}collection/', home)
+        self.assertNotIn('${base}prints/', home)
+        self.assertEqual(home.count('${base}photography/'), 2)
+        self.assertIn('<p class="eyebrow">About RRGH</p>', home)
+        self.assertIn('<h2>Our Story</h2>', home)
+        self.assertIn('About Red River Gorge Hiker →', home)
+        self.assertIn('const homepagePhotographs = photographs;', home)
+        self.assertIn('@media (min-width: 701px)', home_css)
+        self.assertIn('.home-mosaic > .card:first-child', home_css)
+        self.assertIn('href={`${base}puzzles/${photo.slug}/`}', photos)
+        self.assertNotIn('class="button secondary" href={photo.puzzleUrl}', photos)
+        self.assertIn("legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/']", config)
+        self.assertIn('<h1>About Red River Gorge Hiker</h1>', about)
+        self.assertIn('He’s just not the whole story anymore.', about.replace("He's", 'He’s'))
+
+        for path in (ROOT / 'src').rglob('*.astro'):
+            if path.name in {'collection.astro', 'prints.astro'}:
+                continue
+            text = path.read_text(errors='ignore')
+            self.assertNotIn('${base}collection/', text, str(path))
+            self.assertNotIn('${base}prints/', text, str(path))
+
     def test_gear_layout_contract(self):
         gear = (ROOT / 'src/pages/gear.astro').read_text()
+        gear_detail = (ROOT / 'src/pages/gear/[slug].astro').read_text()
         css = (ROOT / 'src/styles/merchandise.css').read_text()
+        sharing_css = (ROOT / 'src/styles/gear-sharing.css').read_text()
         self.assertIn('<h1>Gear</h1>', gear)
         self.assertIn('Red River Gorge Hiker gear', gear)
         self.assertIn('gear/${product.slug}/', gear)
         self.assertIn('<strong>Pricing Notice:</strong>', gear)
         self.assertIn('Final product pricing is determined by Fine Art America and will be displayed before purchase.', gear)
         self.assertIn('width: 100%;\n  max-width: none;\n  margin-top: 2.5rem;', css)
+        self.assertIn('class="gear-product-action-row"', gear_detail)
+        self.assertIn("import '../../styles/gear-sharing.css';", gear_detail)
+        self.assertIn('.gear-product-action-row', sharing_css)
+        self.assertIn('display: flex;', sharing_css)
+        self.assertIn('align-items: stretch;', sharing_css)
 
     def test_production_domain_and_staging_overrides(self):
         config = (ROOT / 'astro.config.mjs').read_text()
