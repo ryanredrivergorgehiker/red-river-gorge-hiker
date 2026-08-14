@@ -19,13 +19,16 @@ interface Props {
 const { product } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+const socialImagePath = product.image.avif.replace(/\.avif$/, '-share.jpg');
 ---
 <Base
   title={product.title}
   description={product.description}
-  socialImagePath={product.image.avif}
-  socialImageType="image/avif"
+  socialImagePath={socialImagePath}
+  socialImageType="image/jpeg"
   socialImageAlt={product.image.alt}
+  socialImageWidth={product.image.width}
+  socialImageHeight={product.image.height}
   ogType="product"
 >
   <div class="page gear-product-page">
