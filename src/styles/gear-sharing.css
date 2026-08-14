@@ -44,6 +44,53 @@
   min-height: 3rem;
 }
 
+/* Individual gear pages use the same compact side-by-side share/purchase pattern. */
+.gear-product-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: .55rem;
+  width: min(100%, 30rem);
+}
+
+.gear-product-action-row .share-controls {
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin: 0;
+  padding: 0 .55rem;
+}
+
+.gear-product-action-row .share-controls button,
+.gear-product-action-row .gear-product-button {
+  min-height: 3.15rem;
+}
+
+.gear-product-action-row .share-controls button {
+  height: 100%;
+}
+
+.gear-product-action-row .gear-product-button {
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .gear-product-action-row {
+    width: 100%;
+    gap: .4rem;
+  }
+  .gear-product-action-row .share-controls { padding-inline: .4rem; }
+  .gear-product-action-row .gear-product-button {
+    width: auto;
+    padding-inline: .65rem;
+    font-size: .9rem;
+  }
+}
+
 @media (max-width: 420px) {
   .merch-card-actions { gap: .45rem; }
   .merch-card-actions .share-controls { padding-inline: .45rem; }
