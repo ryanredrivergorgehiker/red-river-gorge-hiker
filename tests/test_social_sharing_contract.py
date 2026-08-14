@@ -13,7 +13,7 @@ class SocialSharingContractTests(unittest.TestCase):
         self.assertNotIn('files:', source)
         self.assertNotIn('buildShareFile', source)
 
-    def test_share_controls_are_limited_to_supported_detail_templates(self):
+    def test_share_controls_are_limited_to_supported_photography_puzzle_and_gear_pages(self):
         pages = {
             path.relative_to(ROOT).as_posix()
             for path in (ROOT / 'src/pages').rglob('*.astro')
@@ -22,8 +22,10 @@ class SocialSharingContractTests(unittest.TestCase):
         self.assertEqual(
             pages,
             {
+                'src/pages/gear.astro',
                 'src/pages/gear/[slug].astro',
                 'src/pages/photographs/[slug].astro',
+                'src/pages/puzzles.astro',
                 'src/pages/puzzles/[slug].astro',
             },
         )
