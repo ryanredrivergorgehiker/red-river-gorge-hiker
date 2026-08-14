@@ -14,9 +14,10 @@ const featuredGear = merchandiseProducts.find((product) => product.slug === 'sti
 if (!heroPhoto) throw new Error('Homepage hero photograph missing.');
 if (!featuredGear) throw new Error('Featured Gear product missing.');
 
-// Preserve the approved production desktop mosaic exactly. Mobile gets a separate
-// rendering so the Double Rainbow can lead without changing desktop nth-child layout.
-const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPhoto.slug);
+const homepagePhotographs = photographs;
+// Preserve the approved production desktop mosaic exactly. Mobile uses the full
+// photography order so Double Rainbow can lead without shifting desktop nth-child layout.
+const desktopHomepagePhotographs = homepagePhotographs.filter((photo) => photo.slug !== heroPhoto.slug);
 ---
 <Base
   title="Red River Gorge Hiker"
@@ -83,11 +84,10 @@ const homepagePhotographs = photographs.filter((photo) => photo.slug !== heroPho
     </div>
 
     <div class="grid home-mosaic home-mosaic-desktop" aria-label="Original photography">
-      {homepagePhotographs.map((photo) => <Card photo={photo} showDescription={false} />)}
+      {desktopHomepagePhotographs.map((photo) => <Card photo={photo} showDescription={false} />)}
     </div>
 
     <div class="grid home-mosaic home-mosaic-mobile" aria-label="Original photography">
-      <Card photo={heroPhoto} showDescription={false} />
       {homepagePhotographs.map((photo) => <Card photo={photo} showDescription={false} />)}
     </div>
   </section>
