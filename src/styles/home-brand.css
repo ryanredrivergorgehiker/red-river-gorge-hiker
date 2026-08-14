@@ -25,6 +25,13 @@
   object-fit: contain;
 }
 
+/* The Double Rainbow leads the mobile photography list, while desktop keeps its approved mosaic unchanged. */
+@media (min-width: 701px) {
+  .home-mosaic > .card:first-child {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .featured-sticker {
     grid-template-columns: 1fr 1fr;
