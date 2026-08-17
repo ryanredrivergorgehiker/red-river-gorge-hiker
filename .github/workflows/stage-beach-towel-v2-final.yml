@@ -1,0 +1,148 @@
+name: Final Beach Towel V2 candidate verification
+
+on:
+  push:
+    branches:
+      - fix/beach-towel-v2
+    paths:
+      - .github/workflows/stage-beach-towel-v2-final.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v6
+        with:
+          ref: fix/beach-towel-v2
+          fetch-depth: 0
+
+      - name: Reconstruct exact approved V2 derivative
+        run: |
+          set -euo pipefail
+          mkdir -p public/assets/merchandise
+          cat .beach-towel-v2/chunk-*.b64 | base64 --decode > public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif
+          echo '1348ef085542cc0875ba9989837230b55d85925076ad33fcfd58c7453049d8a3  public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif' | sha256sum --check --strict
+          test "$(stat -c %s public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif)" = '82842'
+
+      - name: Generate matching JPEG social preview
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          avif='public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif'
+          jpg='public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg'
+          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$avif")" = '657x1000'
+          ffmpeg -hide_banner -loglevel error -y -i "$avif" -frames:v 1 -q:v 2 "$jpg"
+          test -s "$jpg"
+          file "$jpg" | grep -q 'JPEG image data'
+          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$jpg")" = '657x1000'
+
+      - name: Update only Beach Towel image fields
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/data/merchandise.ts')
+          original = path.read_text(encoding='utf-8')
+          old_name = 'rrgh-merch-towel-beach-35a77bd5.avif'
+          new_name = 'rrgh-merch-towel-beach-1348ef08.avif'
+          start_marker = "  {\n    slug: 'beach-towel',"
+          next_marker = "  {\n    slug: 'kids-tshirt',"
+
+          if original.count(old_name) != 1 or new_name in original:
+              raise RuntimeError('Unexpected active Beach Towel image state before edit')
+          start = original.index(start_marker)
+          end = original.index(next_marker, start)
+          block = original[start:end]
+          required = [
+              "title: 'Beach Towel'",
+              "description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.'",
+              "priceLabel: '$32.50'",
+              "specification: '32 × 64 inches'",
+              "fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'",
+              "alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'",
+              'width: 800,',
+              'height: 1000,'
+          ]
+          for value in required:
+              if value not in block:
+                  raise RuntimeError(f'Immutable Beach Towel value missing: {value}')
+
+          updated_block = block.replace(old_name, new_name, 1).replace('width: 800,', 'width: 657,', 1)
+          updated = original[:start] + updated_block + original[end:]
+
+          normalized = updated.replace(new_name, old_name, 1)
+          nstart = normalized.index(start_marker)
+          nend = normalized.index(next_marker, nstart)
+          normalized = normalized[:nstart] + normalized[nstart:nend].replace('width: 657,', 'width: 800,', 1) + normalized[nend:]
+          if normalized != original:
+              raise RuntimeError('Unexpected merchandise data change outside authorized image filename/width substitutions')
+          path.write_text(updated, encoding='utf-8')
+          PY
+
+      - name: Add regression contract
+        run: |
+          cat > tests/test_beach_towel_v2_contract.py <<'PY'
+          import hashlib
+          import re
+          import unittest
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[1]
+          MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
+
+          class BeachTowelV2ContractTests(unittest.TestCase):
+              def test_product_data_preserved_and_v2_active(self):
+                  match = re.search(r"\{\n\s+slug: 'beach-towel',(?P<body>.*?)\n\s+\},\n\s+\{\n\s+slug: 'kids-tshirt'", MERCH, re.S)
+                  self.assertIsNotNone(match)
+                  body = match.group('body')
+                  for value in [
+                      "title: 'Beach Towel'",
+                      "description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.'",
+                      "priceLabel: '$32.50'",
+                      "specification: '32 × 64 inches'",
+                      "fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'",
+                      "alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'",
+                      'rrgh-merch-towel-beach-1348ef08.avif',
+                      'width: 657',
+                      'height: 1000',
+                  ]:
+                      self.assertIn(value, body)
+                  self.assertNotIn('rrgh-merch-towel-beach-35a77bd5.avif', MERCH)
+
+              def test_new_derivatives_and_old_preserved_files(self):
+                  avif = ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif'
+                  jpg = ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg'
+                  self.assertTrue(avif.is_file())
+                  self.assertTrue(jpg.is_file())
+                  self.assertEqual(hashlib.sha256(avif.read_bytes()).hexdigest(), '1348ef085542cc0875ba9989837230b55d85925076ad33fcfd58c7453049d8a3')
+                  self.assertTrue((ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5.avif').is_file())
+                  self.assertTrue((ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5-share.jpg').is_file())
+
+          if __name__ == '__main__':
+              unittest.main()
+          PY
+
+      - name: Run full repository checks
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run check
+          git diff --check
+
+      - name: Commit only intended candidate files
+        run: |
+          set -euo pipefail
+          git config user.name 'ryanredrivergorgehiker'
+          git config user.email 'ryan@redrivergorgehiker.com'
+          git add src/data/merchandise.ts tests/test_beach_towel_v2_contract.py \
+            public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif \
+            public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg
+          git diff --cached --check
+          git commit -m 'Use approved Beach Towel V2 image'
+          git push origin HEAD:fix/beach-towel-v2
