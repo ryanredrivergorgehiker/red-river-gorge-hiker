@@ -1,3 +1,4 @@
+# rerun after verified chunk-06 correction
 name: Stage Beach Towel V2 image correction
 
 on:
@@ -84,7 +85,6 @@ jobs:
           updated_block = block.replace(old_name, new_name, 1).replace('width: 800,', 'width: 657,', 1)
           updated = before + updated_block + after
 
-          # Prove the complete data file differs only by the two expressly authorized substitutions.
           normalized = updated.replace(new_name, old_name, 1)
           nstart = normalized.index(start_marker)
           nend = normalized.index(next_marker, nstart)
@@ -178,7 +178,6 @@ jobs:
           set -euo pipefail
           git config user.name 'ryanredrivergorgehiker'
           git config user.email 'ryan@redrivergorgehiker.com'
-          git add src/data/merchandise.ts tests/test_beach-towel-v2-contract.py 2>/dev/null || true
           git add src/data/merchandise.ts tests/test_beach_towel_v2_contract.py \
             public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif \
             public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg
