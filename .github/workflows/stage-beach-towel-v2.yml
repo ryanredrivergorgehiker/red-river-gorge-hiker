@@ -20,89 +20,85 @@ jobs:
           ref: fix/beach-towel-v2
           fetch-depth: 0
 
-      - name: Download approved Drive V2 source
-        env:
-          SOURCE_URL: https://drive.google.com/uc?export=download&id=1ffoR1dxnt4qY2cHLK7RyWDvpNR18npDN
-          SOURCE_SHA256: 70c323b2306fbd053aa8d715784cb6df92b36b57e245f90a2066f05a6a740d8d
+      - name: Reconstruct and verify approved V2 Gear AVIF
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --output /tmp/RRGH-Merch-Towel-Beach_V2.png "$SOURCE_URL"
-          echo "$SOURCE_SHA256  /tmp/RRGH-Merch-Towel-Beach_V2.png" | sha256sum --check --strict
+          mkdir -p public/assets/merchandise
+          cat .beach-towel-v2/chunk-*.b64 | base64 --decode > public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif
+          echo '1348ef085542cc0875ba9989837230b55d85925076ad33fcfd58c7453049d8a3  public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif' | sha256sum --check --strict
+          test "$(stat -c %s public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif)" = '82842'
 
-      - name: Install image tooling
+      - name: Generate and verify matching social-preview JPEG
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check 'Pillow==12.3.0'
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-
-      - name: Generate normal Gear derivatives from approved V2
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          from PIL import Image
-          import hashlib
-
-          src_path = Path('/tmp/RRGH-Merch-Towel-Beach_V2.png')
-          out_dir = Path('public/assets/merchandise')
-          out_dir.mkdir(parents=True, exist_ok=True)
-
-          with Image.open(src_path) as src:
-              src = src.convert('RGB')
-              if src.size != (921, 1402):
-                  raise RuntimeError(f'Unexpected V2 source dimensions: {src.size}')
-              scale = 1000 / max(src.size)
-              size = (round(src.width * scale), round(src.height * scale))
-              if size != (657, 1000):
-                  raise RuntimeError(f'Unexpected proportional Gear output dimensions: {size}')
-              resized = src.resize(size, Image.Resampling.LANCZOS)
-
-          temp = Path('/tmp/rrgh-merch-towel-beach-v2.avif')
-          resized.save(temp, format='AVIF', quality=55)
-          payload = temp.read_bytes()
-          digest = hashlib.sha256(payload).hexdigest()
-          if digest != '1348ef085542cc0875ba9989837230b55d85925076ad33fcfd58c7453049d8a3':
-              raise RuntimeError(f'Gear derivative did not reproduce approved pipeline hash: {digest}')
-          final = out_dir / f'rrgh-merch-towel-beach-{digest[:8]}.avif'
-          final.write_bytes(payload)
-          print(f'Generated {final} at {size[0]}x{size[1]} ({len(payload)} bytes).')
-          PY
-
           avif='public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif'
           jpg='public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg'
+          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$avif")" = '657x1000'
           ffmpeg -hide_banner -loglevel error -y -i "$avif" -frames:v 1 -q:v 2 "$jpg"
           test -s "$jpg"
           file "$jpg" | grep -q 'JPEG image data'
-          test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$avif")" = '657x1000'
           test "$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$jpg")" = '657x1000'
 
-      - name: Update only the Beach Towel image reference
+      - name: Update only Beach Towel image reference and dimensions
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
 
           path = Path('src/data/merchandise.ts')
-          text = path.read_text(encoding='utf-8')
-          old = """    image: {
-              avif: `${assetBase}rrgh-merch-towel-beach-35a77bd5.avif`,
-              width: 800,
-              height: 1000,
-              alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'
-            },""".replace('              ', '      ')
-          new = old.replace('rrgh-merch-towel-beach-35a77bd5.avif', 'rrgh-merch-towel-beach-1348ef08.avif').replace('width: 800,', 'width: 657,')
-          if text.count(old) != 1:
-              raise RuntimeError(f'Expected exactly one current Beach Towel image stanza; found {text.count(old)}')
-          text = text.replace(old, new, 1)
-          path.write_text(text, encoding='utf-8')
-          PY
+          original = path.read_text(encoding='utf-8')
+          old_name = 'rrgh-merch-towel-beach-35a77bd5.avif'
+          new_name = 'rrgh-merch-towel-beach-1348ef08.avif'
+          start_marker = "  {\n    slug: 'beach-towel',"
+          next_marker = "  {\n    slug: 'kids-tshirt',"
 
-          test "$(grep -c 'rrgh-merch-towel-beach-1348ef08.avif' src/data/merchandise.ts)" -eq 1
-          test "$(grep -c 'rrgh-merch-towel-beach-35a77bd5.avif' src/data/merchandise.ts || true)" -eq 0
+          if original.count(old_name) != 1:
+              raise RuntimeError(f'Expected one active old Beach Towel image reference; found {original.count(old_name)}')
+          if new_name in original:
+              raise RuntimeError('New Beach Towel reference unexpectedly already exists')
+
+          start = original.index(start_marker)
+          end = original.index(next_marker, start)
+          before = original[:start]
+          block = original[start:end]
+          after = original[end:]
+
+          required = [
+              "title: 'Beach Towel'",
+              "description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.'",
+              "priceLabel: '$32.50'",
+              "specification: '32 × 64 inches'",
+              "fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'",
+              "alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'",
+              'width: 800,',
+              'height: 1000,'
+          ]
+          for value in required:
+              if value not in block:
+                  raise RuntimeError(f'Beach Towel immutable contract missing before edit: {value}')
+          if block.count('width: 800,') != 1:
+              raise RuntimeError('Expected exactly one Beach Towel width field')
+
+          updated_block = block.replace(old_name, new_name, 1).replace('width: 800,', 'width: 657,', 1)
+          updated = before + updated_block + after
+
+          # Prove the complete data file differs only by the two expressly authorized substitutions.
+          normalized = updated.replace(new_name, old_name, 1)
+          nstart = normalized.index(start_marker)
+          nend = normalized.index(next_marker, nstart)
+          nblock = normalized[nstart:nend].replace('width: 657,', 'width: 800,', 1)
+          normalized = normalized[:nstart] + nblock + normalized[nend:]
+          if normalized != original:
+              raise RuntimeError('Unexpected merchandise data change outside the authorized Beach Towel image swap')
+
+          path.write_text(updated, encoding='utf-8')
+          PY
 
       - name: Add Beach Towel V2 repository contract
         run: |
+          set -euo pipefail
           cat > tests/test_beach_towel_v2_contract.py <<'PY'
           import hashlib
           import re
@@ -134,7 +130,12 @@ jobs:
                   jpg = ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg'
                   self.assertTrue(avif.is_file())
                   self.assertTrue(jpg.is_file())
-                  self.assertEqual(hashlib.sha256(avif.read_bytes()).hexdigest()[:8], '1348ef08')
+                  self.assertEqual(hashlib.sha256(avif.read_bytes()).hexdigest(), '1348ef085542cc0875ba9989837230b55d85925076ad33fcfd58c7453049d8a3')
+
+              def test_prior_public_derivatives_are_preserved_but_not_active(self):
+                  self.assertTrue((ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5.avif').is_file())
+                  self.assertTrue((ROOT / 'public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5-share.jpg').is_file())
+                  self.assertNotIn('rrgh-merch-towel-beach-35a77bd5.avif', MERCH)
 
 
           if __name__ == '__main__':
@@ -148,37 +149,40 @@ jobs:
           npm run check
           git diff --check
 
-      - name: Verify change scope and preserve old public derivative unreferenced
+      - name: Verify no unintended tracked-file modifications
         run: |
           set -euo pipefail
-          test -s public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5.avif
-          test -s public/assets/merchandise/rrgh-merch-towel-beach-35a77bd5-share.jpg
           python3 - <<'PY'
-          from pathlib import Path
-          import re
+          import subprocess
 
-          data = Path('src/data/merchandise.ts').read_text(encoding='utf-8')
-          titles = re.findall(r"title:\s*'([^']+)'", data)
-          expected = [
-              'Men’s T-Shirt (Athletic Fit) — Chest Logo', 'Sticker', 'Tote Bag',
-              'Men’s T-Shirt (Regular Fit)', 'Coffee Mug', 'Women’s T-Shirt', 'Sweatshirt',
-              'Men’s T-Shirt (Athletic Fit) — Pocket Logo', 'Throw Pillow', 'Women’s Tank Top',
-              'Zip Pouch', 'Fleece / Sherpa Blanket', 'Youth T-Shirt', 'Spiral Notebook',
-              'Bath Towel', 'Beach Towel', 'Kids T-Shirt', 'Greeting Cards', 'Baby One-Piece', 'Ornament'
-          ]
-          if titles != expected:
-              raise RuntimeError('Gear display order changed unexpectedly')
+          allowed = {
+              'src/data/merchandise.ts',
+              'tests/test_beach_towel_v2_contract.py',
+              'public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif',
+              'public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg',
+          }
+          changed = set(subprocess.check_output(['git', 'status', '--porcelain'], text=True).splitlines())
+          paths = set()
+          for line in changed:
+              path = line[3:]
+              if path.startswith('.beach-towel-v2/') or path == '.github/workflows/stage-beach-towel-v2.yml':
+                  continue
+              paths.add(path)
+          unexpected = paths - allowed
+          if unexpected:
+              raise RuntimeError(f'Unexpected working-tree changes: {sorted(unexpected)}')
           PY
 
-      - name: Commit tested candidate and remove one-time workflow
+      - name: Commit tested candidate and remove temporary transfer tooling
         run: |
           set -euo pipefail
           git config user.name 'ryanredrivergorgehiker'
           git config user.email 'ryan@redrivergorgehiker.com'
+          git add src/data/merchandise.ts tests/test_beach-towel-v2-contract.py 2>/dev/null || true
           git add src/data/merchandise.ts tests/test_beach_towel_v2_contract.py \
             public/assets/merchandise/rrgh-merch-towel-beach-1348ef08.avif \
             public/assets/merchandise/rrgh-merch-towel-beach-1348ef08-share.jpg
-          git rm .github/workflows/stage-beach-towel-v2.yml
+          git rm -r .beach-towel-v2 .github/workflows/stage-beach-towel-v2.yml
           git diff --cached --check
           git commit -m 'Use approved Beach Towel V2 image'
           git push origin HEAD:fix/beach-towel-v2
