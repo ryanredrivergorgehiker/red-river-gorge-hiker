@@ -263,8 +263,8 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     specification: '32 × 64 inches',
     fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
     image: {
-      avif: `${assetBase}rrgh-merch-towel-beach-35a77bd5.avif`,
-      width: 800,
+      avif: `${assetBase}rrgh-merch-towel-beach-1348ef08.avif`,
+      width: 657,
       height: 1000,
       alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'
     },
