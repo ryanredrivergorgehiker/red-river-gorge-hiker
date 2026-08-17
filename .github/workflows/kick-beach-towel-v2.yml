@@ -1,0 +1,30 @@
+name: Trigger final Beach Towel V2 verification
+
+on:
+  push:
+    branches:
+      - fix/beach-towel-v2
+    paths:
+      - .github/workflows/kick-beach-towel-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: fix/beach-towel-v2
+          fetch-depth: 0
+      - name: Trigger verified candidate workflow and self-clean
+        run: |
+          set -euo pipefail
+          git config user.name 'ryanredrivergorgehiker'
+          git config user.email 'ryan@redrivergorgehiker.com'
+          printf '\n# final rerun after all ten transfer blobs match locally calculated Git SHAs\n' >> .github/workflows/stage-beach-towel-v2.yml
+          git rm .github/workflows/kick-beach-towel-v2.yml
+          git add .github/workflows/stage-beach-towel-v2.yml
+          git commit -m 'Trigger verified Beach Towel V2 pipeline'
+          git push origin HEAD:fix/beach-towel-v2
