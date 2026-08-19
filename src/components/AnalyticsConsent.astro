@@ -1,6 +1,7 @@
 ---
 const base = import.meta.env.BASE_URL;
 const measurementId = 'G-HM48NST64P';
+const pinterestTagId = '2613133188222';
 const siteHostname = Astro.site ? new URL(Astro.site).hostname : '';
 // Keep staging debug selection at build time; do not restore runtime window.location.hostname.endsWith('github.io') behavior.
 const gaConfig = {
@@ -15,6 +16,7 @@ const gaConfig = {
   class="analytics-consent"
   data-analytics-consent
   data-measurement-id={measurementId}
+  data-pinterest-tag-id={pinterestTagId}
   role="dialog"
   aria-labelledby="analytics-consent-title"
   aria-describedby="analytics-consent-copy"
@@ -24,7 +26,7 @@ const gaConfig = {
     <div class="analytics-consent-copy">
       <strong id="analytics-consent-title">Optional website analytics</strong>
       <p id="analytics-consent-copy">
-        Red River Gorge Hiker uses optional Google Analytics to understand site traffic, improve the website, evaluate campaigns, and measure actions such as outbound clicks to Fine Art America. Analytics stays off until you allow it.
+        Red River Gorge Hiker uses optional Google Analytics and Pinterest measurement to understand site traffic, improve the website, and evaluate campaigns. Google Analytics also measures actions such as outbound clicks to Fine Art America. Measurement stays off until you allow it.
         <a href={`${base}privacy/`}>Privacy details</a>
       </p>
     </div>
@@ -41,12 +43,14 @@ const gaConfig = {
     if (!consent) return;
 
     const measurementId = consent.getAttribute('data-measurement-id');
+    const pinterestTagId = consent.getAttribute('data-pinterest-tag-id');
     if (!measurementId) return;
 
     const storageKey = 'rrgh-analytics-consent-v1';
     const allowButton = consent.querySelector('[data-analytics-allow]');
     const declineButton = consent.querySelector('[data-analytics-decline]');
     let analyticsLoaded = false;
+    let pinterestLoaded = false;
 
     window.dataLayer = window.dataLayer || [];
     window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
@@ -86,7 +90,7 @@ const gaConfig = {
       });
     };
 
-    const loadAnalytics = () => {
+    const loadGoogleAnalytics = () => {
       if (analyticsLoaded) return;
       analyticsLoaded = true;
 
@@ -106,14 +110,41 @@ const gaConfig = {
       window.gtag('config', measurementId, gaConfig);
     };
 
+    const loadPinterest = () => {
+      if (pinterestLoaded || !pinterestTagId) return;
+      pinterestLoaded = true;
+
+      if (!window.pintrk) {
+        window.pintrk = function () {
+          window.pintrk.queue.push(Array.prototype.slice.call(arguments));
+        };
+        window.pintrk.queue = [];
+        window.pintrk.version = '3.0';
+      }
+
+      window.pintrk('setconsent', true);
+      window.pintrk('load', pinterestTagId);
+      window.pintrk('page');
+
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://s.pinimg.com/ct/core.js';
+      document.head.appendChild(script);
+    };
+
+    const loadMeasurement = () => {
+      loadGoogleAnalytics();
+      loadPinterest();
+    };
+
     const allowAnalytics = () => {
       saveChoice('granted');
       setVisible(false);
-      loadAnalytics();
+      loadMeasurement();
     };
 
     const declineAnalytics = () => {
-      const hadLoadedAnalytics = analyticsLoaded;
+      const hadLoadedMeasurement = analyticsLoaded || pinterestLoaded;
       saveChoice('denied');
       window.gtag('consent', 'update', {
         analytics_storage: 'denied',
@@ -121,9 +152,10 @@ const gaConfig = {
         ad_user_data: 'denied',
         ad_personalization: 'denied'
       });
+      if (window.pintrk) window.pintrk('setconsent', false);
       clearAnalyticsCookies();
       setVisible(false);
-      if (hadLoadedAnalytics) window.location.reload();
+      if (hadLoadedMeasurement) window.location.reload();
     };
 
     allowButton?.addEventListener('click', allowAnalytics);
@@ -134,7 +166,7 @@ const gaConfig = {
     });
 
     const existingChoice = readChoice();
-    if (existingChoice === 'granted') loadAnalytics();
+    if (existingChoice === 'granted') loadMeasurement();
     else if (existingChoice !== 'denied') setVisible(true);
   })();
 </script>
