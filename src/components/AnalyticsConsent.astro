@@ -46,7 +46,8 @@ const gaConfig = {
     const pinterestTagId = consent.getAttribute('data-pinterest-tag-id');
     if (!measurementId) return;
 
-    const storageKey = 'rrgh-analytics-consent-v1';
+    const storageKey = 'rrgh-analytics-consent-v2';
+    const legacyStorageKey = 'rrgh-analytics-consent-v1';
     const allowButton = consent.querySelector('[data-analytics-allow]');
     const declineButton = consent.querySelector('[data-analytics-decline]');
     let analyticsLoaded = false;
@@ -62,8 +63,8 @@ const gaConfig = {
       ad_personalization: 'denied'
     });
 
-    const readChoice = () => {
-      try { return window.localStorage.getItem(storageKey); }
+    const readChoice = (key) => {
+      try { return window.localStorage.getItem(key); }
       catch { return null; }
     };
 
@@ -165,9 +166,23 @@ const gaConfig = {
       control.addEventListener('click', () => setVisible(true));
     });
 
-    const existingChoice = readChoice();
-    if (existingChoice === 'granted') loadMeasurement();
-    else if (existingChoice !== 'denied') setVisible(true);
+    const currentChoice = readChoice(storageKey);
+    if (currentChoice === 'granted') {
+      loadMeasurement();
+    } else if (currentChoice === 'denied') {
+      // Current-version denial is authoritative; keep measurement off without prompting again.
+    } else if (currentChoice === null) {
+      const legacyChoice = readChoice(legacyStorageKey);
+      if (legacyChoice === 'denied') {
+        // Preserve a legacy refusal. A legacy grant covered GA4 only and must not authorize Pinterest.
+        saveChoice('denied');
+      } else {
+        setVisible(true);
+      }
+    } else {
+      // Unknown current-version values are not valid consent.
+      setVisible(true);
+    }
   })();
 </script>
 
