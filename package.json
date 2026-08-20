@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "tsx": "^4.20.3",
+    "tsx": "^4.23.12",
     "typescript": "^5.8.3"
   },
   "engines": {
