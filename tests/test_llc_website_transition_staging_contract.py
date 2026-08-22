@@ -16,9 +16,10 @@ def visible(path: str) -> str:
 class LlcWebsiteTransitionStagingContract(unittest.TestCase):
     def test_footer_exact_operator_credit(self):
         text = read("src/components/Footer.astro")
-        self.assertIn("<strong>Red River Gorge Hiker</strong>", text)
-        self.assertIn("<span>Operated by Red River Gorge Hiker LLC.</span>", text)
-        self.assertIn("<span>© Red River Gorge Hiker LLC. All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
+        self.assertIn("<strong>© Red River Gorge Hiker LLC.</strong>", text)
+        self.assertIn("<span>All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
+        self.assertNotIn("Operated by Red River Gorge Hiker LLC.", text)
+        self.assertNotIn("<span>© Red River Gorge Hiker LLC. All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
         self.assertNotIn("<span>© Ryan D. Lewis. All rights reserved.</span>", text)
         self.assertIn('href="mailto:Ryan@RedRiverGorgeHiker.com"', text)
         self.assertIn("Analytics choices", text)
