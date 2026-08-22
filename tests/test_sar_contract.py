@@ -107,7 +107,8 @@ class SarContract(unittest.TestCase):
         self.assertGreaterEqual(SAR_PAGE.count('Donate directly'), 3)
         self.assertIn('RRGH does not collect or relay it', SAR_PAGE)
         self.assertIn('The donation does not pass through RRGH', SAR_PAGE)
-        self.assertIn('not a partnership, sponsorship, endorsement, or commercial arrangement', SAR_PAGE)
+        self.assertIn('This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement', SAR_PAGE)
+        self.assertIn('Red River Gorge Hiker LLC does not speak on WCSART', SAR_PAGE)
 
     def test_changeable_information_uses_authoritative_sources(self):
         self.assertIn('fs.usda.gov', SAR_DATA)

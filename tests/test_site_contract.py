@@ -234,7 +234,7 @@ class SiteContract(unittest.TestCase):
             'Questions and Permissions',
         ):
             self.assertIn(f'<h2>{heading}</h2>', terms)
-        self.assertIn('gear purchases linked from Red River Gorge Hiker', terms)
+        self.assertIn('Online print, puzzle, gear, and other product purchases linked from Red River Gorge Hiker', terms)
         self.assertIn('The price displayed by Fine Art America at the time of purchase is the final and controlling price for the transaction.', terms)
         self.assertIn('Backcountry travel is undertaken at your own risk.', footer)
         self.assertIn('href={`${base}copyright-and-terms/`}>Copyright and Terms</a>', footer)
