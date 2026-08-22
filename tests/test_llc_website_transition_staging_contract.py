@@ -1,3 +1,4 @@
+from html import unescape
 from pathlib import Path
 import unittest
 
@@ -6,6 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
+
+
+def visible(path: str) -> str:
+    return unescape(read(path))
 
 
 class LlcWebsiteTransitionStagingContract(unittest.TestCase):
@@ -32,7 +37,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertNotIn("Red River Gorge Hiker LLC", photo)
 
     def test_copyright_and_terms_exact_llc_language(self):
-        text = read("src/pages/copyright-and-terms.astro")
+        text = visible("src/pages/copyright-and-terms.astro")
         required = [
             "RedRiverGorgeHiker.com is operated by Red River Gorge Hiker LLC under the Red River Gorge Hiker brand. Ryan D. Lewis is the photographer behind the original Red River Gorge Hiker photography and personally retains the copyrights in his photographs.",
             "Photographs displayed on RedRiverGorgeHiker.com that are identified as photography by Ryan D. Lewis are copyrighted and owned by Ryan D. Lewis unless expressly stated otherwise. Formation and operation of Red River Gorge Hiker LLC does not transfer ownership of those photograph copyrights to the LLC.",
@@ -77,7 +82,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("Ryan@RedRiverGorgeHiker.com", permissions)
 
     def test_sar_business_personal_split_without_financial_logic_changes(self):
-        text = read("src/pages/search-and-rescue.astro")
+        text = visible("src/pages/search-and-rescue.astro")
         self.assertIn("20% of RRGH business profit is allocated to Wolfe County Search & Rescue.", text)
         self.assertIn("When Red River Gorge Hiker launched, Ryan decided the business itself should give back too. Following formation of Red River Gorge Hiker LLC, the RRGH business-support commitment continues through the LLC. Separately from that business commitment, Ryan D. Lewis maintains his own personal support of Wolfe County Search & Rescue. Twenty percent of RRGH business profit is allocated to Wolfe County Search & Rescue.", text)
         self.assertIn("Red River Gorge Hiker LLC supports Wolfe County Search & Rescue independently through the Red River Gorge Hiker business-support program. Ryan D. Lewis's personal support is separate. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker LLC does not speak on WCSART's behalf.", text)
