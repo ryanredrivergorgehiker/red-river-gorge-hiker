@@ -1,19 +1,19 @@
 ---
 import Base from '../../layouts/Base.astro';
 import ShareControls from '../../components/ShareControls.astro';
-import { merchandiseProducts, type MerchandiseProduct } from '../../data/merchandise';
+import { gearProducts, type GearProduct } from '../../data/gearCatalog';
 import '../../styles/merchandise.css';
 import '../../styles/gear-sharing.css';
 
 export function getStaticPaths() {
-  return merchandiseProducts.map((product) => ({
+  return gearProducts.map((product) => ({
     params: { slug: product.slug },
     props: { product }
   }));
 }
 
 interface Props {
-  product: MerchandiseProduct;
+  product: GearProduct;
 }
 
 const { product } = Astro.props;
@@ -53,6 +53,8 @@ const socialImagePath = product.image.avif.replace(/\.avif$/, '-share.jpg');
         <p class="gear-product-spec">{product.specification}</p>
         <p>{product.description}</p>
         {product.optionNote && <p class="gear-product-option">{product.optionNote}</p>}
+        {product.detailPricing?.map((line) => <p class="gear-product-option">{line}</p>)}
+        {product.detailCustomizationNote && <p class="gear-product-option">{product.detailCustomizationNote}</p>}
 
         <div class="gear-product-action-row">
           <ShareControls title={product.title} url={canonical} />
@@ -67,7 +69,7 @@ const socialImagePath = product.image.avif.replace(/\.avif$/, '-share.jpg');
           </a>
         </div>
         <p class="gear-product-fulfillment">
-          Fine Art America handles current product options, checkout, payment, production, fulfillment, shipping, and returns.
+          {product.detailFulfillmentNote ?? 'Fine Art America handles current product options, checkout, payment, production, fulfillment, shipping, and returns.'}
         </p>
       </section>
     </div>

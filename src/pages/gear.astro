@@ -1,13 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import ShareControls from '../components/ShareControls.astro';
-import { merchandiseProducts } from '../data/merchandise';
+import { gearProducts } from '../data/gearCatalog';
 import '../styles/merchandise.css';
 import '../styles/gear-sharing.css';
 
 const base = import.meta.env.BASE_URL;
 const siteOrigin = Astro.site ?? Astro.url.origin;
-const featuredProduct = merchandiseProducts[0]!;
+const featuredProduct = gearProducts[0]!;
 const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, siteOrigin).href;
 ---
 <Base
@@ -25,7 +25,7 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
     <section class="merchandise-catalog" aria-labelledby="gear-catalog-heading">
       <h2 id="gear-catalog-heading" class="sr-only">Available gear</h2>
       <div class="merch-grid">
-        {merchandiseProducts.map((product, index) => {
+        {gearProducts.map((product, index) => {
           const productShareUrl = new URL(`${base}gear/${product.slug}/`, siteOrigin).href;
           return (
             <article class="merch-card" data-product={product.slug}>
