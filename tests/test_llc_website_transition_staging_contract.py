@@ -97,10 +97,18 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         ]:
             self.assertIn(invariant, text)
 
-    def test_no_photo_assets_or_product_data_are_touched_by_llc_contract(self):
+    def test_six_photo_catalog_and_artwork_component_remain_llc_free(self):
         products = read("src/data/products.ts")
         artwork = read("src/components/Artwork.astro")
-        self.assertIn("Ryan D. Lewis", products)
+        for title in [
+            "Double Rainbow at Eagle’s Point Buttress",
+            "Winter at Red-byrd Arch",
+            "Sunrise at Eagle’s Nest",
+            "Dog Fork Falls in Winter",
+            "Ice at West of Copperas Pillar",
+            "Splatter Falls",
+        ]:
+            self.assertIn(title, products)
         self.assertNotIn("Red River Gorge Hiker LLC", products)
         self.assertNotIn("Red River Gorge Hiker LLC", artwork)
 
