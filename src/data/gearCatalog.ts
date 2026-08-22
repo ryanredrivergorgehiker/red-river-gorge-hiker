@@ -13,7 +13,7 @@ export const doubleRainbowGreetingCard: GearProduct = {
   description: 'A greeting-card-only presentation of Double Rainbow at Eagle’s Point Buttress, offered through Fine Art America.',
   priceLabel: 'From $6.25',
   specification: 'Greeting card only',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/2-double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html?product=greeting-card',
+  fineArtAmericaUrl: 'https://fineartamerica.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card',
   image: {
     avif: 'assets/merchandise/rrgh-merch-double-rainbow-greeting-card-3d945e8a.avif',
     width: 1000,
