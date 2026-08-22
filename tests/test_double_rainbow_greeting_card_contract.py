@@ -11,7 +11,7 @@ DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text()
 
 TITLE = 'Double Rainbow at Eagle’s Point Buttress Greeting Card'
 SLUG = 'double-rainbow-eagles-point-buttress-greeting-card'
-FAA_URL = 'https://fineartamerica.com/featured/2-double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html?product=greeting-card'
+FAA_URL = 'https://fineartamerica.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card'
 AVIF = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a.avif'
 SHARE = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a-share.jpg'
 EXPECTED_EXISTING_TITLES = [
