@@ -32,6 +32,8 @@ jobs:
 
           old = 'Red River Gorge Hiker LLC'
           new = 'Red River Gorge Hiker, LLC'
+          old_date = 'Last updated: August 19, 2026'
+          new_date = 'Last updated: August 26, 2026'
           changed = []
 
           for root in (Path('src'), Path('tests')):
@@ -49,13 +51,19 @@ jobs:
 
           privacy = Path('src/pages/privacy.astro')
           text = privacy.read_text(encoding='utf-8')
-          old_date = 'Last updated: August 19, 2026'
-          new_date = 'Last updated: August 26, 2026'
           if text.count(old_date) != 1:
-              raise SystemExit(f'Expected exactly one old Privacy date, found {text.count(old_date)}')
+              raise SystemExit(f'Expected exactly one old Privacy date in source, found {text.count(old_date)}')
           privacy.write_text(text.replace(old_date, new_date), encoding='utf-8')
           if str(privacy) not in changed:
               changed.append(str(privacy))
+
+          contract = Path('tests/test_llc_website_transition_staging_contract.py')
+          text = contract.read_text(encoding='utf-8')
+          if text.count(old_date) != 1:
+              raise SystemExit(f'Expected exactly one old Privacy date in LLC contract test, found {text.count(old_date)}')
+          contract.write_text(text.replace(old_date, new_date), encoding='utf-8')
+          if str(contract) not in changed:
+              changed.append(str(contract))
 
           print('Changed files:')
           for path in sorted(set(changed)):
