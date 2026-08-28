@@ -43,11 +43,22 @@ def sha256(path: Path) -> str:
 
 
 class DoubleRainbowGreetingCardContract(unittest.TestCase):
-    def test_combined_catalog_has_exactly_21_in_prescribed_order(self):
-        self.assertIn('doubleRainbowGreetingCard,\n  ...merchandiseProducts', CATALOG)
+    def test_greeting_card_remains_first_in_25_product_gear_catalog(self):
         self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
         self.assertEqual(re.findall(r"title:\s*'([^']+)'", MERCH), EXPECTED_EXISTING_TITLES)
-        self.assertEqual([TITLE, *EXPECTED_EXISTING_TITLES], [TITLE, *re.findall(r"title:\s*'([^']+)'", MERCH)])
+        self.assertIn('export const gearProducts: readonly GearProduct[] = [\n  doubleRainbowGreetingCard,', CATALOG)
+        for marker in (
+            '...merchandiseProducts.slice(0, 6),',
+            'longSleeveTshirt,',
+            '...merchandiseProducts.slice(6, 9),',
+            'mensTankTop,',
+            '...merchandiseProducts.slice(9, 14),',
+            'handTowel,',
+            '...merchandiseProducts.slice(14, 17),',
+            'toddlerTshirt,',
+            '...merchandiseProducts.slice(17)',
+        ):
+            self.assertIn(marker, CATALOG)
 
     def test_greeting_card_content_is_greeting_card_only(self):
         for text in (
