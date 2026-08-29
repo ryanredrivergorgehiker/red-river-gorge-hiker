@@ -66,7 +66,7 @@ const puzzleImages = {
             <div class="puzzle-action-row">
               <ShareControls title={`${photo.title} jigsaw puzzle`} url={puzzleShareUrl} />
               <a class="button puzzle-primary-action" href={photo.puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
-                View Puzzle in Store
+                View in Store
               </a>
               <a class="button secondary puzzle-print-action" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
                 Wall Art Options
@@ -107,13 +107,14 @@ const puzzleImages = {
     .puzzle-action-row {
       display: flex;
       align-items: stretch;
-      gap: .5rem;
+      gap: .55rem;
       margin-top: auto;
     }
     .puzzle-action-row .share-controls {
       flex: 0 0 auto;
+      align-self: stretch;
       margin: 0;
-      padding: 0 .5rem;
+      padding: 0 .55rem;
     }
     .puzzle-action-row .share-controls button,
     .puzzle-action-row .button {
@@ -137,8 +138,8 @@ const puzzleImages = {
       padding-inline: .75rem;
     }
     @media (max-width: 430px) {
-      .puzzle-action-row { gap: .38rem; }
-      .puzzle-action-row .share-controls { padding-inline: .38rem; }
+      .puzzle-action-row { gap: .4rem; }
+      .puzzle-action-row .share-controls { padding-inline: .4rem; }
       .puzzle-action-row .puzzle-primary-action { padding-inline: .55rem; }
       .puzzle-action-row .puzzle-print-action { padding-inline: .5rem; }
       .puzzle-action-row .button { font-size: .86rem; }
