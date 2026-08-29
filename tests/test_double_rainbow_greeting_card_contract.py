@@ -46,7 +46,7 @@ class DoubleRainbowGreetingCardContract(unittest.TestCase):
     def test_greeting_card_remains_first_in_25_product_gear_catalog(self):
         self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
         self.assertEqual(re.findall(r"title:\s*'([^']+)'", MERCH), EXPECTED_EXISTING_TITLES)
-        self.assertIn('export const gearProducts: readonly GearProduct[] = [\n  doubleRainbowGreetingCard,', CATALOG)
+        self.assertIn('const orderedGearProducts: readonly GearProduct[] = [\n  doubleRainbowGreetingCard,', CATALOG)
         for marker in (
             '...merchandiseProducts.slice(0, 6),',
             'longSleeveTshirt,',
