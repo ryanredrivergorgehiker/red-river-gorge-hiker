@@ -19,7 +19,9 @@ jobs:
           ref: uat/gear-four-products-20260828
           fetch-depth: 0
       - name: Apply migration
-        run: python3 .github/scripts/phase4_store_migrate.py
+        run: |
+          python3 .github/scripts/phase4_store_migrate.py
+          python3 .github/scripts/phase4_store_migrate_fix.py
       - name: Run repository contract tests
         env:
           PYTHONDONTWRITEBYTECODE: '1'
@@ -37,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -f .phase4-store-trigger .github/workflows/phase4-store-integration-temp.yml .github/scripts/phase4_store_migrate.py
+          rm -f .phase4-store-trigger .github/workflows/phase4-store-integration-temp.yml .github/scripts/phase4_store_migrate.py .github/scripts/phase4_store_migrate_fix.py
           git config user.name "ryanredrivergorgehiker"
           git config user.email "ryan@redrivergorgehiker.com"
           git add -A
