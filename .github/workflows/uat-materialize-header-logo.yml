@@ -1,0 +1,104 @@
+name: UAT materialize header logo
+
+on:
+  push:
+    branches:
+      - uat/gear-four-products-20260828
+    paths:
+      - .github/workflows/uat-materialize-header-logo.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout UAT branch
+        uses: actions/checkout@v6
+        with:
+          ref: uat/gear-four-products-20260828
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download and verify approved V3 source
+        env:
+          SOURCE_URL: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXe_pkWSrcNNJZXFc_9Pec32LApxM9bmQIiFJzTCfhnTEuugcjyPnk0fLTYmAsw50g0wLk_GAcCxDaPWhq86LSSVbVU3K-IRO1JKFNQVMRDAHE9_DAX_XteFDCr2yeNxT6DlCgHSS0QrCFYIJJr_vywdz1pBjDrnCRMOj0KLDLCWNtETbWg=s2048?key=HoUNnVbR0tpyqKk6MfimhQ"
+        run: |
+          curl -L --fail --retry 3 "$SOURCE_URL" -o /tmp/header-logo.png
+          echo "8068a48592376d3746b2af875588456d395d413911e659501249eeca04ff3b58  /tmp/header-logo.png" | sha256sum -c -
+
+      - name: Generate optimized public header asset and update Header.astro
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import sharp from 'sharp';
+          await sharp('/tmp/header-logo.png')
+            .resize({ width: 640, withoutEnlargement: true })
+            .webp({ quality: 92 })
+            .toFile('/tmp/header-logo.webp');
+          NODE
+
+          HASH="$(sha256sum /tmp/header-logo.webp | cut -c1-8)"
+          FILENAME="rrgh-banner-logo-profile-pixels-v3-${HASH}.webp"
+          mkdir -p public/assets/brand
+          cp /tmp/header-logo.webp "public/assets/brand/${FILENAME}"
+
+          python3 - "$FILENAME" <<'PY'
+          from pathlib import Path
+          import sys
+          filename = sys.argv[1]
+          path = Path('src/components/Header.astro')
+          text = path.read_text()
+          old = "const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';"
+          if old not in text:
+              raise SystemExit('Expected current banner filename not found')
+          text = text.replace(old, f"const bannerFilename = '{filename}';", 1)
+          text = text.replace('width="448"\n        height="151"', 'width="640"\n        height="176"', 1)
+          path.write_text(text)
+          PY
+
+          echo "HEADER_ASSET=${FILENAME}" >> "$GITHUB_ENV"
+          echo "Generated ${FILENAME}"
+          sha256sum "public/assets/brand/${FILENAME}"
+
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -p "test*.py" -v
+
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=critical
+          npm audit --omit=dev --audit-level=high
+
+      - name: Run production-equivalent checks and build
+        run: npm run check
+
+      - name: Guard change scope
+        shell: bash
+        run: |
+          test ! -e public/assets/brand/RRGH_Banner_Logo_Profile_Transparent_PIXELS_V3.png
+          CHANGED="$(git status --short | awk '{print $2}' | sort)"
+          printf '%s\n' "$CHANGED"
+          EXPECTED="$(printf '%s\n' ".github/workflows/uat-materialize-header-logo.yml" "public/assets/brand/${HEADER_ASSET}" "src/components/Header.astro" | sort)"
+          test "$CHANGED" = "$EXPECTED"
+
+      - name: Commit exact tested staging candidate and remove helper
+        shell: bash
+        run: |
+          git config user.name "ryanredrivergorgehiker"
+          git config user.email "ryan@redrivergorgehiker.com"
+          git rm .github/workflows/uat-materialize-header-logo.yml
+          git add "public/assets/brand/${HEADER_ASSET}" src/components/Header.astro
+          STAGED="$(git diff --cached --name-only | sort)"
+          EXPECTED="$(printf '%s\n' ".github/workflows/uat-materialize-header-logo.yml" "public/assets/brand/${HEADER_ASSET}" "src/components/Header.astro" | sort)"
+          test "$STAGED" = "$EXPECTED"
+          git commit -m "Use Pixels V3 banner logo in staging UAT"
+          git push origin HEAD:uat/gear-four-products-20260828
