@@ -4,14 +4,23 @@ import SarMatchMeter from './SarMatchMeter.astro';
 const nav = [['Photography','/photography/'],['Puzzles','/puzzles/'],['Gear','/gear/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
+const circleLogoFilename = 'rrgh-circle-logo-512-539a2fd23c.png';
 const bannerAvifFilename = 'rrgh-banner-logo-profile-transparent-v3.avif';
 const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
   <div class="header-inner">
-    <a class="wordmark" href={base} aria-label="Red River Gorge Hiker home">
-      <picture>
+    <a class="wordmark brand-lockup" href={base} aria-label="Red River Gorge Hiker home">
+      <img
+        class="brand-emblem"
+        src={`${base}assets/brand/${circleLogoFilename}`}
+        width="512"
+        height="512"
+        alt=""
+        aria-hidden="true"
+      />
+      <picture class="brand-wordmark">
         <source srcset={`${base}assets/brand/${bannerAvifFilename}`} type="image/avif" />
         <img
           class="brand-banner"
@@ -41,7 +50,45 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 </header>
 
 <style>
+  .site-header .brand-lockup {
+    align-items: center;
+    gap: .65rem;
+  }
+
+  .site-header .brand-emblem {
+    display: block;
+    width: 3.75rem;
+    height: 3.75rem;
+    flex: 0 0 auto;
+    object-fit: contain;
+  }
+
+  .site-header .brand-wordmark {
+    display: block;
+    min-width: 0;
+  }
+
   @media (max-width: 850px) {
+    .site-header .brand-lockup {
+      gap: .5rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .site-header .brand-emblem {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .site-header .brand-wordmark {
+      max-width: calc(100% - 3.5rem);
+    }
+
+    .site-header .brand-banner {
+      width: min(15rem, 100%);
+      max-width: 100%;
+    }
+
     .site-header .mobile-primary-nav ul {
       grid-template-columns: repeat(5, minmax(0, 1fr));
     }
@@ -49,6 +96,23 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 
   /* Portrait phones: three centered items on row one, two centered items on row two. */
   @media (max-width: 560px) {
+    .site-header .brand-lockup {
+      gap: .42rem;
+    }
+
+    .site-header .brand-emblem {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .site-header .brand-wordmark {
+      max-width: calc(100% - 3.17rem);
+    }
+
+    .site-header .brand-banner {
+      width: min(14.25rem, 100%);
+    }
+
     .site-header .mobile-primary-nav ul {
       grid-template-columns: repeat(6, minmax(0, 1fr));
       row-gap: .42rem;
