@@ -49,7 +49,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         for token in ('Shop the Store', 'View in Store'):
             self.assertIn(token, GEAR)
         self.assertIn('View in Store', GEAR_DETAIL)
-        self.assertIn('View Puzzle in Store', PUZZLES)
+        self.assertIn('View in Store', PUZZLES)
         self.assertIn('Wall Art Options', PUZZLES)
         self.assertIn('View Puzzle in Store', PUZZLE_DETAIL)
         self.assertIn('Wall Art Options', PUZZLE_DETAIL)
