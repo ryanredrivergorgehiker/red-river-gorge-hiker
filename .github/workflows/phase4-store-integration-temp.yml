@@ -1,0 +1,40 @@
+name: Phase 4 store integration temp
+
+on:
+  push:
+    branches:
+      - uat/gear-four-products-20260828
+    paths:
+      - .phase4-store-trigger
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Audit provider-specific commerce references
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== PROVIDER / COMMERCE REFERENCES ==='
+          git grep -nEi 'fineartamerica\.com|Fine Art America|fineArtAmericaUrl|View on Fine Art America|FAA_URL|faa_|22-ryan-lewis\.pixels\.com|outbound clicks to Fine Art America' -- . ':!public/assets' || true
+          echo '=== TARGET FILES PRESENT ==='
+          for f in \
+            src/data/merchandise.ts \
+            src/data/gearCatalog.ts \
+            src/data/products.ts \
+            src/pages/gear.astro \
+            'src/pages/gear/[slug].astro' \
+            src/pages/puzzles.astro \
+            'src/pages/puzzles/[slug].astro' \
+            'src/pages/photographs/[slug].astro' \
+            src/pages/contact.astro \
+            src/pages/privacy.astro \
+            src/pages/copyright-and-terms.astro \
+            src/components/AnalyticsConsent.astro \
+            src/components/Footer.astro; do
+            test -f "$f" && echo "$f"
+          done
