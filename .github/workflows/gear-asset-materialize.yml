@@ -1,0 +1,166 @@
+name: Gear asset materialization
+
+on:
+  push:
+    branches:
+      - uat/gear-four-products-20260828
+    paths:
+      - .gear-asset-build-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: uat/gear-four-products-20260828
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: Download and verify authoritative PNG sources
+        env:
+          LONG_URL: 'https://oaisdmntprnorthcentralus.blob.core.windows.net/files/00000000-5038-822f-92c9-fa679ce339cd/raw?se=2026-08-29T12%3A37%3A17Z&sp=r&sv=2026-02-06&sr=b&scid=3188f3f0-0a7f-432f-859c-c9760e825fe8&skoid=fae15675-a81a-44b5-9d8c-d8445a7c26a2&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T19%3A37%3A27Z&ske=2026-08-29T19%3A37%3A27Z&sks=b&skv=2026-02-06&sig=BlCb0htcRMQVPu88tqs5F/apBC/vFZj/vsqlgkN1OZQ%3D'
+          TANK_URL: 'https://oaisdmntprnorthcentralus.blob.core.windows.net/files/00000000-1094-822f-940b-3c0ae4fb8eed/raw?se=2026-08-29T12%3A38%3A16Z&sp=r&sv=2026-02-06&sr=b&scid=3188f3f0-0a7f-432f-859c-c9760e825fe8&skoid=fae15675-a81a-44b5-9d8c-d8445a7c26a2&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T19%3A43%3A19Z&ske=2026-08-29T19%3A43%3A19Z&sks=b&skv=2026-02-06&sig=tfnSLGcValodOBvcHtFIo9yorLvk2gVZ2OI7/1vOk94%3D'
+          TOWEL_URL: 'https://oaisdmntprnorthcentralus.blob.core.windows.net/files/00000000-ed64-822f-97e2-bda4c4f3327f/raw?se=2026-08-29T12%3A38%3A16Z&sp=r&sv=2026-02-06&sr=b&scid=3188f3f0-0a7f-432f-859c-c9760e825fe8&skoid=fae15675-a81a-44b5-9d8c-d8445a7c26a2&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-29T11%3A20%3A37Z&ske=2026-08-30T11%3A20%3A37Z&sks=b&skv=2026-02-06&sig=96O3R5h4cPzHpNgB0mjRkEdNvkLKxoJ7r5UYTmBIxMI%3D'
+          TODDLER_URL: 'https://oaisdmntprnorthcentralus.blob.core.windows.net/files/00000000-9dac-822f-aab5-f024db836662/raw?se=2026-08-29T12%3A38%3A16Z&sp=r&sv=2026-02-06&sr=b&scid=3188f3f0-0a7f-432f-859c-c9760e825fe8&skoid=fae15675-a81a-44b5-9d8c-d8445a7c26a2&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-28T19%3A43%3A04Z&ske=2026-08-29T19%3A43%3A04Z&sks=b&skv=2026-02-06&sig=ziFcpeJBPdJ/z7o9NuSaX3jYG6C7QNo3guFE0mvHEbE%3D'
+        run: |
+          mkdir -p .gear-source-tmp
+          curl -L --fail --retry 2 --silent --show-error "$LONG_URL" -o .gear-source-tmp/long.png
+          curl -L --fail --retry 2 --silent --show-error "$TANK_URL" -o .gear-source-tmp/tank.png
+          curl -L --fail --retry 2 --silent --show-error "$TOWEL_URL" -o .gear-source-tmp/towel.png
+          curl -L --fail --retry 2 --silent --show-error "$TODDLER_URL" -o .gear-source-tmp/toddler.png
+          echo 'f51fc9b56da669060a5a0610134695ff779e3b26bafebd5be80288c988974422  .gear-source-tmp/long.png' | sha256sum -c -
+          echo 'bda514301a4f9385f4382d939d7be6a26b8e3f1eebe8d0a476eda1a8f321ab6f  .gear-source-tmp/tank.png' | sha256sum -c -
+          echo '6e16fe2b36d6c47c02061bcec1fc5e243ef845f7b90000b3581052722981797c  .gear-source-tmp/towel.png' | sha256sum -c -
+          echo 'acd6eded04e090cb5e21f5bf59270c5449c5194cd611e2183d3bdf6caef59049  .gear-source-tmp/toddler.png' | sha256sum -c -
+      - name: Generate optimized public assets and update contracts
+        run: |
+          python3 -m pip install --quiet pillow==12.3.0
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import hashlib, json, re
+
+          root = Path('.')
+          asset_dir = root / 'public/assets/merchandise'
+          asset_dir.mkdir(parents=True, exist_ok=True)
+          specs = {
+              'long': ('long.png', 'rrgh-merch-tshirt-long-sleeve', (800, 1000), 'longSleeveTshirt'),
+              'tank': ('tank.png', 'rrgh-merch-tshirt-mens-tank', (800, 1000), 'mensTankTop'),
+              'towel': ('towel.png', 'rrgh-merch-towel-hand', (800, 1000), 'handTowel'),
+              'toddler': ('toddler.png', 'rrgh-merch-tshirt-toddler', (1000, 941), 'toddlerTshirt'),
+          }
+          result = {}
+          for key, (src_name, prefix, size, const_name) in specs.items():
+              src = root / '.gear-source-tmp' / src_name
+              image = Image.open(src).convert('RGB').resize(size, Image.Resampling.LANCZOS)
+              temp = asset_dir / f'{prefix}-temp.avif'
+              image.save(temp, 'AVIF', quality=48, speed=6)
+              avif_sha = hashlib.sha256(temp.read_bytes()).hexdigest()
+              base = f'{prefix}-{avif_sha[:8]}'
+              avif = asset_dir / f'{base}.avif'
+              temp.replace(avif)
+              share = asset_dir / f'{base}-share.jpg'
+              image.save(share, 'JPEG', quality=50, optimize=True, progressive=True, subsampling='4:2:0')
+              share_sha = hashlib.sha256(share.read_bytes()).hexdigest()
+              result[key] = {
+                  'const': const_name, 'avif': avif.name, 'share': share.name,
+                  'avif_sha': avif_sha, 'share_sha': share_sha, 'size': size,
+              }
+
+          catalog_path = root / 'src/data/gearCatalog.ts'
+          catalog = catalog_path.read_text()
+          for key, data in result.items():
+              prefix = specs[key][1]
+              catalog = re.sub(rf'{re.escape(prefix)}-[0-9a-f]{{8}}\.avif', data['avif'], catalog)
+          catalog_path.write_text(catalog)
+
+          expected_order = [
+              'Double Rainbow at Eagle’s Point Buttress Greeting Card',
+              'Men’s T-Shirt (Athletic Fit) — Chest Logo','Sticker','Tote Bag','Men’s T-Shirt (Regular Fit)',
+              'Coffee Mug','Women’s T-Shirt','Long-Sleeve T-Shirt','Sweatshirt',
+              'Men’s T-Shirt (Athletic Fit) — Pocket Logo','Throw Pillow','Men’s Tank Top','Women’s Tank Top',
+              'Zip Pouch','Fleece / Sherpa Blanket','Youth T-Shirt','Spiral Notebook','Hand Towel','Bath Towel',
+              'Beach Towel','Kids T-Shirt','Toddler T-Shirt','Greeting Cards','Baby One-Piece','Ornament'
+          ]
+          product_meta = {
+              'longSleeveTshirt': ('long-sleeve-tshirt','Long-Sleeve T-Shirt','From $29','https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt','long'),
+              'mensTankTop': ('mens-tank-top','Men’s Tank Top','From $25','https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt','tank'),
+              'handTowel': ('hand-towel','Hand Towel','$14.50','https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel','towel'),
+              'toddlerTshirt': ('toddler-tshirt','Toddler T-Shirt','$19','https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt','toddler'),
+          }
+          test_lines = [
+              'import hashlib', 'import re', 'import unittest', 'from pathlib import Path', '',
+              "ROOT = Path(__file__).parents[1]", "CATALOG = (ROOT / 'src/data/gearCatalog.ts').read_text()",
+              "MERCH = (ROOT / 'src/data/merchandise.ts').read_text()", "DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text()",
+              "ASSET_DIR = ROOT / 'public/assets/merchandise'", '', f'EXPECTED_ORDER = {expected_order!r}', '', 'NEW_PRODUCTS = {'
+          ]
+          for const_name, (slug,title,price,url,key) in product_meta.items():
+              d=result[key]
+              test_lines += [f"    {const_name!r}: {{'slug': {slug!r}, 'title': {title!r}, 'price': {price!r}, 'url': {url!r},",
+                             f"        'avif': {d['avif']!r}, 'share': {d['share']!r}, 'avif_sha': {d['avif_sha']!r}, 'share_sha': {d['share_sha']!r}}},"]
+          test_lines += ['}', '',
+              'def block(name: str) -> str:',
+              '    m = re.search(rf"export const {name}: GearProduct = \\{{(.*?)\\n\\}};", CATALOG, flags=re.S)',
+              "    if not m: raise AssertionError(f'Missing product block: {name}')",
+              '    return m.group(1)', '',
+              'def sha256(path: Path) -> str:', '    return hashlib.sha256(path.read_bytes()).hexdigest()', '',
+              'class FourNewGearProductsContract(unittest.TestCase):',
+              '    def test_exact_25_product_order(self):',
+              '        existing = re.findall(r"title:\\s*\'([^\']+)\'", MERCH)',
+              "        assembled = ['Double Rainbow at Eagle’s Point Buttress Greeting Card', *existing[:6], 'Long-Sleeve T-Shirt', *existing[6:9], 'Men’s Tank Top', *existing[9:14], 'Hand Towel', *existing[14:17], 'Toddler T-Shirt', *existing[17:]]",
+              '        self.assertEqual(assembled, EXPECTED_ORDER)', '        self.assertEqual(len(assembled), 25)',
+              "        self.assertEqual(assembled[0], EXPECTED_ORDER[0])", "        self.assertEqual(assembled[7], 'Long-Sleeve T-Shirt')",
+              "        self.assertEqual(assembled[11], 'Men’s Tank Top')", "        self.assertEqual(assembled[17], 'Hand Towel')", "        self.assertEqual(assembled[21], 'Toddler T-Shirt')", '',
+              '    def test_public_prices_urls_and_no_owner_prices(self):',
+              '        for name, expected in NEW_PRODUCTS.items():',
+              '            product = block(name)',
+              '            for value in (expected["slug"], expected["title"], expected["price"], expected["url"], "2026-08-28"): self.assertIn(value, product)',
+              "        self.assertIn('size-dependent', block('longSleeveTshirt'))", "        self.assertIn('size-dependent', block('mensTankTop'))",
+              "        self.assertIn('15 × 30 inches', block('handTowel'))", "        self.assertIn('Medium (3T)', block('toddlerTshirt'))",
+              '        public_blocks = "\\n".join(block(n) for n in NEW_PRODUCTS)',
+              "        for owner_price in (\"priceLabel: '$27'\", \"priceLabel: '$23'\", \"priceLabel: '$12'\", \"priceLabel: '$17'\"): self.assertNotIn(owner_price, public_blocks)", '',
+              '    def test_unique_slugs(self):',
+              '        all_slugs = re.findall(r"slug:\\s*\'([^\']+)\'", CATALOG) + re.findall(r"slug:\\s*\'([^\']+)\'", MERCH)',
+              '        self.assertEqual(len(all_slugs), len(set(all_slugs)))', '',
+              '    def test_assets_and_share_images(self):',
+              '        for expected in NEW_PRODUCTS.values():',
+              '            avif, share = ASSET_DIR / expected["avif"], ASSET_DIR / expected["share"]',
+              '            self.assertTrue(avif.exists(), avif); self.assertTrue(share.exists(), share)',
+              '            self.assertEqual(sha256(avif), expected["avif_sha"]); self.assertEqual(sha256(share), expected["share_sha"])',
+              '            self.assertLess(avif.stat().st_size, 200_000); self.assertLess(share.stat().st_size, 250_000)', '',
+              '    def test_detail_routes_and_social_behavior_are_automatic(self):',
+              "        self.assertIn('gearProducts.map((product)', DETAIL)", "        self.assertIn(\"replace(/\\\\.avif$/, '-share.jpg')\", DETAIL)",
+              "        self.assertIn('View on Fine Art America', DETAIL)", "        self.assertIn('href={product.fineArtAmericaUrl}', DETAIL)", "        self.assertIn('ShareControls', DETAIL)", '',
+              '    def test_source_pngs_are_not_public_repo_assets(self):',
+              "        for source in ('RRGH-Merch-TShirt-Long-Sleeve.png','RRGH-Merch-TShirt-Mens-Tank.png','RRGH-Merch-Towel-Hand.png','RRGH-Merch-TShirt-Toddler.png'): self.assertFalse((ASSET_DIR / source).exists(), source)", '',
+              "if __name__ == '__main__': unittest.main()", ''
+          ]
+          (root / 'tests/test_four_new_gear_products_contract.py').write_text('\n'.join(test_lines))
+          (root / '.gear-generated-assets.json').write_text(json.dumps(result, indent=2) + '\n')
+          PY
+          rm -rf .gear-source-tmp
+      - name: Install project dependencies
+        run: npm ci
+      - name: Audit dependencies
+        run: |
+          npm audit --audit-level=critical
+          npm audit --omit=dev --audit-level=high
+      - name: Run complete repository tests
+        run: python3 -m unittest discover -s tests -p 'test*.py' -v
+      - name: Run production-equivalent checks and build
+        run: npm run check
+      - name: Commit only final UAT source/assets and remove helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/gear-asset-materialize.yml .gear-asset-build-trigger
+          git add src/data/gearCatalog.ts tests/test_four_new_gear_products_contract.py public/assets/merchandise .gear-generated-assets.json
+          git status --short
+          git commit -m 'Materialize four new Gear product assets'
+          git push origin HEAD:uat/gear-four-products-20260828
