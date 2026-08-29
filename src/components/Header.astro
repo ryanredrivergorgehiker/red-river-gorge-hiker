@@ -52,13 +52,13 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 <style>
   .site-header .brand-lockup {
     align-items: center;
-    gap: .65rem;
+    gap: .72rem;
   }
 
   .site-header .brand-emblem {
     display: block;
-    width: 3.75rem;
-    height: 3.75rem;
+    width: 5.25rem;
+    height: 5.25rem;
     flex: 0 0 auto;
     object-fit: contain;
   }
@@ -70,22 +70,27 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 
   @media (max-width: 850px) {
     .site-header .brand-lockup {
-      gap: .5rem;
+      display: grid;
+      grid-template-columns: auto minmax(0, 15rem);
+      align-items: center;
       justify-content: center;
+      column-gap: .6rem;
       width: 100%;
+      margin-inline: auto;
     }
 
     .site-header .brand-emblem {
-      width: 3rem;
-      height: 3rem;
+      width: 4.75rem;
+      height: 4.75rem;
     }
 
     .site-header .brand-wordmark {
-      max-width: calc(100% - 3.5rem);
+      width: 100%;
+      max-width: 15rem;
     }
 
     .site-header .brand-banner {
-      width: min(15rem, 100%);
+      width: 100%;
       max-width: 100%;
     }
 
@@ -97,20 +102,19 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
   /* Portrait phones: three centered items on row one, two centered items on row two. */
   @media (max-width: 560px) {
     .site-header .brand-lockup {
-      gap: .42rem;
+      grid-template-columns: auto minmax(0, 14.25rem);
+      column-gap: .5rem;
+      padding-inline: .2rem;
     }
 
     .site-header .brand-emblem {
-      width: 2.75rem;
-      height: 2.75rem;
+      width: 4.5rem;
+      height: 4.5rem;
     }
 
     .site-header .brand-wordmark {
-      max-width: calc(100% - 3.17rem);
-    }
-
-    .site-header .brand-banner {
-      width: min(14.25rem, 100%);
+      width: min(14.25rem, calc(100vw - 7rem));
+      max-width: 100%;
     }
 
     .site-header .mobile-primary-nav ul {
