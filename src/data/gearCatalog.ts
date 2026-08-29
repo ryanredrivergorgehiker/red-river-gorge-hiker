@@ -41,7 +41,7 @@ export const longSleeveTshirt: GearProduct = {
   optionNote: 'Medium verified at $29 customer retail · Fine Art America lists higher base pricing for 2XL, so retail pricing is size-dependent.',
   fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
   image: {
-    avif: `${assetBase}rrgh-merch-tshirt-long-sleeve-b245685d.avif`,
+    avif: `${assetBase}rrgh-merch-tshirt-long-sleeve-08342fea.avif`,
     width: 800,
     height: 1000,
     alt: 'Woman wearing a charcoal Red River Gorge Hiker long-sleeve T-shirt with the logo centered on the chest.'
@@ -58,7 +58,7 @@ export const mensTankTop: GearProduct = {
   optionNote: 'Medium verified at $25 customer retail · Fine Art America lists higher base pricing for 2XL, so retail pricing is size-dependent.',
   fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
   image: {
-    avif: `${assetBase}rrgh-merch-tshirt-mens-tank-90f189fc.avif`,
+    avif: `${assetBase}rrgh-merch-tshirt-mens-tank-3fe72b20.avif`,
     width: 800,
     height: 1000,
     alt: 'Man wearing a dark Red River Gorge Hiker tank top with the logo centered on the chest at a gorge overlook.'
@@ -75,7 +75,7 @@ export const handTowel: GearProduct = {
   optionNote: 'Hand Towel configuration verified at $14.50 customer retail · Background R(34) G(85) B(58).',
   fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
   image: {
-    avif: `${assetBase}rrgh-merch-towel-hand-f1f88236.avif`,
+    avif: `${assetBase}rrgh-merch-towel-hand-2a8aebf9.avif`,
     width: 800,
     height: 1000,
     alt: 'Green Red River Gorge Hiker logo hand towel displayed in a bathroom setting.'
@@ -92,7 +92,7 @@ export const toddlerTshirt: GearProduct = {
   optionNote: 'Medium (3T) verified at $19 customer retail.',
   fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
   image: {
-    avif: `${assetBase}rrgh-merch-tshirt-toddler-7e00729e.avif`,
+    avif: `${assetBase}rrgh-merch-tshirt-toddler-f7d76ed9.avif`,
     width: 1000,
     height: 941,
     alt: 'Smiling toddler wearing a charcoal Red River Gorge Hiker logo T-shirt on a wooded trail.'
