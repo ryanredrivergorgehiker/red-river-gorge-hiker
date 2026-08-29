@@ -16,6 +16,7 @@ class HeaderBrandLogoContract(unittest.TestCase):
     def test_optimized_transparent_asset_is_present(self):
         self.assertTrue(ASSET.exists())
         self.assertLess(ASSET.stat().st_size, 100_000)
+        # Pin the exact optimized derivative reconstructed from the approved Drive source.
         self.assertEqual(
             hashlib.sha256(ASSET.read_bytes()).hexdigest(),
             'bfeca8eaa14450156a203977de2cb5f73555e741ccb923288db34d6927a19ba4'
