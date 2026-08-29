@@ -4,7 +4,7 @@ import SarMatchMeter from './SarMatchMeter.astro';
 const nav = [['Photography','/photography/'],['Puzzles','/puzzles/'],['Gear','/gear/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
-const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
+const bannerFilename = 'rrgh-banner-logo-profile-pixels-v3.webp';
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
@@ -13,8 +13,8 @@ const bannerFilename = 'rrgh-banner-logo-profile-v2.svg';
       <img
         class="brand-banner"
         src={`${base}assets/brand/${bannerFilename}`}
-        width="448"
-        height="151"
+        width="640"
+        height="176"
         alt="Red River Gorge Hiker"
       />
     </a>
