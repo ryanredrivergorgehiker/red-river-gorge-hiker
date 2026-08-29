@@ -110,9 +110,10 @@ const puzzleImages = {
       gap: .55rem;
       margin-top: auto;
     }
-    .puzzle-action-row .share-controls {
+    .puzzle-grid .puzzle-action-row .share-controls {
       flex: 0 0 auto;
       align-self: stretch;
+      min-height: 3.15rem;
       margin: 0;
       padding: 0 .55rem;
     }
@@ -139,7 +140,7 @@ const puzzleImages = {
     }
     @media (max-width: 430px) {
       .puzzle-action-row { gap: .4rem; }
-      .puzzle-action-row .share-controls { padding-inline: .4rem; }
+      .puzzle-grid .puzzle-action-row .share-controls { padding-inline: .4rem; }
       .puzzle-action-row .puzzle-primary-action { padding-inline: .55rem; }
       .puzzle-action-row .puzzle-print-action { padding-inline: .5rem; }
       .puzzle-action-row .button { font-size: .86rem; }
