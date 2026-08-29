@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HEADER = (ROOT / 'src/components/Header.astro').read_text(encoding='utf-8')
 BRAND = ROOT / 'public/assets/brand'
 
+# These are the exact Ryan-supplied V3 web assets from the Brand & QR Drive folder.
 AVIF = BRAND / 'rrgh-banner-logo-profile-transparent-v3.avif'
 WEBP = BRAND / 'rrgh-banner-logo-profile-transparent-v3.webp'
 SUPERSEDED = BRAND / 'rrgh-banner-logo-profile-pixels-v3.png'
