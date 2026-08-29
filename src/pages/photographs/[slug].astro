@@ -72,9 +72,9 @@ const artworkSchema = {
       <a
         class="photo-artwork-link"
         href={photo.wallArtUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`View wall art options for ${photo.title} on Fine Art America (opens in a new tab)`}
+        data-store-item-type="wall_art"
+        data-store-item-slug={photo.slug}
+        aria-label={`Shop wall art for ${photo.title} in the Red River Gorge Hiker Store`}
       >
         <Artwork
           title={photo.title}
@@ -113,10 +113,9 @@ const artworkSchema = {
       <aside class="purchase-panel" aria-label="Available products">
         <section>
           <h2>Available as wall art</h2>
-          <p>View available sizes and wall-art formats through Fine Art America. Fine Art America produces and ships online orders.</p>
-          <a class="button" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-            View wall art options
-            <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+          <p>View available sizes and wall-art formats in the Red River Gorge Hiker Store. Store orders are produced and fulfilled by Pixels.</p>
+          <a class="button" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
+            Shop Wall Art
           </a>
         </section>
 

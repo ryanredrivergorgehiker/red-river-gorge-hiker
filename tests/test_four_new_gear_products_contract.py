@@ -12,13 +12,13 @@ ASSET_DIR = ROOT / 'public/assets/merchandise'
 EXPECTED_ORDER = ['Double Rainbow at Eagle’s Point Buttress Greeting Card', 'Men’s T-Shirt (Athletic Fit) — Chest Logo', 'Sticker', 'Tote Bag', 'Men’s T-Shirt (Regular Fit)', 'Coffee Mug', 'Women’s T-Shirt', 'Long-Sleeve T-Shirt', 'Sweatshirt', 'Men’s T-Shirt (Athletic Fit) — Pocket Logo', 'Throw Pillow', 'Men’s Tank Top', 'Women’s Tank Top', 'Zip Pouch', 'Fleece / Sherpa Blanket', 'Youth T-Shirt', 'Spiral Notebook', 'Hand Towel', 'Bath Towel', 'Beach Towel', 'Kids T-Shirt', 'Toddler T-Shirt', 'Greeting Cards', 'Baby One-Piece', 'Ornament']
 
 NEW_PRODUCTS = {
-    'longSleeveTshirt': {'slug': 'long-sleeve-tshirt', 'title': 'Long-Sleeve T-Shirt', 'price': 'From $29', 'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
+    'longSleeveTshirt': {'slug': 'long-sleeve-tshirt', 'title': 'Long-Sleeve T-Shirt', 'price': 'From $29', 'url': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
         'avif': 'rrgh-merch-tshirt-long-sleeve-08342fea.avif', 'share': 'rrgh-merch-tshirt-long-sleeve-08342fea-share.jpg', 'avif_sha': '08342fea87ad4233ab0c4ac0f3098253f40dc2a7ed88ff502c828065706e685e', 'share_sha': '4bc6d257fd96c606c83c036c9e6f801e7ed9713ef58477d5a40fbdb44e5979e7'},
-    'mensTankTop': {'slug': 'mens-tank-top', 'title': 'Men’s Tank Top', 'price': 'From $25', 'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
+    'mensTankTop': {'slug': 'mens-tank-top', 'title': 'Men’s Tank Top', 'price': 'From $25', 'url': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
         'avif': 'rrgh-merch-tshirt-mens-tank-3fe72b20.avif', 'share': 'rrgh-merch-tshirt-mens-tank-3fe72b20-share.jpg', 'avif_sha': '3fe72b200a1d9ed8c0aabd292d884e47c19b04e08556a50686ce4a31e7617519', 'share_sha': 'b7cffaad43c48b7fa9aec436ce3386b42a947a00acf12dbeb752314bf3b249e0'},
-    'handTowel': {'slug': 'hand-towel', 'title': 'Hand Towel', 'price': '$14.50', 'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
+    'handTowel': {'slug': 'hand-towel', 'title': 'Hand Towel', 'price': '$14.50', 'url': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=hand-towel',
         'avif': 'rrgh-merch-towel-hand-2a8aebf9.avif', 'share': 'rrgh-merch-towel-hand-2a8aebf9-share.jpg', 'avif_sha': '2a8aebf9362561f2c0925c8b6f89910df590b3d5a4095e4b9d6252149cb7270a', 'share_sha': '8735908120a987cd6408d5c50179ad79059065be7059a281288287cb4d668af8'},
-    'toddlerTshirt': {'slug': 'toddler-tshirt', 'title': 'Toddler T-Shirt', 'price': '$19', 'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
+    'toddlerTshirt': {'slug': 'toddler-tshirt', 'title': 'Toddler T-Shirt', 'price': '$19', 'url': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
         'avif': 'rrgh-merch-tshirt-toddler-f7d76ed9.avif', 'share': 'rrgh-merch-tshirt-toddler-f7d76ed9-share.jpg', 'avif_sha': 'f7d76ed92fca3aeb3101eabe6a83f949c4c3644097f90a8bb85cbc32ee63ca77', 'share_sha': 'cc0a9137f30f82025fb0cd42496faeb808980075d537b8723dc7b15c958a9326'},
 }
 
@@ -67,8 +67,8 @@ class FourNewGearProductsContract(unittest.TestCase):
     def test_detail_routes_and_social_behavior_are_automatic(self):
         self.assertIn('gearProducts.map((product)', DETAIL)
         self.assertIn("replace(/\\.avif$/, '-share.jpg')", DETAIL)
-        self.assertIn('View on Fine Art America', DETAIL)
-        self.assertIn('href={product.fineArtAmericaUrl}', DETAIL)
+        self.assertIn('View in Store', DETAIL)
+        self.assertIn('href={product.storeUrl}', DETAIL)
         self.assertIn('ShareControls', DETAIL)
 
     def test_source_pngs_are_not_public_repo_assets(self):

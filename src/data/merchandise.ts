@@ -7,7 +7,7 @@ export interface MerchandiseProduct {
   priceLabel: string;
   specification: string;
   optionNote?: string;
-  fineArtAmericaUrl: string;
+  storeUrl: string;
   image: {
     avif: string;
     width: number;
@@ -27,7 +27,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',
     optionNote: 'Chest Logo configuration · Sizes below 2XL verified at $25 · 2XL verified at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-chest-70ec579b.avif`,
       width: 800,
@@ -42,7 +42,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A 3 × 3-inch Red River Gorge Hiker logo sticker for hikers and fans of Kentucky’s Red River Gorge.',
     priceLabel: '$3.50',
     specification: '3 × 3 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=sticker',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=sticker',
     image: {
       avif: `${assetBase}rrgh-merch-sticker-218cc04a.avif`,
       width: 983,
@@ -57,7 +57,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'An 18 × 18-inch green tote bag featuring the Red River Gorge Hiker logo.',
     priceLabel: '$23.50',
     specification: '18 × 18 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tote-bag',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tote-bag',
     image: {
       avif: `${assetBase}rrgh-merch-tote-bag-bc2e6737.avif`,
       width: 800,
@@ -73,7 +73,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $23',
     specification: 'Men’s T-Shirt · Regular Fit',
     optionNote: 'Through XL $23 · 2XL $26 · 3XL $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=regular-tshirt',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=regular-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-regular-ece83fde.avif`,
       width: 800,
@@ -88,7 +88,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A large white 15-ounce coffee mug printed with the Red River Gorge Hiker logo.',
     priceLabel: '$16',
     specification: 'Large 15 oz. · White',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=coffee-mug-large',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=coffee-mug-large',
     image: {
       avif: `${assetBase}rrgh-merch-coffee-mug-0d15378a.avif`,
       width: 800,
@@ -104,7 +104,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $25',
     specification: 'Women’s T-Shirt · Chest Logo',
     optionNote: 'Through XL $25 · 2XL $28 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-womens-d77d1bbf.avif`,
       width: 800,
@@ -120,7 +120,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $45',
     specification: 'Pullover sweatshirt · Chest Logo',
     optionNote: 'Below 2XL $45 · 2XL $51 · 3XL $57 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
     image: {
       avif: `${assetBase}rrgh-merch-sweater-df6f24ea.avif`,
       width: 800,
@@ -136,7 +136,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',
     optionNote: 'Pocket Logo configuration · Sizes below 2XL verified at $25 · 2XL verified at $28.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[430]-imageheight[430]-targetx[0]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]-designlocation[pocket]',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[430]-imageheight[430]-targetx[0]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]-designlocation[pocket]',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-pocket-v3-e3c01e3d.avif`,
       width: 800,
@@ -152,7 +152,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $19',
     specification: '14 × 14 inches',
     optionNote: 'Without insert $19 · With insert $24.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=throw-pillow',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=throw-pillow',
     image: {
       avif: `${assetBase}rrgh-merch-throw-pillow-50251954.avif`,
       width: 1000,
@@ -168,7 +168,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $25',
     specification: 'Women’s Tank Top · Chest Logo',
     optionNote: 'Verified at $25 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-womens-tank-9998df0a.avif`,
       width: 750,
@@ -184,7 +184,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $22',
     specification: 'Medium · 9.5 × 6 inches',
     optionNote: 'Regular Bottom $22 · Optional T-style Bottom $22.50.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pouch',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pouch',
     image: {
       avif: `${assetBase}rrgh-merch-zip-pouch-04134418.avif`,
       width: 800,
@@ -200,7 +200,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $45.50',
     specification: '50 × 60 inches',
     optionNote: 'Plush Fleece $45.50 · Sherpa Fleece $48.50.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
     image: {
       avif: `${assetBase}rrgh-merch-fleece-blanket-c5e93147.avif`,
       width: 800,
@@ -216,7 +216,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $21',
     specification: 'Youth T-Shirt',
     optionNote: 'Verified at $21 across sizes.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=youth-tshirt',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=youth-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-youth-f9cdcdd6.avif`,
       width: 800,
@@ -231,7 +231,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A 6 × 8-inch green spiral notebook featuring the Red River Gorge Hiker logo.',
     priceLabel: '$16',
     specification: '6 × 8 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=spiral-notebook',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=spiral-notebook',
     image: {
       avif: `${assetBase}rrgh-merch-spiral-notebook-62906115.avif`,
       width: 800,
@@ -246,7 +246,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A 32 × 64-inch green bath towel featuring the Red River Gorge Hiker logo.',
     priceLabel: '$32.50',
     specification: '32 × 64 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
     image: {
       avif: `${assetBase}rrgh-merch-towel-bath-051a15a3.avif`,
       width: 800,
@@ -261,7 +261,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.',
     priceLabel: '$32.50',
     specification: '32 × 64 inches',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
     image: {
       avif: `${assetBase}rrgh-merch-towel-beach-1348ef08.avif`,
       width: 657,
@@ -277,7 +277,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $19',
     specification: 'Kids T-Shirt · Chest Logo',
     optionNote: 'Verified at $19 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-kids-813c4eae.avif`,
       width: 800,
@@ -293,7 +293,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: '$30',
     specification: 'Pack of 10',
     optionNote: 'Optional buyer-entered inside message available during ordering.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=greeting-card',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=greeting-card',
     image: {
       avif: `${assetBase}rrgh-merch-greeting-card-415e37be.avif`,
       width: 1000,
@@ -309,7 +309,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     priceLabel: 'From $23',
     specification: 'Baby One-Piece',
     optionNote: 'Verified at $23 across sizes.',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
     image: {
       avif: `${assetBase}rrgh-merch-one-piece-37bc434d.avif`,
       width: 800,
@@ -324,7 +324,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'A green Red River Gorge Hiker logo ornament for the holiday season.',
     priceLabel: '$9.50',
     specification: 'Oval Red River Gorge Hiker logo ornament',
-    fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
+    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
     image: {
       avif: `${assetBase}rrgh-merch-ornament-2c0c7784.avif`,
       width: 750,

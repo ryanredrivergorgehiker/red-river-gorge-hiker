@@ -43,7 +43,7 @@ const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg
 ---
 <Base
   title={`${photo.title} Jigsaw Puzzle`}
-  description={`${photo.title} as an 18 × 24-inch, 500-piece jigsaw puzzle through Fine Art America.`}
+  description={`${photo.title} as an 18 × 24-inch, 500-piece jigsaw puzzle in the Red River Gorge Hiker Store.`}
   socialImage={socialImage}
   socialImageType="image/jpeg"
   socialImageAlt={photo.altText}
@@ -51,7 +51,7 @@ const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg
   <div class="page puzzle-detail-page">
     <p class="eyebrow">500-piece jigsaw puzzle</p>
     <h1>{photo.title}</h1>
-    <p class="lede">18 × 24 inches · 500 pieces · horizontal · available through Fine Art America.</p>
+    <p class="lede">18 × 24 inches · 500 pieces · horizontal · available in the Red River Gorge Hiker Store.</p>
 
     <div class="puzzle-detail-image-stage">
       <button
@@ -75,13 +75,11 @@ const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg
 
     <div class="puzzle-detail-actions">
       <ShareControls title={`${photo.title} jigsaw puzzle`} url={canonical} />
-      <a class="button puzzle-detail-primary" href={puzzleUrl} target="_blank" rel="noopener noreferrer">
-        View on Fine Art America
-        <span class="sr-only"> (opens in a new tab)</span>
+      <a class="button puzzle-detail-primary" href={puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
+        View Puzzle in Store
       </a>
-      <a class="button secondary puzzle-detail-print" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-        Print options
-        <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+      <a class="button secondary puzzle-detail-print" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
+        Wall Art Options
       </a>
     </div>
 
@@ -105,9 +103,8 @@ const socialImage = photo.sourceFilename.replace('-WEB-WM.webp', '-SOCIAL-WM.jpg
       </div>
       <div class="puzzle-lightbox-action">
         <ShareControls title={`${photo.title} jigsaw puzzle`} url={canonical} />
-        <a class="button" href={puzzleUrl} target="_blank" rel="noopener noreferrer">
-          View on Fine Art America
-          <span class="sr-only"> (opens in a new tab)</span>
+        <a class="button" href={puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
+          View Puzzle in Store
         </a>
       </div>
     </div>

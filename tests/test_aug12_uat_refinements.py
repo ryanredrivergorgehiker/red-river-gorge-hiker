@@ -15,7 +15,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('footer .footer-nav .footer-privacy-choice', footer)
         self.assertIn('color: #fff;', footer)
 
-    def test_gear_actions_share_and_faa_are_one_row(self):
+    def test_gear_actions_share_and_store_are_one_row(self):
         css = (ROOT / 'src/styles/gear-sharing.css').read_text()
         gear = (ROOT / 'src/pages/gear.astro').read_text()
         detail = (ROOT / 'src/pages/gear/[slug].astro').read_text()
@@ -24,8 +24,8 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('.merch-card-actions .merch-button', css)
         self.assertIn('.gear-product-action-row', css)
         self.assertIn('class="gear-product-action-row"', detail)
-        self.assertIn('View on Fine Art America', detail)
-        self.assertIn('View on Fine Art America', gear)
+        self.assertIn('View in Store', detail)
+        self.assertIn('View in Store', gear)
 
     def test_photography_replaces_standalone_prints_destination(self):
         photography = (ROOT / 'src/pages/photography.astro').read_text()
@@ -46,8 +46,8 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('class="puzzle-action-row"', puzzles)
         self.assertIn('puzzle-primary-action', puzzles)
         self.assertIn('puzzle-print-action', puzzles)
-        self.assertIn('View puzzle', puzzles)
-        self.assertIn('Print options', puzzles)
+        self.assertIn('View Puzzle in Store', puzzles)
+        self.assertIn('Wall Art Options', puzzles)
         self.assertIn('puzzles/${photo.slug}/', puzzles)
         self.assertIn('.puzzle-product-image img {', puzzles)
         self.assertIn('aspect-ratio: 4 / 3;', puzzles)
@@ -92,7 +92,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertNotIn('radial-gradient', detail)
         self.assertIn('box-shadow: none;', detail)
         self.assertIn('View larger', detail)
-        self.assertIn('View on Fine Art America', detail)
+        self.assertIn('View Puzzle in Store', detail)
         self.assertNotIn('aria-label={`View ${photo.title} puzzle on Fine Art America', detail)
 
 

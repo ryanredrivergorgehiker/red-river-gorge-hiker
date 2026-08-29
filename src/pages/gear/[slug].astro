@@ -60,16 +60,15 @@ const socialImagePath = product.image.avif.replace(/\.avif$/, '-share.jpg');
           <ShareControls title={product.title} url={canonical} />
           <a
             class="button gear-product-button"
-            href={product.fineArtAmericaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={product.storeUrl}
+            data-store-item-type="gear"
+            data-store-item-slug={product.slug}
           >
-            View on Fine Art America
-            <span class="sr-only"> (opens in a new tab)</span>
+            View in Store
           </a>
         </div>
         <p class="gear-product-fulfillment">
-          {product.detailFulfillmentNote ?? 'Fine Art America handles current product options, checkout, payment, production, fulfillment, shipping, and returns.'}
+          {product.detailFulfillmentNote ?? 'Current product options, checkout, payment, production, fulfillment, shipping, customer service, and returns are handled through the Red River Gorge Hiker Store, powered by Pixels.'}
         </p>
       </section>
     </div>

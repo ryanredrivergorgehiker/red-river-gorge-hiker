@@ -11,7 +11,7 @@ DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text()
 
 TITLE = 'Double Rainbow at Eagle’s Point Buttress Greeting Card'
 SLUG = 'double-rainbow-eagles-point-buttress-greeting-card'
-FAA_URL = 'https://fineartamerica.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card'
+STORE_URL = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card'
 AVIF = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a.avif'
 SHARE = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a-share.jpg'
 EXPECTED_EXISTING_TITLES = [
@@ -66,10 +66,10 @@ class DoubleRainbowGreetingCardContract(unittest.TestCase):
             SLUG,
             "priceLabel: 'From $6.25'",
             "specification: 'Greeting card only'",
-            FAA_URL,
+            STORE_URL,
             'Single Card — $6.25',
             'Pack of 10 — $35.00 total ($3.50 per card)',
-            'Pack of 25 — $53.00 total (FAA displays $2.12 per card)',
+            'Pack of 25 — $53.00 total (Store displays $2.12 per card)',
             'optional inside message',
             'quantity selection, optional inside-message customization, checkout, payment, production, fulfillment, and shipping',
             "lastVerified: '2026-08-22'",
@@ -87,7 +87,7 @@ class DoubleRainbowGreetingCardContract(unittest.TestCase):
         self.assertIn('getStaticPaths()', DETAIL)
         self.assertIn("replace(/\\.avif$/, '-share.jpg')", DETAIL)
         self.assertIn('ShareControls', DETAIL)
-        self.assertIn('View on Fine Art America', DETAIL)
+        self.assertIn('View in Store', DETAIL)
         self.assertIn('detailPricing', DETAIL)
         self.assertIn('detailCustomizationNote', DETAIL)
         self.assertIn('detailFulfillmentNote', DETAIL)

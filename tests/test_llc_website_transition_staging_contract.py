@@ -50,7 +50,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
             "To the fullest extent permitted by applicable law, Red River Gorge Hiker, LLC shall not be responsible for injuries, losses, damages, expenses, or other consequences arising from a visitor's use of or reliance upon outdoor, geographic, historical, safety, access, or location-related information provided through this website.",
             "Red River Gorge Hiker, LLC, operating under the Red River Gorge Hiker brand, independently supports Wolfe County Search & Rescue through the RRGH business-support program described on this website. This is separate from Ryan D. Lewis's personal support of Wolfe County Search & Rescue. No formal partnership, sponsorship, endorsement, agency relationship, promotional arrangement, or commercial relationship with Wolfe County Search & Rescue is stated or implied. Neither Red River Gorge Hiker, LLC nor Ryan D. Lewis speaks for Wolfe County Search & Rescue.",
             "Links inviting visitors to donate directly to Wolfe County Search & Rescue send visitors to WCSART's own public donation system. Direct charitable donations do not pass through Red River Gorge Hiker, LLC or Ryan D. Lewis, and neither Red River Gorge Hiker, LLC nor Ryan D. Lewis processes, holds, or relays those direct donations.",
-            "Online print, puzzle, gear, and other product purchases linked from Red River Gorge Hiker are currently completed through Fine Art America or another specifically identified third-party provider. Those providers control their own checkout processes, payment processing, production, shipping, returns, product availability, applicable pricing, terms, and privacy practices. Red River Gorge Hiker, LLC does not manufacture, ship, process payment for, or administer returns for Fine Art America orders unless a page expressly states otherwise.",
+            "Online product purchases linked from Red River Gorge Hiker are completed through the Red River Gorge Hiker Store at store.RedRiverGorgeHiker.com, which is powered by Pixels / Fine Art America. Pixels operates the checkout and payment system and handles on-demand production, shipping, customer service, and returns. Purchases through the Store are also subject to the applicable Pixels terms, privacy practices, and return policies. Red River Gorge Hiker, LLC does not manufacture or ship Pixels orders, process buyers’ payment cards, or administer Pixels returns.",
             "To the fullest extent permitted by applicable law, Red River Gorge Hiker, LLC shall not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages arising from or related to access to, use of, inability to use, or reliance upon RedRiverGorgeHiker.com or its content.",
             "Nothing in these Terms is intended to exclude or limit liability that cannot lawfully be excluded or limited.",
         ]
@@ -60,7 +60,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
 
     def test_privacy_staging_copy_and_date(self):
         text = read("src/pages/privacy.astro")
-        self.assertIn("Last updated: August 26, 2026", text)
+        self.assertIn("Last updated: August 29, 2026", text)
         self.assertIn("RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. It is a static photography and outdoor-interest website. It does not create visitor accounts, run its own online shopping cart, or directly collect payment-card information.", text)
         self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Optional measurement tools are described below.", text)
         self.assertIn("If you email Ryan at Ryan@RedRiverGorgeHiker.com, the information you choose to provide may be retained by Red River Gorge Hiker, LLC when reasonably useful for responding to your message, administering the business, or maintaining ordinary business records.", text)
@@ -76,7 +76,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("Red River Gorge Hiker was founded by <strong>Ryan D. Lewis</strong>, a photographer, hiker, backpacker, and backcountry explorer", about)
         self.assertIn("Red River Gorge Hiker is operated by Red River Gorge Hiker, LLC. Ryan D. Lewis remains the photographer and the contact for photography, image-use, and general Red River Gorge Hiker inquiries.", contact)
         self.assertIn("Ryan@RedRiverGorgeHiker.com", contact)
-        self.assertIn("Fine Art America orders", contact)
+        self.assertIn("Store orders", contact)
         self.assertIn("Photographs on Red River Gorge Hiker are copyrighted by Ryan D. Lewis.", permissions)
         self.assertIn("Red River Gorge Hiker, LLC operates the Red River Gorge Hiker website and business, but ownership of Ryan D. Lewis's photograph copyrights remains with Ryan D. Lewis.", permissions)
         self.assertIn("Permission is only granted when Ryan confirms it in writing.", permissions)

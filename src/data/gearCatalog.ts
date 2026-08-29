@@ -17,10 +17,10 @@ const assetBase = 'assets/merchandise/' as const;
 export const doubleRainbowGreetingCard: GearProduct = {
   slug: 'double-rainbow-eagles-point-buttress-greeting-card',
   title: 'Double Rainbow at Eagle’s Point Buttress Greeting Card',
-  description: 'A greeting-card-only presentation of Double Rainbow at Eagle’s Point Buttress, offered through Fine Art America.',
+  description: 'A greeting-card-only presentation of Double Rainbow at Eagle’s Point Buttress, offered through the Red River Gorge Hiker Store.',
   priceLabel: 'From $6.25',
   specification: 'Greeting card only',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card',
+  storeUrl: 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card',
   image: {
     avif: 'assets/merchandise/rrgh-merch-double-rainbow-greeting-card-3d945e8a.avif',
     width: 1000,
@@ -30,10 +30,10 @@ export const doubleRainbowGreetingCard: GearProduct = {
   detailPricing: [
     'Single Card — $6.25',
     'Pack of 10 — $35.00 total ($3.50 per card)',
-    'Pack of 25 — $53.00 total (FAA displays $2.12 per card)'
+    'Pack of 25 — $53.00 total (Store displays $2.12 per card)'
   ],
-  detailCustomizationNote: 'Fine Art America allows the buyer to enter an optional inside message.',
-  detailFulfillmentNote: 'Fine Art America handles quantity selection, optional inside-message customization, checkout, payment, production, fulfillment, and shipping.',
+  detailCustomizationNote: 'The Red River Gorge Hiker Store allows the buyer to enter an optional inside message.',
+  detailFulfillmentNote: 'The Red River Gorge Hiker Store, powered by Pixels, handles quantity selection, optional inside-message customization, checkout, payment, production, fulfillment, and shipping.',
   lastVerified: '2026-08-22'
 };
 
@@ -43,8 +43,8 @@ export const longSleeveTshirt: GearProduct = {
   description: 'A charcoal Red River Gorge Hiker long-sleeve T-shirt featuring the logo centered on the chest.',
   priceLabel: 'From $29',
   specification: 'Long Sleeve T-Shirt · Medium shown · Charcoal',
-  optionNote: 'Medium verified at $29 customer retail · Fine Art America lists higher base pricing for 2XL, so retail pricing is size-dependent.',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
+  optionNote: 'Medium verified at $29 customer retail · The Red River Gorge Hiker Store lists higher pricing for 2XL, so retail pricing is size-dependent.',
+  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
   image: {
     avif: `${assetBase}rrgh-merch-tshirt-long-sleeve-08342fea.avif`,
     width: 800,
@@ -60,8 +60,8 @@ export const mensTankTop: GearProduct = {
   description: 'A charcoal Red River Gorge Hiker men’s tank top featuring the logo centered on the chest.',
   priceLabel: 'From $25',
   specification: 'Men’s Tank Top · Medium shown · Charcoal',
-  optionNote: 'Medium verified at $25 customer retail · Fine Art America lists higher base pricing for 2XL, so retail pricing is size-dependent.',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
+  optionNote: 'Medium verified at $25 customer retail · The Red River Gorge Hiker Store lists higher pricing for 2XL, so retail pricing is size-dependent.',
+  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
   image: {
     avif: `${assetBase}rrgh-merch-tshirt-mens-tank-3fe72b20.avif`,
     width: 800,
@@ -78,7 +78,7 @@ export const handTowel: GearProduct = {
   priceLabel: '$14.50',
   specification: 'Hand Towel · 15 × 30 inches · Vertical',
   optionNote: 'Hand Towel configuration verified at $14.50 customer retail · Background R(34) G(85) B(58).',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
+  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=hand-towel',
   image: {
     avif: `${assetBase}rrgh-merch-towel-hand-2a8aebf9.avif`,
     width: 800,
@@ -95,7 +95,7 @@ export const toddlerTshirt: GearProduct = {
   priceLabel: '$19',
   specification: 'Toddler T-Shirt · Medium (3T) shown · Charcoal',
   optionNote: 'Medium (3T) verified at $19 customer retail.',
-  fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
+  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
   image: {
     avif: `${assetBase}rrgh-merch-tshirt-toddler-f7d76ed9.avif`,
     width: 1000,

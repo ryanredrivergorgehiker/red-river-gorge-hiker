@@ -16,7 +16,7 @@ class BeachTowelV2ContractTests(unittest.TestCase):
             "description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.'",
             "priceLabel: '$32.50'",
             "specification: '32 × 64 inches'",
-            "fineArtAmericaUrl: 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'",
+            "storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'",
             "alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'",
             'rrgh-merch-towel-beach-1348ef08.avif',
             'width: 657',

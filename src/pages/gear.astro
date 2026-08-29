@@ -12,7 +12,7 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
 ---
 <Base
   title="Red River Gorge Hiker Gear"
-  description="Red River Gorge Hiker gear inspired by Kentucky’s Red River Gorge and Clifty Wilderness, produced and fulfilled through Fine Art America."
+  description="Curated Red River Gorge Hiker gear inspired by Kentucky’s Red River Gorge and Clifty Wilderness, available in the Red River Gorge Hiker Store."
   socialImagePath={featuredProduct.image.avif}
   socialImageType="image/avif"
   socialImageAlt={featuredProduct.image.alt}
@@ -36,7 +36,8 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
                 data-image-src={`${base}${product.image.avif}`}
                 data-image-alt={product.image.alt}
                 data-product-title={product.title}
-                data-product-url={product.fineArtAmericaUrl}
+                data-product-slug={product.slug}
+                data-product-url={product.storeUrl}
                 data-product-share-url={productShareUrl}
                 aria-label={`View a larger image of ${product.title}`}
               >
@@ -65,12 +66,11 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
                   <ShareControls title={product.title} url={productShareUrl} />
                   <a
                     class="button merch-button"
-                    href={product.fineArtAmericaUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={product.storeUrl}
+                    data-store-item-type="gear"
+                    data-store-item-slug={product.slug}
                   >
-                    View on Fine Art America
-                    <span class="sr-only"> (opens in a new tab)</span>
+                    View in Store
                   </a>
                 </div>
               </div>
@@ -83,17 +83,20 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
     <section class="merch-ordering" aria-labelledby="gear-ordering-heading">
       <h2 id="gear-ordering-heading">Ordering</h2>
       <p>
-        RedRiverGorgeHiker.com presents the gear collection and sends you to the corresponding Fine Art America product page. Choose any product above to review its current purchase options.
+        RedRiverGorgeHiker.com presents the curated Gear collection. Use View in Store on any product, or Shop the Store to browse the Red River Gorge Hiker Store.
+      </p>
+      <p>
+        <a class="button" href="https://store.redrivergorgehiker.com/" data-store-item-type="store">Shop the Store</a>
       </p>
     </section>
 
     <div class="merch-policy-notices" aria-label="Ordering and pricing information">
       <p class="merch-fulfillment">
-        Orders are produced and fulfilled through Fine Art America, which handles product options, checkout, payment, production, shipping, and returns.
+        Current product options, checkout, payment, production, fulfillment, shipping, customer service, and returns are handled through the Red River Gorge Hiker Store, powered by Pixels.
       </p>
 
       <div class="notice merch-pricing-notice" role="note">
-        <strong>Pricing Notice:</strong> Prices shown on RedRiverGorgeHiker.com are provided for reference and may change. Final product pricing is determined by Fine Art America and will be displayed before purchase.
+        <strong>Pricing Notice:</strong> Prices shown on RedRiverGorgeHiker.com are provided for reference and may change. The product configuration and final price displayed in the Red River Gorge Hiker Store at the time of purchase control the transaction.
       </div>
     </div>
   </div>
@@ -115,11 +118,9 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
           id="merch-lightbox-link"
           class="button"
           href="#"
-          target="_blank"
-          rel="noopener noreferrer"
+          data-store-item-type="gear"
         >
-          View on Fine Art America
-          <span class="sr-only"> (opens in a new tab)</span>
+          View in Store
         </a>
       </div>
     </div>
@@ -140,15 +141,17 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
         const imageSrc = trigger.dataset.imageSrc;
         const imageAlt = trigger.dataset.imageAlt;
         const productTitle = trigger.dataset.productTitle;
+        const productSlug = trigger.dataset.productSlug;
         const productUrl = trigger.dataset.productUrl;
         const productShareUrl = trigger.dataset.productShareUrl;
 
-        if (!imageSrc || !imageAlt || !productTitle || !productUrl || !productShareUrl) return;
+        if (!imageSrc || !imageAlt || !productTitle || !productSlug || !productUrl || !productShareUrl) return;
 
         dialogImage.src = imageSrc;
         dialogImage.alt = imageAlt;
         dialogTitle.textContent = productTitle;
         dialogLink.href = productUrl;
+        dialogLink.dataset.storeItemSlug = productSlug;
         dialogShareControls.dataset.shareTitle = productTitle;
         dialogShareControls.dataset.shareUrl = productShareUrl;
         dialog.showModal();

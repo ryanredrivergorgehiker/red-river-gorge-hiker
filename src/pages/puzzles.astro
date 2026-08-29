@@ -29,12 +29,12 @@ const puzzleImages = {
 ---
 <Base
   title="Red River Gorge Jigsaw Puzzles"
-  description="Three Red River Gorge photographs offered as 500-piece jigsaw puzzles through Fine Art America."
+  description="Three Red River Gorge photographs offered as 500-piece jigsaw puzzles in the Red River Gorge Hiker Store."
 >
   <div class="page catalog-page">
     <h1>Jigsaw Puzzles</h1>
     <div class="prose-wide">
-      <p class="lede">Three photographs are available as 500-piece puzzles through Fine Art America.</p>
+      <p class="lede">Three photographs are available as 500-piece puzzles in the Red River Gorge Hiker Store.</p>
       <div class="notice">
         <strong>Each puzzle:</strong> 18 × 24 inches · 500 pieces · horizontal · $59.99 before shipping and tax.
       </div>
@@ -65,13 +65,11 @@ const puzzleImages = {
             <p class="puzzle-spec">18 × 24 inches · 500 pieces</p>
             <div class="puzzle-action-row">
               <ShareControls title={`${photo.title} jigsaw puzzle`} url={puzzleShareUrl} />
-              <a class="button puzzle-primary-action" href={photo.puzzleUrl} target="_blank" rel="noopener noreferrer">
-                View puzzle
-                <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+              <a class="button puzzle-primary-action" href={photo.puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
+                View Puzzle in Store
               </a>
-              <a class="button secondary puzzle-print-action" href={photo.wallArtUrl} target="_blank" rel="noopener noreferrer">
-                Print options
-                <span class="sr-only"> on Fine Art America (opens in a new tab)</span>
+              <a class="button secondary puzzle-print-action" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
+                Wall Art Options
               </a>
             </div>
           </article>

@@ -26,7 +26,7 @@ const gaConfig = {
     <div class="analytics-consent-copy">
       <strong id="analytics-consent-title">Optional website analytics</strong>
       <p id="analytics-consent-copy">
-        Red River Gorge Hiker uses optional Google Analytics and Pinterest measurement to understand site traffic, improve the website, and evaluate campaigns. Google Analytics also measures actions such as outbound clicks to Fine Art America. Measurement stays off until you allow it.
+        Red River Gorge Hiker uses optional Google Analytics and Pinterest measurement on RedRiverGorgeHiker.com to understand site traffic, improve the website, evaluate campaigns, and measure actions such as clicks to the Red River Gorge Hiker Store. Measurement stays off until you allow it.
         <a href={`${base}privacy/`}>Privacy details</a>
       </p>
     </div>
@@ -166,6 +166,36 @@ const gaConfig = {
     document.querySelectorAll('[data-analytics-privacy-settings]').forEach((control) => {
       control.addEventListener('click', () => setVisible(true));
     });
+
+    const trackStoreHandoff = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+
+      let destination;
+      try { destination = new URL(anchor.href, window.location.href); }
+      catch { return; }
+
+      if (destination.hostname.toLowerCase() !== 'store.redrivergorgehiker.com') return;
+      if (readChoice(storageKey) !== 'granted' || !analyticsLoaded) return;
+
+      const itemType = anchor.dataset.storeItemType;
+      const itemSlug = anchor.dataset.storeItemSlug;
+      const parameters = {
+        link_url: destination.href,
+        link_text: (anchor.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 200),
+        source_path: window.location.pathname,
+        ...(itemType ? { item_type: itemType } : {}),
+        ...(itemSlug ? { item_slug: itemSlug } : {})
+      };
+
+      window.gtag('event', 'store_handoff_click', parameters);
+    };
+
+    if (typeof document.addEventListener === 'function') {
+      document.addEventListener('click', trackStoreHandoff, { capture: true });
+    }
 
     const currentChoice = readChoice(storageKey);
     if (currentChoice === 'granted') {

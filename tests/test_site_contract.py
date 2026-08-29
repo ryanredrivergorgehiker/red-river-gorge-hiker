@@ -40,7 +40,7 @@ class SiteContract(unittest.TestCase):
     def test_gear_catalog(self):
         self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
         self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 20)
-        self.assertEqual(len(re.findall(r"fineArtAmericaUrl:\s*'https://", MERCH)), 20)
+        self.assertEqual(len(re.findall(r"storeUrl:\s*'https://", MERCH)), 20)
         self.assertEqual(MERCH.count('.avif`'), 20)
         self.assertNotIn('ARCHIVE', MERCH)
         self.assertNotIn('.png', MERCH.lower())
@@ -236,8 +236,8 @@ class SiteContract(unittest.TestCase):
             'Questions and Permissions',
         ):
             self.assertIn(f'<h2>{heading}</h2>', terms)
-        self.assertIn('Online print, puzzle, gear, and other product purchases linked from Red River Gorge Hiker', terms)
-        self.assertIn('The price displayed by Fine Art America at the time of purchase is the final and controlling price for the transaction.', terms)
+        self.assertIn('Online product purchases linked from Red River Gorge Hiker', terms)
+        self.assertIn('The price, product configuration, shipping charge, tax, discount, and final total displayed by the Red River Gorge Hiker Store at the time of purchase control the transaction.', terms)
         self.assertIn('Backcountry travel is undertaken at your own risk.', footer)
         self.assertIn('href={`${base}copyright-and-terms/`}>Copyright and Terms</a>', footer)
         self.assertNotIn('modal', terms.lower())
@@ -369,7 +369,7 @@ class SiteContract(unittest.TestCase):
         self.assertIn('Red River Gorge Hiker gear', gear)
         self.assertIn('gear/${product.slug}/', gear)
         self.assertIn('<strong>Pricing Notice:</strong>', gear)
-        self.assertIn('Final product pricing is determined by Fine Art America and will be displayed before purchase.', gear)
+        self.assertIn('The product configuration and final price displayed in the Red River Gorge Hiker Store at the time of purchase control the transaction.', gear)
         self.assertIn('width: 100%;\n  max-width: none;\n  margin-top: 2.5rem;', css)
         self.assertIn('class="gear-product-action-row"', gear_detail)
         self.assertIn("import '../../styles/gear-sharing.css';", gear_detail)
