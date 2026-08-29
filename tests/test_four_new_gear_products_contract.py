@@ -43,28 +43,28 @@ NEW_PRODUCTS = {
         'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
         'avif': 'rrgh-merch-tshirt-long-sleeve-b245685d.avif', 'share': 'rrgh-merch-tshirt-long-sleeve-b245685d-share.jpg',
         'size': (800, 1000), 'avif_sha': 'b245685d2579585d22f6ae73c004adbff5a9ad42fbd2f1efc8bea773fe53a246',
-        'share_sha': '0e285d5c6764f67c2189120ec79db49a8c8d162444597e263d4f81cd5def0069',
+        'share_sha': '0f64892635b405ace0742e3f458eeccb345375471afb20326df6b9fb737a0755',
     },
     'mensTankTop': {
         'slug': 'mens-tank-top', 'title': 'Men’s Tank Top', 'price': 'From $25',
         'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
         'avif': 'rrgh-merch-tshirt-mens-tank-90f189fc.avif', 'share': 'rrgh-merch-tshirt-mens-tank-90f189fc-share.jpg',
         'size': (800, 1000), 'avif_sha': '90f189fc7ac0dbf1bfb1efcbb2aceb36c0b167e65b4a0b761c5b5d2e35152b61',
-        'share_sha': '253307ab37268bdfc5cc9624a9984f69830bbb6fbbc38ae2cc641df208271e2c',
+        'share_sha': 'dada93cccc406b66fa7e530c237bb2825a5af08019fab5651e0b056836631c13',
     },
     'handTowel': {
         'slug': 'hand-towel', 'title': 'Hand Towel', 'price': '$14.50',
         'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
         'avif': 'rrgh-merch-towel-hand-f1f88236.avif', 'share': 'rrgh-merch-towel-hand-f1f88236-share.jpg',
         'size': (800, 1000), 'avif_sha': 'f1f88236c6b4e7df4890041a739d614460debb2983a8089d10c00f1e0b792644',
-        'share_sha': '3e1f7d7768fe4e52a51199ff5e6d9938e472bee1a82062a3f00ca6c3c6bec223',
+        'share_sha': '8e4483ca40ea9e71bdd8a8d010de12640e66de3515abf57100f4855ef749495c',
     },
     'toddlerTshirt': {
         'slug': 'toddler-tshirt', 'title': 'Toddler T-Shirt', 'price': '$19',
         'url': 'https://fineartamerica.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
         'avif': 'rrgh-merch-tshirt-toddler-7e00729e.avif', 'share': 'rrgh-merch-tshirt-toddler-7e00729e-share.jpg',
         'size': (1000, 941), 'avif_sha': '7e00729e54af3c33756791d5d450e6fad67f14f73bb50dba310edcb0104c9f31',
-        'share_sha': '4f31009c2250dc217222e25e14091ead9b81d8b99cfe5e004a04f71cefa8cacf',
+        'share_sha': '0f68707e3587132dcdcb511f154cbbc72ecf631496b828a7a42e3e7939762c8f',
     },
 }
 
