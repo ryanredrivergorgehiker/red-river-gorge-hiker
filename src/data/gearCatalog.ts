@@ -7,6 +7,11 @@ export type GearProduct = Omit<MerchandiseProduct, 'lastVerified'> & {
   detailFulfillmentNote?: string;
 };
 
+export type StorefrontGearProduct = GearProduct & {
+  storefrontSubtitle: string;
+  storefrontNote?: string;
+};
+
 const assetBase = 'assets/merchandise/' as const;
 
 export const doubleRainbowGreetingCard: GearProduct = {
@@ -100,7 +105,110 @@ export const toddlerTshirt: GearProduct = {
   lastVerified: '2026-08-28'
 };
 
-export const gearProducts: readonly GearProduct[] = [
+const storefrontCopy = {
+  'double-rainbow-eagles-point-buttress-greeting-card': {
+    subtitle: 'Send a little piece of the Gorge',
+    note: 'Double Rainbow photograph · Optional inside message'
+  },
+  'tshirt-chest-logo': {
+    subtitle: 'Classic RRGH athletic-fit tee',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'sticker': {
+    subtitle: 'Take the Gorge with you',
+    note: '3 × 3 in. RRGH logo sticker'
+  },
+  'tote-bag': {
+    subtitle: 'Carry the Gorge wherever you go',
+    note: '18 × 18 in. logo tote'
+  },
+  'tshirt-regular-fit': {
+    subtitle: 'Everyday RRGH regular-fit tee',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'coffee-mug': {
+    subtitle: 'Bring the Gorge to your morning coffee',
+    note: '15 oz. white logo mug'
+  },
+  'womens-tshirt': {
+    subtitle: 'Everyday RRGH women’s tee',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'long-sleeve-tshirt': {
+    subtitle: 'Classic RRGH long-sleeve tee',
+    note: 'Chest logo · Charcoal shown'
+  },
+  'sweatshirt': {
+    subtitle: 'RRGH warmth for cooler days',
+    note: 'Pullover style · Chest logo'
+  },
+  'tshirt-pocket-logo': {
+    subtitle: 'A subtler take on the RRGH tee',
+    note: 'Athletic fit · Pocket logo'
+  },
+  'throw-pillow': {
+    subtitle: 'Bring a little Gorge style home',
+    note: '14 × 14 in. · Insert optional'
+  },
+  'mens-tank-top': {
+    subtitle: 'RRGH tank for warm-weather days',
+    note: 'Chest logo · Charcoal shown'
+  },
+  'womens-tank-top': {
+    subtitle: 'RRGH tank for sunny trail days',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'zip-pouch': {
+    subtitle: 'Keep the small stuff together',
+    note: '9.5 × 6 in. · Two bottom styles available'
+  },
+  'fleece-sherpa-blanket': {
+    subtitle: 'Wrap up in Red River Gorge Hiker',
+    note: '50 × 60 in. · Plush or Sherpa fleece'
+  },
+  'youth-tshirt': {
+    subtitle: 'RRGH style for young explorers',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'spiral-notebook': {
+    subtitle: 'A place for trail notes and ideas',
+    note: '6 × 8 in. spiral notebook'
+  },
+  'hand-towel': {
+    subtitle: 'A little Gorge style for home or camp',
+    note: '15 × 30 in. · Vertical logo'
+  },
+  'bath-towel': {
+    subtitle: 'Bring RRGH style to the everyday',
+    note: '32 × 64 in. logo bath towel'
+  },
+  'beach-towel': {
+    subtitle: 'Take the Gorge to the water',
+    note: '32 × 64 in. logo beach towel'
+  },
+  'kids-tshirt': {
+    subtitle: 'RRGH style for little explorers',
+    note: 'Chest logo · Multiple sizes available'
+  },
+  'toddler-tshirt': {
+    subtitle: 'RRGH tee for the littlest explorers',
+    note: 'Chest logo · Charcoal shown'
+  },
+  'greeting-cards': {
+    subtitle: 'Share Red River Gorge Hiker with someone',
+    note: 'RRGH logo cards · Optional inside message'
+  },
+  'baby-one-piece': {
+    subtitle: 'Start them young with RRGH',
+    note: 'Logo one-piece · Multiple sizes available'
+  },
+  'ornament': {
+    subtitle: 'A little piece of the Gorge for the tree',
+    note: 'Oval Red River Gorge Hiker ornament'
+  }
+} as const;
+
+const orderedGearProducts: readonly GearProduct[] = [
   doubleRainbowGreetingCard,
   ...merchandiseProducts.slice(0, 6),
   longSleeveTshirt,
@@ -112,3 +220,17 @@ export const gearProducts: readonly GearProduct[] = [
   toddlerTshirt,
   ...merchandiseProducts.slice(17)
 ];
+
+export const gearProducts: readonly StorefrontGearProduct[] = orderedGearProducts.map((product) => {
+  const copy = storefrontCopy[product.slug as keyof typeof storefrontCopy];
+
+  if (!copy) {
+    throw new Error(`Missing storefront copy for Gear product: ${product.slug}`);
+  }
+
+  return {
+    ...product,
+    storefrontSubtitle: copy.subtitle,
+    ...('note' in copy ? { storefrontNote: copy.note } : {})
+  };
+});

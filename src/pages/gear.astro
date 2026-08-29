@@ -59,8 +59,8 @@ const featuredProductShareUrl = new URL(`${base}gear/${featuredProduct.slug}/`, 
                   <h2><a href={`${base}gear/${product.slug}/`}>{product.title}</a></h2>
                   <p class="merch-price">{product.priceLabel}</p>
                 </div>
-                <p class="merch-spec">{product.specification}</p>
-                {product.optionNote && <p class="merch-option">{product.optionNote}</p>}
+                <p class="merch-spec">{product.storefrontSubtitle}</p>
+                {product.storefrontNote && <p class="merch-option">{product.storefrontNote}</p>}
                 <div class="merch-card-actions">
                   <ShareControls title={product.title} url={productShareUrl} />
                   <a
