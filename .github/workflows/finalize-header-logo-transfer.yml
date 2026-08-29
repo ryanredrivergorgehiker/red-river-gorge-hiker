@@ -1,0 +1,83 @@
+name: Finalize temporary header-logo transfer
+
+on:
+  push:
+    branches:
+      - uat/gear-four-products-20260828
+    paths:
+      - '.tmp/header-logo/**'
+      - '.github/workflows/finalize-header-logo-transfer.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout UAT branch
+        uses: actions/checkout@v6
+        with:
+          ref: uat/gear-four-products-20260828
+          fetch-depth: 0
+
+      - name: Reconstruct and verify approved Pixels V3 derivative
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/assets/brand
+          cat .tmp/header-logo/part-01.b64 .tmp/header-logo/part-02.b64 .tmp/header-logo/part-03.b64 .tmp/header-logo/part-04.b64 | base64 -d > public/assets/brand/rrgh-banner-logo-profile-pixels-v3.png
+          echo 'bfeca8eaa14450156a203977de2cb5f73555e741ccb923288db34d6927a19ba4  public/assets/brand/rrgh-banner-logo-profile-pixels-v3.png' | sha256sum -c -
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          p = Path('public/assets/brand/rrgh-banner-logo-profile-pixels-v3.png')
+          data = p.read_bytes()[:24]
+          assert data[:8] == b'\x89PNG\r\n\x1a\n'
+          width, height = struct.unpack('>II', data[16:24])
+          assert (width, height) == (900, 248), (width, height)
+          print(f'PNG verified: {width}x{height}, {p.stat().st_size} bytes')
+          PY
+
+      - name: Point header and contracts at verified PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          header = Path('src/components/Header.astro')
+          text = header.read_text()
+          text = text.replace("rrgh-banner-logo-profile-pixels-v3.webp", "rrgh-banner-logo-profile-pixels-v3.png")
+          text = text.replace('width="640"', 'width="900"')
+          text = text.replace('height="176"', 'height="248"')
+          header.write_text(text)
+
+          test = Path('tests/test_header_brand_logo_contract.py')
+          text = test.read_text()
+          text = text.replace("rrgh-banner-logo-profile-pixels-v3.webp", "rrgh-banner-logo-profile-pixels-v3.png")
+          text = text.replace('width=\"640\"', 'width=\"900\"')
+          text = text.replace('height=\"176\"', 'height=\"248\"')
+          text = text.replace('1e842a2e383694b67785e77f72a65a3b29c1c615f579e8c1f8ff6a81eda318f7', 'bfeca8eaa14450156a203977de2cb5f73555e741ccb923288db34d6927a19ba4')
+          test.write_text(text)
+
+          site_test = Path('tests/test_site_contract.py')
+          text = site_test.read_text().replace('rrgh-banner-logo-profile-v2.svg', 'rrgh-banner-logo-profile-pixels-v3.png')
+          site_test.write_text(text)
+          PY
+          rm -f public/assets/brand/rrgh-banner-logo-profile-pixels-v3.webp
+
+      - name: Verify repository contracts before committing
+        run: python3 -m unittest discover -s tests -p 'test*.py' -v
+
+      - name: Remove temporary transfer files and commit verified asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp/header-logo
+          rm -f .github/workflows/finalize-header-logo-transfer.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Finalize verified Pixels V3 header logo asset'
+          git push origin HEAD:uat/gear-four-products-20260828
