@@ -50,6 +50,9 @@ const socialImagePath = product.image.avif.replace(/\.avif$/, '-share.jpg');
       <section class="gear-product-info" aria-labelledby="gear-product-title">
         <h1 id="gear-product-title">{product.title}</h1>
         <p class="gear-product-price">{product.priceLabel}</p>
+        <p class="gear-product-option">
+          Price shown is a recent reference. Current product options and the final price displayed in the Red River Gorge Hiker Store control the transaction.
+        </p>
         <p class="gear-product-spec">{product.specification}</p>
         <p>{product.description}</p>
         {product.optionNote && <p class="gear-product-option">{product.optionNote}</p>}
