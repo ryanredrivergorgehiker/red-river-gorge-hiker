@@ -1,3 +1,15 @@
+/* Mobile header: remove the separator rule and the extra vertical gap above the primary navigation without changing desktop. */
+@media (max-width: 850px) {
+  .site-header .mobile-primary-nav {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .site-header .header-inner {
+    row-gap: 0;
+  }
+}
+
 /* Portrait-phone navigation: center the two-item second row while preserving the one-line landscape layout. */
 @media (max-width: 540px) {
   .mobile-primary-nav ul {
