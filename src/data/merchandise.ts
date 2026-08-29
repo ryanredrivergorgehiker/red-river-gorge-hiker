@@ -103,7 +103,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'Women’s Red River Gorge Hiker T-shirt with the logo presented on the chest.',
     priceLabel: 'From $25',
     specification: 'Women’s T-Shirt · Chest Logo',
-    optionNote: 'Through XL $25 · 2XL $28 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    optionNote: 'Through XL $25 · 2XL $28.',
     storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-womens-d77d1bbf.avif`,
@@ -119,7 +119,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'Red River Gorge Hiker pullover sweatshirt with the logo presented on the chest.',
     priceLabel: 'From $45',
     specification: 'Pullover sweatshirt · Chest Logo',
-    optionNote: 'Below 2XL $45 · 2XL $51 · 3XL $57 · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    optionNote: 'Below 2XL $45 · 2XL $51 · 3XL $57.',
     storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
     image: {
       avif: `${assetBase}rrgh-merch-sweater-df6f24ea.avif`,
@@ -167,7 +167,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'Women’s Red River Gorge Hiker tank top with the logo presented on the chest.',
     priceLabel: 'From $25',
     specification: 'Women’s Tank Top · Chest Logo',
-    optionNote: 'Verified at $25 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    optionNote: 'Verified at $25 across sizes.',
     storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-womens-tank-9998df0a.avif`,
@@ -276,7 +276,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'Kids Red River Gorge Hiker T-shirt with the logo presented on the chest.',
     priceLabel: 'From $19',
     specification: 'Kids T-Shirt · Chest Logo',
-    optionNote: 'Verified at $19 across sizes · RedRiverGorgeHiker.com endorses the Chest Logo presentation.',
+    optionNote: 'Verified at $19 across sizes.',
     storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
     image: {
       avif: `${assetBase}rrgh-merch-tshirt-kids-813c4eae.avif`,
