@@ -154,7 +154,7 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn("['Prints','/prints/']", header)
         self.assertIn("['Gear','/gear/']", header)
         self.assertNotIn("['Merchandise','/merchandise/']", header)
-        self.assertIn('rrgh-banner-logo-profile-v2.svg', header)
+        self.assertIn('rrgh-banner-logo-profile-pixels-v3.png', header)
 
     def test_social_sharing_metadata_and_controls(self):
         base = (ROOT / 'src/layouts/Base.astro').read_text()
