@@ -317,20 +317,5 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
       alt: 'Baby wearing a dark Red River Gorge Hiker logo one-piece while being held by an adult.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'ornament',
-    title: 'Ornament',
-    description: 'A green Red River Gorge Hiker logo ornament for the holiday season.',
-    priceLabel: '$9.50',
-    specification: 'Oval Red River Gorge Hiker logo ornament',
-    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=ornament',
-    image: {
-      avif: `${assetBase}rrgh-merch-ornament-2c0c7784.avif`,
-      width: 750,
-      height: 1000,
-      alt: 'Green Red River Gorge Hiker logo ornament hanging on an evergreen Christmas tree.'
-    },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
   }
 ] as const;
