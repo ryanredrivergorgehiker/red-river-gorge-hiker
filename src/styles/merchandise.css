@@ -109,9 +109,6 @@
 .merch-card[data-product='bath-towel'] .merch-image-stage img {
   object-position: 50% 58%;
 }
-.merch-card[data-product='ornament'] .merch-image-stage img {
-  object-position: 50% 57%;
-}
 .merch-card[data-product='fleece-sherpa-blanket'] .merch-image-stage img {
   object-position: 50% 56%;
 }
@@ -379,9 +376,6 @@
   }
   .merch-card[data-product='bath-towel'] .merch-image-stage img {
     object-position: 50% 60%;
-  }
-  .merch-card[data-product='ornament'] .merch-image-stage img {
-    object-position: 50% 59%;
   }
   .merch-card[data-product='fleece-sherpa-blanket'] .merch-image-stage img {
     object-position: 50% 57%;
