@@ -33,12 +33,11 @@ APPROVED_STOREFRONT_COPY = {
     'toddler-tshirt': ('RRGH tee for the littlest explorers', 'Chest logo · Charcoal shown'),
     'greeting-cards': ('Share Red River Gorge Hiker with someone', 'RRGH logo cards · Optional inside message'),
     'baby-one-piece': ('Start them young with RRGH', 'Logo one-piece · Multiple sizes available'),
-    'ornament': ('A little piece of the Gorge for the tree', 'Oval Red River Gorge Hiker ornament'),
 }
 
 
-def test_all_25_products_have_the_approved_consumer_storefront_copy():
-    assert len(APPROVED_STOREFRONT_COPY) == 25
+def test_all_24_active_products_have_the_approved_consumer_storefront_copy():
+    assert len(APPROVED_STOREFRONT_COPY) == 24
 
     for slug, (subtitle, note) in APPROVED_STOREFRONT_COPY.items():
         pattern = re.compile(
@@ -46,6 +45,8 @@ def test_all_25_products_have_the_approved_consumer_storefront_copy():
             re.S,
         )
         assert pattern.search(CATALOG), f'Missing approved storefront copy for {slug}'
+
+    assert "'ornament':" not in CATALOG
 
 
 def test_gear_landing_page_uses_storefront_copy_instead_of_verification_fields():
@@ -65,5 +66,5 @@ def test_storefront_copy_contains_no_price_or_internal_verification_language():
     assert 'customer retail' not in storefront_block.lower()
     assert 'endorses' not in storefront_block.lower()
     assert 'R(34)' not in storefront_block
-    assert storefront_block.count('subtitle:') == 25
-    assert storefront_block.count('note:') == 25
+    assert storefront_block.count('subtitle:') == 24
+    assert storefront_block.count('note:') == 24
