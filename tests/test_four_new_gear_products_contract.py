@@ -9,7 +9,7 @@ MERCH = (ROOT / 'src/data/merchandise.ts').read_text()
 DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text()
 ASSET_DIR = ROOT / 'public/assets/merchandise'
 
-EXPECTED_ORDER = ['Double Rainbow at Eagle’s Point Buttress Greeting Card', 'Men’s T-Shirt (Athletic Fit) — Chest Logo', 'Sticker', 'Tote Bag', 'Men’s T-Shirt (Regular Fit)', 'Coffee Mug', 'Women’s T-Shirt', 'Long-Sleeve T-Shirt', 'Sweatshirt', 'Men’s T-Shirt (Athletic Fit) — Pocket Logo', 'Throw Pillow', 'Men’s Tank Top', 'Women’s Tank Top', 'Zip Pouch', 'Fleece / Sherpa Blanket', 'Youth T-Shirt', 'Spiral Notebook', 'Hand Towel', 'Bath Towel', 'Beach Towel', 'Kids T-Shirt', 'Toddler T-Shirt', 'Greeting Cards', 'Baby One-Piece', 'Ornament']
+EXPECTED_ORDER = ['Double Rainbow at Eagle’s Point Buttress Greeting Card', 'Men’s T-Shirt (Athletic Fit) — Chest Logo', 'Sticker', 'Tote Bag', 'Men’s T-Shirt (Regular Fit)', 'Coffee Mug', 'Women’s T-Shirt', 'Long-Sleeve T-Shirt', 'Sweatshirt', 'Men’s T-Shirt (Athletic Fit) — Pocket Logo', 'Throw Pillow', 'Men’s Tank Top', 'Women’s Tank Top', 'Zip Pouch', 'Fleece / Sherpa Blanket', 'Youth T-Shirt', 'Spiral Notebook', 'Hand Towel', 'Bath Towel', 'Beach Towel', 'Kids T-Shirt', 'Toddler T-Shirt', 'Greeting Cards', 'Baby One-Piece']
 
 NEW_PRODUCTS = {
     'longSleeveTshirt': {'slug': 'long-sleeve-tshirt', 'title': 'Long-Sleeve T-Shirt', 'price': 'From $29', 'url': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
@@ -31,16 +31,17 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 class FourNewGearProductsContract(unittest.TestCase):
-    def test_exact_25_product_order(self):
+    def test_exact_24_product_order_after_ornament_retirement(self):
         existing = re.findall(r"title:\s*'([^']+)'", MERCH)
         assembled = ['Double Rainbow at Eagle’s Point Buttress Greeting Card', *existing[:6], 'Long-Sleeve T-Shirt', *existing[6:9], 'Men’s Tank Top', *existing[9:14], 'Hand Towel', *existing[14:17], 'Toddler T-Shirt', *existing[17:]]
         self.assertEqual(assembled, EXPECTED_ORDER)
-        self.assertEqual(len(assembled), 25)
+        self.assertEqual(len(assembled), 24)
         self.assertEqual(assembled[0], EXPECTED_ORDER[0])
         self.assertEqual(assembled[7], 'Long-Sleeve T-Shirt')
         self.assertEqual(assembled[11], 'Men’s Tank Top')
         self.assertEqual(assembled[17], 'Hand Towel')
         self.assertEqual(assembled[21], 'Toddler T-Shirt')
+        self.assertNotIn('Ornament', assembled)
 
     def test_public_prices_urls_and_no_owner_prices(self):
         for name, expected in NEW_PRODUCTS.items():
