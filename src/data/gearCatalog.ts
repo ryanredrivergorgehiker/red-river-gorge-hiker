@@ -201,10 +201,6 @@ const storefrontCopy = {
   'baby-one-piece': {
     subtitle: 'Start them young with RRGH',
     note: 'Logo one-piece · Multiple sizes available'
-  },
-  'ornament': {
-    subtitle: 'A little piece of the Gorge for the tree',
-    note: 'Oval Red River Gorge Hiker ornament'
   }
 } as const;
 
