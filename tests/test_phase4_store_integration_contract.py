@@ -46,8 +46,8 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
             self.assertIn(f'/featured/{product}-ryan-d-lewis.html?product=puzzle', PRODUCTS)
 
     def test_customer_facing_store_language_and_same_tab(self):
-        for token in ('Shop the Store', 'View in Store'):
-            self.assertIn(token, GEAR)
+        self.assertNotIn('Shop the Store', GEAR)
+        self.assertIn('View in Store', GEAR)
         self.assertIn('View in Store', GEAR_DETAIL)
         self.assertIn('View in Store', PUZZLES)
         self.assertIn('Wall Art Options', PUZZLES)
@@ -59,8 +59,8 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('target="_blank"', PUZZLES)
         self.assertNotIn('target="_blank"', PUZZLE_DETAIL)
 
-    def test_footer_and_contact_store_routes(self):
-        self.assertIn('<a href="https://store.redrivergorgehiker.com/" data-store-item-type="store">Store</a>', FOOTER)
+    def test_footer_store_link_is_removed_and_contact_route_remains(self):
+        self.assertNotIn('<a href="https://store.redrivergorgehiker.com/" data-store-item-type="store">Store</a>', FOOTER)
         self.assertIn('<h2>Store orders</h2>', CONTACT)
         self.assertIn('https://store.redrivergorgehiker.com/contactus.html?tab=contactus', CONTACT)
         self.assertIn('Store Customer Service', CONTACT)
