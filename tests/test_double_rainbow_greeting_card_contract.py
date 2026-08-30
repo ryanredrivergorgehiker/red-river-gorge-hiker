@@ -34,7 +34,6 @@ EXPECTED_EXISTING_TITLES = [
     'Kids T-Shirt',
     'Greeting Cards',
     'Baby One-Piece',
-    'Ornament',
 ]
 
 
@@ -43,8 +42,8 @@ def sha256(path: Path) -> str:
 
 
 class DoubleRainbowGreetingCardContract(unittest.TestCase):
-    def test_greeting_card_remains_first_in_25_product_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
+    def test_greeting_card_remains_first_in_24_product_gear_catalog(self):
+        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 19)
         self.assertEqual(re.findall(r"title:\s*'([^']+)'", MERCH), EXPECTED_EXISTING_TITLES)
         self.assertIn('const orderedGearProducts: readonly GearProduct[] = [\n  doubleRainbowGreetingCard,', CATALOG)
         for marker in (
