@@ -27,6 +27,14 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn('View in Store', detail)
         self.assertIn('View in Store', gear)
 
+    def test_mobile_header_has_subtle_brand_nav_separator(self):
+        css = (ROOT / 'src/styles/responsive-nav.css').read_text()
+        mobile_block = css.split('@media (max-width: 850px)', 1)[1].split('@media (max-width: 540px)', 1)[0]
+        self.assertIn('.site-header .mobile-primary-nav', mobile_block)
+        self.assertIn('border-top: 1px solid var(--line);', mobile_block)
+        self.assertIn('margin-top: .3rem;', mobile_block)
+        self.assertIn('padding-top: .3rem;', mobile_block)
+
     def test_photography_replaces_standalone_prints_destination(self):
         photography = (ROOT / 'src/pages/photography.astro').read_text()
         prints = (ROOT / 'src/pages/prints.astro').read_text()
