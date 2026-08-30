@@ -51,7 +51,8 @@ class SocialSharingContractTests(unittest.TestCase):
     def test_all_active_gear_products_have_jpeg_share_derivatives(self):
         data = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
         avif_names = sorted(set(re.findall(r"rrgh-merch-[A-Za-z0-9._-]+\.avif", data)))
-        self.assertEqual(len(avif_names), 20)
+        self.assertEqual(len(avif_names), 19)
+        self.assertNotIn('rrgh-merch-ornament-2c0c7784.avif', avif_names)
         for avif_name in avif_names:
             jpeg_name = avif_name[:-5] + '-share.jpg'
             self.assertTrue(
