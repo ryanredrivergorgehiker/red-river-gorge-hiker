@@ -38,26 +38,30 @@ class SiteContract(unittest.TestCase):
             self.assertIn(catalog_id, DATA)
 
     def test_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 20)
-        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 20)
-        self.assertEqual(len(re.findall(r"storeUrl:\s*'https://", MERCH)), 20)
-        self.assertEqual(MERCH.count('.avif`'), 20)
+        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 19)
+        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 19)
+        self.assertEqual(len(re.findall(r"storeUrl:\s*'https://", MERCH)), 19)
+        self.assertEqual(MERCH.count('.avif`'), 19)
         self.assertNotIn('ARCHIVE', MERCH)
         self.assertNotIn('.png', MERCH.lower())
         self.assertIn("title: 'Bath Towel'", MERCH)
         self.assertIn("title: 'Beach Towel'", MERCH)
         self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo'", MERCH)
         self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo'", MERCH)
+        self.assertNotIn("title: 'Ornament'", MERCH)
+        self.assertNotIn('?product=ornament', MERCH)
         self.assertNotIn('Select the Pocket design location on Fine Art America.', MERCH)
         self.assertEqual(MERCH.count('?product=adult-tshirt&completeProductSku='), 2)
         self.assertIn('-designlocation[pocket]', MERCH)
         self.assertIn('rrgh-merch-tshirt-pocket-v3-', MERCH)
 
         referenced_assets = re.findall(r"avif:\s*`\$\{assetBase\}([^`]+\.avif)`", MERCH)
-        self.assertEqual(len(referenced_assets), 20)
-        self.assertEqual(len(set(referenced_assets)), 20)
+        self.assertEqual(len(referenced_assets), 19)
+        self.assertEqual(len(set(referenced_assets)), 19)
         for asset in referenced_assets:
             self.assertTrue((ROOT / 'public/assets/merchandise' / asset).exists(), asset)
+        self.assertFalse((ROOT / 'public/assets/merchandise/rrgh-merch-ornament-2c0c7784.avif').exists())
+        self.assertFalse((ROOT / 'public/assets/merchandise/rrgh-merch-ornament-2c0c7784-share.jpg').exists())
 
         titles = re.findall(r"title:\s*'([^']+)'", MERCH)
         self.assertEqual(
@@ -82,7 +86,6 @@ class SiteContract(unittest.TestCase):
                 'Kids T-Shirt',
                 'Greeting Cards',
                 'Baby One-Piece',
-                'Ornament',
             ],
         )
 
