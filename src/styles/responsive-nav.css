@@ -1,8 +1,9 @@
-/* Mobile header: remove the separator rule and the extra vertical gap above the primary navigation without changing desktop. */
+/* Mobile header: add a restrained separator between the brand lockup and primary navigation without changing desktop. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
-    border-top: 0;
-    padding-top: 0;
+    border-top: 1px solid var(--line);
+    margin-top: .3rem;
+    padding-top: .3rem;
   }
 
   .site-header .header-inner {
