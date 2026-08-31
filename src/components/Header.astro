@@ -274,36 +274,36 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   .site-header .nav-panel {
     position: absolute;
     z-index: 220;
-    top: calc(100% + 1rem);
-    padding: 1rem;
+    top: calc(100% + .72rem);
+    padding: 1.05rem 1.15rem 1.2rem;
     border: 1px solid var(--line);
-    border-radius: .35rem;
-    background: rgba(243, 239, 230, .995);
-    box-shadow: 0 .9rem 2rem rgba(23, 55, 45, .16);
+    border-radius: .12rem;
+    background: rgba(251, 250, 246, .995);
+    box-shadow: 0 .45rem 1.2rem rgba(23, 55, 45, .1);
   }
 
   .site-header .nav-panel-wall-art {
     left: 0;
-    width: 20rem;
+    width: 19rem;
   }
 
   .site-header .nav-panel-shop {
     right: 0;
-    width: min(58rem, calc(100vw - 3rem));
+    width: min(64rem, calc(100vw - 3rem));
   }
 
   .site-header .nav-view-all {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.55rem;
-    margin-bottom: .9rem;
-    padding: .55rem .85rem;
+    min-height: 2.45rem;
+    margin-bottom: 1rem;
+    padding: .52rem .85rem;
     border: 1px solid var(--gorge);
-    border-radius: .28rem;
+    border-radius: .2rem;
     background: var(--gorge);
     color: #fff;
-    font-size: .9rem;
+    font-size: .88rem;
     font-weight: 750;
     line-height: 1.2;
     text-decoration: none;
@@ -311,18 +311,20 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   .site-header .nav-view-all:hover { background: var(--pine); color: #fff; }
 
   .site-header .nav-section-title {
-    margin: 0 0 .45rem;
-    color: var(--gorge);
-    font-size: .73rem;
-    font-weight: 800;
-    letter-spacing: .11em;
+    margin: 0 0 .42rem;
+    padding-bottom: .36rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--charcoal);
+    font-size: .94rem;
+    font-weight: 650;
+    letter-spacing: 0;
     line-height: 1.25;
-    text-transform: uppercase;
+    text-transform: none;
   }
 
   .site-header .nav-submenu {
     display: grid;
-    gap: .15rem;
+    gap: .06rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -333,11 +335,11 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   }
   .site-header .nav-submenu a {
     display: block;
-    padding: .28rem 0;
+    padding: .2rem 0;
     color: var(--charcoal);
-    font-size: .91rem;
-    font-weight: 550;
-    line-height: 1.3;
+    font-size: .89rem;
+    font-weight: 450;
+    line-height: 1.28;
     text-decoration: none;
     white-space: normal;
   }
@@ -346,7 +348,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   .site-header .nav-shop-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem 1.35rem;
+    gap: 1rem 2rem;
   }
   .site-header .nav-shop-section { min-width: 0; }
 
@@ -400,10 +402,14 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
       min-width: 0;
     }
 
+    .site-header .mobile-primary-nav > .primary-nav-list > .nav-dropdown-item {
+      position: static;
+    }
+
     .site-header .mobile-primary-nav > .primary-nav-list > li:not(:last-child)::after {
       content: '·';
-      position: absolute;
-      right: -.08rem;
+      position: static;
+      margin-left: .18rem;
       color: var(--pine);
       font-weight: 800;
     }
@@ -436,26 +442,45 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
       top: calc(100% + .35rem);
       left: 50%;
       right: auto;
-      width: min(calc(100vw - 1rem), 42rem);
-      max-height: min(68dvh, 38rem);
+      width: min(calc(100vw - .75rem), 42rem);
+      max-height: min(72dvh, 40rem);
       overflow: auto;
       transform: translateX(-50%);
-      padding: .9rem;
+      padding: .85rem .95rem 1rem;
       text-align: left;
       white-space: normal;
     }
 
+    .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
+      width: min(calc(100vw - .75rem), 22rem);
+    }
+
+    .site-header .mobile-primary-nav .nav-view-all {
+      margin-bottom: .85rem;
+    }
+
     .site-header .mobile-primary-nav .nav-shop-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 1rem 1.2rem;
+      gap: 1.15rem 1.1rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-section-title {
+      margin-bottom: .35rem;
+      font-size: .9rem;
     }
 
     .site-header .mobile-primary-nav .nav-submenu {
       display: grid;
       grid-template-columns: none;
-      gap: .12rem;
+      gap: .02rem;
       width: 100%;
       white-space: normal;
+    }
+
+    .site-header .mobile-primary-nav .nav-submenu a {
+      padding: .17rem 0;
+      font-size: .84rem;
+      line-height: 1.25;
     }
 
     .site-header .mobile-primary-nav .nav-submenu li {
@@ -487,14 +512,26 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
     }
 
     .site-header .mobile-primary-nav .nav-panel {
-      width: min(calc(100vw - .75rem), 34rem);
-      max-height: 70dvh;
-      padding: .8rem;
+      width: calc(100vw - .75rem);
+      max-height: 72dvh;
+      padding: .8rem .85rem .95rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
+      width: min(calc(100vw - .75rem), 21rem);
     }
 
     .site-header .mobile-primary-nav .nav-shop-grid {
-      grid-template-columns: 1fr;
-      gap: .85rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.05rem .9rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-section-title {
+      font-size: .86rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-submenu a {
+      font-size: clamp(.75rem, 3.35vw, .82rem);
     }
   }
 </style>
