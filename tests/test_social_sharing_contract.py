@@ -25,7 +25,6 @@ class SocialSharingContractTests(unittest.TestCase):
                 'src/pages/gear.astro',
                 'src/pages/gear/[slug].astro',
                 'src/pages/photographs/[slug].astro',
-                'src/pages/puzzles.astro',
                 'src/pages/puzzles/[slug].astro',
             },
         )
