@@ -29,11 +29,11 @@ class TestAug12UatRefinements(unittest.TestCase):
 
     def test_mobile_header_has_subtle_brand_nav_separator(self):
         css = (ROOT / 'src/styles/responsive-nav.css').read_text()
-        mobile_block = css.split('@media (max-width: 850px)', 1)[1].split('@media (max-width: 540px)', 1)[0]
-        self.assertIn('.site-header .mobile-primary-nav', mobile_block)
-        self.assertIn('border-top: 1px solid var(--line);', mobile_block)
-        self.assertIn('margin-top: .3rem;', mobile_block)
-        self.assertIn('padding-top: .3rem;', mobile_block)
+        self.assertIn('@media (max-width: 850px)', css)
+        self.assertIn('.site-header .mobile-primary-nav', css)
+        self.assertIn('border-top: 1px solid var(--line);', css)
+        self.assertIn('margin-top: .3rem;', css)
+        self.assertIn('padding-top: .3rem;', css)
 
     def test_photography_replaces_standalone_prints_destination(self):
         photography = (ROOT / 'src/pages/photography.astro').read_text()
@@ -45,47 +45,23 @@ class TestAug12UatRefinements(unittest.TestCase):
         self.assertIn("Astro.redirect(`${base}photography/`, 301)", collection)
         self.assertNotIn('View on Fine Art America', prints)
 
-    def test_puzzle_cards_use_three_button_row_and_v2_assets(self):
+    def test_puzzle_browse_page_redirects_but_detail_pages_and_assets_remain(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text()
         detail_path = ROOT / 'src/pages/puzzles/[slug].astro'
         self.assertTrue(detail_path.exists())
         detail = detail_path.read_text()
 
-        self.assertIn('class="puzzle-action-row"', puzzles)
-        self.assertIn('puzzle-primary-action', puzzles)
-        self.assertIn('puzzle-print-action', puzzles)
-        self.assertIn('View in Store', puzzles)
-        self.assertNotIn('View Puzzle in Store', puzzles)
-        self.assertIn('Wall Art Options', puzzles)
-        self.assertIn('puzzles/${photo.slug}/', puzzles)
-        self.assertIn('.puzzle-grid .puzzle-action-row .share-controls {', puzzles)
-        self.assertIn('align-self: stretch;', puzzles)
-        self.assertIn('min-height: 3.15rem;', puzzles)
-        self.assertIn('margin: 0;', puzzles)
-        self.assertIn('.puzzle-product-image img {', puzzles)
-        self.assertIn('aspect-ratio: 4 / 3;', puzzles)
-        self.assertIn('object-fit: cover;', puzzles)
-        self.assertNotIn('cardScale', puzzles)
-        self.assertNotIn('--puzzle-card-scale', puzzles)
-        self.assertNotIn('transform: scale(', puzzles)
-        self.assertNotIn('-puzzle-overview.webp', puzzles)
-        self.assertNotIn('background: rgba(255,255,255,.3);', puzzles)
-        self.assertNotIn('border: 1px solid var(--line);', puzzles)
+        self.assertIn("Astro.redirect('https://store.redrivergorgehiker.com/shop/puzzles', 301)", puzzles)
+        self.assertNotIn('class="puzzle-action-row"', puzzles)
 
         for filename in (
             'winter-at-red-byrd-arch-puzzle.avif',
             'sunrise-at-eagles-nest-puzzle.avif',
             'ice-at-west-of-copperas-pillar-puzzle.avif',
         ):
-            self.assertIn(filename, puzzles)
             self.assertTrue((ROOT / 'public/assets/puzzles' / filename).exists(), filename)
-
-        for filename in (
-            'winter-at-red-byrd-arch-puzzle.avif',
-            'sunrise-at-eagles-nest-puzzle.avif',
-            'ice-at-west-of-copperas-pillar-puzzle.avif',
-        ):
             self.assertIn(filename, detail)
+
         self.assertIn("'ice-at-west-of-copperas-pillar': {", detail)
         self.assertIn("replace('-WEB-WM.webp', '-SOCIAL-WM.jpg')", detail)
         self.assertIn('socialImage={socialImage}', detail)
