@@ -10,9 +10,10 @@ MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
 
 
 class ShopNavigationContractTests(unittest.TestCase):
-    def test_primary_header_uses_photography_shop_stories_about(self):
-        self.assertIn('Photography <span class="nav-caret"', HEADER)
-        self.assertIn('Shop <span class="nav-caret"', HEADER)
+    def test_primary_header_uses_wall_art_shop_stories_about(self):
+        self.assertEqual(HEADER.count('Wall Art <span class="nav-caret"'), 2)
+        self.assertEqual(HEADER.count('Shop <span class="nav-caret"'), 2)
+        self.assertNotIn('Photography <span class="nav-caret"', HEADER)
         self.assertIn("['Stories', '/exploring-the-gorge/']", HEADER)
         self.assertIn("['About', '/about/']", HEADER)
         self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
@@ -70,6 +71,8 @@ class ShopNavigationContractTests(unittest.TestCase):
 
     def test_view_all_gear_preserves_access_to_every_active_gear_product(self):
         self.assertIn('href={`${base}gear/`}>View All Gear</a>', HEADER)
+        self.assertIn("section.title === 'Home Decor'", HEADER)
+        self.assertIn("section.title === 'Lifestyle'", HEADER)
         self.assertIn('gearProducts.map', GEAR_PAGE)
         self.assertIn('href={product.storeUrl}', GEAR_PAGE)
         self.assertIn('View in Store', GEAR_PAGE)
@@ -80,13 +83,25 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertEqual(added_product_count, 5)
         self.assertEqual(base_product_count + added_product_count, 24)
 
-    def test_mobile_dropdowns_are_centered_and_shop_stays_two_column(self):
+    def test_navigation_presentation_matches_refined_uat_direction(self):
+        self.assertNotIn('⌄', HEADER)
+        self.assertIn('border-right: 1.5px solid currentColor;', HEADER)
+        self.assertIn('transform: rotate(-45deg);', HEADER)
+        self.assertIn('transform: rotate(45deg);', HEADER)
+        self.assertNotIn("content: '·';", HEADER)
         self.assertIn('.site-header .mobile-primary-nav > .primary-nav-list > .nav-dropdown-item {\n      position: static;', HEADER)
         self.assertIn('.site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {', HEADER)
         self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr));', HEADER)
         self.assertNotIn('grid-template-columns: 1fr;', HEADER)
-        self.assertIn('text-transform: none;', HEADER)
+        self.assertIn('text-align: left;', HEADER)
         self.assertIn('border-bottom: 1px solid var(--line);', HEADER)
+        self.assertIn('nav-view-all-wall-art', HEADER)
+
+    def test_wall_art_panel_does_not_repeat_wall_art_heading(self):
+        self.assertNotIn('<p class="nav-section-title">Wall Art</p>', HEADER)
+        desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links">')
+        desktop_button = HEADER.find('View All Wall Art</a>', desktop_list)
+        self.assertGreater(desktop_button, desktop_list)
 
     def test_puzzle_browse_page_is_retired_to_verified_store_category(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text(encoding='utf-8')
