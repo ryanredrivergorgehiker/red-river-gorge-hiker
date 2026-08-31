@@ -49,8 +49,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('Shop the Store', GEAR)
         self.assertIn('View in Store', GEAR)
         self.assertIn('View in Store', GEAR_DETAIL)
-        self.assertIn('View in Store', PUZZLES)
-        self.assertIn('Wall Art Options', PUZZLES)
+        self.assertIn("Astro.redirect('https://store.redrivergorgehiker.com/shop/puzzles', 301)", PUZZLES)
         self.assertIn('View Puzzle in Store', PUZZLE_DETAIL)
         self.assertIn('Wall Art Options', PUZZLE_DETAIL)
         self.assertIn('Shop Wall Art', PHOTO_DETAIL)
@@ -58,6 +57,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('target="_blank"', GEAR_DETAIL)
         self.assertNotIn('target="_blank"', PUZZLES)
         self.assertNotIn('target="_blank"', PUZZLE_DETAIL)
+        self.assertNotIn('target="_blank"', HEADER)
 
     def test_footer_store_link_is_removed_and_contact_route_remains(self):
         self.assertNotIn('<a href="https://store.redrivergorgehiker.com/" data-store-item-type="store">Store</a>', FOOTER)
@@ -90,10 +90,15 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('googletagmanager.com/gtm.js', SRC.lower())
         self.assertNotIn('connect.facebook.net', SRC.lower())
 
-    def test_primary_navigation_and_photo_copyright_remain_unchanged(self):
-        labels = re.findall(r"\['(Photography|Puzzles|Gear|Stories|About)'", HEADER)
-        self.assertEqual(labels, ['Photography', 'Puzzles', 'Gear', 'Stories', 'About'])
+    def test_primary_navigation_shop_change_and_photo_copyright_remain_intact(self):
+        self.assertIn('Photography <span class="nav-caret"', HEADER)
+        self.assertIn('Shop <span class="nav-caret"', HEADER)
+        self.assertIn("['Stories', '/exploring-the-gorge/']", HEADER)
+        self.assertIn("['About', '/about/']", HEADER)
         self.assertNotIn("['Store',", HEADER)
+        self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
+        self.assertNotIn("['Gear','/gear/']", HEADER)
+        self.assertIn('View All Gear', HEADER)
         self.assertIn("creator: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.', PHOTO_DETAIL)
