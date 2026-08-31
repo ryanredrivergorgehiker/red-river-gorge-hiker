@@ -3,7 +3,7 @@ import sitemap from '@astrojs/sitemap';
 
 const site = process.env.SITE_URL ?? 'https://redrivergorgehiker.com';
 const base = process.env.BASE_PATH ?? '/';
-const legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/'];
+const legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/', '/puzzles/'];
 
 export default defineConfig({
   site,
