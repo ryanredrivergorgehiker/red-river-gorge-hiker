@@ -91,7 +91,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('connect.facebook.net', SRC.lower())
 
     def test_primary_navigation_shop_change_and_photo_copyright_remain_intact(self):
-        self.assertIn('Photography <span class="nav-caret"', HEADER)
+        self.assertIn('Wall Art <span class="nav-caret"', HEADER)
         self.assertIn('Shop <span class="nav-caret"', HEADER)
         self.assertIn("['Stories', '/exploring-the-gorge/']", HEADER)
         self.assertIn("['About', '/about/']", HEADER)
