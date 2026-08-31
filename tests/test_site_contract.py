@@ -150,7 +150,7 @@ class SiteContract(unittest.TestCase):
 
     def test_navigation_order(self):
         header = (ROOT / 'src/components/Header.astro').read_text()
-        self.assertIn('Photography <span class="nav-caret"', header)
+        self.assertIn('Wall Art <span class="nav-caret"', header)
         self.assertIn('Shop <span class="nav-caret"', header)
         self.assertIn("['Stories', '/exploring-the-gorge/']", header)
         self.assertIn("['About', '/about/']", header)
