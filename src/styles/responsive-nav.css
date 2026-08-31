@@ -1,3 +1,8 @@
+/* Header/navigation refinements layered over the component defaults. */
+.site-header .nav-panel-wall-art {
+  width: 14.25rem !important;
+}
+
 /* Mobile header: keep the restrained separator between the brand lockup and primary navigation without changing desktop. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
@@ -8,5 +13,31 @@
 
   .site-header .header-inner {
     row-gap: 0;
+  }
+
+  .site-header .mobile-primary-nav > .primary-nav-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    justify-items: stretch;
+  }
+
+  .site-header .mobile-primary-nav > .primary-nav-list > li {
+    width: 100%;
+    justify-content: center !important;
+  }
+
+  .site-header .mobile-primary-nav > .primary-nav-list > li::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .site-header .mobile-primary-nav .nav-trigger,
+  .site-header .mobile-primary-nav > .primary-nav-list > li > a {
+    width: 100%;
+    justify-content: center;
+    margin: 0;
+  }
+
+  .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
+    width: min(calc(100vw - 1.25rem), 14.25rem) !important;
   }
 }
