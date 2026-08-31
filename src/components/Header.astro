@@ -1,12 +1,80 @@
 ---
 import SarMatchMeter from './SarMatchMeter.astro';
 
-const nav = [['Photography','/photography/'],['Puzzles','/puzzles/'],['Gear','/gear/'],['Stories','/exploring-the-gorge/'],['About','/about/']] as const;
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
 const circleLogoFilename = 'rrgh-circle-logo-512-539a2fd23c.png';
 const bannerAvifFilename = 'rrgh-banner-logo-profile-transparent-v3.avif';
 const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
+
+const wallArtLinks = [
+  ['Art Prints', 'https://store.redrivergorgehiker.com/shop/prints'],
+  ['Canvas Prints', 'https://store.redrivergorgehiker.com/shop/canvas+prints'],
+  ['Framed Prints', 'https://store.redrivergorgehiker.com/shop/framed+prints'],
+  ['Metal Prints', 'https://store.redrivergorgehiker.com/shop/metal+prints'],
+  ['Acrylic Prints', 'https://store.redrivergorgehiker.com/shop/acrylic+prints'],
+  ['Wood Prints', 'https://store.redrivergorgehiker.com/shop/wood+prints'],
+  ['Posters', 'https://store.redrivergorgehiker.com/shop/posters'],
+  ['Photographs', 'https://store.redrivergorgehiker.com/art/photographs']
+] as const;
+
+const shopSections = [
+  {
+    title: 'Home Decor',
+    links: [
+      ['Throw Pillows', 'https://store.redrivergorgehiker.com/shop/throw+pillows'],
+      ['Fleece Blankets', 'https://store.redrivergorgehiker.com/shop/fleece+blankets'],
+      ['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs'],
+      ['Hand Towels', 'https://store.redrivergorgehiker.com/shop/hand+towels']
+    ]
+  },
+  {
+    title: 'Stationery',
+    links: [
+      ['Greeting Cards', 'https://store.redrivergorgehiker.com/shop/greeting+cards'],
+      ['Spiral Notebooks', 'https://store.redrivergorgehiker.com/shop/spiral+notebooks'],
+      ['Stickers', 'https://store.redrivergorgehiker.com/shop/stickers']
+    ]
+  },
+  {
+    title: 'Lifestyle',
+    links: [
+      ['Tote Bags', 'https://store.redrivergorgehiker.com/shop/tote+bags'],
+      ['Zip Pouches', 'https://store.redrivergorgehiker.com/shop/pouches'],
+      ['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs'],
+      ['Beach Towels', 'https://store.redrivergorgehiker.com/shop/beach+towels'],
+      ["Men's Apparel", 'https://store.redrivergorgehiker.com/shop/tshirts'],
+      ["Women's Apparel", 'https://store.redrivergorgehiker.com/shop/womens+tshirts'],
+      ['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']
+    ]
+  },
+  {
+    title: 'Apparel',
+    links: [
+      ["Men's T-Shirts", 'https://store.redrivergorgehiker.com/shop/tshirts'],
+      ["Men's Tank Tops", 'https://store.redrivergorgehiker.com/shop/tank+tops'],
+      ["Women's T-Shirts", 'https://store.redrivergorgehiker.com/shop/womens+tshirts'],
+      ["Women's Tank Tops", 'https://store.redrivergorgehiker.com/shop/womens+tank+tops'],
+      ['Long Sleeve T-Shirts', 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts'],
+      ['Sweatshirts', 'https://store.redrivergorgehiker.com/shop/sweatshirts'],
+      ["Kid's T-Shirts", 'https://store.redrivergorgehiker.com/shop/kids+tshirts'],
+      ['Toddler T-Shirts', 'https://store.redrivergorgehiker.com/shop/toddler+tshirts'],
+      ['Baby One-Pieces', 'https://store.redrivergorgehiker.com/shop/baby+one+pieces']
+    ]
+  }
+] as const;
+
+const primaryLinks = [
+  ['Stories', '/exploring-the-gorge/'],
+  ['About', '/about/']
+] as const;
+
+const relativePath = base !== '/' && path.startsWith(base)
+  ? `/${path.slice(base.length)}`
+  : path;
+const isIn = (prefix: string) => relativePath === prefix || relativePath.startsWith(prefix);
+const photographyActive = isIn('/photography/') || isIn('/photographs/');
+const shopActive = isIn('/gear/') || isIn('/puzzles/');
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
@@ -31,23 +99,123 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
         />
       </picture>
     </a>
+
     <nav class="desktop-nav" aria-label="Primary">
-      <ul>
-        {nav.map(([label,href]) => (
-          <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
+      <ul class="primary-nav-list">
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-wall-art">
+            <summary class:list={['nav-trigger', { 'is-active': photographyActive }]} aria-current={photographyActive ? 'page' : undefined}>
+              Photography <span class="nav-caret" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="nav-panel nav-panel-wall-art">
+              <a class="nav-view-all" href={`${base}photography/`}>View All Wall Art</a>
+              <p class="nav-section-title">Wall Art</p>
+              <ul class="nav-submenu">
+                {wallArtLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+              </ul>
+            </div>
+          </details>
+        </li>
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-shop">
+            <summary class:list={['nav-trigger', { 'is-active': shopActive }]} aria-current={shopActive ? 'page' : undefined}>
+              Shop <span class="nav-caret" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="nav-panel nav-panel-shop">
+              <a class="nav-view-all nav-view-all-gear" href={`${base}gear/`}>View All Gear</a>
+              <div class="nav-shop-grid">
+                {shopSections.map((section) => (
+                  <section class="nav-shop-section" aria-labelledby={`desktop-shop-${section.title.toLowerCase().replace(/[^a-z]+/g, '-')}`}>
+                    <p class="nav-section-title" id={`desktop-shop-${section.title.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{section.title}</p>
+                    <ul class="nav-submenu">
+                      {section.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          </details>
+        </li>
+        {primaryLinks.map(([label, href]) => (
+          <li><a href={`${base}${href.slice(1)}`} aria-current={relativePath === href ? 'page' : undefined}>{label}</a></li>
         ))}
       </ul>
     </nav>
+
     <nav class="mobile-primary-nav" aria-label="Primary mobile">
-      <ul>
-        {nav.map(([label,href]) => (
-          <li><a href={`${base}${href.slice(1)}`} aria-current={path.endsWith(href) ? 'page' : undefined}>{label}</a></li>
+      <ul class="primary-nav-list">
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-wall-art">
+            <summary class:list={['nav-trigger', { 'is-active': photographyActive }]} aria-current={photographyActive ? 'page' : undefined}>
+              Photography <span class="nav-caret" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="nav-panel nav-panel-wall-art">
+              <a class="nav-view-all" href={`${base}photography/`}>View All Wall Art</a>
+              <p class="nav-section-title">Wall Art</p>
+              <ul class="nav-submenu">
+                {wallArtLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+              </ul>
+            </div>
+          </details>
+        </li>
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-shop">
+            <summary class:list={['nav-trigger', { 'is-active': shopActive }]} aria-current={shopActive ? 'page' : undefined}>
+              Shop <span class="nav-caret" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="nav-panel nav-panel-shop">
+              <a class="nav-view-all nav-view-all-gear" href={`${base}gear/`}>View All Gear</a>
+              <div class="nav-shop-grid">
+                {shopSections.map((section) => (
+                  <section class="nav-shop-section" aria-labelledby={`mobile-shop-${section.title.toLowerCase().replace(/[^a-z]+/g, '-')}`}>
+                    <p class="nav-section-title" id={`mobile-shop-${section.title.toLowerCase().replace(/[^a-z]+/g, '-')}`}>{section.title}</p>
+                    <ul class="nav-submenu">
+                      {section.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            </div>
+          </details>
+        </li>
+        {primaryLinks.map(([label, href]) => (
+          <li><a href={`${base}${href.slice(1)}`} aria-current={relativePath === href ? 'page' : undefined}>{label}</a></li>
         ))}
       </ul>
     </nav>
   </div>
   <SarMatchMeter variant="header" />
 </header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('.site-header');
+  const menus = Array.from(document.querySelectorAll<HTMLDetailsElement>('.site-header .nav-details'));
+
+  menus.forEach((menu) => {
+    menu.addEventListener('toggle', () => {
+      if (!menu.open) return;
+      menus.forEach((other) => {
+        if (other !== menu) other.open = false;
+      });
+    });
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        menu.open = false;
+      });
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (header?.contains(event.target as Node)) return;
+    menus.forEach((menu) => { menu.open = false; });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    menus.forEach((menu) => { menu.open = false; });
+  });
+</script>
 
 <style>
   .site-header .brand-lockup {
@@ -67,6 +235,120 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
     display: block;
     min-width: 0;
   }
+
+  .site-header .primary-nav-list {
+    align-items: center;
+  }
+
+  .site-header .nav-dropdown-item,
+  .site-header .nav-details {
+    position: relative;
+  }
+
+  .site-header .nav-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: .28rem;
+    color: var(--charcoal);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.2;
+    list-style: none;
+    white-space: nowrap;
+  }
+
+  .site-header .nav-trigger::-webkit-details-marker { display: none; }
+  .site-header .nav-trigger:hover,
+  .site-header .nav-details[open] > .nav-trigger { color: var(--gorge); }
+  .site-header .nav-trigger.is-active {
+    border-bottom: 2px solid var(--sunrise);
+  }
+  .site-header .nav-caret {
+    font-size: .85em;
+    line-height: 1;
+    transform: translateY(-.05em);
+  }
+  .site-header .nav-details[open] .nav-caret { transform: rotate(180deg) translateY(.05em); }
+
+  .site-header .nav-panel {
+    position: absolute;
+    z-index: 220;
+    top: calc(100% + 1rem);
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: .35rem;
+    background: rgba(243, 239, 230, .995);
+    box-shadow: 0 .9rem 2rem rgba(23, 55, 45, .16);
+  }
+
+  .site-header .nav-panel-wall-art {
+    left: 0;
+    width: 20rem;
+  }
+
+  .site-header .nav-panel-shop {
+    right: 0;
+    width: min(58rem, calc(100vw - 3rem));
+  }
+
+  .site-header .nav-view-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.55rem;
+    margin-bottom: .9rem;
+    padding: .55rem .85rem;
+    border: 1px solid var(--gorge);
+    border-radius: .28rem;
+    background: var(--gorge);
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 750;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+  .site-header .nav-view-all:hover { background: var(--pine); color: #fff; }
+
+  .site-header .nav-section-title {
+    margin: 0 0 .45rem;
+    color: var(--gorge);
+    font-size: .73rem;
+    font-weight: 800;
+    letter-spacing: .11em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .site-header .nav-submenu {
+    display: grid;
+    gap: .15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .site-header .nav-submenu li {
+    display: block;
+    min-width: 0;
+  }
+  .site-header .nav-submenu a {
+    display: block;
+    padding: .28rem 0;
+    color: var(--charcoal);
+    font-size: .91rem;
+    font-weight: 550;
+    line-height: 1.3;
+    text-decoration: none;
+    white-space: normal;
+  }
+  .site-header .nav-submenu a:hover { color: var(--gorge); text-decoration: underline; }
+
+  .site-header .nav-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem 1.35rem;
+  }
+  .site-header .nav-shop-section { min-width: 0; }
 
   @media (max-width: 850px) {
     .site-header .brand-lockup {
@@ -94,12 +376,94 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
       max-width: 100%;
     }
 
-    .site-header .mobile-primary-nav ul {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+    .site-header .mobile-primary-nav {
+      position: relative;
     }
+
+    .site-header .mobile-primary-nav > .primary-nav-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: center;
+      width: 100%;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      white-space: nowrap;
+    }
+
+    .site-header .mobile-primary-nav > .primary-nav-list > li {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .site-header .mobile-primary-nav > .primary-nav-list > li:not(:last-child)::after {
+      content: '·';
+      position: absolute;
+      right: -.08rem;
+      color: var(--pine);
+      font-weight: 800;
+    }
+
+    .site-header .mobile-primary-nav .nav-trigger,
+    .site-header .mobile-primary-nav > .primary-nav-list > li > a {
+      color: var(--charcoal);
+      font-size: clamp(.72rem, 3vw, .9rem);
+      font-weight: 700;
+      line-height: 1.2;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .site-header .mobile-primary-nav .nav-trigger.is-active,
+    .site-header .mobile-primary-nav > .primary-nav-list > li > a[aria-current='page'] {
+      color: var(--gorge);
+      text-decoration: underline;
+      text-decoration-color: var(--sunrise);
+      text-decoration-thickness: 2px;
+      text-underline-offset: .24em;
+      border-bottom: 0;
+    }
+
+    .site-header .mobile-primary-nav .nav-details {
+      position: static;
+    }
+
+    .site-header .mobile-primary-nav .nav-panel {
+      top: calc(100% + .35rem);
+      left: 50%;
+      right: auto;
+      width: min(calc(100vw - 1rem), 42rem);
+      max-height: min(68dvh, 38rem);
+      overflow: auto;
+      transform: translateX(-50%);
+      padding: .9rem;
+      text-align: left;
+      white-space: normal;
+    }
+
+    .site-header .mobile-primary-nav .nav-shop-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem 1.2rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-submenu {
+      display: grid;
+      grid-template-columns: none;
+      gap: .12rem;
+      width: 100%;
+      white-space: normal;
+    }
+
+    .site-header .mobile-primary-nav .nav-submenu li {
+      display: block;
+    }
+    .site-header .mobile-primary-nav .nav-submenu li::after { content: none; }
   }
 
-  /* Portrait phones: three centered items on row one, two centered items on row two. */
   @media (max-width: 560px) {
     .site-header .brand-lockup {
       grid-template-columns: auto minmax(0, 14.25rem);
@@ -117,28 +481,20 @@ const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
       max-width: 100%;
     }
 
-    .site-header .mobile-primary-nav ul {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      row-gap: .42rem;
-    }
-    .site-header .mobile-primary-nav li:nth-child(1) { grid-column: 1 / span 2; }
-    .site-header .mobile-primary-nav li:nth-child(2) { grid-column: 3 / span 2; }
-    .site-header .mobile-primary-nav li:nth-child(3) { grid-column: 5 / span 2; }
-    .site-header .mobile-primary-nav li:nth-child(4) { grid-column: 2 / span 2; }
-    .site-header .mobile-primary-nav li:nth-child(5) { grid-column: 4 / span 2; }
-
-    .site-header .mobile-primary-nav li::after { content: none !important; }
-    .site-header .mobile-primary-nav li:nth-child(1)::after,
-    .site-header .mobile-primary-nav li:nth-child(2)::after,
-    .site-header .mobile-primary-nav li:nth-child(4)::after {
-      content: '·' !important;
-      position: absolute;
-      right: -.08rem;
-      color: var(--pine);
-      font-weight: 800;
-    }
-    .site-header .mobile-primary-nav a {
+    .site-header .mobile-primary-nav .nav-trigger,
+    .site-header .mobile-primary-nav > .primary-nav-list > li > a {
       font-size: clamp(.72rem, 3.15vw, .84rem);
+    }
+
+    .site-header .mobile-primary-nav .nav-panel {
+      width: min(calc(100vw - .75rem), 34rem);
+      max-height: 70dvh;
+      padding: .8rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-shop-grid {
+      grid-template-columns: 1fr;
+      gap: .85rem;
     }
   }
 </style>
