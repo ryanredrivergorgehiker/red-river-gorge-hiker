@@ -1,4 +1,4 @@
-/* Mobile header: add a restrained separator between the brand lockup and primary navigation without changing desktop. */
+/* Mobile header: keep the restrained separator between the brand lockup and primary navigation without changing desktop. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
     border-top: 1px solid var(--line);
@@ -8,32 +8,5 @@
 
   .site-header .header-inner {
     row-gap: 0;
-  }
-}
-
-/* Portrait-phone navigation: center the two-item second row while preserving the one-line landscape layout. */
-@media (max-width: 540px) {
-  .mobile-primary-nav ul {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    row-gap: .3rem;
-  }
-
-  .mobile-primary-nav li:nth-child(1),
-  .mobile-primary-nav li:nth-child(2),
-  .mobile-primary-nav li:nth-child(3) {
-    grid-column: span 2;
-  }
-
-  .mobile-primary-nav li:nth-child(4) {
-    grid-column: 2 / span 2;
-  }
-
-  .mobile-primary-nav li:nth-child(5) {
-    grid-column: 4 / span 2;
-  }
-
-  /* Gear ends the first portrait row, so it should not carry a trailing separator. */
-  .mobile-primary-nav li:nth-child(3)::after {
-    content: none;
   }
 }
