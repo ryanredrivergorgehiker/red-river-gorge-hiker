@@ -80,6 +80,14 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertEqual(added_product_count, 5)
         self.assertEqual(base_product_count + added_product_count, 24)
 
+    def test_mobile_dropdowns_are_centered_and_shop_stays_two_column(self):
+        self.assertIn('.site-header .mobile-primary-nav > .primary-nav-list > .nav-dropdown-item {\n      position: static;', HEADER)
+        self.assertIn('.site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {', HEADER)
+        self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr));', HEADER)
+        self.assertNotIn('grid-template-columns: 1fr;', HEADER)
+        self.assertIn('text-transform: none;', HEADER)
+        self.assertIn('border-bottom: 1px solid var(--line);', HEADER)
+
     def test_puzzle_browse_page_is_retired_to_verified_store_category(self):
         puzzles = (ROOT / 'src/pages/puzzles.astro').read_text(encoding='utf-8')
         home = (ROOT / 'src/pages/index.astro').read_text(encoding='utf-8')
