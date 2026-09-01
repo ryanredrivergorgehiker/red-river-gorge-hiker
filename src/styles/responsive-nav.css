@@ -18,6 +18,21 @@
   }
 }
 
+/* Desktop hover menus keep their visible .72rem air gap, but the panel owns an invisible
+   pointer corridor across that gap so moving from Wall Art/Shop into the menu cannot fire
+   the details mouseleave handler before the pointer reaches the panel. */
+@media (min-width: 851px) and (hover: hover) {
+  .site-header .desktop-nav .nav-panel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% - 1px);
+    height: calc(.72rem + 2px);
+    pointer-events: auto;
+  }
+}
+
 /* Mobile header: keep the restrained separator, shorten SAR copy, and anchor dropdowns to their triggers. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
