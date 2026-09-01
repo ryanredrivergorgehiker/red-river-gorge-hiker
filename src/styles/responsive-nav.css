@@ -10,7 +10,15 @@
   justify-content: space-between;
 }
 
-/* Mobile header: keep the restrained separator between the brand lockup and primary navigation without changing desktop. */
+/* Match the desktop Search & Rescue label to the invitation headline size. */
+@media (min-width: 851px) {
+  .sar-meter--header .sar-meter-kicker {
+    font-size: .82rem !important;
+    letter-spacing: .1em !important;
+  }
+}
+
+/* Mobile header: keep the restrained separator, shorten SAR copy, and anchor dropdowns to their triggers. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
     border-top: 1px solid var(--line);
@@ -44,8 +52,64 @@
     margin: 0;
   }
 
+  /* Panels use the mobile nav as their containing block. JS aligns each one to its trigger and clamps it inside the nav width. */
+  .site-header .mobile-primary-nav .nav-panel {
+    left: var(--mobile-panel-left, 0px) !important;
+    right: auto !important;
+    transform: none !important;
+    max-width: calc(100vw - 1.25rem) !important;
+  }
+
   .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
     width: max-content !important;
-    max-width: calc(100vw - 1.25rem);
+  }
+
+  /* The Shop panel and its two columns hug their contents so left/right interior whitespace is balanced. */
+  .site-header .mobile-primary-nav .nav-panel-shop {
+    width: max-content !important;
+  }
+
+  .site-header .mobile-primary-nav .nav-shop-grid {
+    grid-template-columns: repeat(2, max-content) !important;
+    column-gap: clamp(1.15rem, 5vw, 2rem) !important;
+    row-gap: 1.05rem !important;
+    justify-content: start;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .site-header .mobile-primary-nav .nav-shop-section {
+    width: max-content;
+    max-width: 100%;
+  }
+
+  /* On phones, preserve the support sentence rather than squeezing in all three desktop phrases. */
+  .sar-meter--header .sar-meter-kicker {
+    font-size: 0 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .sar-meter--header .sar-meter-kicker::after {
+    content: 'SAR';
+    color: #e8c99d;
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    line-height: 1.1;
+  }
+
+  .sar-meter--header .sar-meter-status strong {
+    display: none !important;
+  }
+
+  .sar-meter--header .sar-meter-status span {
+    display: block !important;
+    color: #eadfcf !important;
+    font-size: clamp(.6rem, 2.55vw, .68rem) !important;
+    white-space: nowrap;
+  }
+
+  .sar-meter--header .sar-meter-status span::before {
+    content: none !important;
   }
 }
