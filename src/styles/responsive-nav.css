@@ -91,7 +91,7 @@
     padding-inline: 1.05rem !important;
   }
 
-  /* On phones, preserve the support sentence rather than squeezing in all three desktop phrases. */
+  /* On phones, preserve the support sentence rather than squeezing in all three desktop phrases. Use one gold bullet as hierarchy without suggesting a second link. */
   .sar-meter--header .sar-meter-kicker {
     font-size: 0 !important;
     letter-spacing: 0 !important;
