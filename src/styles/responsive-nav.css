@@ -1,6 +1,13 @@
 /* Header/navigation refinements layered over the component defaults. */
 .site-header .nav-panel-wall-art {
-  width: 14.25rem !important;
+  width: max-content !important;
+  min-width: 0;
+}
+
+/* Keep the wide Store-style Shop panel while letting the final Apparel column hug its content instead of carrying a dead right-side strip. */
+.site-header .desktop-nav .nav-panel-shop .nav-shop-grid {
+  grid-template-columns: repeat(4, max-content);
+  justify-content: space-between;
 }
 
 /* Mobile header: keep the restrained separator between the brand lockup and primary navigation without changing desktop. */
@@ -38,6 +45,7 @@
   }
 
   .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
-    width: min(calc(100vw - 1.25rem), 14.25rem) !important;
+    width: max-content !important;
+    max-width: calc(100vw - 1.25rem);
   }
 }
