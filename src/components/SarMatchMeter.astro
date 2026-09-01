@@ -25,6 +25,9 @@ const stateLabel = exceeded
   : achieved
     ? `Match achieved · ${generated} generated for SAR`
     : `${generated} of ${target} matched · ${sar.matchPercentage.toFixed(0)}%`;
+const headerPrimary = 'Walk the path with us.';
+const headerDetail = 'Support the people who answer the call.';
+const displayStateLabel = variant === 'header' ? `${headerPrimary} ${headerDetail}` : stateLabel;
 const nodeAmounts = [0, 100, 200, 300, 400, 500];
 const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed0141d.webp`;
 ---
@@ -34,12 +37,14 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
   href={targetHref}
   data-sar-meter
   data-sar-meter-variant={variant}
-  aria-label={`Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`}
+  aria-label={`Search and Rescue: ${displayStateLabel} View Search and Rescue resources.`}
 >
   <span class="sar-meter-copy">
     <span class="sar-meter-kicker">Search &amp; Rescue</span>
     <span class="sar-meter-status">
-      {exceeded ? (
+      {variant === 'header' ? (
+        <><strong data-sar-meter-primary>{headerPrimary}</strong><span data-sar-meter-detail>{headerDetail}</span></>
+      ) : exceeded ? (
         <><strong data-sar-meter-primary>{generated} generated</strong><span data-sar-meter-detail>Match goal surpassed</span></>
       ) : achieved ? (
         <><strong data-sar-meter-primary>Match achieved</strong><span data-sar-meter-detail>{generated} generated for SAR</span></>
@@ -193,7 +198,11 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       if (progressPath) progressPath.style.strokeDasharray = `${progress} ${100 - progress}`;
 
       let stateLabel;
-      if (exceeded) {
+      if (variant === 'header') {
+        primary.textContent = 'Walk the path with us.';
+        detail.textContent = 'Support the people who answer the call.';
+        stateLabel = 'Walk the path with us. Support the people who answer the call.';
+      } else if (exceeded) {
         primary.textContent = `${generated} generated`;
         detail.textContent = 'Match goal surpassed';
         stateLabel = `${generated} generated · match goal surpassed`;
@@ -206,7 +215,9 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
         detail.textContent = `${percentRounded}% of annual milestone`;
         stateLabel = `${generated} of ${target} matched · ${percentRounded}%`;
       }
-      meter.setAttribute('aria-label', `Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`);
+      meter.setAttribute('aria-label', variant === 'header'
+        ? `Search and Rescue: ${stateLabel} View Search and Rescue resources.`
+        : `Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`);
 
       if (variant === 'full') {
         const nodes = meter.querySelectorAll('[data-sar-meter-nodes] span');
