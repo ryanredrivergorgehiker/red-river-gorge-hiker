@@ -83,6 +83,14 @@
     max-width: 100%;
   }
 
+  /* Give the mobile View All Gear CTA a touch more air while expanding it evenly around its existing label position. */
+  .site-header .mobile-primary-nav .nav-view-all-gear {
+    position: relative;
+    left: -.2rem;
+    top: .2rem;
+    padding-inline: 1.05rem !important;
+  }
+
   /* On phones, preserve the support sentence rather than squeezing in all three desktop phrases. */
   .sar-meter--header .sar-meter-kicker {
     font-size: 0 !important;
@@ -98,18 +106,49 @@
     line-height: 1.1;
   }
 
+  .sar-meter--header .sar-meter-status {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+  }
+
   .sar-meter--header .sar-meter-status strong {
     display: none !important;
   }
 
   .sar-meter--header .sar-meter-status span {
     display: block !important;
-    color: #eadfcf !important;
+    color: #fff !important;
     font-size: clamp(.6rem, 2.55vw, .68rem) !important;
     white-space: nowrap;
   }
 
   .sar-meter--header .sar-meter-status span::before {
-    content: none !important;
+    content: '•' !important;
+    display: inline-block;
+    margin: 0 .34rem 0 .04rem;
+    color: #e8c99d;
+    font-size: .58em;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  .sar-meter--header .sar-meter-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .18rem;
+    line-height: 1;
+  }
+
+  .sar-meter--header .sar-meter-action::before {
+    margin-right: 0 !important;
+    line-height: 1;
+  }
+
+  .sar-meter--header .sar-meter-action span {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
   }
 }
