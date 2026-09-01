@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HEADER = (ROOT / 'src/components/Header.astro').read_text(encoding='utf-8')
+RESPONSIVE_NAV = (ROOT / 'src/styles/responsive-nav.css').read_text(encoding='utf-8')
 GEAR_PAGE = (ROOT / 'src/pages/gear.astro').read_text(encoding='utf-8')
 GEAR_CATALOG = (ROOT / 'src/data/gearCatalog.ts').read_text(encoding='utf-8')
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
@@ -96,6 +97,16 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('text-align: left;', HEADER)
         self.assertIn('border-bottom: 1px solid var(--line);', HEADER)
         self.assertIn('nav-view-all-wall-art', HEADER)
+
+    def test_desktop_hover_gap_is_bridged_without_changing_mobile_layout(self):
+        self.assertIn('@media (min-width: 851px) and (hover: hover)', RESPONSIVE_NAV)
+        self.assertIn('.site-header .desktop-nav .nav-panel::before {', RESPONSIVE_NAV)
+        self.assertIn('bottom: calc(100% - 1px);', RESPONSIVE_NAV)
+        self.assertIn('height: calc(.72rem + 2px);', RESPONSIVE_NAV)
+        self.assertIn('pointer-events: auto;', RESPONSIVE_NAV)
+        self.assertIn('@media (max-width: 850px)', RESPONSIVE_NAV)
+        self.assertIn('.site-header .mobile-primary-nav .nav-view-all-gear {', RESPONSIVE_NAV)
+        self.assertIn("content: '•' !important;", RESPONSIVE_NAV)
 
     def test_wall_art_panel_does_not_repeat_wall_art_heading(self):
         self.assertNotIn('<p class="nav-section-title">Wall Art</p>', HEADER)
