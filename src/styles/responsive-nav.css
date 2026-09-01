@@ -10,28 +10,6 @@
   justify-content: space-between;
 }
 
-/* Header SAR message: preserve the live SAR meter mechanics while presenting the approved invitation copy in the compact header treatment. */
-.sar-meter--header [data-sar-meter-primary] {
-  font-size: 0 !important;
-}
-.sar-meter--header [data-sar-meter-primary]::after {
-  content: 'Walk the path with us.';
-  color: #fff;
-  font-size: .82rem;
-  font-weight: inherit;
-}
-.sar-meter--header [data-sar-meter-detail] {
-  font-size: 0 !important;
-}
-.sar-meter--header [data-sar-meter-detail]::before {
-  content: none !important;
-}
-.sar-meter--header [data-sar-meter-detail]::after {
-  content: 'Support the people who answer the call.';
-  color: #eadfcf;
-  font-size: .68rem;
-}
-
 /* Mobile header: keep the restrained separator between the brand lockup and primary navigation without changing desktop. */
 @media (max-width: 850px) {
   .site-header .mobile-primary-nav {
@@ -69,9 +47,5 @@
   .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
     width: max-content !important;
     max-width: calc(100vw - 1.25rem);
-  }
-
-  .sar-meter--header [data-sar-meter-primary]::after {
-    font-size: .75rem;
   }
 }
