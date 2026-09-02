@@ -30,11 +30,17 @@ class ShopNavigationContractTests(unittest.TestCase):
             'Wood Prints': 'https://store.redrivergorgehiker.com/shop/wood+prints',
             'Posters': 'https://store.redrivergorgehiker.com/shop/posters',
             'Photographs': 'https://store.redrivergorgehiker.com/art/photographs',
+            'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
         }
         self.assertIn('View All Wall Art', HEADER)
         self.assertIn('href={`${base}photography/`}>View All Wall Art</a>', HEADER)
         for label, url in expected.items():
             self.assertIn(f"['{label}', '{url}']", HEADER)
+
+        puzzle_link = "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']"
+        self.assertEqual(HEADER.count(puzzle_link), 2)
+        wall_art_block = HEADER.split('const wallArtLinks = [', 1)[1].split('] as const;', 1)[0]
+        self.assertLess(wall_art_block.index("['Photographs',"), wall_art_block.index("['Jigsaw Puzzles',"))
 
     def test_shop_menu_preserves_unrelated_destinations_and_removes_retired_families(self):
         expected = {
