@@ -71,23 +71,6 @@ export const mensTankTop: GearProduct = {
   lastVerified: '2026-08-28'
 };
 
-export const handTowel: GearProduct = {
-  slug: 'hand-towel',
-  title: 'Hand Towel',
-  description: 'A green Red River Gorge Hiker hand towel featuring the logo in a vertical presentation.',
-  priceLabel: '$14.50',
-  specification: 'Hand Towel · 15 × 30 inches · Vertical',
-  optionNote: 'Hand Towel configuration verified at $14.50 customer retail · Background R(34) G(85) B(58).',
-  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=hand-towel',
-  image: {
-    avif: `${assetBase}rrgh-merch-towel-hand-2a8aebf9.avif`,
-    width: 800,
-    height: 1000,
-    alt: 'Green Red River Gorge Hiker logo hand towel displayed in a bathroom setting.'
-  },
-  lastVerified: '2026-08-28'
-};
-
 export const toddlerTshirt: GearProduct = {
   slug: 'toddler-tshirt',
   title: 'Toddler T-Shirt',
@@ -126,10 +109,6 @@ const storefrontCopy = {
     subtitle: 'Everyday RRGH regular-fit tee',
     note: 'Chest logo · Multiple sizes available'
   },
-  'coffee-mug': {
-    subtitle: 'Bring the Gorge to your morning coffee',
-    note: '15 oz. white logo mug'
-  },
   'womens-tshirt': {
     subtitle: 'Everyday RRGH women’s tee',
     note: 'Chest logo · Multiple sizes available'
@@ -158,10 +137,6 @@ const storefrontCopy = {
     subtitle: 'RRGH tank for sunny trail days',
     note: 'Chest logo · Multiple sizes available'
   },
-  'zip-pouch': {
-    subtitle: 'Keep the small stuff together',
-    note: '9.5 × 6 in. · Two bottom styles available'
-  },
   'fleece-sherpa-blanket': {
     subtitle: 'Wrap up in Red River Gorge Hiker',
     note: '50 × 60 in. · Plush or Sherpa fleece'
@@ -173,18 +148,6 @@ const storefrontCopy = {
   'spiral-notebook': {
     subtitle: 'A place for trail notes and ideas',
     note: '6 × 8 in. spiral notebook'
-  },
-  'hand-towel': {
-    subtitle: 'A little Gorge style for home or camp',
-    note: '15 × 30 in. · Vertical logo'
-  },
-  'bath-towel': {
-    subtitle: 'Bring RRGH style to the everyday',
-    note: '32 × 64 in. logo bath towel'
-  },
-  'beach-towel': {
-    subtitle: 'Take the Gorge to the water',
-    note: '32 × 64 in. logo beach towel'
   },
   'kids-tshirt': {
     subtitle: 'RRGH style for little explorers',
@@ -206,15 +169,13 @@ const storefrontCopy = {
 
 const orderedGearProducts: readonly GearProduct[] = [
   doubleRainbowGreetingCard,
-  ...merchandiseProducts.slice(0, 6),
+  ...merchandiseProducts.slice(0, 5),
   longSleeveTshirt,
-  ...merchandiseProducts.slice(6, 9),
+  ...merchandiseProducts.slice(5, 8),
   mensTankTop,
-  ...merchandiseProducts.slice(9, 14),
-  handTowel,
-  ...merchandiseProducts.slice(14, 17),
+  ...merchandiseProducts.slice(8, 13),
   toddlerTshirt,
-  ...merchandiseProducts.slice(17)
+  ...merchandiseProducts.slice(13)
 ];
 
 export const gearProducts: readonly StorefrontGearProduct[] = orderedGearProducts.map((product) => {
