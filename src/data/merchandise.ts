@@ -83,21 +83,6 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
-    slug: 'coffee-mug',
-    title: 'Coffee Mug',
-    description: 'A large white 15-ounce coffee mug printed with the Red River Gorge Hiker logo.',
-    priceLabel: '$16',
-    specification: 'Large 15 oz. · White',
-    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=coffee-mug-large',
-    image: {
-      avif: `${assetBase}rrgh-merch-coffee-mug-0d15378a.avif`,
-      width: 800,
-      height: 1000,
-      alt: 'White 15-ounce coffee mug printed with the Red River Gorge Hiker logo.'
-    },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
     slug: 'womens-tshirt',
     title: 'Women’s T-Shirt',
     description: 'Women’s Red River Gorge Hiker T-shirt with the logo presented on the chest.',
@@ -178,22 +163,6 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
   {
-    slug: 'zip-pouch',
-    title: 'Zip Pouch',
-    description: 'A medium 9.5 × 6-inch green Red River Gorge Hiker logo zip pouch with regular or T-style bottom options.',
-    priceLabel: 'From $22',
-    specification: 'Medium · 9.5 × 6 inches',
-    optionNote: 'Regular Bottom $22 · Optional T-style Bottom $22.50.',
-    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pouch',
-    image: {
-      avif: `${assetBase}rrgh-merch-zip-pouch-04134418.avif`,
-      width: 800,
-      height: 1000,
-      alt: 'Green Red River Gorge Hiker logo zip pouch held at waist height.'
-    },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
     slug: 'fleece-sherpa-blanket',
     title: 'Fleece / Sherpa Blanket',
     description: 'A 50 × 60-inch Red River Gorge Hiker logo blanket available in Plush Fleece or Sherpa Fleece.',
@@ -237,36 +206,6 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
       width: 800,
       height: 1000,
       alt: 'Green spiral notebook with the Red River Gorge Hiker logo being held and written in.'
-    },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'bath-towel',
-    title: 'Bath Towel',
-    description: 'A 32 × 64-inch green bath towel featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$32.50',
-    specification: '32 × 64 inches',
-    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel',
-    image: {
-      avif: `${assetBase}rrgh-merch-towel-bath-051a15a3.avif`,
-      width: 800,
-      height: 1000,
-      alt: 'Green Red River Gorge Hiker logo bath towel hanging on a bathroom towel bar.'
-    },
-    lastVerified: MERCHANDISE_VERIFICATION_DATE
-  },
-  {
-    slug: 'beach-towel',
-    title: 'Beach Towel',
-    description: 'A 32 × 64-inch green beach towel featuring the Red River Gorge Hiker logo.',
-    priceLabel: '$32.50',
-    specification: '32 × 64 inches',
-    storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel',
-    image: {
-      avif: `${assetBase}rrgh-merch-towel-beach-1348ef08.avif`,
-      width: 657,
-      height: 1000,
-      alt: 'Green Red River Gorge Hiker logo beach towel spread on sand beside the ocean.'
     },
     lastVerified: MERCHANDISE_VERIFICATION_DATE
   },
