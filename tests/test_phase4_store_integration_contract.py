@@ -19,6 +19,7 @@ ANALYTICS = (ROOT / 'src/components/AnalyticsConsent.astro').read_text()
 FOOTER = (ROOT / 'src/components/Footer.astro').read_text()
 HEADER = (ROOT / 'src/components/Header.astro').read_text()
 
+
 class Phase4StoreIntegrationContract(unittest.TestCase):
     def test_provider_specific_public_commerce_urls_are_retired(self):
         self.assertNotIn('https://fineartamerica.com/', SRC)
@@ -29,15 +30,18 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn('on Fine Art America (opens in a new tab)', SRC)
         self.assertNotIn('outbound clicks to Fine Art America', SRC)
 
-    def test_exact_store_destinations(self):
-        self.assertIn("storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=hand-towel'", GEAR_DATA)
-        self.assertIn("storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=bath-towel'", MERCH)
-        self.assertIn("storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=beach-towel'", MERCH)
-        self.assertNotIn('round-beach-towel', (MERCH + GEAR_DATA).lower())
+    def test_exact_active_and_retired_store_destinations(self):
+        active_data = MERCH + '\n' + GEAR_DATA
+        for retired_product in ('coffee-mug', 'zip-pouch', 'hand-towel', 'bath-towel', 'beach-towel', 'ornament'):
+            self.assertNotIn(f'?product={retired_product}', active_data)
+            self.assertNotIn(f"slug: '{retired_product}'", active_data)
+
+        self.assertNotIn('round-beach-towel', active_data.lower())
         self.assertIn('completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]', MERCH)
         self.assertIn('-designlocation[pocket]', MERCH)
         self.assertIn('double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html', PRODUCTS)
         self.assertIn('double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card', GEAR_DATA)
+        self.assertEqual((MERCH + GEAR_DATA).count("storeUrl: 'https://store.redrivergorgehiker.com/"), 19)
 
     def test_six_wall_art_and_three_puzzle_destinations_use_store(self):
         self.assertEqual(PRODUCTS.count("wallArtUrl: 'https://store.redrivergorgehiker.com/"), 6)
@@ -102,6 +106,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertIn("creator: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.', PHOTO_DETAIL)
+
 
 if __name__ == '__main__':
     unittest.main()
