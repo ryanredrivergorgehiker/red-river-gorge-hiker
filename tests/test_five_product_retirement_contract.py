@@ -157,8 +157,8 @@ class FiveProductRetirementContractTests(unittest.TestCase):
             self.assertIn(value, HEADER)
 
     def test_detail_routes_are_generated_from_current_gear_products(self):
-        self.assertIn("import { gearProducts } from '../../data/gearCatalog';", GEAR_DETAIL)
-        self.assertIn('gearProducts.map', GEAR_DETAIL)
+        self.assertIn("import { gearProducts, type GearProduct } from '../../data/gearCatalog';", GEAR_DETAIL)
+        self.assertIn('gearProducts.map((product)', GEAR_DETAIL)
 
 
 if __name__ == '__main__':
