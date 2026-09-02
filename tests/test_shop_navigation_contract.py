@@ -36,17 +36,14 @@ class ShopNavigationContractTests(unittest.TestCase):
         for label, url in expected.items():
             self.assertIn(f"['{label}', '{url}']", HEADER)
 
-    def test_shop_menu_uses_verified_destinations_and_preserves_sales_repetition(self):
+    def test_shop_menu_preserves_unrelated_destinations_and_removes_retired_families(self):
         expected = {
             'Throw Pillows': 'https://store.redrivergorgehiker.com/shop/throw+pillows',
             'Fleece Blankets': 'https://store.redrivergorgehiker.com/shop/fleece+blankets',
-            'Hand Towels': 'https://store.redrivergorgehiker.com/shop/hand+towels',
             'Greeting Cards': 'https://store.redrivergorgehiker.com/shop/greeting+cards',
             'Spiral Notebooks': 'https://store.redrivergorgehiker.com/shop/spiral+notebooks',
             'Stickers': 'https://store.redrivergorgehiker.com/shop/stickers',
             'Tote Bags': 'https://store.redrivergorgehiker.com/shop/tote+bags',
-            'Zip Pouches': 'https://store.redrivergorgehiker.com/shop/pouches',
-            'Beach Towels': 'https://store.redrivergorgehiker.com/shop/beach+towels',
             'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
             "Men's Tank Tops": 'https://store.redrivergorgehiker.com/shop/tank+tops',
             "Women's Tank Tops": 'https://store.redrivergorgehiker.com/shop/womens+tank+tops',
@@ -62,7 +59,14 @@ class ShopNavigationContractTests(unittest.TestCase):
             quote = '"' if "'" in label else "'"
             self.assertIn(f"[{quote}{label}{quote}, '{url}']", HEADER)
 
-        self.assertEqual(HEADER.count("['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs']"), 2)
+        for retired in (
+            "['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs']",
+            "['Hand Towels', 'https://store.redrivergorgehiker.com/shop/hand+towels']",
+            "['Zip Pouches', 'https://store.redrivergorgehiker.com/shop/pouches']",
+            "['Beach Towels', 'https://store.redrivergorgehiker.com/shop/beach+towels']",
+        ):
+            self.assertNotIn(retired, HEADER)
+
         self.assertEqual(HEADER.count("[\"Men's Apparel\", 'https://store.redrivergorgehiker.com/shop/tshirts']"), 1)
         self.assertEqual(HEADER.count("[\"Women's Apparel\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']"), 1)
         self.assertEqual(HEADER.count("[\"Men's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/tshirts']"), 1)
@@ -79,10 +83,10 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('View in Store', GEAR_PAGE)
 
         base_product_count = len(re.findall(r"storeUrl:\s*'https://", MERCH))
-        added_product_count = len(re.findall(r"export const (?:doubleRainbowGreetingCard|longSleeveTshirt|mensTankTop|handTowel|toddlerTshirt): GearProduct", GEAR_CATALOG))
-        self.assertEqual(base_product_count, 19)
-        self.assertEqual(added_product_count, 5)
-        self.assertEqual(base_product_count + added_product_count, 24)
+        added_product_count = len(re.findall(r"export const (?:doubleRainbowGreetingCard|longSleeveTshirt|mensTankTop|toddlerTshirt): GearProduct", GEAR_CATALOG))
+        self.assertEqual(base_product_count, 15)
+        self.assertEqual(added_product_count, 4)
+        self.assertEqual(base_product_count + added_product_count, 19)
 
     def test_navigation_presentation_matches_refined_uat_direction(self):
         self.assertNotIn('⌄', HEADER)
