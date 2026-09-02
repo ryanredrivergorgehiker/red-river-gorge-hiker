@@ -118,10 +118,15 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('.site-header .mobile-primary-nav .nav-view-all-gear {', RESPONSIVE_NAV)
         self.assertIn("content: '•' !important;", RESPONSIVE_NAV)
 
-    def test_wall_art_panel_does_not_repeat_wall_art_heading(self):
+    def test_wall_art_panel_has_shop_heading_without_repeating_wall_art(self):
         self.assertNotIn('<p class="nav-section-title">Wall Art</p>', HEADER)
-        desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links">')
+        self.assertEqual(HEADER.count('<p class="nav-section-title nav-wall-art-title">Shop</p>'), 2)
+        desktop_panel = HEADER.find('<div class="nav-panel nav-panel-wall-art">')
+        desktop_heading = HEADER.find('<p class="nav-section-title nav-wall-art-title">Shop</p>', desktop_panel)
+        desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links">', desktop_heading)
         desktop_button = HEADER.find('View All Wall Art</a>', desktop_list)
+        self.assertGreater(desktop_heading, desktop_panel)
+        self.assertGreater(desktop_list, desktop_heading)
         self.assertGreater(desktop_button, desktop_list)
 
     def test_puzzle_browse_page_is_retired_to_verified_store_category(self):
