@@ -3,6 +3,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+# The approved UAT design hands the customer directly to the native branded Store cart.
 
 
 class PixelsCartIntegrationContract(unittest.TestCase):
