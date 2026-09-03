@@ -33,7 +33,11 @@ class ShopNavigationContractTests(unittest.TestCase):
             'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
         }
         self.assertIn('View All Wall Art', HEADER)
-        self.assertIn('href={`${base}photography/`}>View All Wall Art</a>', HEADER)
+        self.assertEqual(
+            HEADER.count('href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>'),
+            2,
+        )
+        self.assertNotIn('href={`${base}photography/`}>View All Wall Art</a>', HEADER)
         for label, url in expected.items():
             self.assertIn(f"['{label}', '{url}']", HEADER)
 
@@ -80,8 +84,10 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertNotIn('Holiday Ornaments', HEADER)
         self.assertNotIn('/shop/ornaments', HEADER)
 
-    def test_view_all_gear_preserves_access_to_every_active_gear_product(self):
-        self.assertIn('href={`${base}gear/`}>View All Gear</a>', HEADER)
+    def test_view_all_gear_goes_directly_to_store_design_page(self):
+        gear_url = 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html'
+        self.assertEqual(HEADER.count(f'href="{gear_url}">View All Gear</a>'), 2)
+        self.assertNotIn('href={`${base}gear/`}>View All Gear</a>', HEADER)
         self.assertIn("section.title === 'Home Decor'", HEADER)
         self.assertIn("section.title === 'Lifestyle'", HEADER)
         self.assertIn('gearProducts.map', GEAR_PAGE)
@@ -137,7 +143,7 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('href="https://store.redrivergorgehiker.com/shop/puzzles">View Puzzles</a>', home)
         self.assertTrue(detail.exists())
 
-    def test_cart_is_not_part_of_this_candidate(self):
+    def test_cart_is_not_part_of_header_navigation(self):
         self.assertNotIn('shopping cart', HEADER.lower())
         self.assertNotIn('cart badge', HEADER.lower())
 
