@@ -8,6 +8,7 @@ RESPONSIVE_NAV = (ROOT / 'src/styles/responsive-nav.css').read_text(encoding='ut
 GEAR_PAGE = (ROOT / 'src/pages/gear.astro').read_text(encoding='utf-8')
 GEAR_CATALOG = (ROOT / 'src/data/gearCatalog.ts').read_text(encoding='utf-8')
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
+GEAR_URL_SOURCES = GEAR_CATALOG + MERCH
 
 
 class ShopNavigationContractTests(unittest.TestCase):
@@ -46,28 +47,60 @@ class ShopNavigationContractTests(unittest.TestCase):
         wall_art_block = HEADER.split('const wallArtLinks = [', 1)[1].split('] as const;', 1)[0]
         self.assertLess(wall_art_block.index("['Photographs',"), wall_art_block.index("['Jigsaw Puzzles',"))
 
-    def test_shop_menu_preserves_unrelated_destinations_and_removes_retired_families(self):
-        expected = {
-            'Throw Pillows': 'https://store.redrivergorgehiker.com/shop/throw+pillows',
-            'Fleece Blankets': 'https://store.redrivergorgehiker.com/shop/fleece+blankets',
-            'Greeting Cards': 'https://store.redrivergorgehiker.com/shop/greeting+cards',
-            'Spiral Notebooks': 'https://store.redrivergorgehiker.com/shop/spiral+notebooks',
-            'Stickers': 'https://store.redrivergorgehiker.com/shop/stickers',
-            'Tote Bags': 'https://store.redrivergorgehiker.com/shop/tote+bags',
-            'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
-            "Men's Tank Tops": 'https://store.redrivergorgehiker.com/shop/tank+tops',
-            "Women's Tank Tops": 'https://store.redrivergorgehiker.com/shop/womens+tank+tops',
-            'Long Sleeve T-Shirts': 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts',
-            'Sweatshirts': 'https://store.redrivergorgehiker.com/shop/sweatshirts',
-            "Kid's T-Shirts": 'https://store.redrivergorgehiker.com/shop/kids+tshirts',
-            'Toddler T-Shirts': 'https://store.redrivergorgehiker.com/shop/toddler+tshirts',
-            'Baby One-Pieces': 'https://store.redrivergorgehiker.com/shop/baby+one+pieces',
+    def test_shop_menu_uses_direct_gear_product_links_with_agreed_category_exceptions(self):
+        direct_expected = {
+            'Throw Pillows': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=throw-pillow',
+            'Fleece Blankets': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=fleece-blanket',
+            'Spiral Notebooks': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=spiral-notebook',
+            'Stickers': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=sticker',
+            'Tote Bags': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tote-bag',
+            "Men's T-Shirts": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=adult-tshirt&completeProductSku=artworkid[70456163]-productid[clothing-23]-imagewidth[286]-imageheight[286]-targetx[72]-targety[0]-modelwidth[430]-modelheight[575]-backgroundcolor[5]-orientation[0]-size[3]',
+            "Men's Tank Tops": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=tank-top-tshirt',
+            "Women's T-Shirts": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tshirt',
+            "Women's Tank Tops": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
+            'Long Sleeve T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
+            'Sweatshirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
+            "Kid's T-Shirts": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
+            'Toddler T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
+            'Baby One-Pieces': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
         }
+        preserved_category_expected = {
+            'Greeting Cards': 'https://store.redrivergorgehiker.com/shop/greeting+cards',
+            "Men's Apparel": 'https://store.redrivergorgehiker.com/shop/tshirts',
+            "Women's Apparel": 'https://store.redrivergorgehiker.com/shop/womens+tshirts',
+            'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
+        }
+
         for section in ('Home Decor', 'Stationery', 'Lifestyle', 'Apparel'):
             self.assertIn(f"title: '{section}'", HEADER)
-        for label, url in expected.items():
+
+        for label, url in direct_expected.items():
             quote = '"' if "'" in label else "'"
             self.assertIn(f"[{quote}{label}{quote}, '{url}']", HEADER)
+            self.assertIn(url, GEAR_URL_SOURCES)
+
+        for label, url in preserved_category_expected.items():
+            quote = '"' if "'" in label else "'"
+            self.assertIn(f"[{quote}{label}{quote}, '{url}']", HEADER)
+
+        old_product_specific_pairs = (
+            "['Throw Pillows', 'https://store.redrivergorgehiker.com/shop/throw+pillows']",
+            "['Fleece Blankets', 'https://store.redrivergorgehiker.com/shop/fleece+blankets']",
+            "['Spiral Notebooks', 'https://store.redrivergorgehiker.com/shop/spiral+notebooks']",
+            "['Stickers', 'https://store.redrivergorgehiker.com/shop/stickers']",
+            "['Tote Bags', 'https://store.redrivergorgehiker.com/shop/tote+bags']",
+            "[\"Men's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
+            "[\"Men's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/tank+tops']",
+            "[\"Women's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
+            "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tank+tops']",
+            "['Long Sleeve T-Shirts', 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts']",
+            "['Sweatshirts', 'https://store.redrivergorgehiker.com/shop/sweatshirts']",
+            "[\"Kid's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/kids+tshirts']",
+            "['Toddler T-Shirts', 'https://store.redrivergorgehiker.com/shop/toddler+tshirts']",
+            "['Baby One-Pieces', 'https://store.redrivergorgehiker.com/shop/baby+one+pieces']",
+        )
+        for old_pair in old_product_specific_pairs:
+            self.assertNotIn(old_pair, HEADER)
 
         for retired in (
             "['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs']",
@@ -79,8 +112,6 @@ class ShopNavigationContractTests(unittest.TestCase):
 
         self.assertEqual(HEADER.count("[\"Men's Apparel\", 'https://store.redrivergorgehiker.com/shop/tshirts']"), 1)
         self.assertEqual(HEADER.count("[\"Women's Apparel\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']"), 1)
-        self.assertEqual(HEADER.count("[\"Men's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/tshirts']"), 1)
-        self.assertEqual(HEADER.count("[\"Women's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']"), 1)
         self.assertNotIn('Holiday Ornaments', HEADER)
         self.assertNotIn('/shop/ornaments', HEADER)
 
