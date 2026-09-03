@@ -130,7 +130,7 @@ class FiveProductRetirementContractTests(unittest.TestCase):
         for filename in RETIRED_PUBLIC_FILES:
             self.assertFalse((asset_dir / filename).exists(), filename)
 
-    def test_shop_header_removes_only_retired_family_destinations(self):
+    def test_shop_header_removes_only_retired_families_and_keeps_surviving_navigation(self):
         retired_menu_values = [
             "['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs']",
             "['Hand Towels', 'https://store.redrivergorgehiker.com/shop/hand+towels']",
@@ -140,20 +140,38 @@ class FiveProductRetirementContractTests(unittest.TestCase):
         for value in retired_menu_values:
             self.assertNotIn(value, HEADER)
 
-        preserved_menu_values = [
-            "['Throw Pillows', 'https://store.redrivergorgehiker.com/shop/throw+pillows']",
-            "['Fleece Blankets', 'https://store.redrivergorgehiker.com/shop/fleece+blankets']",
-            "['Greeting Cards', 'https://store.redrivergorgehiker.com/shop/greeting+cards']",
-            "['Spiral Notebooks', 'https://store.redrivergorgehiker.com/shop/spiral+notebooks']",
-            "['Stickers', 'https://store.redrivergorgehiker.com/shop/stickers']",
-            "['Tote Bags', 'https://store.redrivergorgehiker.com/shop/tote+bags']",
-            "[\"Men's Apparel\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
-            "[\"Women's Apparel\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
-            "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']",
+        surviving_labels = [
+            'Throw Pillows',
+            'Fleece Blankets',
+            'Greeting Cards',
+            'Spiral Notebooks',
+            'Stickers',
+            'Tote Bags',
+            "Men's Apparel",
+            "Women's Apparel",
+            'Jigsaw Puzzles',
+            "Men's T-Shirts",
+            "Men's Tank Tops",
+            "Women's T-Shirts",
+            "Women's Tank Tops",
+            'Long Sleeve T-Shirts',
+            'Sweatshirts',
+            "Kid's T-Shirts",
+            'Toddler T-Shirts',
+            'Baby One-Pieces',
             'View All Gear',
             'View All Wall Art',
         ]
-        for value in preserved_menu_values:
+        for label in surviving_labels:
+            self.assertIn(label, HEADER)
+
+        preserved_category_values = [
+            "['Greeting Cards', 'https://store.redrivergorgehiker.com/shop/greeting+cards']",
+            "[\"Men's Apparel\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
+            "[\"Women's Apparel\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
+            "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']",
+        ]
+        for value in preserved_category_values:
             self.assertIn(value, HEADER)
 
     def test_detail_routes_are_generated_from_current_gear_products(self):
