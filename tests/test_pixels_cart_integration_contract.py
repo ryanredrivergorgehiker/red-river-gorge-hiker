@@ -7,35 +7,36 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class PixelsCartIntegrationContract(unittest.TestCase):
     def setUp(self):
-        self.cart_page = (ROOT / 'src/pages/cart.astro').read_text(encoding='utf-8')
         self.launcher = (ROOT / 'src/components/CartLauncher.astro').read_text(encoding='utf-8')
         self.base = (ROOT / 'src/layouts/Base.astro').read_text(encoding='utf-8')
 
-    def test_cart_uses_ryan_supplied_pixels_embed_identity(self):
-        self.assertIn('memberidtype=artistid&memberid=1618459', self.cart_page)
-        self.assertIn('domainid=0&showheader=0&height=600&autoheight=true', self.cart_page)
-        self.assertIn('widgetshoppingcart/artwork.html', self.cart_page)
+    def test_cart_launcher_uses_native_branded_store_cart(self):
+        self.assertIn("https://store.redrivergorgehiker.com/shoppingcart.html", self.launcher)
+        self.assertIn('data-store-item-type="cart"', self.launcher)
+        self.assertNotIn('fineartamerica.com', self.launcher.lower())
+        self.assertNotIn('widgetshoppingcart', self.launcher.lower())
 
-    def test_cart_uses_pixels_widget_without_a_second_local_cart(self):
-        self.assertIn('https://fineartamerica.com/widgetshoppingcart/widgetscripts.php', self.cart_page)
+    def test_cart_launcher_is_sitewide_without_a_second_local_cart(self):
+        self.assertIn("import CartLauncher from '../components/CartLauncher.astro';", self.base)
+        self.assertIn('<CartLauncher />', self.base)
         self.assertNotIn('localStorage', self.launcher)
         self.assertNotIn('sessionStorage', self.launcher)
         self.assertNotIn('cartCount', self.launcher)
 
-    def test_cart_launcher_is_sitewide_but_not_redundant_on_cart_page(self):
-        self.assertIn("import CartLauncher from '../components/CartLauncher.astro';", self.base)
-        self.assertIn('<CartLauncher />', self.base)
-        self.assertIn("href={`${base}cart/`}", self.launcher)
-        self.assertIn('!isCartPage', self.launcher)
-
-    def test_cart_launcher_and_frame_have_mobile_treatments(self):
+    def test_cart_launcher_keeps_approved_mobile_treatment(self):
         self.assertIn('@media (max-width: 560px)', self.launcher)
-        self.assertIn('@media (max-width: 700px)', self.cart_page)
-        self.assertIn('width: 100% !important', self.cart_page)
-        self.assertIn('min-height: 620px', self.cart_page)
+        self.assertIn('right: max(.75rem, env(safe-area-inset-right));', self.launcher)
+        self.assertIn('bottom: max(.75rem, env(safe-area-inset-bottom));', self.launcher)
 
-    def test_store_handoff_returns_to_branded_store(self):
-        self.assertIn('https://store.redrivergorgehiker.com/', self.cart_page)
+    def test_embedded_cart_experiment_is_removed(self):
+        self.assertFalse((ROOT / 'src/pages/cart.astro').exists())
+        src = '\n'.join(
+            path.read_text(encoding='utf-8', errors='ignore')
+            for path in (ROOT / 'src').rglob('*')
+            if path.is_file()
+        )
+        self.assertNotIn('widgetshoppingcart', src.lower())
+        self.assertNotIn('pixelsshoppingcartiframe', src.lower())
 
 
 if __name__ == '__main__':
