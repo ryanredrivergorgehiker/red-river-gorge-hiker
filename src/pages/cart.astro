@@ -1,42 +1,44 @@
 ---
 import Base from '../layouts/Base.astro';
 
-const pixelsCartUrl = 'https://fineartamerica.com/widgetshoppingcart/shoppingcart.html?memberidtype=artistid&memberid=1618459&domainid=0&showheader=0&flagwidget=true&widgettype=standard&height=6000';
+// Exact Pixels Pro Stand Alone Shopping Cart embed destination supplied by Ryan on 2026-09-02.
+const pixelsCartWidgetUrl = 'https://fineartamerica.com/widgetshoppingcart/artwork.html?memberidtype=artistid&memberid=1618459&domainid=0&showheader=0&height=600&autoheight=true';
 ---
 
 <Base
   title="Cart"
-  description="Review your Red River Gorge Hiker cart and continue to checkout through the Red River Gorge Hiker Store."
+  description="Review your Red River Gorge Hiker shopping selections and continue through the Red River Gorge Hiker Store on Pixels."
 >
   <article class="page cart-page">
     <header class="cart-page-intro">
       <div>
         <p class="eyebrow">Red River Gorge Hiker Store</p>
-        <h1>Your Cart</h1>
-        <p class="lede">Review what you’ve selected and continue to checkout through our Pixels fulfillment partner.</p>
+        <h1>Cart &amp; Store</h1>
+        <p class="lede">Your Pixels shopping experience is embedded here so you can return to Red River Gorge Hiker without losing the path back to your cart.</p>
       </div>
-      <a class="button secondary cart-continue-shopping" href="https://store.redrivergorgehiker.com/">Continue shopping</a>
+      <a class="button secondary cart-continue-shopping" href="https://store.redrivergorgehiker.com/">Open Store</a>
     </header>
 
-    <section class="cart-widget-shell" aria-label="Shopping cart">
+    <section class="cart-widget-shell" aria-label="Red River Gorge Hiker Store shopping cart">
       <script is:inline type="text/javascript" src="https://fineartamerica.com/widgetshoppingcart/widgetscripts.php"></script>
       <iframe
         id="pixelsshoppingcartiframe"
-        title="Red River Gorge Hiker shopping cart"
-        src={pixelsCartUrl}
+        title="Red River Gorge Hiker Store and shopping cart"
+        src={pixelsCartWidgetUrl}
         style="display: inline-block; width: 100%; height: 820px; border: none; overflow: hidden;"
       ></iframe>
     </section>
 
     <p class="cart-widget-note">
-      Cart, payment, production, fulfillment, and shipping are provided through the Red River Gorge Hiker Store on Pixels.
+      Product selection, cart, checkout, payment, production, fulfillment, shipping, customer service, and returns are provided through Pixels / Fine Art America.
     </p>
   </article>
 </Base>
 
 <style>
   .cart-page {
-    padding-top: 2.25rem;
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
   }
 
   .cart-page-intro {
@@ -44,25 +46,25 @@ const pixelsCartUrl = 'https://fineartamerica.com/widgetshoppingcart/shoppingcar
     align-items: end;
     justify-content: space-between;
     gap: 1.25rem 2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
   }
 
   .cart-page-intro .eyebrow {
-    margin-bottom: .55rem;
+    margin-bottom: .4rem;
   }
 
   .cart-page-intro h1 {
-    margin-bottom: .7rem;
+    margin-bottom: .55rem;
   }
 
   .cart-page-intro .lede {
     margin-bottom: 0;
-    max-width: 54rem;
+    max-width: 58rem;
   }
 
   .cart-continue-shopping {
     flex: 0 0 auto;
-    margin-bottom: .2rem;
+    margin-bottom: .15rem;
   }
 
   .cart-widget-shell {
@@ -82,7 +84,7 @@ const pixelsCartUrl = 'https://fineartamerica.com/widgetshoppingcart/shoppingcar
   }
 
   .cart-widget-note {
-    margin: .85rem 0 0;
+    margin: .8rem 0 0;
     color: var(--muted);
     font-size: .82rem;
     line-height: 1.5;
@@ -91,14 +93,20 @@ const pixelsCartUrl = 'https://fineartamerica.com/widgetshoppingcart/shoppingcar
   @media (max-width: 700px) {
     .cart-page {
       width: min(100% - 1rem, var(--content));
-      padding-top: 1.5rem;
+      padding-top: 1rem;
+      padding-bottom: 2.5rem;
     }
 
     .cart-page-intro {
       display: grid;
       align-items: start;
-      gap: 1rem;
-      margin-bottom: 1.1rem;
+      gap: .85rem;
+      margin-bottom: 1rem;
+    }
+
+    .cart-page-intro .lede {
+      font-size: 1rem;
+      line-height: 1.45;
     }
 
     .cart-continue-shopping {
@@ -115,7 +123,8 @@ const pixelsCartUrl = 'https://fineartamerica.com/widgetshoppingcart/shoppingcar
     }
 
     .cart-widget-note {
-      padding-inline: .15rem;
+      padding-inline: .1rem;
+      font-size: .78rem;
     }
   }
 </style>
