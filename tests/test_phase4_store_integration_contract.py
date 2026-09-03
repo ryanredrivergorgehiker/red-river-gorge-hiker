@@ -3,7 +3,14 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = '\n'.join(p.read_text(errors='ignore') for p in (ROOT / 'src').rglob('*') if p.is_file())
+CART = (ROOT / 'src/pages/cart.astro').read_text()
+SRC_FILES = [p for p in (ROOT / 'src').rglob('*') if p.is_file()]
+SRC = '\n'.join(p.read_text(errors='ignore') for p in SRC_FILES)
+SRC_EXCEPT_CART = '\n'.join(
+    p.read_text(errors='ignore')
+    for p in SRC_FILES
+    if p.resolve() != (ROOT / 'src/pages/cart.astro').resolve()
+)
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text()
 GEAR_DATA = (ROOT / 'src/data/gearCatalog.ts').read_text()
 PRODUCTS = (ROOT / 'src/data/products.ts').read_text()
@@ -21,8 +28,14 @@ HEADER = (ROOT / 'src/components/Header.astro').read_text()
 
 
 class Phase4StoreIntegrationContract(unittest.TestCase):
-    def test_provider_specific_public_commerce_urls_are_retired(self):
-        self.assertNotIn('https://fineartamerica.com/', SRC)
+    def test_provider_specific_public_commerce_urls_are_retired_except_cart_uat(self):
+        # Phase 4 retired provider-specific public commerce destinations in favor of the
+        # branded Store. The dedicated cart UAT is the sole intentional exception because
+        # Pixels supplies its Stand Alone Shopping Cart from fineartamerica.com.
+        self.assertNotIn('https://fineartamerica.com/', SRC_EXCEPT_CART)
+        self.assertIn('https://fineartamerica.com/widgetshoppingcart/widgetscripts.php', CART)
+        self.assertIn('https://fineartamerica.com/widgetshoppingcart/artwork.html?', CART)
+        self.assertEqual(CART.count('https://fineartamerica.com/'), 2)
         self.assertNotIn('22-ryan-lewis.pixels.com', SRC)
         self.assertNotIn('fineArtAmericaUrl', SRC)
         self.assertIn('storeUrl: string;', MERCH)
