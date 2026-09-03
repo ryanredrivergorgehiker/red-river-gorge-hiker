@@ -3,14 +3,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CART = (ROOT / 'src/pages/cart.astro').read_text()
 SRC_FILES = [p for p in (ROOT / 'src').rglob('*') if p.is_file()]
 SRC = '\n'.join(p.read_text(errors='ignore') for p in SRC_FILES)
-SRC_EXCEPT_CART = '\n'.join(
-    p.read_text(errors='ignore')
-    for p in SRC_FILES
-    if p.resolve() != (ROOT / 'src/pages/cart.astro').resolve()
-)
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text()
 GEAR_DATA = (ROOT / 'src/data/gearCatalog.ts').read_text()
 PRODUCTS = (ROOT / 'src/data/products.ts').read_text()
@@ -28,20 +22,15 @@ HEADER = (ROOT / 'src/components/Header.astro').read_text()
 
 
 class Phase4StoreIntegrationContract(unittest.TestCase):
-    def test_provider_specific_public_commerce_urls_are_retired_except_cart_uat(self):
-        # Phase 4 retired provider-specific public commerce destinations in favor of the
-        # branded Store. The dedicated cart UAT is the sole intentional exception because
-        # Pixels supplies its Stand Alone Shopping Cart from fineartamerica.com.
-        self.assertNotIn('https://fineartamerica.com/', SRC_EXCEPT_CART)
-        self.assertIn('https://fineartamerica.com/widgetshoppingcart/widgetscripts.php', CART)
-        self.assertIn('https://fineartamerica.com/widgetshoppingcart/artwork.html?', CART)
-        self.assertEqual(CART.count('https://fineartamerica.com/'), 2)
+    def test_provider_specific_public_commerce_urls_are_retired(self):
+        self.assertNotIn('https://fineartamerica.com/', SRC)
         self.assertNotIn('22-ryan-lewis.pixels.com', SRC)
         self.assertNotIn('fineArtAmericaUrl', SRC)
         self.assertIn('storeUrl: string;', MERCH)
         self.assertNotIn('View on Fine Art America', SRC)
         self.assertNotIn('on Fine Art America (opens in a new tab)', SRC)
         self.assertNotIn('outbound clicks to Fine Art America', SRC)
+        self.assertNotIn('widgetshoppingcart', SRC.lower())
 
     def test_exact_active_and_retired_store_destinations(self):
         active_data = MERCH + '\n' + GEAR_DATA
@@ -116,6 +105,8 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
         self.assertNotIn("['Gear','/gear/']", HEADER)
         self.assertIn('View All Gear', HEADER)
+        self.assertIn('https://store.redrivergorgehiker.com/art', HEADER)
+        self.assertIn('https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html', HEADER)
         self.assertIn("creator: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
         self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.', PHOTO_DETAIL)
