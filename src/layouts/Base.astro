@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import AnalyticsConsent from '../components/AnalyticsConsent.astro';
+import CartLauncher from '../components/CartLauncher.astro';
 import '../styles/global.css';
 import '../styles/refinements.css';
 import '../styles/sharing-layout.css';
@@ -138,6 +139,7 @@ const schema = {
     <Header />
     <main id="main"><slot /></main>
     <Footer />
+    <CartLauncher />
     <AnalyticsConsent />
     <script is:inline src={`${base}scripts/story-paragraphs.js?v=20260807-2`}></script>
     <script is:inline src={`${base}scripts/header-nav.js?v=20260901-1`}></script>
