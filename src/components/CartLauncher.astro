@@ -1,0 +1,83 @@
+---
+const base = import.meta.env.BASE_URL;
+const path = Astro.url.pathname;
+const relativePath = base !== '/' && path.startsWith(base)
+  ? `/${path.slice(base.length)}`
+  : path;
+const isCartPage = relativePath === '/cart/' || relativePath.startsWith('/cart/');
+---
+
+{!isCartPage && (
+  <a class="cart-launcher" href={`${base}cart/`} aria-label="View cart and checkout">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 4h2l2.2 10.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 8H7" />
+      <circle cx="10" cy="20" r="1.25" />
+      <circle cx="18" cy="20" r="1.25" />
+    </svg>
+    <span>Cart</span>
+  </a>
+)}
+
+<style is:global>
+  .cart-launcher {
+    position: fixed;
+    z-index: 900;
+    right: max(1.1rem, env(safe-area-inset-right));
+    bottom: max(1.1rem, env(safe-area-inset-bottom));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .48rem;
+    min-height: 3rem;
+    padding: .62rem .9rem;
+    border: 1px solid rgba(243, 239, 230, .5);
+    border-radius: 999px;
+    background: var(--gorge);
+    color: var(--parchment);
+    box-shadow: 0 .55rem 1.35rem rgba(23, 55, 45, .24);
+    font-size: .92rem;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .cart-launcher:hover {
+    background: var(--pine);
+    color: #fff;
+  }
+
+  .cart-launcher:focus-visible {
+    outline: 3px solid var(--sunrise);
+    outline-offset: 4px;
+  }
+
+  .cart-launcher svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 560px) {
+    .cart-launcher {
+      right: max(.75rem, env(safe-area-inset-right));
+      bottom: max(.75rem, env(safe-area-inset-bottom));
+      min-height: 2.8rem;
+      padding: .56rem .78rem;
+      font-size: .86rem;
+    }
+
+    .cart-launcher svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  @media print {
+    .cart-launcher { display: none !important; }
+  }
+</style>
