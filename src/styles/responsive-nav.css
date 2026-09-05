@@ -77,6 +77,20 @@
 
   .site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {
     width: max-content !important;
+    overflow: hidden;
+  }
+
+  /* Keep the Wall Art footer CTA visible when the longest nested menu is expanded. Only the choice list scrolls. */
+  .site-header .mobile-primary-nav .nav-wall-art-links {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-header .mobile-primary-nav .nav-view-all-wall-art {
+    flex: 0 0 auto;
   }
 
   /* Match desktop's intentional wrapping for the long Double Rainbow labels without changing the mobile panel or accordion behavior. */
