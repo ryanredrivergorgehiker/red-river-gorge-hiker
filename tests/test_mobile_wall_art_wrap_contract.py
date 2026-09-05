@@ -20,9 +20,25 @@ class MobileWallArtWrapContractTests(unittest.TestCase):
             '  }',
             RESPONSIVE_NAV,
         )
+
+    def test_mobile_wall_art_keeps_view_all_cta_visible_when_nested_menu_grows(self):
         self.assertIn(
             '.site-header .mobile-primary-nav .nav-details-wall-art .nav-panel {\n'
             '    width: max-content !important;\n'
+            '    overflow: hidden;\n'
+            '  }',
+            RESPONSIVE_NAV,
+        )
+        self.assertIn(
+            '.site-header .mobile-primary-nav .nav-wall-art-links {\n'
+            '    flex: 1 1 auto;\n'
+            '    min-height: 0;\n'
+            '    overflow-y: auto;\n',
+            RESPONSIVE_NAV,
+        )
+        self.assertIn(
+            '.site-header .mobile-primary-nav .nav-view-all-wall-art {\n'
+            '    flex: 0 0 auto;\n'
             '  }',
             RESPONSIVE_NAV,
         )
