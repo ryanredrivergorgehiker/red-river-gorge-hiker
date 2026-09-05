@@ -131,6 +131,9 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                           {photo.catalogId === 'RRGH-0001' && (
                             <li><a class="nav-wall-art-greeting-card-link" href={doubleRainbowGreetingCardUrl}>Greeting Card</a></li>
                           )}
+                          {photo.puzzleAvailable && photo.puzzleUrl && (
+                            <li><a href={photo.puzzleUrl}>Jigsaw Puzzle</a></li>
+                          )}
                         </ul>
                       </div>
                     </details>
@@ -208,6 +211,9 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                           ))}
                           {photo.catalogId === 'RRGH-0001' && (
                             <li><a class="nav-wall-art-greeting-card-link" href={doubleRainbowGreetingCardUrl}>Greeting Card</a></li>
+                          )}
+                          {photo.puzzleAvailable && photo.puzzleUrl && (
+                            <li><a href={photo.puzzleUrl}>Jigsaw Puzzle</a></li>
                           )}
                         </ul>
                       </div>
