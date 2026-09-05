@@ -6,6 +6,7 @@ RESPONSIVE_NAV = (ROOT / 'src/styles/responsive-nav.css').read_text(encoding='ut
 
 
 class MobileWallArtWrapContractTests(unittest.TestCase):
+    # The expanded mobile Wall Art menu must remain fully visible; do not solve height pressure with an internal scroll region.
     def test_mobile_long_wall_art_labels_match_desktop_wrap_widths(self):
         self.assertIn('@media (max-width: 850px)', RESPONSIVE_NAV)
         self.assertIn(
