@@ -67,9 +67,15 @@ class ShopNavigationContractTests(unittest.TestCase):
         for url in puzzle_urls:
             self.assertTrue(url.endswith('?product=puzzle'), url)
 
+        puzzle_collection_url = 'https://store.redrivergorgehiker.com/shop/puzzles'
+        self.assertIn(f"const puzzleCollectionUrl = '{puzzle_collection_url}';", HEADER)
+        self.assertEqual(HEADER.count('href={puzzleCollectionUrl}>View All</a>'), 2)
+
         greeting_card_url = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html'
         self.assertIn(f"'{greeting_card_url}'", HEADER)
         self.assertEqual(HEADER.count('Double Rainbow Greeting Card'), 2)
+        self.assertEqual(HEADER.count('>Greeting Card</a>'), 2)
+        self.assertEqual(HEADER.count('class="nav-wall-art-greeting-card-link"'), 2)
         self.assertEqual(HEADER.count('<li class="nav-wall-art-choice nav-wall-art-direct-choice">'), 2)
 
         self.assertEqual(
@@ -138,7 +144,7 @@ class ShopNavigationContractTests(unittest.TestCase):
             "[\"Men's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
             "[\"Men's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/tank+tops']",
             "[\"Women's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
-            "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tank+tops']",
+            "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
             "['Long Sleeve T-Shirts', 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts']",
             "['Sweatshirts', 'https://store.redrivergorgehiker.com/shop/sweatshirts']",
             "[\"Kid's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/kids+tshirts']",
@@ -193,6 +199,11 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('.site-header .desktop-nav .nav-wall-art-flyout::before {', HEADER)
         self.assertIn('width: calc(.45rem + 2px);', HEADER)
         self.assertIn('.nav-wall-art-choice-details[open] > .nav-wall-art-flyout', HEADER)
+        self.assertIn("const desktopWallArtHover = window.matchMedia('(min-width: 851px) and (hover: hover)');", HEADER)
+        self.assertIn("choice.addEventListener('mouseenter'", HEADER)
+        self.assertIn("choice.addEventListener('mouseleave'", HEADER)
+        self.assertIn('width: 16rem;', HEADER)
+        self.assertIn('max-width: 11.75rem;', HEADER)
 
     def test_desktop_hover_gap_is_bridged_without_changing_mobile_layout(self):
         self.assertIn('@media (min-width: 851px) and (hover: hover)', RESPONSIVE_NAV)
@@ -204,11 +215,11 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('.site-header .mobile-primary-nav .nav-view-all-gear {', RESPONSIVE_NAV)
         self.assertIn("content: '•' !important;", RESPONSIVE_NAV)
 
-    def test_wall_art_panel_has_shop_heading_without_repeating_wall_art(self):
+    def test_wall_art_panel_has_shop_wall_art_heading(self):
         self.assertNotIn('<p class="nav-section-title">Wall Art</p>', HEADER)
-        self.assertEqual(HEADER.count('<p class="nav-section-title nav-wall-art-title">Shop</p>'), 2)
+        self.assertEqual(HEADER.count('<p class="nav-section-title nav-wall-art-title">Shop Wall Art</p>'), 2)
         desktop_panel = HEADER.find('<div class="nav-panel nav-panel-wall-art">')
-        desktop_heading = HEADER.find('<p class="nav-section-title nav-wall-art-title">Shop</p>', desktop_panel)
+        desktop_heading = HEADER.find('<p class="nav-section-title nav-wall-art-title">Shop Wall Art</p>', desktop_panel)
         desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">', desktop_heading)
         desktop_button = HEADER.find('View All Wall Art</a>', desktop_list)
         self.assertGreater(desktop_heading, desktop_panel)
