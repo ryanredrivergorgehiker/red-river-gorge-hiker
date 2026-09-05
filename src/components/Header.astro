@@ -26,6 +26,7 @@ const puzzlePhotographs = photographs
   .filter((photo) => photo.puzzleAvailable && photo.puzzleUrl)
   .map((photo) => ({ title: photo.title, url: photo.puzzleUrl as string }));
 
+const puzzleCollectionUrl = 'https://store.redrivergorgehiker.com/shop/puzzles';
 const doubleRainbowGreetingCardUrl =
   'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html';
 
@@ -114,12 +115,12 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
               Wall Art <span class="nav-caret" aria-hidden="true"></span>
             </summary>
             <div class="nav-panel nav-panel-wall-art">
-              <p class="nav-section-title nav-wall-art-title">Shop</p>
+              <p class="nav-section-title nav-wall-art-title">Shop Wall Art</p>
               <ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">
                 {photographs.map((photo) => (
                   <li class="nav-wall-art-choice">
                     <details class="nav-wall-art-choice-details">
-                      <summary class="nav-wall-art-choice-trigger">
+                      <summary class:list={['nav-wall-art-choice-trigger', { 'nav-wall-art-choice-trigger-long': photo.catalogId === 'RRGH-0001' }]}>
                         <span>{photo.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
                       </summary>
                       <div class="nav-wall-art-flyout">
@@ -127,6 +128,9 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                           {wallArtFormats.map(([label, product]) => (
                             <li><a class:list={{ 'nav-wall-art-view-all-link': product === null }} href={wallArtProductUrl(photo.wallArtUrl, product)}>{label}</a></li>
                           ))}
+                          {photo.catalogId === 'RRGH-0001' && (
+                            <li><a class="nav-wall-art-greeting-card-link" href={doubleRainbowGreetingCardUrl}>Greeting Card</a></li>
+                          )}
                         </ul>
                       </div>
                     </details>
@@ -139,6 +143,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                     </summary>
                     <div class="nav-wall-art-flyout nav-wall-art-puzzle-flyout">
                       <ul class="nav-submenu nav-wall-art-puzzle-links">
+                        <li><a class="nav-wall-art-view-all-link" href={puzzleCollectionUrl}>View All</a></li>
                         {puzzlePhotographs.map((photo) => <li><a href={photo.url}>{photo.title}</a></li>)}
                       </ul>
                     </div>
@@ -188,12 +193,12 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
               Wall Art <span class="nav-caret" aria-hidden="true"></span>
             </summary>
             <div class="nav-panel nav-panel-wall-art">
-              <p class="nav-section-title nav-wall-art-title">Shop</p>
+              <p class="nav-section-title nav-wall-art-title">Shop Wall Art</p>
               <ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">
                 {photographs.map((photo) => (
                   <li class="nav-wall-art-choice">
                     <details class="nav-wall-art-choice-details">
-                      <summary class="nav-wall-art-choice-trigger">
+                      <summary class:list={['nav-wall-art-choice-trigger', { 'nav-wall-art-choice-trigger-long': photo.catalogId === 'RRGH-0001' }]}>
                         <span>{photo.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
                       </summary>
                       <div class="nav-wall-art-flyout">
@@ -201,6 +206,9 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                           {wallArtFormats.map(([label, product]) => (
                             <li><a class:list={{ 'nav-wall-art-view-all-link': product === null }} href={wallArtProductUrl(photo.wallArtUrl, product)}>{label}</a></li>
                           ))}
+                          {photo.catalogId === 'RRGH-0001' && (
+                            <li><a class="nav-wall-art-greeting-card-link" href={doubleRainbowGreetingCardUrl}>Greeting Card</a></li>
+                          )}
                         </ul>
                       </div>
                     </details>
@@ -213,6 +221,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
                     </summary>
                     <div class="nav-wall-art-flyout nav-wall-art-puzzle-flyout">
                       <ul class="nav-submenu nav-wall-art-puzzle-links">
+                        <li><a class="nav-wall-art-view-all-link" href={puzzleCollectionUrl}>View All</a></li>
                         {puzzlePhotographs.map((photo) => <li><a href={photo.url}>{photo.title}</a></li>)}
                       </ul>
                     </div>
@@ -261,11 +270,20 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   const header = document.querySelector<HTMLElement>('.site-header');
   const menus = Array.from(document.querySelectorAll<HTMLDetailsElement>('.site-header .nav-details'));
   const wallArtChoices = Array.from(document.querySelectorAll<HTMLDetailsElement>('.site-header .nav-wall-art-choice-details'));
+  const desktopWallArtHover = window.matchMedia('(min-width: 851px) and (hover: hover)');
 
   const closeWallArtChoices = (scope: ParentNode = document) => {
     scope.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((choice) => {
       choice.open = false;
     });
+  };
+
+  const openWallArtChoice = (choice: HTMLDetailsElement) => {
+    const panel = choice.closest('.nav-panel-wall-art');
+    panel?.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((other) => {
+      if (other !== choice) other.open = false;
+    });
+    choice.open = true;
   };
 
   menus.forEach((menu) => {
@@ -293,6 +311,29 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
       panel?.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((other) => {
         if (other !== choice) other.open = false;
       });
+    });
+
+    choice.addEventListener('mouseenter', () => {
+      if (!desktopWallArtHover.matches) return;
+      openWallArtChoice(choice);
+    });
+
+    choice.addEventListener('mouseleave', () => {
+      if (!desktopWallArtHover.matches || choice.matches(':focus-within')) return;
+      choice.open = false;
+    });
+
+    choice.addEventListener('focusin', () => {
+      if (!desktopWallArtHover.matches) return;
+      openWallArtChoice(choice);
+    });
+
+    choice.addEventListener('focusout', (event) => {
+      if (!desktopWallArtHover.matches) return;
+      const nextTarget = event.relatedTarget;
+      if (!(nextTarget instanceof Node) || !choice.contains(nextTarget)) {
+        choice.open = false;
+      }
     });
   });
 
@@ -385,7 +426,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
     left: 0;
     display: flex;
     flex-direction: column;
-    width: 19rem;
+    width: 16rem;
     overflow: visible;
   }
 
@@ -479,6 +520,9 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
     text-align: left;
     white-space: normal;
   }
+  .site-header .nav-wall-art-choice-trigger > span:first-child {
+    min-width: 0;
+  }
   .site-header .nav-wall-art-choice-trigger::-webkit-details-marker { display: none; }
   .site-header .nav-wall-art-choice-trigger:hover,
   .site-header .nav-wall-art-choice-details:focus-within > .nav-wall-art-choice-trigger {
@@ -544,9 +588,18 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   }
 
   @media (min-width: 851px) and (hover: hover) {
+    .site-header .desktop-nav .nav-wall-art-choice-details[open] > .nav-wall-art-flyout,
     .site-header .desktop-nav .nav-wall-art-choice-details:hover > .nav-wall-art-flyout,
     .site-header .desktop-nav .nav-wall-art-choice-details:focus-within > .nav-wall-art-flyout {
       display: block;
+    }
+
+    .site-header .desktop-nav .nav-wall-art-choice-trigger-long > span:first-child {
+      max-width: 11.75rem;
+    }
+
+    .site-header .desktop-nav .nav-wall-art-direct-choice > a {
+      max-width: 12rem;
     }
 
     .site-header .desktop-nav .nav-wall-art-flyout::before {
