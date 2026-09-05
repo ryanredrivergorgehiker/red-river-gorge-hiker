@@ -8,6 +8,7 @@ RESPONSIVE_NAV = (ROOT / 'src/styles/responsive-nav.css').read_text(encoding='ut
 GEAR_PAGE = (ROOT / 'src/pages/gear.astro').read_text(encoding='utf-8')
 GEAR_CATALOG = (ROOT / 'src/data/gearCatalog.ts').read_text(encoding='utf-8')
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
+PRODUCTS = (ROOT / 'src/data/products.ts').read_text(encoding='utf-8')
 GEAR_URL_SOURCES = GEAR_CATALOG + MERCH
 
 
@@ -21,31 +22,76 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
         self.assertNotIn("['Gear','/gear/']", HEADER)
 
-    def test_wall_art_menu_uses_verified_destinations(self):
-        expected = {
-            'Art Prints': 'https://store.redrivergorgehiker.com/shop/prints',
-            'Canvas Prints': 'https://store.redrivergorgehiker.com/shop/canvas+prints',
-            'Framed Prints': 'https://store.redrivergorgehiker.com/shop/framed+prints',
-            'Metal Prints': 'https://store.redrivergorgehiker.com/shop/metal+prints',
-            'Acrylic Prints': 'https://store.redrivergorgehiker.com/shop/acrylic+prints',
-            'Wood Prints': 'https://store.redrivergorgehiker.com/shop/wood+prints',
-            'Posters': 'https://store.redrivergorgehiker.com/shop/posters',
-            'Photographs': 'https://store.redrivergorgehiker.com/art/photographs',
-            'Jigsaw Puzzles': 'https://store.redrivergorgehiker.com/shop/puzzles',
-        }
-        self.assertIn('View All Wall Art', HEADER)
+    def test_wall_art_menu_is_artwork_first_with_direct_purchase_handoffs(self):
+        self.assertIn("import { photographs } from '../data/products';", HEADER)
+        self.assertEqual(HEADER.count('photographs.map((photo)'), 2)
+        self.assertEqual(HEADER.count('wallArtProductUrl(photo.wallArtUrl, product)'), 2)
+
+        formats_block = HEADER.split('const wallArtFormats = [', 1)[1].split('] as const;', 1)[0]
+        expected_formats = [
+            ("['View All', null]", None),
+            ("['Art Print', 'art-print']", 'art-print'),
+            ("['Canvas Print', 'canvas-print']", 'canvas-print'),
+            ("['Framed Print', 'framed-print']", 'framed-print'),
+            ("['Metal Print', 'metal-print']", 'metal-print'),
+            ("['Acrylic Print', 'acrylic-print']", 'acrylic-print'),
+            ("['Wood Print', 'wood-print']", 'wood-print'),
+            ("['Poster', 'poster']", 'poster'),
+        ]
+        cursor = -1
+        for literal, _ in expected_formats:
+            next_cursor = formats_block.find(literal)
+            self.assertGreater(next_cursor, cursor, literal)
+            cursor = next_cursor
+
+        self.assertLess(formats_block.index("['View All', null]"), formats_block.index("['Art Print', 'art-print']"))
+        self.assertIn("product ? `${artworkUrl}?product=${product}` : artworkUrl", HEADER)
+
+        wall_art_urls = re.findall(r"wallArtUrl: '([^']+)'", PRODUCTS)
+        self.assertEqual(len(wall_art_urls), 6)
+        self.assertEqual(len(set(wall_art_urls)), 6)
+        for url in wall_art_urls:
+            self.assertTrue(url.startswith('https://store.redrivergorgehiker.com/featured/'), url)
+
+        titles = re.findall(r"\btitle: '([^']+)'", PRODUCTS)
+        self.assertGreaterEqual(len(titles), 6)
+        self.assertIn('nav-wall-art-choice-details', HEADER)
+        self.assertIn('nav-wall-art-flyout', HEADER)
+        self.assertIn('nav-wall-art-choice-arrow', HEADER)
+        self.assertIn('nav-wall-art-view-all-link', HEADER)
+
+        self.assertIn('photo.puzzleAvailable && photo.puzzleUrl', HEADER)
+        self.assertEqual(HEADER.count('puzzlePhotographs.map((photo)'), 2)
+        puzzle_urls = re.findall(r"puzzleUrl: '([^']+)'", PRODUCTS)
+        self.assertEqual(len(puzzle_urls), 3)
+        for url in puzzle_urls:
+            self.assertTrue(url.endswith('?product=puzzle'), url)
+
+        greeting_card_url = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html'
+        self.assertIn(f"'{greeting_card_url}'", HEADER)
+        self.assertEqual(HEADER.count('Double Rainbow Greeting Card'), 2)
+        self.assertEqual(HEADER.count('nav-wall-art-direct-choice'), 2)
+
         self.assertEqual(
             HEADER.count('href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>'),
             2,
         )
         self.assertNotIn('href={`${base}photography/`}>View All Wall Art</a>', HEADER)
-        for label, url in expected.items():
-            self.assertIn(f"['{label}', '{url}']", HEADER)
 
-        puzzle_link = "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']"
-        self.assertEqual(HEADER.count(puzzle_link), 2)
-        wall_art_block = HEADER.split('const wallArtLinks = [', 1)[1].split('] as const;', 1)[0]
-        self.assertLess(wall_art_block.index("['Photographs',"), wall_art_block.index("['Jigsaw Puzzles',"))
+        for old_generic in (
+            'https://store.redrivergorgehiker.com/shop/prints',
+            'https://store.redrivergorgehiker.com/shop/canvas+prints',
+            'https://store.redrivergorgehiker.com/shop/framed+prints',
+            'https://store.redrivergorgehiker.com/shop/metal+prints',
+            'https://store.redrivergorgehiker.com/shop/acrylic+prints',
+            'https://store.redrivergorgehiker.com/shop/wood+prints',
+            'https://store.redrivergorgehiker.com/shop/posters',
+            'https://store.redrivergorgehiker.com/art/photographs',
+        ):
+            self.assertNotIn(old_generic, HEADER)
+
+        puzzle_category_link = "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']"
+        self.assertEqual(HEADER.count(puzzle_category_link), 1)
 
     def test_shop_menu_uses_direct_gear_product_links_with_agreed_category_exceptions(self):
         direct_expected = {
@@ -144,6 +190,9 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertIn('text-align: left;', HEADER)
         self.assertIn('border-bottom: 1px solid var(--line);', HEADER)
         self.assertIn('nav-view-all-wall-art', HEADER)
+        self.assertIn('.site-header .desktop-nav .nav-wall-art-flyout::before {', HEADER)
+        self.assertIn('width: calc(.45rem + 2px);', HEADER)
+        self.assertIn('.nav-wall-art-choice-details[open] > .nav-wall-art-flyout', HEADER)
 
     def test_desktop_hover_gap_is_bridged_without_changing_mobile_layout(self):
         self.assertIn('@media (min-width: 851px) and (hover: hover)', RESPONSIVE_NAV)
@@ -160,7 +209,7 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertEqual(HEADER.count('<p class="nav-section-title nav-wall-art-title">Shop</p>'), 2)
         desktop_panel = HEADER.find('<div class="nav-panel nav-panel-wall-art">')
         desktop_heading = HEADER.find('<p class="nav-section-title nav-wall-art-title">Shop</p>', desktop_panel)
-        desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links">', desktop_heading)
+        desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">', desktop_heading)
         desktop_button = HEADER.find('View All Wall Art</a>', desktop_list)
         self.assertGreater(desktop_heading, desktop_panel)
         self.assertGreater(desktop_list, desktop_heading)
