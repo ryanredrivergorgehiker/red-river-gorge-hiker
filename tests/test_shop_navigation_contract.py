@@ -70,7 +70,7 @@ class ShopNavigationContractTests(unittest.TestCase):
         greeting_card_url = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html'
         self.assertIn(f"'{greeting_card_url}'", HEADER)
         self.assertEqual(HEADER.count('Double Rainbow Greeting Card'), 2)
-        self.assertEqual(HEADER.count('nav-wall-art-direct-choice'), 2)
+        self.assertEqual(HEADER.count('<li class="nav-wall-art-choice nav-wall-art-direct-choice">'), 2)
 
         self.assertEqual(
             HEADER.count('href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>'),
