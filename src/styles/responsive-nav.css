@@ -79,6 +79,15 @@
     width: max-content !important;
   }
 
+  /* Match desktop's intentional wrapping for the long Double Rainbow labels without changing the mobile panel or accordion behavior. */
+  .site-header .mobile-primary-nav .nav-wall-art-choice-trigger-long > span:first-child {
+    max-width: 11.75rem;
+  }
+
+  .site-header .mobile-primary-nav .nav-wall-art-direct-choice > a {
+    max-width: 12rem;
+  }
+
   /* The Shop panel and its two columns hug their contents so left/right interior whitespace is balanced. */
   .site-header .mobile-primary-nav .nav-panel-shop {
     width: max-content !important;
