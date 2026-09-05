@@ -1,5 +1,6 @@
 ---
 import SarMatchMeter from './SarMatchMeter.astro';
+import { photographs } from '../data/products';
 
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
@@ -7,17 +8,26 @@ const circleLogoFilename = 'rrgh-circle-logo-512-539a2fd23c.png';
 const bannerAvifFilename = 'rrgh-banner-logo-profile-transparent-v3.avif';
 const bannerWebpFilename = 'rrgh-banner-logo-profile-transparent-v3.webp';
 
-const wallArtLinks = [
-  ['Art Prints', 'https://store.redrivergorgehiker.com/shop/prints'],
-  ['Canvas Prints', 'https://store.redrivergorgehiker.com/shop/canvas+prints'],
-  ['Framed Prints', 'https://store.redrivergorgehiker.com/shop/framed+prints'],
-  ['Metal Prints', 'https://store.redrivergorgehiker.com/shop/metal+prints'],
-  ['Acrylic Prints', 'https://store.redrivergorgehiker.com/shop/acrylic+prints'],
-  ['Wood Prints', 'https://store.redrivergorgehiker.com/shop/wood+prints'],
-  ['Posters', 'https://store.redrivergorgehiker.com/shop/posters'],
-  ['Photographs', 'https://store.redrivergorgehiker.com/art/photographs'],
-  ['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']
+const wallArtFormats = [
+  ['View All', null],
+  ['Art Print', 'art-print'],
+  ['Canvas Print', 'canvas-print'],
+  ['Framed Print', 'framed-print'],
+  ['Metal Print', 'metal-print'],
+  ['Acrylic Print', 'acrylic-print'],
+  ['Wood Print', 'wood-print'],
+  ['Poster', 'poster']
 ] as const;
+
+const wallArtProductUrl = (artworkUrl: string, product: string | null) =>
+  product ? `${artworkUrl}?product=${product}` : artworkUrl;
+
+const puzzlePhotographs = photographs
+  .filter((photo) => photo.puzzleAvailable && photo.puzzleUrl)
+  .map((photo) => ({ title: photo.title, url: photo.puzzleUrl as string }));
+
+const doubleRainbowGreetingCardUrl =
+  'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-ryan-d-lewis.html';
 
 const shopSections = [
   {
@@ -105,8 +115,38 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
             </summary>
             <div class="nav-panel nav-panel-wall-art">
               <p class="nav-section-title nav-wall-art-title">Shop</p>
-              <ul class="nav-submenu nav-wall-art-links">
-                {wallArtLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+              <ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">
+                {photographs.map((photo) => (
+                  <li class="nav-wall-art-choice">
+                    <details class="nav-wall-art-choice-details">
+                      <summary class="nav-wall-art-choice-trigger">
+                        <span>{photo.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                      </summary>
+                      <div class="nav-wall-art-flyout">
+                        <ul class="nav-submenu nav-wall-art-format-links">
+                          {wallArtFormats.map(([label, product]) => (
+                            <li><a class:list={{ 'nav-wall-art-view-all-link': product === null }} href={wallArtProductUrl(photo.wallArtUrl, product)}>{label}</a></li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </li>
+                ))}
+                <li class="nav-wall-art-choice">
+                  <details class="nav-wall-art-choice-details">
+                    <summary class="nav-wall-art-choice-trigger">
+                      <span>Jigsaw Puzzles</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                    </summary>
+                    <div class="nav-wall-art-flyout nav-wall-art-puzzle-flyout">
+                      <ul class="nav-submenu nav-wall-art-puzzle-links">
+                        {puzzlePhotographs.map((photo) => <li><a href={photo.url}>{photo.title}</a></li>)}
+                      </ul>
+                    </div>
+                  </details>
+                </li>
+                <li class="nav-wall-art-choice nav-wall-art-direct-choice">
+                  <a href={doubleRainbowGreetingCardUrl}>Double Rainbow Greeting Card</a>
+                </li>
               </ul>
               <a class="nav-view-all nav-view-all-wall-art" href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>
             </div>
@@ -149,8 +189,38 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
             </summary>
             <div class="nav-panel nav-panel-wall-art">
               <p class="nav-section-title nav-wall-art-title">Shop</p>
-              <ul class="nav-submenu nav-wall-art-links">
-                {wallArtLinks.map(([label, href]) => <li><a href={href}>{label}</a></li>)}
+              <ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">
+                {photographs.map((photo) => (
+                  <li class="nav-wall-art-choice">
+                    <details class="nav-wall-art-choice-details">
+                      <summary class="nav-wall-art-choice-trigger">
+                        <span>{photo.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                      </summary>
+                      <div class="nav-wall-art-flyout">
+                        <ul class="nav-submenu nav-wall-art-format-links">
+                          {wallArtFormats.map(([label, product]) => (
+                            <li><a class:list={{ 'nav-wall-art-view-all-link': product === null }} href={wallArtProductUrl(photo.wallArtUrl, product)}>{label}</a></li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </li>
+                ))}
+                <li class="nav-wall-art-choice">
+                  <details class="nav-wall-art-choice-details">
+                    <summary class="nav-wall-art-choice-trigger">
+                      <span>Jigsaw Puzzles</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                    </summary>
+                    <div class="nav-wall-art-flyout nav-wall-art-puzzle-flyout">
+                      <ul class="nav-submenu nav-wall-art-puzzle-links">
+                        {puzzlePhotographs.map((photo) => <li><a href={photo.url}>{photo.title}</a></li>)}
+                      </ul>
+                    </div>
+                  </details>
+                </li>
+                <li class="nav-wall-art-choice nav-wall-art-direct-choice">
+                  <a href={doubleRainbowGreetingCardUrl}>Double Rainbow Greeting Card</a>
+                </li>
               </ul>
               <a class="nav-view-all nav-view-all-wall-art" href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>
             </div>
@@ -190,10 +260,20 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
 <script>
   const header = document.querySelector<HTMLElement>('.site-header');
   const menus = Array.from(document.querySelectorAll<HTMLDetailsElement>('.site-header .nav-details'));
+  const wallArtChoices = Array.from(document.querySelectorAll<HTMLDetailsElement>('.site-header .nav-wall-art-choice-details'));
+
+  const closeWallArtChoices = (scope: ParentNode = document) => {
+    scope.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((choice) => {
+      choice.open = false;
+    });
+  };
 
   menus.forEach((menu) => {
     menu.addEventListener('toggle', () => {
-      if (!menu.open) return;
+      if (!menu.open) {
+        closeWallArtChoices(menu);
+        return;
+      }
       menus.forEach((other) => {
         if (other !== menu) other.open = false;
       });
@@ -206,6 +286,16 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
     });
   });
 
+  wallArtChoices.forEach((choice) => {
+    choice.addEventListener('toggle', () => {
+      if (!choice.open) return;
+      const panel = choice.closest('.nav-panel-wall-art');
+      panel?.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((other) => {
+        if (other !== choice) other.open = false;
+      });
+    });
+  });
+
   document.addEventListener('click', (event) => {
     if (header?.contains(event.target as Node)) return;
     menus.forEach((menu) => { menu.open = false; });
@@ -213,6 +303,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
+    closeWallArtChoices();
     menus.forEach((menu) => { menu.open = false; });
   });
 </script>
@@ -295,6 +386,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
     display: flex;
     flex-direction: column;
     width: 19rem;
+    overflow: visible;
   }
 
   .site-header .nav-panel-shop {
@@ -362,6 +454,79 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   }
   .site-header .nav-submenu a:hover { color: var(--gorge); text-decoration: underline; }
 
+  .site-header .nav-wall-art-choices {
+    gap: .03rem;
+  }
+
+  .site-header .nav-wall-art-choice,
+  .site-header .nav-wall-art-choice-details {
+    position: relative;
+  }
+
+  .site-header .nav-wall-art-choice-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    width: 100%;
+    padding: .2rem 0;
+    color: var(--charcoal);
+    cursor: pointer;
+    font-size: .89rem;
+    font-weight: 450;
+    line-height: 1.28;
+    list-style: none;
+    text-align: left;
+    white-space: normal;
+  }
+  .site-header .nav-wall-art-choice-trigger::-webkit-details-marker { display: none; }
+  .site-header .nav-wall-art-choice-trigger:hover,
+  .site-header .nav-wall-art-choice-details:focus-within > .nav-wall-art-choice-trigger {
+    color: var(--gorge);
+    text-decoration: underline;
+  }
+
+  .site-header .nav-wall-art-choice-arrow {
+    display: inline-block;
+    width: .34rem;
+    height: .34rem;
+    flex: 0 0 auto;
+    border-right: 1.4px solid currentColor;
+    border-bottom: 1.4px solid currentColor;
+    transform: rotate(-45deg);
+    transform-origin: center;
+  }
+
+  .site-header .nav-wall-art-flyout {
+    display: none;
+    position: absolute;
+    z-index: 230;
+    top: -.62rem;
+    left: calc(100% + .45rem);
+    min-width: 11.4rem;
+    padding: .62rem .78rem .68rem;
+    border: 1px solid var(--line);
+    border-radius: .12rem;
+    background: rgba(251, 250, 246, .995);
+    box-shadow: 0 .45rem 1.2rem rgba(23, 55, 45, .1);
+  }
+
+  .site-header .nav-wall-art-puzzle-flyout {
+    min-width: 17.5rem;
+  }
+
+  .site-header .nav-wall-art-view-all-link {
+    margin-bottom: .18rem;
+    padding-bottom: .42rem !important;
+    border-bottom: 1px solid var(--line);
+    color: var(--gorge) !important;
+    font-weight: 700 !important;
+  }
+
+  .site-header .nav-wall-art-direct-choice > a {
+    padding-right: 1.1rem;
+  }
+
   .site-header .nav-shop-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -376,6 +541,23 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   .site-header .nav-shop-section .nav-view-all-gear {
     margin-top: auto;
     padding-top: .52rem;
+  }
+
+  @media (min-width: 851px) and (hover: hover) {
+    .site-header .desktop-nav .nav-wall-art-choice-details:hover > .nav-wall-art-flyout,
+    .site-header .desktop-nav .nav-wall-art-choice-details:focus-within > .nav-wall-art-flyout {
+      display: block;
+    }
+
+    .site-header .desktop-nav .nav-wall-art-flyout::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 100%;
+      bottom: 0;
+      width: calc(.45rem + 2px);
+      pointer-events: auto;
+    }
   }
 
   @media (max-width: 850px) {
@@ -478,6 +660,41 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
       text-align: left;
     }
 
+    .site-header .mobile-primary-nav .nav-wall-art-choice-trigger {
+      font-size: .84rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-wall-art-choice-arrow {
+      transform: rotate(45deg);
+      transition: transform .15s ease;
+    }
+
+    .site-header .mobile-primary-nav .nav-wall-art-choice-details[open] > .nav-wall-art-choice-trigger .nav-wall-art-choice-arrow {
+      transform: rotate(225deg);
+    }
+
+    .site-header .mobile-primary-nav .nav-wall-art-flyout {
+      position: static;
+      display: none;
+      width: calc(100% - .55rem);
+      min-width: 0;
+      margin: .2rem 0 .45rem .55rem;
+      padding: .3rem .55rem .38rem;
+      border: 0;
+      border-left: 2px solid var(--sunrise);
+      border-radius: 0;
+      background: rgba(243, 239, 230, .62);
+      box-shadow: none;
+    }
+
+    .site-header .mobile-primary-nav .nav-wall-art-choice-details[open] > .nav-wall-art-flyout {
+      display: block;
+    }
+
+    .site-header .mobile-primary-nav .nav-wall-art-puzzle-flyout {
+      min-width: 0;
+    }
+
     .site-header .mobile-primary-nav .nav-view-all-wall-art {
       margin-top: 1rem;
     }
@@ -554,7 +771,8 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
       font-size: .86rem;
     }
 
-    .site-header .mobile-primary-nav .nav-submenu a {
+    .site-header .mobile-primary-nav .nav-submenu a,
+    .site-header .mobile-primary-nav .nav-wall-art-choice-trigger {
       font-size: clamp(.75rem, 3.35vw, .82rem);
     }
   }
