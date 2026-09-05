@@ -144,7 +144,7 @@ class ShopNavigationContractTests(unittest.TestCase):
             "[\"Men's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
             "[\"Men's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/tank+tops']",
             "[\"Women's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
-            "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
+            "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tank+tops']",
             "['Long Sleeve T-Shirts', 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts']",
             "['Sweatshirts', 'https://store.redrivergorgehiker.com/shop/sweatshirts']",
             "[\"Kid's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/kids+tshirts']",
