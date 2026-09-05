@@ -79,10 +79,11 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertEqual(HEADER.count('<li class="nav-wall-art-choice nav-wall-art-direct-choice">'), 2)
 
         self.assertEqual(
-            HEADER.count('href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>'),
+            HEADER.count('href={`${base}photography/`}>View Photography</a>'),
             2,
         )
-        self.assertNotIn('href={`${base}photography/`}>View All Wall Art</a>', HEADER)
+        self.assertNotIn('href="https://store.redrivergorgehiker.com/art">View All Wall Art</a>', HEADER)
+        self.assertNotIn('>View All Wall Art</a>', HEADER)
 
         for old_generic in (
             'https://store.redrivergorgehiker.com/shop/prints',
@@ -167,10 +168,10 @@ class ShopNavigationContractTests(unittest.TestCase):
         self.assertNotIn('Holiday Ornaments', HEADER)
         self.assertNotIn('/shop/ornaments', HEADER)
 
-    def test_view_all_gear_goes_directly_to_store_design_page(self):
+    def test_view_all_gear_returns_to_curated_site_gear_page(self):
         gear_url = 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html'
-        self.assertEqual(HEADER.count(f'href="{gear_url}">View All Gear</a>'), 2)
-        self.assertNotIn('href={`${base}gear/`}>View All Gear</a>', HEADER)
+        self.assertEqual(HEADER.count('href={`${base}gear/`}>View All Gear</a>'), 2)
+        self.assertNotIn(f'href="{gear_url}">View All Gear</a>', HEADER)
         self.assertIn("section.title === 'Home Decor'", HEADER)
         self.assertIn("section.title === 'Lifestyle'", HEADER)
         self.assertIn('gearProducts.map', GEAR_PAGE)
@@ -221,7 +222,7 @@ class ShopNavigationContractTests(unittest.TestCase):
         desktop_panel = HEADER.find('<div class="nav-panel nav-panel-wall-art">')
         desktop_heading = HEADER.find('<p class="nav-section-title nav-wall-art-title">Shop Wall Art</p>', desktop_panel)
         desktop_list = HEADER.find('<ul class="nav-submenu nav-wall-art-links nav-wall-art-choices">', desktop_heading)
-        desktop_button = HEADER.find('View All Wall Art</a>', desktop_list)
+        desktop_button = HEADER.find('View Photography</a>', desktop_list)
         self.assertGreater(desktop_heading, desktop_panel)
         self.assertGreater(desktop_list, desktop_heading)
         self.assertGreater(desktop_button, desktop_list)
