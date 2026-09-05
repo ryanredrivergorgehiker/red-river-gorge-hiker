@@ -160,7 +160,7 @@ class FiveProductRetirementContractTests(unittest.TestCase):
             'Toddler T-Shirts',
             'Baby One-Pieces',
             'View All Gear',
-            'View All Wall Art',
+            'View Photography',
         ]
         for label in surviving_labels:
             self.assertIn(label, HEADER)
