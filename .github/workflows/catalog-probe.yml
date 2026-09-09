@@ -1,0 +1,50 @@
+name: Pinterest Catalog Probe
+
+on:
+  push:
+    branches:
+      - catalog-stage1-automation-20260909
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Probe Store product metadata
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const url = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html?product=art-print';
+          const response = await fetch(url, {
+            redirect: 'follow',
+            headers: {
+              'user-agent': 'Mozilla/5.0 (compatible; RRGH-Catalog-Builder/1.0)',
+              'accept-language': 'en-US,en;q=0.9'
+            }
+          });
+          const html = await response.text();
+          console.log('STATUS', response.status);
+          console.log('FINAL_URL', response.url);
+          console.log('LENGTH', html.length);
+          const meta = (property) => {
+            const rx1 = new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i');
+            const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["'][^>]*>`, 'i');
+            return html.match(rx1)?.[1] ?? html.match(rx2)?.[1] ?? null;
+          };
+          console.log('OG_TITLE', meta('og:title'));
+          console.log('OG_IMAGE', meta('og:image'));
+          console.log('PRODUCT_PRICE_AMOUNT', meta('product:price:amount'));
+          console.log('PRODUCT_PRICE_CURRENCY', meta('product:price:currency'));
+          console.log('OG_URL', meta('og:url'));
+          const ld = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
+          console.log('LD_JSON_COUNT', ld.length);
+          for (let i = 0; i < ld.length; i++) {
+            const compact = ld[i].replace(/\s+/g, ' ').slice(0, 5000);
+            console.log(`LD_JSON_${i}`, compact);
+          }
+          const priceMatches = [...html.matchAll(/(?:USD|\$|price)[^\n<]{0,120}/gi)].slice(0, 30).map(m => m[0].replace(/\s+/g, ' '));
+          console.log('PRICE_SNIPPETS', JSON.stringify(priceMatches));
+          NODE
