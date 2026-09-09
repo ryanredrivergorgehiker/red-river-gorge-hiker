@@ -1,0 +1,34 @@
+name: Build Pinterest Catalog Image
+
+on:
+  push:
+    branches:
+      - catalog-stage1-automation-20260909
+
+permissions:
+  contents: write
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: catalog-stage1-automation-20260909
+          fetch-depth: 0
+      - name: Install image dependency
+        run: python3 -m pip install --disable-pip-version-check Pillow
+      - name: Build Double Rainbow catalog derivative
+        run: python3 scripts/build-double-rainbow-catalog-image.py
+      - name: Commit derivative when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- public/assets/catalog/RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-PINTEREST-CATALOG.jpg && git ls-files --error-unmatch public/assets/catalog/RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-PINTEREST-CATALOG.jpg >/dev/null 2>&1; then
+            echo "Catalog derivative already current."
+            exit 0
+          fi
+          git config user.name "RRGH Catalog Automation"
+          git config user.email "ryan@redrivergorgehiker.com"
+          git add public/assets/catalog/RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-PINTEREST-CATALOG.jpg
+          git commit -m "Add Pinterest catalog image derivative [skip ci]"
+          git push origin HEAD:catalog-stage1-automation-20260909
