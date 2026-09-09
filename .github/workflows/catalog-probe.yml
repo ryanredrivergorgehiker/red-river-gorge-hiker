@@ -1,4 +1,4 @@
-name: Pinterest Catalog Probe
+name: Pinterest Catalog Stage 1 UAT
 
 on:
   push:
@@ -9,42 +9,33 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  catalog-uat:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Probe Store product metadata
+
+      - name: Generate controlled Stage 1 feed
+        run: node scripts/generate-pinterest-art-catalog.mjs --output-dir catalog-uat
+
+      - name: Verify exact row count and required columns
         shell: bash
         run: |
           node --input-type=module <<'NODE'
-          const url = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html?product=art-print';
-          const response = await fetch(url, {
-            redirect: 'follow',
-            headers: {
-              'user-agent': 'Mozilla/5.0 (compatible; RRGH-Catalog-Builder/1.0)',
-              'accept-language': 'en-US,en;q=0.9'
-            }
-          });
-          const html = await response.text();
-          console.log('STATUS', response.status);
-          console.log('FINAL_URL', response.url);
-          console.log('LENGTH', html.length);
-          const meta = (property) => {
-            const rx1 = new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i');
-            const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["'][^>]*>`, 'i');
-            return html.match(rx1)?.[1] ?? html.match(rx2)?.[1] ?? null;
-          };
-          console.log('OG_TITLE', meta('og:title'));
-          console.log('OG_IMAGE', meta('og:image'));
-          console.log('PRODUCT_PRICE_AMOUNT', meta('product:price:amount'));
-          console.log('PRODUCT_PRICE_CURRENCY', meta('product:price:currency'));
-          console.log('OG_URL', meta('og:url'));
-          const ld = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
-          console.log('LD_JSON_COUNT', ld.length);
-          for (let i = 0; i < ld.length; i++) {
-            const compact = ld[i].replace(/\s+/g, ' ').slice(0, 5000);
-            console.log(`LD_JSON_${i}`, compact);
-          }
-          const priceMatches = [...html.matchAll(/(?:USD|\$|price)[^\n<]{0,120}/gi)].slice(0, 30).map(m => m[0].replace(/\s+/g, ' '));
-          console.log('PRICE_SNIPPETS', JSON.stringify(priceMatches));
+          import fs from 'node:fs';
+          const csv = fs.readFileSync('catalog-uat/pinterest-art-catalog.csv', 'utf8').trimEnd().split(/\r?\n/);
+          if (csv.length !== 47) throw new Error(`Expected header + 46 rows, found ${csv.length} lines`);
+          const expected = '"id","title","description","link","image_link","price","availability","product_type","alt_text"';
+          if (csv[0] !== expected) throw new Error(`Unexpected header: ${csv[0]}`);
+          const manifest = JSON.parse(fs.readFileSync('catalog-uat/pinterest-art-catalog-manifest.json', 'utf8'));
+          if (manifest.itemCount !== 46 || manifest.rows.length !== 46) throw new Error('Manifest count mismatch');
+          if (!manifest.noGear || manifest.paidCampaignChanged) throw new Error('Stage 1 boundary violation');
+          console.log('UAT PASS: 46 rows, no Gear, no paid-campaign change.');
+          console.log('PRICE RANGE', Math.min(...manifest.rows.map(r => Number(r.price.split(' ')[0]))), Math.max(...manifest.rows.map(r => Number(r.price.split(' ')[0]))));
           NODE
+
+      - name: Upload UAT feed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinterest-art-catalog-stage1-uat
+          path: catalog-uat/
+          if-no-files-found: error
