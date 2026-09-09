@@ -10,42 +10,42 @@ const photographs = [
     catalogId: 'RRGH-0001',
     title: 'Double Rainbow at Eagle’s Point Buttress',
     storeBase: `${STORE_ROOT}/featured/double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-SOCIAL-WM.jpg',
+    imagePath: 'assets/catalog/RRGH-0001-Double_Rainbow_at_Eagles_Point_Buttress-PINTEREST-CATALOG.jpg',
     altText: 'Double rainbow above foggy forested ridges, photographed from Eagle’s Point Buttress Overlook after a summer storm.'
   },
   {
     catalogId: 'RRGH-0004',
     title: 'Winter at Red-byrd Arch',
     storeBase: `${STORE_ROOT}/featured/winter-at-red-byrd-arch-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0004-Winter_at_Red-byrd_Arch-SOCIAL-WM.jpg',
+    imagePath: 'assets/social/RRGH-0004-Winter_at_Red-byrd_Arch-SOCIAL-WM.jpg',
     altText: 'Large layered ice column beneath the sandstone at Red-byrd Arch, surrounded by snow-covered rocks and winter forest.'
   },
   {
     catalogId: 'RRGH-0005',
     title: 'Sunrise at Eagle’s Nest',
     storeBase: `${STORE_ROOT}/featured/sunrise-at-eagles-nest-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0005-Sunrise_at_Eagles_Nest-SOCIAL-WM.jpg',
+    imagePath: 'assets/social/RRGH-0005-Sunrise_at_Eagles_Nest-SOCIAL-WM.jpg',
     altText: 'Vivid orange sunrise beside the sandstone at Eagle’s Nest, overlooking forested ridges and a river in the Red River Gorge.'
   },
   {
     catalogId: 'RRGH-0002',
     title: 'Dog Fork Falls in Winter',
     storeBase: `${STORE_ROOT}/featured/dog-fork-falls-in-winter-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0002-Dog_Fork_Falls_in_Winter-SOCIAL-WM.jpg',
+    imagePath: 'assets/social/RRGH-0002-Dog_Fork_Falls_in_Winter-SOCIAL-WM.jpg',
     altText: 'Dog Fork Falls surrounded by long icicles, snow-covered sandstone, flowing water, and rhododendron in winter.'
   },
   {
     catalogId: 'RRGH-0007',
     title: 'Ice at West of Copperas Pillar',
     storeBase: `${STORE_ROOT}/featured/ice-at-west-of-copperas-pillar-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0007-Ice_at_West_of_Copperas_Pillar-SOCIAL-WM.jpg',
+    imagePath: 'assets/social/RRGH-0007-Ice_at_West_of_Copperas_Pillar-SOCIAL-WM.jpg',
     altText: 'Long icicles hanging beneath sandstone beside West of Copperas Pillar, surrounded by snow, rhododendron, and winter forest.'
   },
   {
     catalogId: 'RRGH-0003',
     title: 'Splatter Falls',
     storeBase: `${STORE_ROOT}/featured/splatter-falls-ryan-d-lewis.html`,
-    imageFilename: 'RRGH-0003-Splatter_Falls-SOCIAL-WM.jpg',
+    imagePath: 'assets/social/RRGH-0003-Splatter_Falls-SOCIAL-WM.jpg',
     altText: 'Splatter Falls descending through four sandstone drops into an amber pool in the Red River Gorge.'
   }
 ];
@@ -146,17 +146,27 @@ function jpegDimensions(buffer) {
 async function verifyApprovedImages() {
   const cache = new Map();
   for (const photo of photographs) {
-    const url = `${SITE_ROOT}/assets/social/${encodeURIComponent(photo.imageFilename)}`;
-    const response = await fetchWithRetry(url);
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.toLowerCase().includes('image/jpeg')) throw new Error(`Unexpected image content type for ${url}: ${contentType}`);
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const url = `${SITE_ROOT}/${photo.imagePath.split('/').map(encodeURIComponent).join('/')}`;
+    const localPath = path.join('public', ...photo.imagePath.split('/'));
+    let buffer;
+    let evidenceSource;
+    try {
+      buffer = await fs.readFile(localPath);
+      evidenceSource = `repo:${localPath}`;
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      const response = await fetchWithRetry(url);
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.toLowerCase().includes('image/jpeg')) throw new Error(`Unexpected image content type for ${url}: ${contentType}`);
+      buffer = Buffer.from(await response.arrayBuffer());
+      evidenceSource = `live:${url}`;
+    }
     const dimensions = jpegDimensions(buffer);
     if (dimensions.width < 1000 || dimensions.height < 1500) {
       throw new Error(`Pinterest image minimum not met for ${photo.catalogId}: ${dimensions.width}x${dimensions.height}`);
     }
-    cache.set(photo.catalogId, { url, ...dimensions, bytes: buffer.length });
-    console.log(`IMAGE PASS ${photo.catalogId}: ${dimensions.width}x${dimensions.height}, ${buffer.length} bytes`);
+    cache.set(photo.catalogId, { url, ...dimensions, bytes: buffer.length, evidenceSource });
+    console.log(`IMAGE PASS ${photo.catalogId}: ${dimensions.width}x${dimensions.height}, ${buffer.length} bytes, ${evidenceSource}`);
   }
   return cache;
 }
@@ -267,7 +277,8 @@ async function main() {
       source_sku: product.sku,
       source_product_image: product.sourceProductImage,
       approved_image_width: image.width,
-      approved_image_height: image.height
+      approved_image_height: image.height,
+      image_evidence_source: image.evidenceSource
     });
     console.log(`PRODUCT PASS ${String(i + 1).padStart(2, '0')}/46 ${planned.id}: ${product.title} | ${product.price.toFixed(2)} USD | ${product.availability}`);
   }
@@ -284,7 +295,7 @@ async function main() {
     itemCount: rows.length,
     itemGrouping: 'Each of the 46 catalog entries is a standalone product; item_group_id is intentionally omitted.',
     transactionAuthority: STORE_ROOT,
-    imageAuthority: `${SITE_ROOT}/assets/social/`,
+    imageAuthority: SITE_ROOT,
     noGear: true,
     paidCampaignChanged: false,
     rows
