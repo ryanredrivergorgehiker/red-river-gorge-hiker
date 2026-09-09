@@ -46,5 +46,21 @@ jobs:
           npm audit --audit-level=critical
           npm audit --omit=dev --audit-level=high
 
+      - name: Generate controlled Pinterest Stage 1 catalog feed
+        run: node scripts/generate-pinterest-art-catalog.mjs --output-dir public/feeds
+
+      - name: Verify Pinterest catalog contract
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const lines = fs.readFileSync('public/feeds/pinterest-art-catalog.csv', 'utf8').trimEnd().split(/\r?\n/);
+          if (lines.length !== 47) throw new Error(`Expected header + 46 rows, found ${lines.length} lines`);
+          const manifest = JSON.parse(fs.readFileSync('public/feeds/pinterest-art-catalog-manifest.json', 'utf8'));
+          if (manifest.itemCount !== 46 || manifest.rows.length !== 46) throw new Error('Pinterest catalog item count mismatch');
+          if (!manifest.noGear || manifest.paidCampaignChanged) throw new Error('Pinterest Stage 1 scope boundary failure');
+          console.log('Pinterest catalog contract PASS: 46 photography-commerce items, no Gear, no paid change.');
+          NODE
+
       - name: Run checks
         run: npm run check
