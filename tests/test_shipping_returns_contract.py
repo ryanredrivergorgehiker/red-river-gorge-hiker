@@ -71,13 +71,13 @@ def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_li
     assert 'The final configuration and price shown in the Store control the transaction.' in PHOTO
     assert 'href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a>' in PHOTO
 
-    # The artwork itself plus desktop and mobile Shop Wall Art actions retain the Store handoff and analytics attributes.
+    # Artwork link plus both redundant Shop Wall Art actions retain Store handoff and analytics attributes.
     assert PHOTO.count('href={photo.wallArtUrl}') == 3
     assert PHOTO.count('data-store-item-type="wall_art"') == 3
-    assert 'Shop Wall Art' in PHOTO
+    assert PHOTO.count('Shop Wall Art') == 2
 
 
-def test_desktop_photo_purchase_layout_uses_available_width_and_preserves_mobile_stack():
+def test_desktop_photo_purchase_layout_uses_available_width_and_redundant_actions():
     assert '<div class="split content-split">' not in PHOTO
     assert '<section class="prose photo-story">' in PHOTO
     assert "['purchase-panel', 'photo-purchase-grid', photo.puzzleAvailable && photo.puzzleUrl ? 'has-puzzle' : 'wall-art-only']" in PHOTO
@@ -86,23 +86,38 @@ def test_desktop_photo_purchase_layout_uses_available_width_and_preserves_mobile
     assert '.photo-purchase-grid.wall-art-only {' in PHOTO
     assert 'grid-template-columns: 1fr;' in PHOTO
 
-    # Puzzle-eligible pages give the denser Wall Art card more width than the compact puzzle card.
+    # Puzzle-eligible pages retain a wider Wall Art column and narrower Puzzle column.
     assert '.photo-purchase-grid.has-puzzle {' in PHOTO
-    assert 'grid-template-columns: minmax(0, 1.7fr) minmax(18rem, .8fr);' in PHOTO
+    assert 'grid-template-columns: minmax(0, 1.8fr) minmax(17rem, .8fr);' in PHOTO
 
-    # Desktop moves purchase actions into the top context row; card actions remain for mobile only.
-    assert '<div class="photo-top-actions" aria-label="Purchase options">' in PHOTO
+    # Product cards stretch to a balanced desktop row, while their actions remain visible at the bottom.
+    assert 'align-items: stretch;' in PHOTO
+    assert '.photo-purchase-grid > section {' in PHOTO
+    assert 'height: 100%;' in PHOTO
+    assert 'display: flex;' in PHOTO
+    assert 'flex-direction: column;' in PHOTO
+    assert '.photo-purchase-grid.has-puzzle .puzzle-panel .photo-card-action {' in PHOTO
+    assert 'margin-top: auto;' in PHOTO
+    assert '.photo-card-action {' in PHOTO
+    assert 'display: none;' not in PHOTO
+
+    # Desktop top actions sit directly after Share, before the context text; bottom actions remain as intentional redundancy.
+    share_index = PHOTO.index('<ShareControls title={photo.title} url={canonical} />')
+    top_actions_index = PHOTO.index('<div class="photo-top-actions" aria-label="Purchase options">')
+    context_index = PHOTO.index('<p class="photo-context-line">{photo.contextLine}</p>')
+    assert share_index < top_actions_index < context_index
     assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
     assert '@media (min-width: 801px)' in PHOTO
     assert '.photo-top-actions {' in PHOTO
-    assert 'order: 3;' in PHOTO
-    assert 'margin-left: auto;' in PHOTO
-    assert '.photo-card-action {' in PHOTO
-    assert 'display: none;' in PHOTO
+    assert 'order: 2;' in PHOTO
+    assert 'margin: 0;' in PHOTO
+    assert 'margin-left: auto;' not in PHOTO
 
-    # Mobile remains a one-column card stack and the desktop-only action group stays hidden by default.
+    # Mobile remains a one-column card stack and the desktop-only top action group stays hidden by default.
     assert '@media (max-width: 800px)' in PHOTO
     assert '.photo-purchase-grid.has-puzzle,' in PHOTO
     assert 'grid-template-columns: 1fr;' in PHOTO
+    assert '.photo-purchase-grid > section {' in PHOTO
+    assert 'height: auto;' in PHOTO
