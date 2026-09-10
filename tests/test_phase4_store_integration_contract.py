@@ -23,7 +23,11 @@ HEADER = (ROOT / 'src/components/Header.astro').read_text()
 
 class Phase4StoreIntegrationContract(unittest.TestCase):
     def test_provider_specific_public_commerce_urls_are_retired(self):
-        self.assertNotIn('https://fineartamerica.com/', SRC)
+        # The only approved fineartamerica.com URL is the provider's return-start form.
+        # Product and purchase handoffs must continue to use the branded RRGH Store.
+        approved_return_url = 'https://fineartamerica.com/returnsstep1.html?newrma=true'
+        self.assertEqual(SRC.count(approved_return_url), 1)
+        self.assertNotIn('https://fineartamerica.com/', SRC.replace(approved_return_url, ''))
         self.assertNotIn('22-ryan-lewis.pixels.com', SRC)
         self.assertNotIn('fineArtAmericaUrl', SRC)
         self.assertIn('storeUrl: string;', MERCH)
