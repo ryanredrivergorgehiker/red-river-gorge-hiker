@@ -102,15 +102,23 @@ def test_top_wall_art_action_keeps_desktop_hover_focus_but_mobile_uses_direct_st
     assert '.top-wall-art-action:hover .top-wall-art-popover,' in PHOTO
     assert '.top-wall-art-action:focus-within .top-wall-art-popover {' in PHOTO
 
-    # Mobile suppresses that disclosure entirely; the same top anchor goes directly to the Store.
-    assert '@media (max-width: 800px)' in PHOTO
-    assert '.top-wall-art-action:hover .top-wall-art-popover,' in PHOTO
-    assert '.top-wall-art-action:focus-within .top-wall-art-popover {' in PHOTO
-    assert 'display: none;' in PHOTO
+    # The rejected mobile persistent-disclosure implementation is completely absent.
     assert 'top-wall-art-mobile-trigger' not in PHOTO
     assert 'top-wall-art-mobile-proceed' not in PHOTO
     assert 'is-mobile-open' not in PHOTO
     assert 'orderingPopoverId' not in PHOTO
+    assert 'I Understand — Shop Wall Art' not in PHOTO
+    assert "window.matchMedia('(max-width: 800px)')" not in PHOTO
+
+    # Mobile explicitly suppresses the desktop hover/focus popover, leaving the top anchor as a normal direct Store handoff.
+    media_index = PHOTO.index('@media (max-width: 800px)')
+    mobile_css = PHOTO[media_index:]
+    mobile_hover = '.top-wall-art-action:hover .top-wall-art-popover,'
+    mobile_focus = '.top-wall-art-action:focus-within .top-wall-art-popover {'
+    assert mobile_hover in mobile_css
+    assert mobile_focus in mobile_css
+    suppression_start = mobile_css.index(mobile_hover)
+    assert 'display: none;' in mobile_css[suppression_start:suppression_start + 220]
 
 
 def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_aligned_top_controls():
@@ -136,11 +144,14 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert 'margin-top: auto;' in PHOTO
     assert '.photo-card-action {' in PHOTO
 
-    # Share, one Shop Wall Art action, and the optional puzzle action occur together before context text.
+    # Share, exactly one top Shop Wall Art action, and the optional puzzle action occur together before context text.
     share_index = PHOTO.index('<ShareControls title={photo.title} url={canonical} />')
     top_actions_index = PHOTO.index('<div class="photo-top-actions" aria-label="Purchase options">')
     context_index = PHOTO.index('<p class="photo-context-line">{photo.contextLine}</p>')
     assert share_index < top_actions_index < context_index
+    top_group = PHOTO[top_actions_index:context_index]
+    assert top_group.count('Shop Wall Art') == 1
+    assert top_group.count('href={photo.wallArtUrl}') == 1
     assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
