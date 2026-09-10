@@ -78,7 +78,7 @@ const artworkSchema = {
           </div>
         </div>
         {photo.puzzleAvailable && photo.puzzleUrl && (
-          <a class="button secondary" href={`${base}puzzles/${photo.slug}/`}>
+          <a class="button secondary" href={photo.puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
             View this puzzle
           </a>
         )}
@@ -150,7 +150,7 @@ const artworkSchema = {
         <section class="puzzle-panel">
           <h2>Available as a 500-piece puzzle</h2>
           <p>This photograph is available as an 18 × 24-inch horizontal puzzle with 500 pieces. The current customer price is $59.99 before shipping and tax.</p>
-          <a class="button secondary photo-card-action" href={`${base}puzzles/${photo.slug}/`}>
+          <a class="button secondary photo-card-action" href={photo.puzzleUrl} data-store-item-type="puzzle" data-store-item-slug={photo.slug}>
             View this puzzle
           </a>
         </section>
