@@ -63,14 +63,32 @@ def test_gear_ordering_area_has_matching_shipping_returns_notice_after_pricing_n
     assert '<strong>See Shipping & Returns →</strong>' in GEAR
 
 
-def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_without_changing_store_handoff():
+def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_link_without_changing_store_handoff():
     assert '<div class="notice wall-art-ordering-notice" role="note">' in PHOTO
     assert '<strong>Before Ordering:</strong>' in PHOTO
     assert 'Please review the selected size, print material, frame, mat, finish, and other options carefully in the Store before checkout.' in PHOTO
     assert 'return shipping for a non-defective return is generally the buyer’s responsibility and can be significant for larger or framed pieces.' in PHOTO
     assert 'The final configuration and price shown in the Store control the transaction.' in PHOTO
+    assert 'href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a>' in PHOTO
 
     # Preserve both existing direct wall-art Store handoffs and their analytics attributes.
     assert PHOTO.count('href={photo.wallArtUrl}') == 2
     assert PHOTO.count('data-store-item-type="wall_art"') == 2
     assert 'Shop Wall Art' in PHOTO
+
+
+def test_desktop_photo_story_and_purchase_options_are_separated_without_changing_mobile_stack():
+    # The story is no longer forced into the old desktop split/sidebar layout.
+    assert '<div class="split content-split">' not in PHOTO
+    assert '<section class="prose photo-story">' in PHOTO
+
+    # Product cards form their own row: two columns when a puzzle exists, one sensible-width card otherwise.
+    assert "['purchase-panel', 'photo-purchase-grid', photo.puzzleAvailable && photo.puzzleUrl ? 'has-puzzle' : 'wall-art-only']" in PHOTO
+    assert 'grid-template-columns: repeat(2, minmax(0, 1fr));' in PHOTO
+    assert '.photo-purchase-grid.wall-art-only {' in PHOTO
+    assert 'grid-template-columns: minmax(0, 36rem);' in PHOTO
+
+    # Mobile remains the existing stacked card presentation.
+    assert '@media (max-width: 800px)' in PHOTO
+    assert '.photo-purchase-grid.wall-art-only {' in PHOTO
+    assert 'grid-template-columns: 1fr;' in PHOTO
