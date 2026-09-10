@@ -83,6 +83,9 @@ const artworkSchema = {
           </a>
         )}
       </div>
+      <p class="mobile-ordering-reminder" role="note">
+        <strong>Before Ordering</strong> · <a class="text-link" href={`${base}shipping-and-returns/`}>Review Shipping & Returns →</a>
+      </p>
       <p class="photo-context-line">{photo.contextLine}</p>
     </div>
 
@@ -213,8 +216,16 @@ const artworkSchema = {
     white-space: nowrap;
   }
 
-  .photo-context-line {
+  .mobile-ordering-reminder {
+    display: none;
     order: 3;
+    flex: 1 0 100%;
+    width: 100%;
+    margin: 0;
+  }
+
+  .photo-context-line {
+    order: 4;
     flex: 1 1 20rem;
     min-width: 0;
     margin: 0;
@@ -308,10 +319,27 @@ const artworkSchema = {
       padding-inline: .5rem;
     }
 
+    .mobile-ordering-reminder {
+      display: block;
+      margin-top: .05rem;
+      font-size: .78rem;
+      line-height: 1.25;
+    }
+
+    .mobile-ordering-reminder strong {
+      font-weight: 700;
+    }
+
+    .mobile-ordering-reminder a {
+      font-weight: 650;
+      text-decoration: underline;
+      text-underline-offset: .13em;
+    }
+
     .photo-context-line {
       flex: 1 0 100%;
       width: 100%;
-      margin-top: .15rem;
+      margin-top: .05rem;
     }
 
     .top-wall-art-action:hover .top-wall-art-popover,
