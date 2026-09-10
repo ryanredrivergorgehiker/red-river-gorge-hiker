@@ -64,7 +64,6 @@ const artworkSchema = {
     <h1>{photo.title}</h1>
     <p class="lede">{photo.shortDescription}</p>
     <div class="photo-context-share-row">
-      <p class="photo-context-line">{photo.contextLine}</p>
       <ShareControls title={photo.title} url={canonical} />
       <div class="photo-top-actions" aria-label="Purchase options">
         <a class="button" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
@@ -76,6 +75,7 @@ const artworkSchema = {
           </a>
         )}
       </div>
+      <p class="photo-context-line">{photo.contextLine}</p>
     </div>
 
     <div class:list={['photo-artwork-stage', `photo-artwork-${orientationClass}`]}>
@@ -162,7 +162,6 @@ const artworkSchema = {
     margin-top: 2.5rem;
   }
 
-  /* Mobile keeps purchase actions in the product cards; desktop promotes them beside the photo context. */
   .photo-top-actions {
     display: none;
   }
@@ -170,12 +169,12 @@ const artworkSchema = {
   .photo-purchase-grid {
     display: grid;
     gap: 1.5rem;
-    align-items: start;
+    align-items: stretch;
     margin-top: 1.75rem;
   }
 
   .photo-purchase-grid.has-puzzle {
-    grid-template-columns: minmax(0, 1.7fr) minmax(18rem, .8fr);
+    grid-template-columns: minmax(0, 1.8fr) minmax(17rem, .8fr);
   }
 
   .photo-purchase-grid.wall-art-only {
@@ -184,6 +183,18 @@ const artworkSchema = {
 
   .photo-purchase-grid > section {
     min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .photo-card-action {
+    align-self: flex-start;
+    margin-top: 1rem;
+  }
+
+  .photo-purchase-grid.has-puzzle .puzzle-panel .photo-card-action {
+    margin-top: auto;
   }
 
   .wall-art-ordering-notice p:last-child {
@@ -197,20 +208,16 @@ const artworkSchema = {
   @media (min-width: 801px) {
     .photo-context-share-row {
       flex-wrap: wrap;
-    }
-
-    .photo-context-line {
-      flex: 1 1 auto;
-      min-width: 0;
+      align-items: center;
     }
 
     .photo-top-actions {
       display: flex;
-      order: 3;
+      order: 2;
       flex: 0 0 auto;
       align-items: center;
       gap: .5rem;
-      margin-left: auto;
+      margin: 0;
     }
 
     .photo-top-actions .button {
@@ -218,8 +225,11 @@ const artworkSchema = {
       white-space: nowrap;
     }
 
-    .photo-card-action {
-      display: none;
+    .photo-context-line {
+      order: 3;
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
     }
   }
 
@@ -228,6 +238,14 @@ const artworkSchema = {
     .photo-purchase-grid.has-puzzle,
     .photo-purchase-grid.wall-art-only {
       grid-template-columns: 1fr;
+    }
+
+    .photo-purchase-grid > section {
+      height: auto;
+    }
+
+    .photo-purchase-grid.has-puzzle .puzzle-panel .photo-card-action {
+      margin-top: 1rem;
     }
   }
 </style>
