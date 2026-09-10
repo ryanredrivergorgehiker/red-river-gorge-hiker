@@ -90,16 +90,19 @@ def test_desktop_photo_purchase_layout_uses_available_width_and_preserves_mobile
     assert '.photo-purchase-grid.has-puzzle {' in PHOTO
     assert 'grid-template-columns: minmax(0, 1.7fr) minmax(18rem, .8fr);' in PHOTO
 
-    # Desktop moves the purchase actions beside the context/share information; mobile keeps the actions in the cards.
+    # Desktop moves purchase actions into the top context row; card actions remain for mobile only.
     assert '<div class="photo-top-actions" aria-label="Purchase options">' in PHOTO
     assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
     assert '@media (min-width: 801px)' in PHOTO
+    assert '.photo-top-actions {' in PHOTO
+    assert 'order: 3;' in PHOTO
+    assert 'margin-left: auto;' in PHOTO
     assert '.photo-card-action {' in PHOTO
     assert 'display: none;' in PHOTO
 
-    # Mobile remains a one-column card stack and does not show the desktop-only action group.
+    # Mobile remains a one-column card stack and the desktop-only action group stays hidden by default.
     assert '@media (max-width: 800px)' in PHOTO
     assert '.photo-purchase-grid.has-puzzle,' in PHOTO
     assert 'grid-template-columns: 1fr;' in PHOTO
