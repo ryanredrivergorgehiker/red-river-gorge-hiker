@@ -66,9 +66,17 @@ const artworkSchema = {
     <div class="photo-context-share-row">
       <ShareControls title={photo.title} url={canonical} />
       <div class="photo-top-actions" aria-label="Purchase options">
-        <a class="button" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
-          Shop Wall Art
-        </a>
+        <div class="top-wall-art-action">
+          <a class="button" href={photo.wallArtUrl} data-store-item-type="wall_art" data-store-item-slug={photo.slug}>
+            Shop Wall Art
+          </a>
+          <div class="top-wall-art-popover" role="note">
+            <div class="top-wall-art-popover-inner">
+              <p><strong>Before Ordering:</strong> Please review the selected size, print material, frame, mat, finish, and other options carefully in the Store before checkout. Wall art is made to order, and <strong>return shipping for a non-defective return is generally the buyer’s responsibility and can be significant for larger or framed pieces.</strong> The final configuration and price shown in the Store control the transaction.</p>
+              <p class="wall-art-ordering-link"><a class="text-link" href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a></p>
+            </div>
+          </div>
+        </div>
         {photo.puzzleAvailable && photo.puzzleUrl && (
           <a class="button secondary" href={`${base}puzzles/${photo.slug}/`}>
             View this puzzle
@@ -162,8 +170,85 @@ const artworkSchema = {
     margin-top: 2.5rem;
   }
 
+  .photo-context-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    position: relative;
+    margin-bottom: .4rem;
+  }
+
+  .photo-context-share-row :global(.share-controls) {
+    order: 1;
+    flex: 0 0 auto;
+    height: 3rem;
+    min-height: 3rem;
+    margin: 0;
+    padding: 0 .65rem;
+  }
+
+  .photo-context-share-row :global(.share-controls button) {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
   .photo-top-actions {
+    display: flex;
+    order: 2;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+  }
+
+  .photo-top-actions .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 3rem;
+    margin: 0;
+    padding-block: 0;
+    white-space: nowrap;
+  }
+
+  .photo-context-line {
+    order: 3;
+    flex: 1 1 20rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .top-wall-art-action {
+    display: inline-flex;
+  }
+
+  .top-wall-art-popover {
     display: none;
+    position: absolute;
+    z-index: 30;
+    top: 100%;
+    left: 0;
+    width: min(38rem, 100%);
+    padding-top: .45rem;
+  }
+
+  .top-wall-art-popover-inner {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--sunrise);
+    background: var(--parchment);
+    box-shadow: 0 .6rem 1.4rem rgba(23,55,45,.18);
+    padding: 1rem 1.1rem;
+  }
+
+  .top-wall-art-popover-inner p:last-child {
+    margin-bottom: 0;
+  }
+
+  .top-wall-art-action:hover .top-wall-art-popover,
+  .top-wall-art-action:focus-within .top-wall-art-popover {
+    display: block;
   }
 
   .photo-purchase-grid {
@@ -205,35 +290,34 @@ const artworkSchema = {
     margin-top: .75rem;
   }
 
-  @media (min-width: 801px) {
+  @media (max-width: 800px) {
     .photo-context-share-row {
-      flex-wrap: wrap;
       align-items: center;
     }
 
     .photo-top-actions {
-      display: flex;
-      order: 2;
-      flex: 0 0 auto;
-      align-items: center;
-      gap: .5rem;
-      margin: 0;
+      gap: .4rem;
     }
 
     .photo-top-actions .button {
-      margin: 0;
-      white-space: nowrap;
+      padding-inline: .7rem;
+      font-size: .9rem;
+    }
+
+    .photo-context-share-row :global(.share-controls) {
+      padding-inline: .5rem;
     }
 
     .photo-context-line {
-      order: 3;
-      flex: 1 1 auto;
-      min-width: 0;
-      margin: 0;
+      flex: 1 0 100%;
+      width: 100%;
+      margin-top: .15rem;
     }
-  }
 
-  @media (max-width: 800px) {
+    .top-wall-art-popover {
+      width: 100%;
+    }
+
     .photo-purchase-grid,
     .photo-purchase-grid.has-puzzle,
     .photo-purchase-grid.wall-art-only {
