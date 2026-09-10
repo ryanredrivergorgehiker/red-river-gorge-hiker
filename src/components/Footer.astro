@@ -16,6 +16,13 @@ const socialLinks = {
   pinterest: 'https://www.pinterest.com/redrivergorgehiker/'
 } as const;
 ---
+<template id="nav-ordering-policy-template">
+  <div class="nav-ordering-policy-note" role="note">
+    <strong>Before Ordering</strong>
+    <a href={`${base}shipping-and-returns/`}>Review Shipping & Returns →</a>
+  </div>
+</template>
+
 <footer>
   <div class="footer-inner">
     <nav class="footer-nav" aria-label="Footer">
@@ -109,6 +116,16 @@ const socialLinks = {
   </div>
 </footer>
 
+<script>
+  const navPolicyTemplate = document.querySelector<HTMLTemplateElement>('#nav-ordering-policy-template');
+  if (navPolicyTemplate) {
+    document.querySelectorAll<HTMLElement>('.site-header .nav-view-all-wall-art, .site-header .nav-view-all-gear').forEach((action) => {
+      if (action.nextElementSibling?.classList.contains('nav-ordering-policy-note')) return;
+      action.after(navPolicyTemplate.content.cloneNode(true));
+    });
+  }
+</script>
+
 <style is:global>
   footer .footer-inner > .footer-nav {
     display: flex;
@@ -145,6 +162,37 @@ const socialLinks = {
     width: 1.55rem;
     height: 1.55rem;
   }
+
+  .site-header .nav-ordering-policy-note {
+    display: grid;
+    gap: .16rem;
+    align-self: flex-start;
+    max-width: 15rem;
+    margin: .7rem 0 0;
+    padding-top: .62rem;
+    border-top: 1px solid var(--line);
+    color: var(--charcoal);
+    line-height: 1.25;
+  }
+  .site-header .nav-ordering-policy-note strong {
+    font-size: .78rem;
+    font-weight: 700;
+  }
+  .site-header .nav-ordering-policy-note a {
+    color: var(--gorge);
+    font-size: .8rem;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: .13em;
+  }
+  .site-header .nav-ordering-policy-note a:hover,
+  .site-header .nav-ordering-policy-note a:focus-visible {
+    color: var(--pine);
+  }
+  .site-header .nav-shop-section .nav-view-all-gear {
+    margin-top: 1.5rem;
+  }
+
   @media (max-width: 600px) {
     footer .footer-inner > .footer-nav {
       flex-direction: column;
