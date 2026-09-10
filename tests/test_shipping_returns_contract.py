@@ -77,7 +77,18 @@ def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_li
     assert PHOTO.count('Shop Wall Art') == 2
 
 
-def test_desktop_photo_purchase_layout_uses_available_width_and_redundant_actions():
+def test_top_wall_art_action_has_hover_focus_ordering_popover_with_working_policy_link():
+    assert '<div class="top-wall-art-action">' in PHOTO
+    assert '<div class="top-wall-art-popover" role="note">' in PHOTO
+    assert '<div class="top-wall-art-popover-inner">' in PHOTO
+    assert PHOTO.count('<strong>Before Ordering:</strong>') == 2
+    assert PHOTO.count('href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a>') == 2
+    assert '.top-wall-art-action:hover .top-wall-art-popover,' in PHOTO
+    assert '.top-wall-art-action:focus-within .top-wall-art-popover {' in PHOTO
+    assert 'display: block;' in PHOTO
+
+
+def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_aligned_top_controls():
     assert '<div class="split content-split">' not in PHOTO
     assert '<section class="prose photo-story">' in PHOTO
     assert "['purchase-panel', 'photo-purchase-grid', photo.puzzleAvailable && photo.puzzleUrl ? 'has-puzzle' : 'wall-art-only']" in PHOTO
@@ -90,7 +101,7 @@ def test_desktop_photo_purchase_layout_uses_available_width_and_redundant_action
     assert '.photo-purchase-grid.has-puzzle {' in PHOTO
     assert 'grid-template-columns: minmax(0, 1.8fr) minmax(17rem, .8fr);' in PHOTO
 
-    # Product cards stretch to a balanced desktop row, while their actions remain visible at the bottom.
+    # Product cards stretch to a balanced desktop row, with actions retained at the bottom.
     assert 'align-items: stretch;' in PHOTO
     assert '.photo-purchase-grid > section {' in PHOTO
     assert 'height: 100%;' in PHOTO
@@ -101,7 +112,7 @@ def test_desktop_photo_purchase_layout_uses_available_width_and_redundant_action
     assert '.photo-card-action {' in PHOTO
     assert 'display: none;' not in PHOTO
 
-    # Desktop top actions sit directly after Share, before the context text; bottom actions remain as intentional redundancy.
+    # Share, Shop Wall Art, and the optional puzzle action occur together before context text.
     share_index = PHOTO.index('<ShareControls title={photo.title} url={canonical} />')
     top_actions_index = PHOTO.index('<div class="photo-top-actions" aria-label="Purchase options">')
     context_index = PHOTO.index('<p class="photo-context-line">{photo.contextLine}</p>')
@@ -109,14 +120,21 @@ def test_desktop_photo_purchase_layout_uses_available_width_and_redundant_action
     assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
-    assert '@media (min-width: 801px)' in PHOTO
+
+    # The top action group is visible at all responsive sizes and its buttons match the Share control height.
     assert '.photo-top-actions {' in PHOTO
+    assert 'display: flex;' in PHOTO
     assert 'order: 2;' in PHOTO
-    assert 'margin: 0;' in PHOTO
+    assert '.photo-context-share-row :global(.share-controls) {' in PHOTO
+    assert 'height: 3rem;' in PHOTO
+    assert '.photo-top-actions .button {' in PHOTO
+    assert 'height: 3rem;' in PHOTO
     assert 'margin-left: auto;' not in PHOTO
 
-    # Mobile remains a one-column card stack and the desktop-only top action group stays hidden by default.
+    # Mobile keeps the three top controls together as space permits, moves context below them, and keeps card stacking.
     assert '@media (max-width: 800px)' in PHOTO
+    assert '.photo-context-line {' in PHOTO
+    assert 'flex: 1 0 100%;' in PHOTO
     assert '.photo-purchase-grid.has-puzzle,' in PHOTO
     assert 'grid-template-columns: 1fr;' in PHOTO
     assert '.photo-purchase-grid > section {' in PHOTO
