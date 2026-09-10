@@ -168,7 +168,11 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     top_group = PHOTO[top_actions_index:reminder_index]
     assert top_group.count('Shop Wall Art') == 1
     assert top_group.count('href={photo.wallArtUrl}') == 1
-    assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
+
+    # Both photograph-page puzzle purchase actions hand directly to the authoritative Store puzzle URL.
+    assert PHOTO.count('href={photo.puzzleUrl}') == 2
+    assert PHOTO.count('data-store-item-type="puzzle"') == 2
+    assert 'href={`${base}puzzles/${photo.slug}/`}' not in PHOTO
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
 
