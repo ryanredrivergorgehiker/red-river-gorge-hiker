@@ -90,7 +90,7 @@ def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_li
     assert 'I Understand — Shop Wall Art' not in PHOTO
 
 
-def test_top_wall_art_action_keeps_desktop_hover_focus_but_mobile_uses_direct_store_handoff():
+def test_top_wall_art_action_keeps_desktop_hover_focus_mobile_direct_handoff_and_compact_policy_reminder():
     assert '<div class="top-wall-art-action">' in PHOTO
     assert 'class="button top-wall-art-trigger"' in PHOTO
     assert '<div class="top-wall-art-popover" role="note">' in PHOTO
@@ -110,9 +110,24 @@ def test_top_wall_art_action_keeps_desktop_hover_focus_but_mobile_uses_direct_st
     assert 'I Understand — Shop Wall Art' not in PHOTO
     assert "window.matchMedia('(max-width: 800px)')" not in PHOTO
 
-    # Mobile explicitly suppresses the desktop hover/focus popover, leaving the top anchor as a normal direct Store handoff.
+    # Mobile gets a compact policy reminder beneath the top action row while the top Shop Wall Art anchor remains the direct Store handoff.
+    reminder = '<p class="mobile-ordering-reminder" role="note">'
+    assert reminder in PHOTO
+    assert '<strong>Before Ordering</strong> · <a class="text-link" href={`${base}shipping-and-returns/`}>Review Shipping & Returns →</a>' in PHOTO
+    reminder_index = PHOTO.index(reminder)
+    context_index = PHOTO.index('<p class="photo-context-line">{photo.contextLine}</p>')
+    top_actions_index = PHOTO.index('<div class="photo-top-actions" aria-label="Purchase options">')
+    assert top_actions_index < reminder_index < context_index
+    assert '.mobile-ordering-reminder {' in PHOTO
+    assert 'display: none;' in PHOTO[PHOTO.index('.mobile-ordering-reminder {'):PHOTO.index('@media (max-width: 800px)')]
+
     media_index = PHOTO.index('@media (max-width: 800px)')
     mobile_css = PHOTO[media_index:]
+    assert '.mobile-ordering-reminder {' in mobile_css
+    mobile_reminder_start = mobile_css.index('.mobile-ordering-reminder {')
+    assert 'display: block;' in mobile_css[mobile_reminder_start:mobile_reminder_start + 180]
+
+    # Mobile explicitly suppresses the desktop hover/focus popover, leaving the top anchor as a normal direct Store handoff.
     mobile_hover = '.top-wall-art-action:hover .top-wall-art-popover,'
     mobile_focus = '.top-wall-art-action:focus-within .top-wall-art-popover {'
     assert mobile_hover in mobile_css
@@ -144,12 +159,13 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert 'margin-top: auto;' in PHOTO
     assert '.photo-card-action {' in PHOTO
 
-    # Share, exactly one top Shop Wall Art action, and the optional puzzle action occur together before context text.
+    # Share, exactly one top Shop Wall Art action, and the optional puzzle action occur together before the mobile policy reminder and context text.
     share_index = PHOTO.index('<ShareControls title={photo.title} url={canonical} />')
     top_actions_index = PHOTO.index('<div class="photo-top-actions" aria-label="Purchase options">')
+    reminder_index = PHOTO.index('<p class="mobile-ordering-reminder" role="note">')
     context_index = PHOTO.index('<p class="photo-context-line">{photo.contextLine}</p>')
-    assert share_index < top_actions_index < context_index
-    top_group = PHOTO[top_actions_index:context_index]
+    assert share_index < top_actions_index < reminder_index < context_index
+    top_group = PHOTO[top_actions_index:reminder_index]
     assert top_group.count('Shop Wall Art') == 1
     assert top_group.count('href={photo.wallArtUrl}') == 1
     assert PHOTO.count('href={`${base}puzzles/${photo.slug}/`}') == 2
@@ -166,7 +182,7 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert 'height: 3rem;' in PHOTO
     assert 'margin-left: auto;' not in PHOTO
 
-    # Mobile keeps the top controls together, moves context below them, suppresses the top popover, and keeps card stacking.
+    # Mobile keeps the top controls together, places the compact policy reminder before context, suppresses the top popover, and keeps card stacking.
     assert '@media (max-width: 800px)' in PHOTO
     assert '.photo-context-line {' in PHOTO
     assert 'flex: 1 0 100%;' in PHOTO
