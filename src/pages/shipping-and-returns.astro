@@ -38,6 +38,12 @@ import Base from '../layouts/Base.astro';
       <p>For large, framed, or otherwise substantial products, <strong>return-shipping costs can be significant.</strong> Please take particular care when selecting artwork size, print material, frame, mat, finish, and other configuration options before ordering.</p>
     </section>
 
+    <section class="return-start-section">
+      <h2>How to Start a Return</h2>
+      <p><strong>To start a return, use the Store return form and enter the email address used to place your order and your order number. Follow the return instructions provided by Pixels / Fine Art America before shipping the product back. Under the current return policy, the product purchase price is refunded after the returned item is received.</strong></p>
+      <p class="return-start-action-row"><a class="return-start-action" href="https://fineartamerica.com/returnsstep1.html?newrma=true">Start a Return →</a></p>
+    </section>
+
     <section>
       <h2>IF THERE IS A PRODUCT-QUALITY PROBLEM</h2>
       <p>If an item arrives damaged, defective, or with another apparent product-quality problem, contact the Store’s customer-service team promptly and follow its instructions before arranging a return.</p>
@@ -57,3 +63,27 @@ import Base from '../layouts/Base.astro';
     </section>
   </div>
 </Base>
+
+<style>
+  .return-start-action-row {
+    margin-top: 1.25rem;
+  }
+
+  .return-start-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: .7rem 1rem;
+    background: var(--gorge);
+    color: var(--parchment);
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+
+  .return-start-action:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+</style>
