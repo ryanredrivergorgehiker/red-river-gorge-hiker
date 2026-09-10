@@ -50,6 +50,18 @@ def test_footer_has_permanent_shipping_returns_link_with_customer_information_li
     assert FOOTER.index("['Contact', 'contact/']") < FOOTER.index(expected) < FOOTER.index("['Privacy', 'privacy/']")
 
 
+def test_header_navigation_gets_compact_before_ordering_policy_reminders():
+    assert '<template id="nav-ordering-policy-template">' in FOOTER
+    assert '<div class="nav-ordering-policy-note" role="note">' in FOOTER
+    assert '<strong>Before Ordering</strong>' in FOOTER
+    assert 'Review Shipping & Returns →' in FOOTER
+    assert 'href={`${base}shipping-and-returns/`}' in FOOTER
+    assert ".site-header .nav-view-all-wall-art, .site-header .nav-view-all-gear" in FOOTER
+    assert "action.after(navPolicyTemplate.content.cloneNode(true));" in FOOTER
+    assert '.site-header .nav-shop-section .nav-view-all-gear {' in FOOTER
+    assert 'margin-top: 1.5rem;' in FOOTER
+
+
 def test_gear_ordering_area_has_matching_shipping_returns_notice_after_pricing_notice():
     pricing = '<div class="notice merch-pricing-notice" role="note">'
     shipping = '<div class="notice merch-shipping-returns-notice" role="note">'
@@ -71,21 +83,36 @@ def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_li
     assert 'The final configuration and price shown in the Store control the transaction.' in PHOTO
     assert 'href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a>' in PHOTO
 
-    # Artwork link plus both redundant Shop Wall Art actions retain Store handoff and analytics attributes.
-    assert PHOTO.count('href={photo.wallArtUrl}') == 3
-    assert PHOTO.count('data-store-item-type="wall_art"') == 3
-    assert PHOTO.count('Shop Wall Art') == 2
+    # Artwork link, desktop top action, mobile acknowledged handoff, and lower action preserve Store handoff attributes.
+    assert PHOTO.count('href={photo.wallArtUrl}') == 4
+    assert PHOTO.count('data-store-item-type="wall_art"') == 4
+    assert 'I Understand — Shop Wall Art' in PHOTO
 
 
-def test_top_wall_art_action_has_hover_focus_ordering_popover_with_working_policy_link():
+def test_top_wall_art_action_keeps_desktop_hover_focus_and_adds_persistent_mobile_disclosure():
     assert '<div class="top-wall-art-action">' in PHOTO
-    assert '<div class="top-wall-art-popover" role="note">' in PHOTO
+    assert 'class="button top-wall-art-desktop-trigger"' in PHOTO
+    assert 'class="button top-wall-art-mobile-trigger"' in PHOTO
+    assert 'aria-expanded="false"' in PHOTO
+    assert 'aria-controls={orderingPopoverId}' in PHOTO
+    assert 'class="top-wall-art-popover" id={orderingPopoverId} role="note"' in PHOTO
     assert '<div class="top-wall-art-popover-inner">' in PHOTO
     assert PHOTO.count('<strong>Before Ordering:</strong>') == 2
     assert PHOTO.count('href={`${base}shipping-and-returns/`}>See Shipping & Returns →</a>') == 2
+
+    # Desktop remains hover/focus disclosure.
     assert '.top-wall-art-action:hover .top-wall-art-popover,' in PHOTO
     assert '.top-wall-art-action:focus-within .top-wall-art-popover {' in PHOTO
-    assert 'display: block;' in PHOTO
+
+    # Mobile first tap toggles a durable class instead of depending on focus, so scrolling does not close it.
+    assert "const mobileOrderingQuery = window.matchMedia('(max-width: 800px)');" in PHOTO
+    assert "action.classList.toggle('is-mobile-open', open);" in PHOTO
+    assert "trigger.setAttribute('aria-expanded', String(open));" in PHOTO
+    assert "setOpen(!action.classList.contains('is-mobile-open'));" in PHOTO
+    assert ".top-wall-art-action.is-mobile-open .top-wall-art-popover" in PHOTO
+    assert '.top-wall-art-mobile-proceed {' in PHOTO
+    assert 'I Understand — Shop Wall Art' in PHOTO
+    assert "addEventListener('scroll'" not in PHOTO
 
 
 def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_aligned_top_controls():
@@ -110,7 +137,6 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert '.photo-purchase-grid.has-puzzle .puzzle-panel .photo-card-action {' in PHOTO
     assert 'margin-top: auto;' in PHOTO
     assert '.photo-card-action {' in PHOTO
-    assert 'display: none;' not in PHOTO
 
     # Share, Shop Wall Art, and the optional puzzle action occur together before context text.
     share_index = PHOTO.index('<ShareControls title={photo.title} url={canonical} />')
@@ -121,7 +147,7 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert 'class="button photo-card-action"' in PHOTO
     assert 'class="button secondary photo-card-action"' in PHOTO
 
-    # The top action group is visible at all responsive sizes and its buttons match the Share control height.
+    # Top action controls remain visible at all sizes and match the Share control height.
     assert '.photo-top-actions {' in PHOTO
     assert 'display: flex;' in PHOTO
     assert 'order: 2;' in PHOTO
@@ -131,7 +157,7 @@ def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_
     assert 'height: 3rem;' in PHOTO
     assert 'margin-left: auto;' not in PHOTO
 
-    # Mobile keeps the three top controls together as space permits, moves context below them, and keeps card stacking.
+    # Mobile keeps the top controls together, moves context below them, and keeps card stacking.
     assert '@media (max-width: 800px)' in PHOTO
     assert '.photo-context-line {' in PHOTO
     assert 'flex: 1 0 100%;' in PHOTO
