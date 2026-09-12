@@ -1,0 +1,164 @@
+name: Pinterest API read-only smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/pinterest-api-readonly-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  pinterest-api-readonly:
+    name: Verify Pinterest read-only API access
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PINTEREST_APP_ID: '1610960'
+      PINTEREST_AD_ACCOUNT_ID: '549770711358'
+      PINTEREST_APP_SECRET: ${{ secrets.PINTEREST_APP_SECRET }}
+      PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+
+    steps:
+      - name: Verify required secrets exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PINTEREST_APP_SECRET" || { echo 'PINTEREST_APP_SECRET is not configured.'; exit 1; }
+          test -n "$PINTEREST_ACCESS_TOKEN" || { echo 'PINTEREST_ACCESS_TOKEN is not configured.'; exit 1; }
+          echo 'Required Pinterest secrets are configured.'
+
+      - name: Exercise read-only Pinterest API
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CLIENT_TOKEN_FILE="$RUNNER_TEMP/pinterest-client-token.json"
+          CLIENT_ADS_FILE="$RUNNER_TEMP/pinterest-client-ads.json"
+          STORED_ADS_FILE="$RUNNER_TEMP/pinterest-stored-ads.json"
+          ANALYTICS_FILE="$RUNNER_TEMP/pinterest-analytics.json"
+
+          CLIENT_MINT='FAIL'
+          CLIENT_MINT_HTTP='n/a'
+          CLIENT_ADS='NOT TESTED'
+          CLIENT_ADS_HTTP='n/a'
+          STORED_ADS='NOT TESTED'
+          STORED_ADS_HTTP='n/a'
+          ANALYTICS='NOT TESTED'
+          ANALYTICS_HTTP='n/a'
+          TOKEN_SOURCE='none'
+          SELECTED_TOKEN=''
+
+          # Pinterest documents Client Credentials as suitable for CRON jobs on the
+          # developer account, but individual endpoints may or may not support it.
+          # Probe that capability first without printing the returned token or body.
+          CLIENT_MINT_HTTP=$(curl --silent --show-error \
+            --output "$CLIENT_TOKEN_FILE" \
+            --write-out '%{http_code}' \
+            --request POST 'https://api.pinterest.com/v5/oauth/token' \
+            --user "$PINTEREST_APP_ID:$PINTEREST_APP_SECRET" \
+            --header 'Content-Type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=client_credentials' \
+            --data-urlencode 'scope=ads:read' || true)
+
+          CLIENT_TOKEN=''
+          if [[ "$CLIENT_MINT_HTTP" == '200' ]]; then
+            CLIENT_TOKEN=$(python3 - "$CLIENT_TOKEN_FILE" <<'PY'
+          import json, sys
+          try:
+              with open(sys.argv[1], encoding='utf-8') as fh:
+                  print(json.load(fh).get('access_token', ''))
+          except Exception:
+              print('')
+          PY
+            )
+            if [[ -n "$CLIENT_TOKEN" ]]; then
+              echo "::add-mask::$CLIENT_TOKEN"
+              CLIENT_MINT='PASS'
+            fi
+          fi
+
+          if [[ "$CLIENT_MINT" == 'PASS' ]]; then
+            CLIENT_ADS_HTTP=$(curl --silent --show-error \
+              --output "$CLIENT_ADS_FILE" \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer $CLIENT_TOKEN" \
+              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/ads" \
+              --data-urlencode 'page_size=2' || true)
+            if [[ "$CLIENT_ADS_HTTP" == '200' ]]; then
+              CLIENT_ADS='PASS'
+              TOKEN_SOURCE='client_credentials'
+              SELECTED_TOKEN="$CLIENT_TOKEN"
+            else
+              CLIENT_ADS='FAIL'
+            fi
+          fi
+
+          # The Production Limited token is intentionally only a temporary test
+          # credential. Use it solely as a fallback to verify OAuth-based ads:read.
+          if [[ "$TOKEN_SOURCE" == 'none' ]]; then
+            echo "::add-mask::$PINTEREST_ACCESS_TOKEN"
+            STORED_ADS_HTTP=$(curl --silent --show-error \
+              --output "$STORED_ADS_FILE" \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer $PINTEREST_ACCESS_TOKEN" \
+              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/ads" \
+              --data-urlencode 'page_size=2' || true)
+            if [[ "$STORED_ADS_HTTP" == '200' ]]; then
+              STORED_ADS='PASS'
+              TOKEN_SOURCE='production_limited_test_token'
+              SELECTED_TOKEN="$PINTEREST_ACCESS_TOKEN"
+            else
+              STORED_ADS='FAIL'
+            fi
+          fi
+
+          if [[ "$TOKEN_SOURCE" != 'none' ]]; then
+            START_DATE=$(date -u -d '7 days ago' +%F)
+            END_DATE=$(date -u +%F)
+            ANALYTICS_HTTP=$(curl --silent --show-error \
+              --output "$ANALYTICS_FILE" \
+              --write-out '%{http_code}' \
+              --header "Authorization: Bearer $SELECTED_TOKEN" \
+              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/analytics" \
+              --data-urlencode "start_date=$START_DATE" \
+              --data-urlencode "end_date=$END_DATE" \
+              --data-urlencode 'columns=SPEND_IN_MICRO_DOLLAR,IMPRESSION_1,CLICKTHROUGH_1' \
+              --data-urlencode 'granularity=TOTAL' \
+              --data-urlencode 'click_window_days=30' \
+              --data-urlencode 'engagement_window_days=30' \
+              --data-urlencode 'view_window_days=1' \
+              --data-urlencode 'conversion_report_time=TIME_OF_AD_ACTION' || true)
+            if [[ "$ANALYTICS_HTTP" == '200' ]]; then
+              ANALYTICS='PASS'
+            else
+              ANALYTICS='FAIL'
+            fi
+          fi
+
+          {
+            echo '# Pinterest API read-only smoke test'
+            echo
+            echo "- Client Credentials token mint: **$CLIENT_MINT** (HTTP $CLIENT_MINT_HTTP)"
+            echo "- Client Credentials ads-read endpoint: **$CLIENT_ADS** (HTTP $CLIENT_ADS_HTTP)"
+            echo "- Production Limited test-token ads-read endpoint: **$STORED_ADS** (HTTP $STORED_ADS_HTTP)"
+            echo "- Selected credential path: **$TOKEN_SOURCE**"
+            echo "- Ad-account analytics endpoint: **$ANALYTICS** (HTTP $ANALYTICS_HTTP)"
+            echo
+            echo 'No tokens, API response bodies, spend, impressions, clicks, or other performance values are printed or persisted by this workflow.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$TOKEN_SOURCE" == 'none' ]]; then
+            echo 'Neither read-only authentication path could access the ads endpoint.'
+            exit 1
+          fi
+
+          if [[ "$ANALYTICS" != 'PASS' ]]; then
+            echo 'Ads read access worked, but the analytics endpoint test did not return HTTP 200.'
+            exit 1
+          fi
+
+          echo 'Pinterest read-only API smoke test passed.'
