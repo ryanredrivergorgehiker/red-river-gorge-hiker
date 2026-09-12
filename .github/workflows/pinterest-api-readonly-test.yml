@@ -1,7 +1,9 @@
-name: Pinterest API read-only smoke test
+name: Pinterest Daily Analytics Feed
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * *'
   push:
     branches:
       - main
@@ -12,153 +14,281 @@ permissions:
   contents: read
 
 jobs:
-  pinterest-api-readonly:
-    name: Verify Pinterest read-only API access
+  pinterest-daily-analytics:
+    name: Pull Pinterest analytics and update private Sheet
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      PINTEREST_APP_ID: '1610960'
       PINTEREST_AD_ACCOUNT_ID: '549770711358'
-      PINTEREST_APP_SECRET: ${{ secrets.PINTEREST_APP_SECRET }}
       PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+      PINTEREST_ANALYTICS_RECEIVER_SECRET: ${{ secrets.PINTEREST_ANALYTICS_RECEIVER_SECRET }}
+      PINTEREST_ANALYTICS_RECEIVER_URL: 'https://script.google.com/macros/s/AKfycbw1HemIH482-77T3T-GHFvqey_e9x2LpF-9o0EjJjp1nnMisMceEF58nN60BTSYNhByTQ/exec'
 
     steps:
       - name: Verify required secrets exist
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$PINTEREST_APP_SECRET" || { echo 'PINTEREST_APP_SECRET is not configured.'; exit 1; }
           test -n "$PINTEREST_ACCESS_TOKEN" || { echo 'PINTEREST_ACCESS_TOKEN is not configured.'; exit 1; }
-          echo 'Required Pinterest secrets are configured.'
+          test -n "$PINTEREST_ANALYTICS_RECEIVER_SECRET" || { echo 'PINTEREST_ANALYTICS_RECEIVER_SECRET is not configured.'; exit 1; }
+          echo 'Required Pinterest reporting secrets are configured.'
 
-      - name: Exercise read-only Pinterest API
+      - name: Pull read-only analytics and send private snapshot
         shell: bash
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from datetime import date, datetime, timedelta, timezone
+          from zoneinfo import ZoneInfo
 
-          CLIENT_TOKEN_FILE="$RUNNER_TEMP/pinterest-client-token.json"
-          CLIENT_ADS_FILE="$RUNNER_TEMP/pinterest-client-ads.json"
-          STORED_ADS_FILE="$RUNNER_TEMP/pinterest-stored-ads.json"
-          ANALYTICS_FILE="$RUNNER_TEMP/pinterest-analytics.json"
+          API_BASE = 'https://api.pinterest.com/v5'
+          AD_ACCOUNT_ID = os.environ['PINTEREST_AD_ACCOUNT_ID']
+          ACCESS_TOKEN = os.environ['PINTEREST_ACCESS_TOKEN']
+          RECEIVER_SECRET = os.environ['PINTEREST_ANALYTICS_RECEIVER_SECRET']
+          RECEIVER_URL = os.environ['PINTEREST_ANALYTICS_RECEIVER_URL']
+          METRICS = [
+              'SPEND_IN_MICRO_DOLLAR',
+              'IMPRESSION_1',
+              'CLICKTHROUGH_1',
+              'OUTBOUND_CLICK_1',
+          ]
 
-          CLIENT_MINT='FAIL'
-          CLIENT_MINT_HTTP='n/a'
-          CLIENT_ADS='NOT TESTED'
-          CLIENT_ADS_HTTP='n/a'
-          STORED_ADS='NOT TESTED'
-          STORED_ADS_HTTP='n/a'
-          ANALYTICS='NOT TESTED'
-          ANALYTICS_HTTP='n/a'
-          TOKEN_SOURCE='none'
-          SELECTED_TOKEN=''
+          def api_get(path, params=None):
+              query = urllib.parse.urlencode(params or {})
+              url = f'{API_BASE}{path}' + (f'?{query}' if query else '')
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      'Authorization': f'Bearer {ACCESS_TOKEN}',
+                      'Accept': 'application/json',
+                  },
+                  method='GET',
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=45) as response:
+                      return json.loads(response.read().decode('utf-8'))
+              except urllib.error.HTTPError as exc:
+                  raise RuntimeError(f'Pinterest GET {path} failed with HTTP {exc.code}') from None
 
-          # Pinterest documents Client Credentials as suitable for CRON jobs on the
-          # developer account, but individual endpoints may or may not support it.
-          # Probe that capability first without printing the returned token or body.
-          CLIENT_MINT_HTTP=$(curl --silent --show-error \
-            --output "$CLIENT_TOKEN_FILE" \
-            --write-out '%{http_code}' \
-            --request POST 'https://api.pinterest.com/v5/oauth/token' \
-            --user "$PINTEREST_APP_ID:$PINTEREST_APP_SECRET" \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --data-urlencode 'grant_type=client_credentials' \
-            --data-urlencode 'scope=ads:read' || true)
+          def list_all(path):
+              items = []
+              bookmark = None
+              while True:
+                  params = {'page_size': 250}
+                  if bookmark:
+                      params['bookmark'] = bookmark
+                  payload = api_get(path, params)
+                  items.extend(payload.get('items', []))
+                  bookmark = payload.get('bookmark')
+                  if not bookmark:
+                      return items
 
-          CLIENT_TOKEN=''
-          if [[ "$CLIENT_MINT_HTTP" == '200' ]]; then
-            CLIENT_TOKEN=$(python3 - "$CLIENT_TOKEN_FILE" <<'PY'
-          import json, sys
+          def chunks(values, size=50):
+              for index in range(0, len(values), size):
+                  yield values[index:index + size]
+
+          def analytics_params(start_date, end_date):
+              return {
+                  'start_date': start_date,
+                  'end_date': end_date,
+                  'columns': ','.join(METRICS),
+                  'granularity': 'TOTAL',
+                  'click_window_days': 30,
+                  'engagement_window_days': 30,
+                  'view_window_days': 1,
+                  'conversion_report_time': 'TIME_OF_AD_ACTION',
+              }
+
+          def entity_analytics(path, id_param, ids, start_date, end_date):
+              rows = []
+              for subset in chunks(ids):
+                  params = analytics_params(start_date, end_date)
+                  params[id_param] = ','.join(subset)
+                  payload = api_get(path, params)
+                  if isinstance(payload, list):
+                      rows.extend(payload)
+                  else:
+                      rows.extend(payload.get('items', []))
+              return rows
+
+          def number(value):
+              if value in (None, ''):
+                  return 0.0
+              try:
+                  return float(value)
+              except (TypeError, ValueError):
+                  return 0.0
+
+          def derive(row):
+              spend = number(row.get('SPEND_IN_MICRO_DOLLAR')) / 1_000_000.0
+              impressions = int(number(row.get('IMPRESSION_1')))
+              pin_clicks = int(number(row.get('CLICKTHROUGH_1')))
+              outbound_clicks = int(number(row.get('OUTBOUND_CLICK_1')))
+              ctr = (pin_clicks / impressions * 100.0) if impressions else 0.0
+              cpc = (spend / pin_clicks) if pin_clicks else 0.0
+              cpm = (spend / impressions * 1000.0) if impressions else 0.0
+              cpoc = (spend / outbound_clicks) if outbound_clicks else 0.0
+              return {
+                  'spend_usd': round(spend, 6),
+                  'impressions': impressions,
+                  'pin_clicks': pin_clicks,
+                  'outbound_clicks': outbound_clicks,
+                  'ctr_pct': round(ctr, 6),
+                  'cpc_usd': round(cpc, 6),
+                  'cpm_usd': round(cpm, 6),
+                  'cpoc_usd': round(cpoc, 6),
+              }
+
+          utc_today = datetime.now(timezone.utc).date()
+          baseline = date(2026, 8, 9)
+          earliest_allowed = utc_today - timedelta(days=89)
+          period_start = max(baseline, earliest_allowed).isoformat()
+          period_end = utc_today.isoformat()
+          generated_at_utc = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+          snapshot_date_et = datetime.now(ZoneInfo('America/New_York')).date().isoformat()
+
+          campaigns = list_all(f'/ad_accounts/{AD_ACCOUNT_ID}/campaigns')
+          ads = list_all(f'/ad_accounts/{AD_ACCOUNT_ID}/ads')
+
+          account_payload = api_get(
+              f'/ad_accounts/{AD_ACCOUNT_ID}/analytics',
+              analytics_params(period_start, period_end),
+          )
+          if isinstance(account_payload, list):
+              account_metrics_row = account_payload[0] if account_payload else {}
+          else:
+              account_items = account_payload.get('items', [])
+              account_metrics_row = account_items[0] if account_items else account_payload
+
+          campaign_ids = [str(item.get('id')) for item in campaigns if item.get('id')]
+          ad_ids = [str(item.get('id')) for item in ads if item.get('id')]
+
+          campaign_metric_rows = entity_analytics(
+              f'/ad_accounts/{AD_ACCOUNT_ID}/campaigns/analytics',
+              'campaign_ids',
+              campaign_ids,
+              period_start,
+              period_end,
+          ) if campaign_ids else []
+
+          ad_metric_rows = entity_analytics(
+              f'/ad_accounts/{AD_ACCOUNT_ID}/ads/analytics',
+              'ad_ids',
+              ad_ids,
+              period_start,
+              period_end,
+          ) if ad_ids else []
+
+          campaign_metrics = {
+              str(row.get('CAMPAIGN_ID')): row
+              for row in campaign_metric_rows
+              if row.get('CAMPAIGN_ID') is not None
+          }
+          ad_metrics = {
+              str(row.get('AD_ID')): row
+              for row in ad_metric_rows
+              if row.get('AD_ID') is not None
+          }
+
+          campaign_name_by_id = {
+              str(item.get('id')): item.get('name', '')
+              for item in campaigns
+              if item.get('id')
+          }
+
+          daily_row = {
+              'snapshot_date_et': snapshot_date_et,
+              'generated_at_utc': generated_at_utc,
+              'period_start': period_start,
+              'period_end': period_end,
+              'ad_account_id': AD_ACCOUNT_ID,
+              **derive(account_metrics_row),
+              'campaign_count': len(campaigns),
+              'ad_count': len(ads),
+              'source_status': 'Pinterest API v5 OAuth ads:read',
+              'notes': 'Read-only daily snapshot; values aggregate the reporting period.',
+          }
+
+          campaign_rows = []
+          for item in campaigns:
+              campaign_id = str(item.get('id', ''))
+              if not campaign_id:
+                  continue
+              campaign_rows.append({
+                  'snapshot_date_et': snapshot_date_et,
+                  'period_start': period_start,
+                  'period_end': period_end,
+                  'campaign_id': campaign_id,
+                  'campaign_name': item.get('name', ''),
+                  'status': item.get('status', ''),
+                  'summary_status': item.get('summary_status', ''),
+                  **derive(campaign_metrics.get(campaign_id, {})),
+              })
+
+          ad_rows = []
+          for item in ads:
+              ad_id = str(item.get('id', ''))
+              if not ad_id:
+                  continue
+              campaign_id = str(item.get('campaign_id', '') or '')
+              ad_rows.append({
+                  'snapshot_date_et': snapshot_date_et,
+                  'period_start': period_start,
+                  'period_end': period_end,
+                  'ad_id': ad_id,
+                  'ad_name': item.get('name', ''),
+                  'status': item.get('status', ''),
+                  'summary_status': item.get('summary_status', ''),
+                  **derive(ad_metrics.get(ad_id, {})),
+                  'campaign_id': campaign_id,
+                  'campaign_name': campaign_name_by_id.get(campaign_id, ''),
+              })
+
+          receiver_payload = {
+              'receiver_secret': RECEIVER_SECRET,
+              'daily_account': [daily_row],
+              'ads': ad_rows,
+              'campaigns': campaign_rows,
+          }
+
+          request = urllib.request.Request(
+              RECEIVER_URL,
+              data=json.dumps(receiver_payload, separators=(',', ':')).encode('utf-8'),
+              headers={'Content-Type': 'application/json'},
+              method='POST',
+          )
           try:
-              with open(sys.argv[1], encoding='utf-8') as fh:
-                  print(json.load(fh).get('access_token', ''))
-          except Exception:
-              print('')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  receiver_result = json.loads(response.read().decode('utf-8'))
+          except urllib.error.HTTPError as exc:
+              raise RuntimeError(f'Analytics receiver failed with HTTP {exc.code}') from None
+
+          if not receiver_result.get('ok'):
+              raise RuntimeError('Analytics receiver rejected the snapshot.')
+
+          print(
+              'Pinterest daily analytics feed succeeded: '
+              f"daily={receiver_result.get('daily_account_rows_processed', 0)}, "
+              f"campaigns={receiver_result.get('campaign_rows_processed', 0)}, "
+              f"ads={receiver_result.get('ad_rows_processed', 0)}."
+          )
           PY
-            )
-            if [[ -n "$CLIENT_TOKEN" ]]; then
-              echo "::add-mask::$CLIENT_TOKEN"
-              CLIENT_MINT='PASS'
-            fi
-          fi
 
-          if [[ "$CLIENT_MINT" == 'PASS' ]]; then
-            CLIENT_ADS_HTTP=$(curl --silent --show-error \
-              --output "$CLIENT_ADS_FILE" \
-              --write-out '%{http_code}' \
-              --header "Authorization: Bearer $CLIENT_TOKEN" \
-              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/ads" \
-              --data-urlencode 'page_size=2' || true)
-            if [[ "$CLIENT_ADS_HTTP" == '200' ]]; then
-              CLIENT_ADS='PASS'
-              TOKEN_SOURCE='client_credentials'
-              SELECTED_TOKEN="$CLIENT_TOKEN"
-            else
-              CLIENT_ADS='FAIL'
-            fi
-          fi
-
-          # The Production Limited token is intentionally only a temporary test
-          # credential. Use it solely as a fallback to verify OAuth-based ads:read.
-          if [[ "$TOKEN_SOURCE" == 'none' ]]; then
-            echo "::add-mask::$PINTEREST_ACCESS_TOKEN"
-            STORED_ADS_HTTP=$(curl --silent --show-error \
-              --output "$STORED_ADS_FILE" \
-              --write-out '%{http_code}' \
-              --header "Authorization: Bearer $PINTEREST_ACCESS_TOKEN" \
-              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/ads" \
-              --data-urlencode 'page_size=2' || true)
-            if [[ "$STORED_ADS_HTTP" == '200' ]]; then
-              STORED_ADS='PASS'
-              TOKEN_SOURCE='production_limited_test_token'
-              SELECTED_TOKEN="$PINTEREST_ACCESS_TOKEN"
-            else
-              STORED_ADS='FAIL'
-            fi
-          fi
-
-          if [[ "$TOKEN_SOURCE" != 'none' ]]; then
-            START_DATE=$(date -u -d '7 days ago' +%F)
-            END_DATE=$(date -u +%F)
-            ANALYTICS_HTTP=$(curl --silent --show-error \
-              --output "$ANALYTICS_FILE" \
-              --write-out '%{http_code}' \
-              --header "Authorization: Bearer $SELECTED_TOKEN" \
-              --get "https://api.pinterest.com/v5/ad_accounts/$PINTEREST_AD_ACCOUNT_ID/analytics" \
-              --data-urlencode "start_date=$START_DATE" \
-              --data-urlencode "end_date=$END_DATE" \
-              --data-urlencode 'columns=SPEND_IN_MICRO_DOLLAR,IMPRESSION_1,CLICKTHROUGH_1' \
-              --data-urlencode 'granularity=TOTAL' \
-              --data-urlencode 'click_window_days=30' \
-              --data-urlencode 'engagement_window_days=30' \
-              --data-urlencode 'view_window_days=1' \
-              --data-urlencode 'conversion_report_time=TIME_OF_AD_ACTION' || true)
-            if [[ "$ANALYTICS_HTTP" == '200' ]]; then
-              ANALYTICS='PASS'
-            else
-              ANALYTICS='FAIL'
-            fi
-          fi
-
+      - name: Write safe run summary
+        shell: bash
+        run: |
           {
-            echo '# Pinterest API read-only smoke test'
+            echo '# Pinterest Daily Analytics Feed'
             echo
-            echo "- Client Credentials token mint: **$CLIENT_MINT** (HTTP $CLIENT_MINT_HTTP)"
-            echo "- Client Credentials ads-read endpoint: **$CLIENT_ADS** (HTTP $CLIENT_ADS_HTTP)"
-            echo "- Production Limited test-token ads-read endpoint: **$STORED_ADS** (HTTP $STORED_ADS_HTTP)"
-            echo "- Selected credential path: **$TOKEN_SOURCE**"
-            echo "- Ad-account analytics endpoint: **$ANALYTICS** (HTTP $ANALYTICS_HTTP)"
+            echo '- Pinterest access: **read-only** (`ads:read`)'
+            echo '- Destination: **private Google Sheet receiver**'
+            echo '- Schedule: **daily**'
+            echo '- Paid campaign authority changed: **No**'
             echo
-            echo 'No tokens, API response bodies, spend, impressions, clicks, or other performance values are printed or persisted by this workflow.'
+            echo 'Performance values and credentials are intentionally not printed or persisted in this public repository or workflow summary.'
           } >> "$GITHUB_STEP_SUMMARY"
-
-          if [[ "$TOKEN_SOURCE" == 'none' ]]; then
-            echo 'Neither read-only authentication path could access the ads endpoint.'
-            exit 1
-          fi
-
-          if [[ "$ANALYTICS" != 'PASS' ]]; then
-            echo 'Ads read access worked, but the analytics endpoint test did not return HTTP 200.'
-            exit 1
-          fi
-
-          echo 'Pinterest read-only API smoke test passed.'
