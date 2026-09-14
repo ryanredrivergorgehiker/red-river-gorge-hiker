@@ -78,6 +78,19 @@ const base = import.meta.env.BASE_URL;
     outline-offset: 2px;
   }
 
+  /* Header's accessible skip link must stay above the viewport until keyboard focus. */
+  :global(.site-header .skip) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateY(-160%);
+    z-index: 1000;
+  }
+
+  :global(.site-header .skip:focus) {
+    transform: none;
+  }
+
   @media (max-width: 560px) {
     .rrgh-analytics-bar-inner {
       padding-inline: 5px;
