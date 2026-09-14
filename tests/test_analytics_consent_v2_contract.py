@@ -420,7 +420,7 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertIn("'switzerland': 1", ANALYTICS)
 
     def test_tracker_guardrails_and_no_bottom_dialog(self):
-        self.assertEqual(ANALYTICS.count(GA_ID), 2)  # measurement ID + targeted stream-cookie name
+        self.assertEqual(ANALYTICS.count(GA_ID), 1)
         self.assertEqual(ANALYTICS.count(PINTEREST_ID), 1)
         self.assertIn("window.pintrk('load', pinterestTagId);", ANALYTICS)
         self.assertIn("allow_google_signals: false", ANALYTICS)
