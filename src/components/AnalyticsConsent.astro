@@ -29,14 +29,12 @@ const gaConfig = {
 
     const sharedCookieName = 'rrgh-analytics-consent-v1';
     const regionCookieName = 'rrgh-region-country-v1';
-    // Historical Store CORS probe is intentionally retired. Its fetch used
-    // credentials: 'omit' and cache: 'no-store', but Pixels does not expose
-    // the Store HTML cross-origin. Regional state now comes from the narrow
-    // first-party country bridge cookie instead.
     const currentLocalStorageKey = 'rrgh-analytics-consent-v2';
     const legacyLocalStorageKey = 'rrgh-analytics-consent-v1';
     const rrghGaCookieName = '_ga_HM48NST64P';
     const oneYearSeconds = 60 * 60 * 24 * 365;
+    const oneHourSeconds = 60 * 60;
+    const cloudflareCountryEndpoint = 'https://one.one.one.one/cdn-cgi/trace';
 
     const consentRequired = {
       'austria': 1,
@@ -74,10 +72,18 @@ const gaConfig = {
       'great britain': 1,
       'switzerland': 1
     };
+    const consentRequiredCodes = {
+      'at': 1, 'be': 1, 'bg': 1, 'hr': 1, 'cy': 1, 'cz': 1, 'dk': 1,
+      'ee': 1, 'fi': 1, 'fr': 1, 'de': 1, 'gr': 1, 'hu': 1, 'ie': 1,
+      'it': 1, 'lv': 1, 'lt': 1, 'lu': 1, 'mt': 1, 'nl': 1, 'pl': 1,
+      'pt': 1, 'ro': 1, 'sk': 1, 'si': 1, 'es': 1, 'se': 1, 'is': 1,
+      'li': 1, 'no': 1, 'gb': 1, 'ch': 1
+    };
     const approvedDefaultOn = {
       'united states': 1,
       'united states of america': 1
     };
+    const approvedDefaultOnCodes = { 'us': 1 };
 
     const toggleControls = Array.from(document.querySelectorAll('[data-rrgh-analytics-toggle]'));
     let effectiveOn = false;
@@ -114,29 +120,48 @@ const gaConfig = {
       }
     };
 
+    const normalizeCountrySignal = (value) => {
+      if (!value) return null;
+      const signal = String(value).trim().toLowerCase();
+      if (!signal || signal.length > 80 || !/^[a-z][a-z .'-]*$/.test(signal)) return null;
+      return signal;
+    };
+
     const readSharedChoice = () => {
       const value = readCookieValue(sharedCookieName);
       return value === 'allowed' || value === 'declined' ? value : null;
     };
 
-    const readBridgedCountry = () => {
-      const value = readCookieValue(regionCookieName);
-      if (!value) return null;
-      const country = value.trim().toLowerCase();
-      if (!country || country.length > 80 || !/^[a-z][a-z .'-]*$/.test(country)) return null;
-      return country;
-    };
+    const readBridgedCountry = () => normalizeCountrySignal(readCookieValue(regionCookieName));
 
-    const writeSharedChoice = (choice) => {
-      if (choice !== 'allowed' && choice !== 'declined') return false;
+    const rrghCookieDomainSuffix = () => {
       try {
         const hostname = window.location.hostname.toLowerCase();
         const onRrghDomain = hostname === 'redrivergorgehiker.com'
           || hostname === 'www.redrivergorgehiker.com'
           || hostname.endsWith('.redrivergorgehiker.com');
-        const domain = onRrghDomain ? '; Domain=.redrivergorgehiker.com' : '';
-        document.cookie = `${sharedCookieName}=${encodeURIComponent(choice)}; Max-Age=${oneYearSeconds}; Path=/${domain}; Secure; SameSite=Lax`;
+        return onRrghDomain ? '; Domain=.redrivergorgehiker.com' : '';
+      } catch {
+        return '';
+      }
+    };
+
+    const writeSharedChoice = (choice) => {
+      if (choice !== 'allowed' && choice !== 'declined') return false;
+      try {
+        document.cookie = `${sharedCookieName}=${encodeURIComponent(choice)}; Max-Age=${oneYearSeconds}; Path=/${rrghCookieDomainSuffix()}; Secure; SameSite=Lax`;
         return readSharedChoice() === choice;
+      } catch {
+        return false;
+      }
+    };
+
+    const writeRegionCountry = (country) => {
+      const signal = normalizeCountrySignal(country);
+      if (!signal) return false;
+      try {
+        document.cookie = `${regionCookieName}=${encodeURIComponent(signal)}; Max-Age=${oneHourSeconds}; Path=/${rrghCookieDomainSuffix()}; Secure; SameSite=Lax`;
+        return readBridgedCountry() === signal;
       } catch {
         return false;
       }
@@ -274,17 +299,36 @@ const gaConfig = {
       }
     };
 
-    const determineAutomaticCountry = async () => {
-      const country = readBridgedCountry();
-      if (!country) throw new Error('RRGH country bridge cookie is unavailable or invalid');
+    const fetchCloudflareCountry = async () => {
+      const response = await fetch(cloudflareCountryEndpoint, {
+        credentials: 'omit',
+        cache: 'no-store',
+        mode: 'cors',
+        referrerPolicy: 'no-referrer'
+      });
+      if (!response.ok) throw new Error(`Cloudflare country lookup failed: ${response.status}`);
+      const text = await response.text();
+      const match = text.match(/(?:^|\n)loc=([A-Z]{2})(?:\n|$)/);
+      if (!match) throw new Error('Cloudflare country lookup did not return a valid country code');
+      const country = normalizeCountrySignal(match[1]);
+      if (!country) throw new Error('Cloudflare country code was invalid');
+      writeRegionCountry(country);
       return country;
+    };
+
+    const determineAutomaticCountry = async () => {
+      const bridged = readBridgedCountry();
+      if (bridged) return { country: bridged, source: 'first-party-country-cookie' };
+      const cloudflare = await fetchCloudflareCountry();
+      return { country: cloudflare, source: 'cloudflare-country-lookup' };
     };
 
     const applyRegionalDefault = async () => {
       try {
-        const country = await determineAutomaticCountry();
+        const resolved = await determineAutomaticCountry();
+        const country = resolved.country;
         window.rrghAutomaticCountry = country;
-        window.rrghAutomaticCountrySource = 'first-party-country-cookie';
+        window.rrghAutomaticCountrySource = resolved.source;
 
         // Explicit choice or privacy signal may have changed while regional state was resolving.
         if (privacySignalRequiresOff()) {
@@ -297,11 +341,11 @@ const gaConfig = {
           return;
         }
 
-        if (approvedDefaultOn[country]) {
+        if (approvedDefaultOn[country] || approvedDefaultOnCodes[country]) {
           turnMeasurementOn('regional-default-on');
           return;
         }
-        if (consentRequired[country]) {
+        if (consentRequired[country] || consentRequiredCodes[country]) {
           turnMeasurementOff('consent-required', true);
           return;
         }
