@@ -20,8 +20,8 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('data-rrgh-analytics-toggle', BAR)
         self.assertIn('aria-pressed="false"', BAR)
 
-    def test_header_bar_matches_store_compact_visual_and_container_contract(self):
-        self.assertIn('background: #17372D;', BAR)
+    def test_header_bar_matches_live_pixels_announcement_geometry(self):
+        self.assertIn('background-color: #17372D;', BAR)
         self.assertIn('background: #F3EFE6;', BAR)
         self.assertIn('color: #17372D;', BAR)
         self.assertIn('height: 26px;', BAR)
@@ -31,9 +31,16 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('gap: 4px;', BAR)
         self.assertIn('max-width: 1150px;', BAR)
         self.assertIn('min-width: 220px;', BAR)
-        self.assertIn('padding: 4px 25px;', BAR)
-        self.assertIn('@media (max-width: 560px)', BAR)
-        self.assertIn('padding-inline: 5px;', BAR)
+        self.assertIn('padding-left: 25px;', BAR)
+        self.assertIn('padding-right: 25px;', BAR)
+        self.assertIn('padding-top: 8px;', BAR)
+        self.assertIn('padding-bottom: 8px;', BAR)
+        self.assertIn('position: relative;', BAR)
+        self.assertIn('top: -10px;', BAR)
+        self.assertIn('padding: 0 7px;', BAR)
+        self.assertNotIn('@media (max-width:', BAR)
+        self.assertNotIn('padding-inline: 5px;', BAR)
+        self.assertNotIn('8.25pt', BAR)
 
     def test_skip_link_stays_outside_bar_until_keyboard_focus(self):
         self.assertIn(':global(.site-header .skip)', BAR)
@@ -65,11 +72,14 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('Last updated: Pending production approval', PRIVACY)
         self.assertNotIn('Last updated: September 14, 2026', PRIVACY)
 
-    def test_privacy_page_covers_unified_measurement_and_pixels_independence(self):
+    def test_privacy_page_covers_unified_measurement_cloudflare_and_pixels_independence(self):
         required_phrases = [
             'RRGH Analytics may be On by default',
             'RRGH Analytics remains Off until the visitor affirmatively turns it On',
             'RRGH Analytics defaults Off',
+            'Cloudflare’s public network diagnostic service',
+            'uses only the returned two-letter country code',
+            'does not intentionally retain the returned IP address or other diagnostic values',
             'A regional default-On state is not recorded as an affirmative visitor consent choice',
             'Google advertising-related consent states remain denied',
             'does not enable Google Signals',
