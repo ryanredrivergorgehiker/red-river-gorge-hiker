@@ -20,7 +20,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('data-rrgh-analytics-toggle', BAR)
         self.assertIn('aria-pressed="false"', BAR)
 
-    def test_header_bar_matches_approved_compact_visual_contract(self):
+    def test_header_bar_matches_store_compact_visual_and_container_contract(self):
         self.assertIn('background: #17372D;', BAR)
         self.assertIn('background: #F3EFE6;', BAR)
         self.assertIn('color: #17372D;', BAR)
@@ -29,6 +29,18 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('justify-content: space-between;', BAR)
         self.assertIn('white-space: nowrap;', BAR)
         self.assertIn('gap: 4px;', BAR)
+        self.assertIn('max-width: 1150px;', BAR)
+        self.assertIn('min-width: 220px;', BAR)
+        self.assertIn('padding: 4px 25px;', BAR)
+        self.assertIn('@media (max-width: 560px)', BAR)
+        self.assertIn('padding-inline: 5px;', BAR)
+
+    def test_skip_link_stays_outside_bar_until_keyboard_focus(self):
+        self.assertIn(':global(.site-header .skip)', BAR)
+        self.assertIn('position: fixed;', BAR)
+        self.assertIn('transform: translateY(-160%);', BAR)
+        self.assertIn(':global(.site-header .skip:focus)', BAR)
+        self.assertIn('transform: none;', BAR)
 
     def test_old_bottom_consent_popup_is_removed(self):
         self.assertNotIn('Optional website analytics', ANALYTICS)
