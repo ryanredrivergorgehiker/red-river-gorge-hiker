@@ -20,17 +20,22 @@ const base = import.meta.env.BASE_URL;
 <style>
   .rrgh-analytics-bar {
     width: 100%;
-    min-height: 34px;
-    padding: 4px 0;
+    min-width: 100%;
     background: #17372D;
+    text-align: center;
   }
 
   .rrgh-analytics-bar-inner {
-    display: flex;
+    display: inline-flex;
+    box-sizing: border-box;
     align-items: center;
     justify-content: space-between;
-    width: min(var(--content), calc(100% - 1rem));
-    margin-inline: auto;
+    width: 100%;
+    min-width: 220px;
+    max-width: 1150px;
+    height: 34px;
+    padding: 4px 25px;
+    margin: 0 auto;
     white-space: nowrap;
   }
 
@@ -73,11 +78,13 @@ const base = import.meta.env.BASE_URL;
     outline-offset: 2px;
   }
 
-  @media (max-width: 420px) {
+  @media (max-width: 560px) {
     .rrgh-analytics-bar-inner {
-      width: calc(100% - .5rem);
+      padding-inline: 5px;
     }
+  }
 
+  @media (max-width: 420px) {
     .rrgh-analytics-bar-control {
       padding-inline: 5px;
       font-size: 8.25pt;
