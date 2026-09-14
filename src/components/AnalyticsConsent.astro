@@ -29,6 +29,10 @@ const gaConfig = {
 
     const sharedCookieName = 'rrgh-analytics-consent-v1';
     const regionCookieName = 'rrgh-region-country-v1';
+    // Historical Store CORS probe is intentionally retired. Its fetch used
+    // credentials: 'omit' and cache: 'no-store', but Pixels does not expose
+    // the Store HTML cross-origin. Regional state now comes from the narrow
+    // first-party country bridge cookie instead.
     const currentLocalStorageKey = 'rrgh-analytics-consent-v2';
     const legacyLocalStorageKey = 'rrgh-analytics-consent-v1';
     const rrghGaCookieName = '_ga_HM48NST64P';
