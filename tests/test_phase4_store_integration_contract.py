@@ -23,8 +23,6 @@ HEADER = (ROOT / 'src/components/Header.astro').read_text()
 
 class Phase4StoreIntegrationContract(unittest.TestCase):
     def test_provider_specific_public_commerce_urls_are_retired(self):
-        # The only approved fineartamerica.com URL is the provider's return-start form.
-        # Product and purchase handoffs must continue to use the branded RRGH Store.
         approved_return_url = 'https://fineartamerica.com/returnsstep1.html?newrma=true'
         self.assertEqual(SRC.count(approved_return_url), 1)
         self.assertNotIn('https://fineartamerica.com/', SRC.replace(approved_return_url, ''))
@@ -76,19 +74,19 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertIn('Store Customer Service', CONTACT)
 
     def test_privacy_and_terms_store_disclosures(self):
-        self.assertIn('Last updated: August 29, 2026', PRIVACY)
+        self.assertIn('Last updated: Pending production approval', PRIVACY)
         self.assertIn('<h2>Red River Gorge Hiker Store and Pixels</h2>', PRIVACY)
         self.assertIn('does not treat the placement of an order, by itself, as consent', PRIVACY)
-        self.assertIn('It does not control cookies, analytics, or other processing performed independently by Pixels', PRIVACY)
-        self.assertIn('clicks to the Red River Gorge Hiker Store', PRIVACY)
+        self.assertIn('Pixels platform analytics operates independently from RRGH Analytics', PRIVACY)
+        self.assertIn('Turning RRGH Analytics Off does not disable Pixels’ own analytics or other Pixels processing.', PRIVACY)
+        self.assertIn('Store page views, page locations, referring sources, campaign and UTM information', PRIVACY)
         self.assertIn('store.RedRiverGorgeHiker.com, which is powered by Pixels / Fine Art America', TERMS)
         self.assertIn('does not manufacture or ship Pixels orders, process buyers’ payment cards, or administer Pixels returns', TERMS)
         self.assertIn('The price, product configuration, shipping charge, tax, discount, and final total displayed by the Red River Gorge Hiker Store at the time of purchase control the transaction.', TERMS)
 
-    def test_consent_controlled_store_handoff_event(self):
-        self.assertIn('on RedRiverGorgeHiker.com', ANALYTICS)
+    def test_effective_measurement_controls_store_handoff_event(self):
         self.assertIn("destination.hostname.toLowerCase() !== 'store.redrivergorgehiker.com'", ANALYTICS)
-        self.assertIn("readChoice(storageKey) !== 'granted' || !analyticsLoaded", ANALYTICS)
+        self.assertIn('if (!effectiveOn || !gaActuallyLoaded) return;', ANALYTICS)
         self.assertIn("window.gtag('event', 'store_handoff_click', parameters);", ANALYTICS)
         for parameter in ('link_url', 'link_text', 'source_path', 'item_type', 'item_slug'):
             self.assertIn(parameter, ANALYTICS)
