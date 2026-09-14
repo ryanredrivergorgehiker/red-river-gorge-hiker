@@ -122,10 +122,6 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn('On December 21, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
 
     def test_prohibited_photo(self):
-        # The retired sunset photograph must never return to controlled photo data or public assets.
-        # General safety prose may legitimately use the ordinary word "sunset" (for example,
-        # advising hikers to plan around sunset), so public Astro copy is guarded by the retired
-        # catalog ID rather than a blanket ban on that common word.
         self.assertNotRegex(DATA.lower(), r'rrgh-0006|sunset')
         self.assertNotIn('rrgh-0006', PUBLIC_ASTRO.lower())
         public_paths = '\n'.join(
@@ -137,10 +133,7 @@ class SiteContract(unittest.TestCase):
 
     def test_public_copy_is_timeless_and_catalog_ids_are_internal(self):
         self.assertNotRegex(PUBLIC_ASTRO, r'>\s*RRGH-\d{4}\s*<')
-        self.assertNotRegex(
-            PUBLIC_ASTRO.lower(),
-            r'\blaunch\s+(collection|photographs?|puzzles?)\b',
-        )
+        self.assertNotRegex(PUBLIC_ASTRO.lower(), r'\blaunch\s+(collection|photographs?|puzzles?)\b')
         self.assertNotIn('<dt>Catalog ID</dt>', PUBLIC_ASTRO)
 
     def test_navigation_order(self):
@@ -198,7 +191,6 @@ class SiteContract(unittest.TestCase):
         self.assertIn("replace(/\.avif$/, '-share.jpg')", gear_product)
         self.assertIn('socialImageType="image/jpeg"', gear_product)
         self.assertIn('getStaticPaths()', gear_product)
-
         self.assertIn('Share ↗', share)
         self.assertIn('navigator.share', share)
         self.assertIn('await navigator.share({ title, text, url });', share)
@@ -267,6 +259,7 @@ class SiteContract(unittest.TestCase):
         base = (ROOT / 'src/layouts/Base.astro').read_text()
         privacy = (ROOT / 'src/pages/privacy.astro').read_text()
         footer = (ROOT / 'src/components/Footer.astro').read_text()
+        bar = (ROOT / 'src/components/RrghAnalyticsBar.astro').read_text()
 
         self.assertEqual(analytics.count('G-HM48NST64P'), 1)
         self.assertIn('googletagmanager.com/gtag/js', analytics)
@@ -277,30 +270,35 @@ class SiteContract(unittest.TestCase):
         self.assertIn("ad_personalization: 'denied'", analytics)
         self.assertIn('allow_google_signals: false', analytics)
         self.assertIn('allow_ad_personalization_signals: false', analytics)
-        self.assertIn("window.location.hostname.endsWith('github.io')", analytics)
+        self.assertIn("siteHostname.endsWith('github.io') ? { debug_mode: true } : {}", analytics)
+        self.assertIn("const sharedCookieName = 'rrgh-analytics-consent-v1';", analytics)
+        self.assertIn("credentials: 'omit'", analytics)
+        self.assertIn("cache: 'no-store'", analytics)
         self.assertIn('AnalyticsConsent', base)
-        self.assertIn('data-analytics-privacy-settings', footer)
+        self.assertIn('RrghAnalyticsBar', base)
+        self.assertIn('data-rrgh-analytics-toggle', bar)
+        self.assertIn('RRGH Analytics: Off', bar)
+        self.assertIn('Privacy & Analytics', footer)
+        self.assertNotIn('data-analytics-privacy-settings', footer)
+        self.assertNotIn('Optional website analytics', analytics)
 
         for text in (
-            'Google Analytics 4 (GA4)',
+            'RRGH Analytics may be On by default',
+            'European Economic Area, United Kingdom, and Switzerland',
+            'RRGH Analytics defaults Off',
+            'Google Analytics 4',
             'page views and site interactions',
-            'referring source or campaign information',
-            'outbound-link activity',
+            'referring source and campaign information',
             'approximate geographic information',
-            'browser, device, and related technical information',
-            'pseudonymous first-party Analytics identifiers or cookies',
-            'does not receive or store visitors’ raw IP addresses through GA4',
-            'does not use GA4 to identify individual visitors by name',
-            'Analytics storage is denied by default',
-            'European Economic Area, United Kingdom, or Switzerland',
-            'Meta Pixel',
-            'Roku tracking pixels',
-            'Google Ads remarketing',
-            'Google Tag Manager',
+            'pseudonymous first-party Analytics identifiers',
+            'does not receive visitors’ raw IP addresses through its ordinary GA4 reports',
+            'does not enable Google Signals',
+            'does not enable Pinterest Enhanced Match',
+            'Pixels platform analytics operates independently from RRGH Analytics',
         ):
             self.assertIn(text, privacy)
         self.assertIn('https://policies.google.com/technologies/partner-sites', privacy)
-
+        self.assertIn('https://policy.pinterest.com/privacy-policy', privacy)
         self.assertNotIn('connect.facebook.net', ALL.lower())
         self.assertNotIn('googletagmanager.com/gtm.js', ALL.lower())
         self.assertNotIn('googleads.g.doubleclick.net', ALL.lower())
@@ -390,10 +388,7 @@ class SiteContract(unittest.TestCase):
     def test_production_domain_and_staging_overrides(self):
         config = (ROOT / 'astro.config.mjs').read_text()
         workflow = (ROOT / '.github/workflows/deploy-pages.yml').read_text()
-        self.assertIn(
-            "const site = process.env.SITE_URL ?? 'https://redrivergorgehiker.com';",
-            config,
-        )
+        self.assertIn("const site = process.env.SITE_URL ?? 'https://redrivergorgehiker.com';", config)
         self.assertIn("const base = process.env.BASE_PATH ?? '/';", config)
         self.assertNotIn('github.io', config)
         self.assertIn('- main', workflow)
