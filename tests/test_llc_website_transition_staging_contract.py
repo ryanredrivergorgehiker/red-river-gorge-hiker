@@ -22,7 +22,9 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertNotIn("<span>© Red River Gorge Hiker, LLC. All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
         self.assertNotIn("<span>© Ryan D. Lewis. All rights reserved.</span>", text)
         self.assertIn('href="mailto:Ryan@RedRiverGorgeHiker.com"', text)
-        self.assertIn("Analytics choices", text)
+        self.assertIn("Privacy & Analytics", text)
+        self.assertIn("privacy/#privacy-and-analytics", text)
+        self.assertNotIn("Analytics choices", text)
         self.assertIn("instagram", text)
         self.assertIn("facebook", text)
         self.assertIn("pinterest", text)
@@ -60,13 +62,16 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
 
     def test_privacy_staging_copy_and_date(self):
         text = read("src/pages/privacy.astro")
-        self.assertIn("Last updated: August 29, 2026", text)
+        self.assertIn("Last updated: Pending production approval", text)
+        self.assertNotIn("Last updated: September 14, 2026", text)
         self.assertIn("RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. It is a static photography and outdoor-interest website. It does not create visitor accounts, run its own online shopping cart, or directly collect payment-card information.", text)
-        self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Optional measurement tools are described below.", text)
+        self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Red River Gorge Hiker measurement tools are described below.", text)
         self.assertIn("If you email Ryan at Ryan@RedRiverGorgeHiker.com, the information you choose to provide may be retained by Red River Gorge Hiker, LLC when reasonably useful for responding to your message, administering the business, or maintaining ordinary business records.", text)
         self.assertIn("Privacy questions may be sent to Ryan@RedRiverGorgeHiker.com.", text)
-        self.assertIn("Analytics storage is denied by default.", text)
-        self.assertIn("Google Analytics and Pinterest measurement are configured as optional.", text)
+        self.assertIn("RRGH Analytics may be On by default", text)
+        self.assertIn("RRGH Analytics remains Off until the visitor affirmatively turns it On", text)
+        self.assertIn("Pixels platform analytics operates independently from RRGH Analytics", text)
+        self.assertIn("does not enable Pinterest Enhanced Match", text)
 
     def test_about_contact_and_permissions_exact_copy(self):
         about = read("src/pages/about.astro")
