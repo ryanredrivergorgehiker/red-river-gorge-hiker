@@ -17,6 +17,7 @@ if not SCRIPT_MATCH:
 SCRIPT = SCRIPT_MATCH.group(1)
 
 SHARED_COOKIE = 'rrgh-analytics-consent-v1'
+REGION_COOKIE = 'rrgh-region-country-v1'
 CURRENT_LOCAL_KEY = 'rrgh-analytics-consent-v2'
 LEGACY_LOCAL_KEY = 'rrgh-analytics-consent-v1'
 GA_ID = 'G-HM48NST64P'
@@ -29,7 +30,9 @@ NODE_HARNESS = r'''
 const source = __SOURCE__;
 const scenario = __SCENARIO__;
 const store = new Map(Object.entries(scenario.storage || {}));
-const cookieJar = new Map(Object.entries(scenario.cookies || {}));
+const initialCookies = { ...(scenario.cookies || {}) };
+if (scenario.country) initialCookies['rrgh-region-country-v1'] = encodeURIComponent(scenario.country);
+const cookieJar = new Map(Object.entries(initialCookies));
 const appendedScripts = [];
 const cookieWrites = [];
 const documentListeners = new Map();
@@ -88,17 +91,6 @@ class HTMLAnchorElementMock extends ElementMock {
 global.Element = ElementMock;
 global.HTMLAnchorElement = HTMLAnchorElementMock;
 
-global.DOMParser = class {
-  parseFromString() {
-    return {
-      querySelector(selector) {
-        if (selector !== 'a[href*="enterzipcode.php"]' || !scenario.country) return null;
-        return { textContent: `Change Location (${scenario.country})` };
-      }
-    };
-  }
-};
-
 const documentMock = {
   get cookie() {
     return Array.from(cookieJar.entries()).map(([key, value]) => `${key}=${value}`).join('; ');
@@ -148,14 +140,6 @@ const documentMock = {
 };
 
 global.document = documentMock;
-global.fetch = async () => {
-  if (scenario.fetchReject) throw new Error('regional fetch failed');
-  return {
-    ok: scenario.fetchOk !== false,
-    status: scenario.fetchOk === false ? 500 : 200,
-    async text() { return '<html></html>'; }
-  };
-};
 
 global.window = {
   localStorage,
@@ -222,6 +206,7 @@ const result = {
   dataLayer: (window.dataLayer || []).map(normalizeArguments),
   reloads,
   automaticCountry: window.rrghAutomaticCountry === undefined ? null : window.rrghAutomaticCountry,
+  automaticCountrySource: window.rrghAutomaticCountrySource === undefined ? null : window.rrghAutomaticCountrySource,
   gaLoaded: window.rrghAnalyticsGaLoaded === true
 };
 console.log(JSON.stringify(result));
@@ -234,9 +219,8 @@ console.log(JSON.stringify(result));
 
 class UnifiedRrghAnalyticsContract(unittest.TestCase):
     def run_scenario(self, **kwargs):
-        scenario = kwargs
         program = NODE_HARNESS.replace('__SOURCE__', json.dumps(SCRIPT)).replace(
-            '__SCENARIO__', json.dumps(scenario)
+            '__SCENARIO__', json.dumps(kwargs)
         )
         completed = subprocess.run(
             ['node', '-e', program],
@@ -277,6 +261,7 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['ariaPressed'], 'true')
         self.assertEqual(result['effectiveSource'], 'regional-default-on')
         self.assertEqual(result['automaticCountry'], 'united states')
+        self.assertEqual(result['automaticCountrySource'], 'first-party-country-cookie')
         self.assertNotIn(SHARED_COOKIE, result['cookies'])
         self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
         self.assertIn(PINTEREST_CORE, result['appendedScripts'])
@@ -349,11 +334,15 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'unapproved-region')
         self.assertEqual(result['appendedScripts'], [])
 
-    def test_regional_lookup_error_fails_closed(self):
-        result = self.run_scenario(fetchReject=True)
-        self.assertEqual(result['toggleText'], 'RRGH Analytics: Off')
-        self.assertEqual(result['effectiveSource'], 'regional-error')
-        self.assertEqual(result['appendedScripts'], [])
+    def test_missing_or_invalid_country_bridge_fails_closed(self):
+        missing = self.run_scenario()
+        self.assertEqual(missing['toggleText'], 'RRGH Analytics: Off')
+        self.assertEqual(missing['effectiveSource'], 'regional-error')
+        self.assertEqual(missing['appendedScripts'], [])
+
+        invalid = self.run_scenario(cookies={REGION_COOKIE: '39.2,-84.7'})
+        self.assertEqual(invalid['effectiveSource'], 'regional-error')
+        self.assertEqual(invalid['appendedScripts'], [])
 
     def test_v2_granted_migrates_to_shared_allowed(self):
         result = self.run_scenario(storage={CURRENT_LOCAL_KEY: 'granted'}, country='Great Britain')
@@ -406,15 +395,16 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
             self.assertEqual(state['ad_user_data'], 'denied')
             self.assertEqual(state['ad_personalization'], 'denied')
 
-    def test_shared_cookie_and_pixels_country_source_contract(self):
+    def test_shared_preference_and_country_bridge_contract(self):
         self.assertIn("const sharedCookieName = 'rrgh-analytics-consent-v1';", ANALYTICS)
+        self.assertIn("const regionCookieName = 'rrgh-region-country-v1';", ANALYTICS)
         self.assertIn('Domain=.redrivergorgehiker.com', ANALYTICS)
         self.assertIn('Max-Age=${oneYearSeconds}', ANALYTICS)
         self.assertIn('Secure; SameSite=Lax', ANALYTICS)
-        self.assertIn("fetch(storeUrl, {", ANALYTICS)
-        self.assertIn("credentials: 'omit'", ANALYTICS)
-        self.assertIn("cache: 'no-store'", ANALYTICS)
-        self.assertIn('a[href*="enterzipcode.php"]', ANALYTICS)
+        self.assertIn('readBridgedCountry()', ANALYTICS)
+        self.assertIn("'first-party-country-cookie'", ANALYTICS)
+        self.assertNotIn('fetch(storeUrl', ANALYTICS)
+        self.assertNotIn('enterzipcode.php', ANALYTICS)
         self.assertIn("'united states': 1", ANALYTICS)
         self.assertIn("'great britain': 1", ANALYTICS)
         self.assertIn("'switzerland': 1", ANALYTICS)
@@ -423,8 +413,8 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(ANALYTICS.count(GA_ID), 1)
         self.assertEqual(ANALYTICS.count(PINTEREST_ID), 1)
         self.assertIn("window.pintrk('load', pinterestTagId);", ANALYTICS)
-        self.assertIn("allow_google_signals: false", ANALYTICS)
-        self.assertIn("allow_ad_personalization_signals: false", ANALYTICS)
+        self.assertIn('allow_google_signals: false', ANALYTICS)
+        self.assertIn('allow_ad_personalization_signals: false', ANALYTICS)
         self.assertNotIn('Optional website analytics', ANALYTICS)
         self.assertNotIn('Allow analytics', ANALYTICS)
         self.assertNotIn('role="dialog"', ANALYTICS)
