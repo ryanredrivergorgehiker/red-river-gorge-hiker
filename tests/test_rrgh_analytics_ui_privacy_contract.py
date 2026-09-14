@@ -39,9 +39,16 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('top: 0;', BAR)
         self.assertNotIn('top: -10px;', BAR)
         self.assertIn('padding: 0 7px;', BAR)
+        self.assertIn("https://render.fineartamerica.com/font/cabinregular.woff", BAR)
+        self.assertIn('font-family: cabin, oswald, arial, sans-serif;', BAR)
         self.assertNotIn('@media (max-width:', BAR)
         self.assertNotIn('padding-inline: 5px;', BAR)
         self.assertNotIn('8.25pt', BAR)
+
+    def test_staging_has_nonvisual_effective_state_diagnostic(self):
+        self.assertIn("window.location.hostname.endsWith('github.io')", BAR)
+        self.assertIn("data-effective-source", BAR)
+        self.assertIn('Staging diagnostic — source:', BAR)
 
     def test_skip_link_stays_outside_bar_until_keyboard_focus(self):
         self.assertIn(':global(.site-header .skip)', BAR)
