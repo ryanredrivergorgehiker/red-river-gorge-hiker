@@ -41,13 +41,6 @@ const base = import.meta.env.BASE_URL;
 </script>
 
 <style>
-  /* Load the same Cabin Regular WOFF served by Pixels so the bar typography matches the Store. */
-  @font-face {
-    font-family: cabin;
-    font-display: swap;
-    src: url('https://render.fineartamerica.com/font/cabinregular.woff') format('woff');
-  }
-
   .rrgh-analytics-bar {
     display: block;
     width: 100%;
@@ -70,7 +63,7 @@ const base = import.meta.env.BASE_URL;
     text-align: center;
   }
 
-  /* Mirrors #headerAnnouncementWhiteLabelText on the Store. */
+  /* Keep typography deterministic on both the main site and Store. */
   .rrgh-analytics-text {
     display: inline-block;
     box-sizing: border-box;
@@ -78,7 +71,7 @@ const base = import.meta.env.BASE_URL;
     padding-top: 8px;
     padding-bottom: 8px;
     font-size: 10pt;
-    font-family: cabin, oswald, arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     font-weight: normal;
     color: #F3EFE6;
     letter-spacing: 0.5px;
@@ -117,7 +110,7 @@ const base = import.meta.env.BASE_URL;
     border-radius: 3px;
     background: #F3EFE6;
     color: #17372D;
-    font-family: inherit;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 9pt;
     font-weight: bold;
     line-height: 1;
