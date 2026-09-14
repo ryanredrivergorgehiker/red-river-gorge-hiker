@@ -1,0 +1,86 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="rrgh-analytics-bar" aria-label="Store and privacy controls">
+  <div class="rrgh-analytics-bar-inner">
+    <a class="rrgh-analytics-bar-control rrgh-analytics-shop" href="https://store.redrivergorgehiker.com/">Shop Now →</a>
+    <span class="rrgh-analytics-bar-actions">
+      <a class="rrgh-analytics-bar-control" href={`${base}privacy/`}>Privacy</a>
+      <button
+        type="button"
+        class="rrgh-analytics-bar-control rrgh-analytics-toggle"
+        data-rrgh-analytics-toggle
+        aria-pressed="false"
+      >RRGH Analytics: Off</button>
+    </span>
+  </div>
+</div>
+
+<style>
+  .rrgh-analytics-bar {
+    width: 100%;
+    min-height: 34px;
+    padding: 4px 0;
+    background: #17372D;
+  }
+
+  .rrgh-analytics-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(var(--content), calc(100% - 1rem));
+    margin-inline: auto;
+    white-space: nowrap;
+  }
+
+  .rrgh-analytics-bar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .rrgh-analytics-bar-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    box-sizing: border-box;
+    padding: 0 7px;
+    margin: 0;
+    border: 0;
+    border-radius: 3px;
+    background: #F3EFE6;
+    color: #17372D;
+    font-family: var(--sans);
+    font-size: 9pt;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .rrgh-analytics-bar-control:hover {
+    background: #fff;
+    color: #17372D;
+    text-decoration: none;
+  }
+
+  .rrgh-analytics-bar-control:focus-visible {
+    outline: 2px solid #F3EFE6;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 420px) {
+    .rrgh-analytics-bar-inner {
+      width: calc(100% - .5rem);
+    }
+
+    .rrgh-analytics-bar-control {
+      padding-inline: 5px;
+      font-size: 8.25pt;
+    }
+  }
+</style>
