@@ -24,6 +24,7 @@ GA_ID = 'G-HM48NST64P'
 GA_COOKIE = '_ga_HM48NST64P'
 PINTEREST_ID = '2613133188222'
 PINTEREST_CORE = 'https://s.pinimg.com/ct/core.js'
+CLOUDFLARE_TRACE = 'https://one.one.one.one/cdn-cgi/trace'
 
 NODE_HARNESS = r'''
 (async () => {
@@ -35,6 +36,7 @@ if (scenario.country) initialCookies['rrgh-region-country-v1'] = encodeURICompon
 const cookieJar = new Map(Object.entries(initialCookies));
 const appendedScripts = [];
 const cookieWrites = [];
+const fetches = [];
 const documentListeners = new Map();
 let reloads = 0;
 
@@ -140,6 +142,19 @@ const documentMock = {
 };
 
 global.document = documentMock;
+global.fetch = async (url, options) => {
+  fetches.push({ url: String(url), options: options || {} });
+  if (scenario.cloudflareReject) throw new Error('cloudflare lookup failed');
+  const status = scenario.cloudflareStatus || 200;
+  const loc = scenario.cloudflareLoc || '';
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async text() {
+      return `fl=test\nip=203.0.113.9\ncolo=TEST\n${loc ? `loc=${loc}\n` : ''}tls=TLSv1.3\n`;
+    }
+  };
+};
 
 global.window = {
   localStorage,
@@ -198,6 +213,7 @@ const result = {
   storage: Object.fromEntries(store),
   cookies: Object.fromEntries(cookieJar),
   cookieWrites,
+  fetches,
   toggleText: toggle.textContent,
   ariaPressed: toggle.attrs['aria-pressed'],
   effectiveSource: toggle.attrs['data-effective-source'] || null,
@@ -262,11 +278,45 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'regional-default-on')
         self.assertEqual(result['automaticCountry'], 'united states')
         self.assertEqual(result['automaticCountrySource'], 'first-party-country-cookie')
+        self.assertEqual(result['fetches'], [])
         self.assertNotIn(SHARED_COOKIE, result['cookies'])
         self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
         self.assertIn(PINTEREST_CORE, result['appendedScripts'])
         self.assertTrue(result['gaLoaded'])
         self.assertTrue(self.has_pin_command(result, 'load', PINTEREST_ID))
+
+    def test_cloudflare_us_lookup_defaults_on_and_caches_country_only(self):
+        result = self.run_scenario(cloudflareLoc='US')
+        self.assertEqual(result['toggleText'], 'RRGH Analytics: On')
+        self.assertEqual(result['effectiveSource'], 'regional-default-on')
+        self.assertEqual(result['automaticCountry'], 'us')
+        self.assertEqual(result['automaticCountrySource'], 'cloudflare-country-lookup')
+        self.assertEqual(result['cookies'][REGION_COOKIE], 'us')
+        self.assertNotIn(SHARED_COOKIE, result['cookies'])
+        self.assertEqual(len(result['fetches']), 1)
+        self.assertEqual(result['fetches'][0]['url'], CLOUDFLARE_TRACE)
+        options = result['fetches'][0]['options']
+        self.assertEqual(options['credentials'], 'omit')
+        self.assertEqual(options['cache'], 'no-store')
+        self.assertEqual(options['mode'], 'cors')
+        self.assertEqual(options['referrerPolicy'], 'no-referrer')
+        self.assertNotIn('203.0.113.9', result['cookies'].values())
+        self.assertNotIn('TEST', result['cookies'].values())
+
+    def test_cloudflare_consent_required_country_and_failure_fail_closed(self):
+        gb = self.run_scenario(cloudflareLoc='GB')
+        self.assertEqual(gb['toggleText'], 'RRGH Analytics: Off')
+        self.assertEqual(gb['effectiveSource'], 'consent-required')
+        self.assertEqual(gb['automaticCountry'], 'gb')
+        self.assertEqual(gb['automaticCountrySource'], 'cloudflare-country-lookup')
+        self.assertEqual(gb['cookies'][REGION_COOKIE], 'gb')
+        self.assertEqual(gb['appendedScripts'], [])
+
+        rejected = self.run_scenario(cloudflareReject=True)
+        self.assertEqual(rejected['toggleText'], 'RRGH Analytics: Off')
+        self.assertEqual(rejected['effectiveSource'], 'regional-error')
+        self.assertEqual(rejected['appendedScripts'], [])
+        self.assertIsNone(rejected['automaticCountry'])
 
     def test_explicit_withdrawal_saves_shared_decline_reloads_and_targets_only_rrgh_ga_cookie(self):
         result = self.run_scenario(
@@ -297,12 +347,14 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'explicit-allowed')
         self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
         self.assertIn(PINTEREST_CORE, result['appendedScripts'])
+        self.assertEqual(result['fetches'], [])
 
     def test_shared_decline_overrides_us_regional_default(self):
         result = self.run_scenario(country='United States', cookies={SHARED_COOKIE: 'declined'})
         self.assertEqual(result['toggleText'], 'RRGH Analytics: Off')
         self.assertEqual(result['effectiveSource'], 'explicit-declined')
         self.assertEqual(result['appendedScripts'], [])
+        self.assertEqual(result['fetches'], [])
 
     def test_shared_allow_overrides_consent_required_region(self):
         result = self.run_scenario(country='Great Britain', cookies={SHARED_COOKIE: 'allowed'})
@@ -310,6 +362,7 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'explicit-allowed')
         self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
         self.assertIn(PINTEREST_CORE, result['appendedScripts'])
+        self.assertEqual(result['fetches'], [])
 
     def test_gpc_overrides_explicit_allow_and_keeps_unified_measurement_off(self):
         result = self.run_scenario(
@@ -320,6 +373,7 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['toggleText'], 'RRGH Analytics: Off')
         self.assertEqual(result['effectiveSource'], 'privacy-signal')
         self.assertEqual(result['appendedScripts'], [])
+        self.assertEqual(result['fetches'], [])
 
     def test_consent_required_country_defaults_off(self):
         result = self.run_scenario(country='Great Britain')
@@ -334,7 +388,7 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'unapproved-region')
         self.assertEqual(result['appendedScripts'], [])
 
-    def test_missing_or_invalid_country_bridge_fails_closed(self):
+    def test_missing_invalid_or_bad_cloudflare_country_fails_closed(self):
         missing = self.run_scenario()
         self.assertEqual(missing['toggleText'], 'RRGH Analytics: Off')
         self.assertEqual(missing['effectiveSource'], 'regional-error')
@@ -343,6 +397,10 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         invalid = self.run_scenario(cookies={REGION_COOKIE: '39.2,-84.7'})
         self.assertEqual(invalid['effectiveSource'], 'regional-error')
         self.assertEqual(invalid['appendedScripts'], [])
+
+        bad_code = self.run_scenario(cloudflareLoc='USA')
+        self.assertEqual(bad_code['effectiveSource'], 'regional-error')
+        self.assertEqual(bad_code['appendedScripts'], [])
 
     def test_v2_granted_migrates_to_shared_allowed(self):
         result = self.run_scenario(storage={CURRENT_LOCAL_KEY: 'granted'}, country='Great Britain')
@@ -395,19 +453,30 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
             self.assertEqual(state['ad_user_data'], 'denied')
             self.assertEqual(state['ad_personalization'], 'denied')
 
-    def test_shared_preference_and_country_bridge_contract(self):
+    def test_shared_preference_country_bridge_and_cloudflare_contract(self):
         self.assertIn("const sharedCookieName = 'rrgh-analytics-consent-v1';", ANALYTICS)
         self.assertIn("const regionCookieName = 'rrgh-region-country-v1';", ANALYTICS)
+        self.assertIn("const cloudflareCountryEndpoint = 'https://one.one.one.one/cdn-cgi/trace';", ANALYTICS)
         self.assertIn('Domain=.redrivergorgehiker.com', ANALYTICS)
         self.assertIn('Max-Age=${oneYearSeconds}', ANALYTICS)
+        self.assertIn('Max-Age=${oneHourSeconds}', ANALYTICS)
         self.assertIn('Secure; SameSite=Lax', ANALYTICS)
         self.assertIn('readBridgedCountry()', ANALYTICS)
-        self.assertIn("'first-party-country-cookie'", ANALYTICS)
+        self.assertIn('writeRegionCountry(country)', ANALYTICS)
+        self.assertIn("source: 'first-party-country-cookie'", ANALYTICS)
+        self.assertIn("source: 'cloudflare-country-lookup'", ANALYTICS)
+        self.assertIn("credentials: 'omit'", ANALYTICS)
+        self.assertIn("cache: 'no-store'", ANALYTICS)
+        self.assertIn("mode: 'cors'", ANALYTICS)
+        self.assertIn("referrerPolicy: 'no-referrer'", ANALYTICS)
         self.assertNotIn('fetch(storeUrl', ANALYTICS)
         self.assertNotIn('enterzipcode.php', ANALYTICS)
         self.assertIn("'united states': 1", ANALYTICS)
+        self.assertIn("'us': 1", ANALYTICS)
         self.assertIn("'great britain': 1", ANALYTICS)
+        self.assertIn("'gb': 1", ANALYTICS)
         self.assertIn("'switzerland': 1", ANALYTICS)
+        self.assertIn("'ch': 1", ANALYTICS)
 
     def test_tracker_guardrails_and_no_bottom_dialog(self):
         self.assertEqual(ANALYTICS.count(GA_ID), 1)
