@@ -21,7 +21,33 @@ const base = import.meta.env.BASE_URL;
   </div>
 </div>
 
+<script>
+  (() => {
+    if (!window.location.hostname.endsWith('github.io')) return;
+    const control = document.querySelector('[data-rrgh-analytics-toggle]');
+    if (!(control instanceof HTMLElement)) return;
+
+    const updateDiagnosticTitle = () => {
+      const source = control.getAttribute('data-effective-source') || 'initializing';
+      const country = typeof window.rrghAutomaticCountry === 'string' && window.rrghAutomaticCountry
+        ? window.rrghAutomaticCountry
+        : 'unresolved';
+      control.title = `Staging diagnostic — source: ${source}; country: ${country}`;
+    };
+
+    updateDiagnosticTitle();
+    const observer = new MutationObserver(updateDiagnosticTitle);
+    observer.observe(control, { attributes: true, attributeFilter: ['data-effective-source'] });
+  })();
+</script>
+
 <style>
+  @font-face {
+    font-family: cabin;
+    font-display: swap;
+    src: url('https://render.fineartamerica.com/font/cabinregular.woff') format('woff');
+  }
+
   .rrgh-analytics-bar {
     display: block;
     width: 100%;
