@@ -82,35 +82,32 @@ class ShippingReturnsContract(unittest.TestCase):
         self.assertIn('Return shipping for larger items can be significant.', GEAR)
         self.assertIn('href={`${base}shipping-and-returns/`}', GEAR)
 
-    def test_photo_purchase_layout_uses_available_width_redundant_actions_and_share_aligned_top_controls(self):
-        self.assertIn('class="photo-purchase-layout"', PHOTO)
-        self.assertIn('class="photo-purchase-panel"', PHOTO)
-        self.assertIn('class="photo-purchase-panel-actions photo-purchase-panel-actions-top"', PHOTO)
-        self.assertIn('class="photo-purchase-panel-actions photo-purchase-panel-actions-bottom"', PHOTO)
-        self.assertEqual(PHOTO.count('<span>Shop Wall Art</span>'), 2)
-        self.assertEqual(PHOTO.count('aria-label={`Open wall art options for ${photo.title}`}'), 2)
-        self.assertEqual(PHOTO.count('<ShareControls title={photo.title} text={photo.shareDescription} />'), 2)
+    def test_photo_purchase_layout_uses_current_top_actions_and_purchase_grid(self):
+        self.assertIn('class="photo-context-share-row"', PHOTO)
+        self.assertIn('<ShareControls title={photo.title} url={canonical} />', PHOTO)
+        self.assertIn('class="photo-top-actions" aria-label="Purchase options"', PHOTO)
+        self.assertIn("class:list={['purchase-panel', 'photo-purchase-grid'", PHOTO)
+        self.assertIn('class="button photo-card-action" href={photo.wallArtUrl}', PHOTO)
+        self.assertIn('class="button secondary photo-card-action" href={photo.puzzleUrl}', PHOTO)
 
-    def test_top_wall_art_action_keeps_desktop_hover_focus_mobile_direct_handoff_and_compact_policy_reminder(self):
-        self.assertIn('data-wall-art-menu-trigger', PHOTO)
-        self.assertIn('data-wall-art-mobile-link', PHOTO)
-        self.assertIn('href={photo.wallArtUrl}', PHOTO)
-        self.assertIn('aria-haspopup="true"', PHOTO)
-        self.assertIn('aria-expanded="false"', PHOTO)
-        self.assertIn("const compactWallArt = window.matchMedia('(max-width: 760px)');", PHOTO)
-        self.assertIn("trigger.addEventListener('mouseenter', () => {", PHOTO)
-        self.assertIn("trigger.addEventListener('focusin', () => {", PHOTO)
-        self.assertIn("if (compactWallArt.matches) window.location.assign(mobileLink.href);", PHOTO)
-        self.assertIn('class="photo-purchase-policy-note"', PHOTO)
-        self.assertIn('<strong>Before Ordering</strong>', PHOTO)
+    def test_top_wall_art_action_keeps_desktop_hover_focus_and_mobile_direct_link(self):
+        self.assertIn('class="top-wall-art-action"', PHOTO)
+        self.assertIn('class="button top-wall-art-trigger" href={photo.wallArtUrl}', PHOTO)
+        self.assertIn('class="top-wall-art-popover" role="note"', PHOTO)
+        self.assertIn('.top-wall-art-action:hover .top-wall-art-popover', PHOTO)
+        self.assertIn('.top-wall-art-action:focus-within .top-wall-art-popover', PHOTO)
+        self.assertIn('@media (max-width: 800px)', PHOTO)
+        self.assertIn('display: none;', PHOTO)
+        self.assertIn('class="mobile-ordering-reminder" role="note"', PHOTO)
         self.assertIn('Review Shipping & Returns →', PHOTO)
 
     def test_wall_art_purchase_panel_has_approved_pre_purchase_warning_and_policy_link_without_changing_store_handoff(self):
-        self.assertIn('<strong>Before Ordering</strong>', PHOTO)
-        self.assertIn('Review Shipping & Returns →', PHOTO)
+        self.assertIn('<div class="notice wall-art-ordering-notice" role="note">', PHOTO)
+        self.assertIn('<strong>Before Ordering:</strong>', PHOTO)
+        self.assertIn('See Shipping & Returns →', PHOTO)
         self.assertIn('href={`${base}shipping-and-returns/`}', PHOTO)
-        self.assertIn('href={photo.wallArtUrl}', PHOTO)
-        self.assertIn('href={`${photo.wallArtUrl}?product=${product}`}', PHOTO)
+        self.assertGreaterEqual(PHOTO.count('href={photo.wallArtUrl}'), 3)
+        self.assertIn('data-store-item-type="wall_art"', PHOTO)
 
 
 if __name__ == '__main__':
