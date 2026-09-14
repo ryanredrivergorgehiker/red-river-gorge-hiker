@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import AnalyticsConsent from '../components/AnalyticsConsent.astro';
+import RrghAnalyticsBar from '../components/RrghAnalyticsBar.astro';
 import CartLauncher from '../components/CartLauncher.astro';
 import '../styles/global.css';
 import '../styles/refinements.css';
@@ -136,6 +137,7 @@ const schema = {
     <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)}></script>
   </head>
   <body>
+    <RrghAnalyticsBar />
     <Header />
     <main id="main"><slot /></main>
     <Footer />
