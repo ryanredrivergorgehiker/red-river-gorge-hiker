@@ -27,8 +27,8 @@ const gaConfig = {
     const pinterestTagId = controller.getAttribute('data-pinterest-tag-id');
     if (!measurementId) return;
 
-    const storeUrl = 'https://store.redrivergorgehiker.com/';
     const sharedCookieName = 'rrgh-analytics-consent-v1';
+    const regionCookieName = 'rrgh-region-country-v1';
     const currentLocalStorageKey = 'rrgh-analytics-consent-v2';
     const legacyLocalStorageKey = 'rrgh-analytics-consent-v1';
     const rrghGaCookieName = '_ga_HM48NST64P';
@@ -96,19 +96,31 @@ const gaConfig = {
       catch { return null; }
     };
 
-    const readSharedChoice = () => {
+    const readCookieValue = (name) => {
       try {
-        const prefix = `${sharedCookieName}=`;
+        const prefix = `${name}=`;
         const entry = document.cookie
           .split(';')
           .map((part) => part.trim())
           .find((part) => part.startsWith(prefix));
         if (!entry) return null;
-        const value = decodeURIComponent(entry.slice(prefix.length));
-        return value === 'allowed' || value === 'declined' ? value : null;
+        return decodeURIComponent(entry.slice(prefix.length));
       } catch {
         return null;
       }
+    };
+
+    const readSharedChoice = () => {
+      const value = readCookieValue(sharedCookieName);
+      return value === 'allowed' || value === 'declined' ? value : null;
+    };
+
+    const readBridgedCountry = () => {
+      const value = readCookieValue(regionCookieName);
+      if (!value) return null;
+      const country = value.trim().toLowerCase();
+      if (!country || country.length > 80 || !/^[a-z][a-z .'-]*$/.test(country)) return null;
+      return country;
     };
 
     const writeSharedChoice = (choice) => {
@@ -259,30 +271,18 @@ const gaConfig = {
     };
 
     const determineAutomaticCountry = async () => {
-      const response = await fetch(storeUrl, {
-        credentials: 'omit',
-        cache: 'no-store'
-      });
-      if (!response.ok) throw new Error(`Store location request failed with ${response.status}`);
-      const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const locationLink = doc.querySelector('a[href*="enterzipcode.php"]');
-      if (!locationLink) throw new Error('Pixels automatic-country link was not found');
-      const locationText = (locationLink.textContent || '').trim();
-      const open = locationText.lastIndexOf('(');
-      const close = locationText.lastIndexOf(')');
-      if (open === -1 || close === -1 || close <= open + 1) {
-        throw new Error('Pixels automatic-country value could not be parsed');
-      }
-      return locationText.slice(open + 1, close).trim().toLowerCase();
+      const country = readBridgedCountry();
+      if (!country) throw new Error('RRGH country bridge cookie is unavailable or invalid');
+      return country;
     };
 
     const applyRegionalDefault = async () => {
       try {
         const country = await determineAutomaticCountry();
         window.rrghAutomaticCountry = country;
+        window.rrghAutomaticCountrySource = 'first-party-country-cookie';
 
-        // Explicit choice or privacy signal may have changed while the request was in flight.
+        // Explicit choice or privacy signal may have changed while regional state was resolving.
         if (privacySignalRequiresOff()) {
           turnMeasurementOff('privacy-signal', true);
           return;
@@ -304,6 +304,7 @@ const gaConfig = {
         turnMeasurementOff('unapproved-region', true);
       } catch {
         window.rrghAutomaticCountry = null;
+        window.rrghAutomaticCountrySource = null;
         turnMeasurementOff('regional-error', true);
       }
     };
