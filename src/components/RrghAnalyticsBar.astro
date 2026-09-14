@@ -29,9 +29,8 @@ const base = import.meta.env.BASE_URL;
 
     const updateDiagnosticTitle = () => {
       const source = control.getAttribute('data-effective-source') || 'initializing';
-      const country = typeof window.rrghAutomaticCountry === 'string' && window.rrghAutomaticCountry
-        ? window.rrghAutomaticCountry
-        : 'unresolved';
+      const countryValue = Reflect.get(window, 'rrghAutomaticCountry');
+      const country = typeof countryValue === 'string' && countryValue ? countryValue : 'unresolved';
       control.title = `Staging diagnostic — source: ${source}; country: ${country}`;
     };
 
