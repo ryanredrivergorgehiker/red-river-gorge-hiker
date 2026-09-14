@@ -6,7 +6,7 @@ const footerLinks = [
   ['Photography Use', 'photography-use-and-permissions/'],
   ['Contact', 'contact/'],
   ['Shipping & Returns', 'shipping-and-returns/'],
-  ['Privacy', 'privacy/'],
+  ['Privacy & Analytics', 'privacy/#privacy-and-analytics'],
   ['Copyright and Terms', 'copyright-and-terms/']
 ] as const;
 
@@ -30,7 +30,6 @@ const socialLinks = {
         {footerLinks.map(([label, href]) => (
           <a href={`${base}${href}`}>{label}</a>
         ))}
-        <button type="button" class="footer-privacy-choice" data-analytics-privacy-settings>Analytics choices</button>
       </div>
 
       <div class="footer-contact-links" aria-label="Email and social media">
@@ -147,13 +146,6 @@ const socialLinks = {
     flex-wrap: nowrap;
     gap: .7rem;
   }
-  footer .footer-nav .footer-privacy-choice {
-    color: #fff;
-    font-size: .9rem;
-    font-weight: 650;
-    line-height: 1.3;
-  }
-  footer .footer-nav .footer-privacy-choice:hover { color: #fff; }
   footer .footer-nav .email-link {
     color: #fff;
     border-radius: 0;
@@ -203,6 +195,5 @@ const socialLinks = {
       gap: .5rem .9rem;
     }
     footer .footer-contact-links { gap: .85rem; }
-    footer .footer-nav .footer-privacy-choice { font-size: .84rem; }
   }
 </style>
