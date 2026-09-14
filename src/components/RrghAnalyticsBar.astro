@@ -3,50 +3,83 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <div class="rrgh-analytics-bar" aria-label="Store and privacy controls">
-  <div class="rrgh-analytics-bar-inner">
-    <a class="rrgh-analytics-bar-control rrgh-analytics-shop" href="https://store.redrivergorgehiker.com/">Shop Now →</a>
-    <span class="rrgh-analytics-bar-actions">
-      <a class="rrgh-analytics-bar-control" href={`${base}privacy/`}>Privacy</a>
-      <button
-        type="button"
-        class="rrgh-analytics-bar-control rrgh-analytics-toggle"
-        data-rrgh-analytics-toggle
-        aria-pressed="false"
-      >RRGH Analytics: Off</button>
-    </span>
+  <div class="rrgh-analytics-container">
+    <div class="rrgh-analytics-text">
+      <div class="rrgh-analytics-row">
+        <a class="rrgh-analytics-control" href="https://store.redrivergorgehiker.com/">Shop Now →</a>
+        <span class="rrgh-analytics-actions">
+          <a class="rrgh-analytics-control" href={`${base}privacy/`}>Privacy</a>
+          <button
+            type="button"
+            class="rrgh-analytics-control"
+            data-rrgh-analytics-toggle
+            aria-pressed="false"
+          >RRGH Analytics: Off</button>
+        </span>
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
   .rrgh-analytics-bar {
+    display: block;
     width: 100%;
     min-width: 100%;
-    background: #17372D;
+    background-color: #17372D;
     text-align: center;
   }
 
-  .rrgh-analytics-bar-inner {
-    display: inline-flex;
+  /* Mirrors the live Pixels .container rule used by the Store announcement bar. */
+  .rrgh-analytics-container {
+    display: inline-block;
     box-sizing: border-box;
-    align-items: center;
-    justify-content: space-between;
     width: 100%;
+    padding-left: 25px;
+    padding-right: 25px;
     min-width: 220px;
     max-width: 1150px;
-    height: 34px;
-    padding: 4px 25px;
-    margin: 0 auto;
-    white-space: nowrap;
+    margin: auto;
+    overflow: visible;
+    text-align: center;
   }
 
-  .rrgh-analytics-bar-actions {
+  /* Mirrors #headerAnnouncementWhiteLabelText on the Store. */
+  .rrgh-analytics-text {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 10pt;
+    font-family: cabin, oswald, arial, sans-serif;
+    font-weight: normal;
+    color: #F3EFE6;
+    letter-spacing: 0.5px;
+    word-spacing: 1px;
+    text-align: center;
+  }
+
+  /* This is the Store row geometry verbatim; only the left-button wording differs. */
+  .rrgh-analytics-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 26px;
+    white-space: nowrap;
+    position: relative;
+    top: -10px;
+  }
+
+  .rrgh-analytics-actions {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     white-space: nowrap;
   }
 
-  .rrgh-analytics-bar-control {
+  .rrgh-analytics-control {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -58,27 +91,29 @@ const base = import.meta.env.BASE_URL;
     border-radius: 3px;
     background: #F3EFE6;
     color: #17372D;
-    font-family: var(--sans);
+    font-family: inherit;
     font-size: 9pt;
-    font-weight: 700;
+    font-weight: bold;
     line-height: 1;
+    letter-spacing: normal;
+    word-spacing: normal;
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
   }
 
-  .rrgh-analytics-bar-control:hover {
-    background: #fff;
+  .rrgh-analytics-control:hover {
+    background: #F3EFE6;
     color: #17372D;
     text-decoration: none;
   }
 
-  .rrgh-analytics-bar-control:focus-visible {
+  .rrgh-analytics-control:focus-visible {
     outline: 2px solid #F3EFE6;
     outline-offset: 2px;
   }
 
-  /* Header's accessible skip link must stay above the viewport until keyboard focus. */
+  /* Header's accessible skip link stays above the viewport until keyboard focus. */
   :global(.site-header .skip) {
     position: fixed;
     top: 0;
@@ -89,18 +124,5 @@ const base = import.meta.env.BASE_URL;
 
   :global(.site-header .skip:focus) {
     transform: none;
-  }
-
-  @media (max-width: 560px) {
-    .rrgh-analytics-bar-inner {
-      padding-inline: 5px;
-    }
-  }
-
-  @media (max-width: 420px) {
-    .rrgh-analytics-bar-control {
-      padding-inline: 5px;
-      font-size: 8.25pt;
-    }
   }
 </style>
