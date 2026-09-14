@@ -5,14 +5,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class TestAug12UatRefinements(unittest.TestCase):
-    def test_footer_email_icon_and_analytics_choice(self):
+    def test_footer_email_icon_and_privacy_analytics_link(self):
         footer = (ROOT / 'src/components/Footer.astro').read_text()
         self.assertIn('footer-contact-links', footer)
         self.assertIn('aria-label="Email Red River Gorge Hiker"', footer)
         self.assertIn('class="email-icon"', footer)
         self.assertNotIn('>Email</a>', footer)
-        self.assertIn('Analytics choices', footer)
-        self.assertIn('footer .footer-nav .footer-privacy-choice', footer)
+        self.assertIn('Privacy & Analytics', footer)
+        self.assertIn('privacy/#privacy-and-analytics', footer)
+        self.assertNotIn('Analytics choices', footer)
+        self.assertNotIn('data-analytics-privacy-settings', footer)
         self.assertIn('color: #fff;', footer)
 
     def test_gear_actions_share_and_store_are_one_row(self):
