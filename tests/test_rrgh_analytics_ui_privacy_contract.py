@@ -20,7 +20,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('data-rrgh-analytics-toggle', BAR)
         self.assertIn('aria-pressed="false"', BAR)
 
-    def test_header_bar_matches_live_pixels_announcement_geometry(self):
+    def test_header_bar_matches_live_pixels_geometry_with_deterministic_font(self):
         self.assertIn('background-color: #17372D;', BAR)
         self.assertIn('background: #F3EFE6;', BAR)
         self.assertIn('color: #17372D;', BAR)
@@ -39,8 +39,9 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertIn('top: 0;', BAR)
         self.assertNotIn('top: -10px;', BAR)
         self.assertIn('padding: 0 7px;', BAR)
-        self.assertIn("https://render.fineartamerica.com/font/cabinregular.woff", BAR)
-        self.assertIn('font-family: cabin, oswald, arial, sans-serif;', BAR)
+        self.assertIn('font-family: Arial, Helvetica, sans-serif;', BAR)
+        self.assertNotIn('cabinregular.woff', BAR)
+        self.assertNotIn('@font-face', BAR)
         self.assertNotIn('@media (max-width:', BAR)
         self.assertNotIn('padding-inline: 5px;', BAR)
         self.assertNotIn('8.25pt', BAR)
