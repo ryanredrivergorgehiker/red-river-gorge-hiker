@@ -60,10 +60,10 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
             self.assertIn(item, text)
         self.assertNotIn("all photographs, written content, graphics, and other original material displayed on RedRiverGorgeHiker.com are copyrighted and owned by Ryan D. Lewis", text)
 
-    def test_privacy_staging_copy_and_date(self):
+    def test_privacy_production_ready_copy_and_date(self):
         text = read("src/pages/privacy.astro")
-        self.assertIn("Last updated: Pending production approval", text)
-        self.assertNotIn("Last updated: September 14, 2026", text)
+        self.assertIn("Last updated: September 14, 2026", text)
+        self.assertNotIn("Last updated: Pending production approval", text)
         self.assertIn("RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. It is a static photography and outdoor-interest website. It does not create visitor accounts, run its own online shopping cart, or directly collect payment-card information.", text)
         self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Red River Gorge Hiker measurement tools are described below.", text)
         self.assertIn("If you email Ryan at Ryan@RedRiverGorgeHiker.com, the information you choose to provide may be retained by Red River Gorge Hiker, LLC when reasonably useful for responding to your message, administering the business, or maintaining ordinary business records.", text)
