@@ -48,7 +48,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
 
     def test_staging_has_nonvisual_effective_state_diagnostic(self):
         self.assertIn("window.location.hostname.endsWith('github.io')", BAR)
-        self.assertIn("data-effective-source", BAR)
+        self.assertIn('data-effective-source', BAR)
         self.assertIn('Staging diagnostic — source:', BAR)
 
     def test_skip_link_stays_outside_bar_until_keyboard_focus(self):
@@ -70,7 +70,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         self.assertNotIn('Analytics choices', FOOTER)
         self.assertNotIn('data-analytics-privacy-settings', FOOTER)
 
-    def test_privacy_page_has_required_metadata_anchor_and_staging_date_gate(self):
+    def test_privacy_page_has_required_metadata_anchor_and_final_date(self):
         expected_description = (
             'Privacy information for Red River Gorge Hiker, including RRGH Analytics, '
             'Google Analytics, Pinterest measurement, shared measurement choices, and '
@@ -78,8 +78,13 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         )
         self.assertIn(expected_description, PRIVACY)
         self.assertIn('id="privacy-and-analytics"', PRIVACY)
-        self.assertIn('Last updated: Pending production approval', PRIVACY)
-        self.assertNotIn('Last updated: September 14, 2026', PRIVACY)
+        self.assertIn('Last updated: September 14, 2026', PRIVACY)
+        self.assertNotIn('Pending production approval', PRIVACY)
+
+    def test_privacy_page_describes_live_cross_site_preference_sharing(self):
+        self.assertIn('An explicit RRGH Analytics choice is stored in a first-party cookie scoped to redrivergorgehiker.com', PRIVACY)
+        self.assertIn('is recognized across RedRiverGorgeHiker.com and store.RedRiverGorgeHiker.com', PRIVACY)
+        self.assertNotIn('Once cross-site preference sharing has been implemented and verified', PRIVACY)
 
     def test_privacy_page_covers_unified_measurement_cloudflare_and_pixels_independence(self):
         required_phrases = [
