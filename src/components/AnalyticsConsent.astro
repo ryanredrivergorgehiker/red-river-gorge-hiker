@@ -90,7 +90,9 @@ const gaConfig = {
     let gaLoadStarted = false;
     let gaActuallyLoaded = false;
     let pinterestLoaded = false;
+    let rokuLoaded = false;
 
+    window.rrghAnalyticsRokuLoaded = false;
     window.dataLayer = window.dataLayer || [];
     window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
 
@@ -266,10 +268,29 @@ const gaConfig = {
       document.head.appendChild(script);
     };
 
+    const loadRoku = () => {
+      if (rokuLoaded) return;
+      rokuLoaded = true;
+      window.rrghAnalyticsRokuLoaded = true;
+
+      // Roku Pixel Code — exact platform-provided Default Event Group base code.
+      !function(e,r){if(!e.rkp){var t=e.rkp=function(){
+      var e=Array.prototype.slice.call(arguments)
+      ;e.push(Date.now()),t.eventProcessor?t.eventProcessor.apply(t,e):t.queue.push(e)
+      };t.initiatorVersion="1.0",t.queue=[],t.load=function(e){
+      var t=r.createElement("script");t.async=!0,t.src=e
+      ;var n=r.getElementsByTagName("script")[0]
+      ;(n?n.parentNode:r.body).insertBefore(t,n)},rkp.load("https://cdn.ravm.tv/ust/dist/rkp.loader.js")}
+      }(window,document);
+      rkp("init","PaccInUJusF8"),rkp('event', 'PAGE_VIEW');;
+      // End Roku Pixel Code
+    };
+
     const turnMeasurementOn = (source) => {
       showEffectiveState(true, source);
       loadGoogleAnalytics();
       loadPinterest();
+      loadRoku();
     };
 
     const turnMeasurementOff = (source, cleanup) => {
@@ -359,7 +380,7 @@ const gaConfig = {
 
     const toggleAnalytics = () => {
       if (effectiveOn) {
-        const hadLoadedMeasurement = gaLoadStarted || pinterestLoaded;
+        const hadLoadedMeasurement = gaLoadStarted || pinterestLoaded || rokuLoaded;
         writeSharedChoice('declined');
         turnMeasurementOff('explicit-declined', true);
         if (hadLoadedMeasurement) window.location.reload();
