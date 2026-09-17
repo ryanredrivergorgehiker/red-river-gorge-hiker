@@ -40,6 +40,14 @@ const fetches = [];
 const documentListeners = new Map();
 let reloads = 0;
 
+const insertScript = (node) => {
+  appendedScripts.push(node.src || '');
+  if (scenario.autoLoadScripts !== false && node.src && node.src.includes('googletagmanager.com/gtag/js')) {
+    node._fire('load');
+  }
+  return node;
+};
+
 const makeControl = () => ({
   handler: null,
   textContent: 'RRGH Analytics: Off',
@@ -127,15 +135,12 @@ const documentMock = {
       _fire(type) { const handler = listeners.get(type); if (handler) handler(); }
     };
   },
-  head: {
-    appendChild(node) {
-      appendedScripts.push(node.src || '');
-      if (scenario.autoLoadScripts !== false && node.src && node.src.includes('googletagmanager.com/gtag/js')) {
-        node._fire('load');
-      }
-      return node;
-    }
+  getElementsByTagName(tagName) {
+    if (String(tagName).toLowerCase() !== 'script') return [];
+    return [{ parentNode: { insertBefore: insertScript } }];
   },
+  body: { insertBefore: insertScript },
+  head: { appendChild: insertScript },
   addEventListener(type, handler) {
     documentListeners.set(type, handler);
   }
@@ -169,6 +174,11 @@ global.window = {
 };
 
 global.navigator = global.window.navigator;
+Object.defineProperty(global, 'rkp', {
+  configurable: true,
+  get() { return global.window.rkp; },
+  set(value) { global.window.rkp = value; }
+});
 
 const gaConfig = {
   send_page_view: true,
@@ -219,6 +229,8 @@ const result = {
   effectiveSource: toggle.attrs['data-effective-source'] || null,
   appendedScripts,
   pinQueue: window.pintrk && Array.isArray(window.pintrk.queue) ? window.pintrk.queue : [],
+  rokuQueue: window.rkp && Array.isArray(window.rkp.queue) ? window.rkp.queue.map(normalizeArguments) : [],
+  rokuLoaded: window.rrghAnalyticsRokuLoaded === true,
   dataLayer: (window.dataLayer || []).map(normalizeArguments),
   reloads,
   automaticCountry: window.rrghAutomaticCountry === undefined ? null : window.rrghAutomaticCountry,
