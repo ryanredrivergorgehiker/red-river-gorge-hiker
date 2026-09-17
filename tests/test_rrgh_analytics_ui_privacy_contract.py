@@ -73,12 +73,12 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
     def test_privacy_page_has_required_metadata_anchor_and_final_date(self):
         expected_description = (
             'Privacy information for Red River Gorge Hiker, including RRGH Analytics, '
-            'Google Analytics, Pinterest measurement, shared measurement choices, and '
+            'Google Analytics, Pinterest and Roku advertising measurement, shared measurement choices, and '
             'Pixels / Fine Art America Store processing.'
         )
         self.assertIn(expected_description, PRIVACY)
         self.assertIn('id="privacy-and-analytics"', PRIVACY)
-        self.assertIn('Last updated: September 14, 2026', PRIVACY)
+        self.assertIn('Last updated: September 17, 2026', PRIVACY)
         self.assertNotIn('Pending production approval', PRIVACY)
 
     def test_privacy_page_describes_live_cross_site_preference_sharing(self):
@@ -98,6 +98,9 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
             'Google advertising-related consent states remain denied',
             'does not enable Google Signals',
             'does not enable Pinterest Enhanced Match',
+            'Roku advertising measurement',
+            'Page View event only',
+            'Automatic Advanced Matching are not enabled',
             'Pixels platform analytics operates independently from RRGH Analytics',
             'Turning RRGH Analytics Off does not disable Pixels’ own analytics',
             'does not intentionally send buyer names, postal addresses, phone numbers, email addresses, payment-card information',
