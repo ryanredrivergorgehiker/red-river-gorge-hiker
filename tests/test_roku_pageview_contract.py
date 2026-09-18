@@ -4,6 +4,8 @@ from pathlib import Path
 
 from test_analytics_consent_v2_contract import (
     ANALYTICS,
+    GA_ID,
+    PINTEREST_CORE,
     SHARED_COOKIE,
     UnifiedRrghAnalyticsContract,
 )
@@ -42,7 +44,7 @@ rkp("init","PaccInUJusF8"),rkp('event','PAGE_VIEW');;""")
         self.assertEqual(ANALYTICS.count(f'rkp("init","{ROKU_EVENT_GROUP}")'), 1)
         self.assertEqual(ANALYTICS.count("rkp('event', 'PAGE_VIEW')"), 1)
 
-    def test_effective_on_loads_roku_once_and_queues_one_truthful_page_view(self):
+    def test_us_regional_default_on_loads_roku_once_and_queues_one_truthful_page_view(self):
         result = self.run_scenario(country='United States')
         self.assertTrue(result['rokuLoaded'])
         self.assertEqual(result['appendedScripts'].count(ROKU_LOADER), 1)
@@ -50,6 +52,18 @@ rkp("init","PaccInUJusF8"),rkp('event','PAGE_VIEW');;""")
         self.assertEqual(commands.count(('init', ROKU_EVENT_GROUP)), 1)
         self.assertEqual(commands.count(('event', 'PAGE_VIEW')), 1)
         self.assertNotIn(SHARED_COOKIE, result['cookies'])
+
+    def test_us_explicit_allowed_loads_roku_once_and_queues_one_truthful_page_view(self):
+        result = self.run_scenario(
+            country='United States',
+            cookies={SHARED_COOKIE: 'allowed'},
+        )
+        self.assertEqual(result['effectiveSource'], 'explicit-allowed')
+        self.assertTrue(result['rokuLoaded'])
+        self.assertEqual(result['appendedScripts'].count(ROKU_LOADER), 1)
+        commands = self.commands(result)
+        self.assertEqual(commands.count(('init', ROKU_EVENT_GROUP)), 1)
+        self.assertEqual(commands.count(('event', 'PAGE_VIEW')), 1)
 
     def test_explicit_off_gpc_consent_required_and_fail_closed_never_load_roku(self):
         scenarios = (
@@ -64,6 +78,34 @@ rkp("init","PaccInUJusF8"),rkp('event','PAGE_VIEW');;""")
                 self.assertFalse(result['rokuLoaded'])
                 self.assertNotIn(ROKU_LOADER, result['appendedScripts'])
                 self.assertEqual(result['rokuQueue'], [])
+
+    def test_non_us_explicit_allowed_keeps_main_analytics_on_but_never_loads_roku(self):
+        for country in ('Great Britain', 'Canada'):
+            with self.subTest(country=country):
+                result = self.run_scenario(
+                    country=country,
+                    cookies={SHARED_COOKIE: 'allowed'},
+                )
+                self.assertEqual(result['toggleText'], 'RRGH Analytics: On')
+                self.assertEqual(result['effectiveSource'], 'explicit-allowed')
+                self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
+                self.assertIn(PINTEREST_CORE, result['appendedScripts'])
+                self.assertFalse(result['rokuLoaded'])
+                self.assertNotIn(ROKU_LOADER, result['appendedScripts'])
+                self.assertEqual(result['rokuQueue'], [])
+
+    def test_unresolved_country_with_explicit_allowed_keeps_main_analytics_on_but_never_loads_roku(self):
+        result = self.run_scenario(
+            cookies={SHARED_COOKIE: 'allowed'},
+            cloudflareReject=True,
+        )
+        self.assertEqual(result['toggleText'], 'RRGH Analytics: On')
+        self.assertEqual(result['effectiveSource'], 'explicit-allowed')
+        self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
+        self.assertIn(PINTEREST_CORE, result['appendedScripts'])
+        self.assertFalse(result['rokuLoaded'])
+        self.assertNotIn(ROKU_LOADER, result['appendedScripts'])
+        self.assertEqual(result['rokuQueue'], [])
 
     def test_withdrawal_does_not_queue_a_second_page_view_and_reload_then_stays_off(self):
         withdrawal = self.run_scenario(country='United States', actions=['toggle'])
@@ -100,8 +142,12 @@ rkp("init","PaccInUJusF8"),rkp('event','PAGE_VIEW');;""")
             'is not treated or described as a purchase conversion',
             '“Enable first-party cookies” option and Automatic Advanced Matching are not enabled',
             'does not intentionally send Roku buyer names, email addresses, phone numbers, postal addresses, account identifiers, payment information, form contents, purchase or transaction details, revenue amounts',
-            'prevents the RRGH Roku pixel from loading',
+            'limited to applicable United States website traffic',
+            'only when RRGH Analytics is effectively On and the resolved governing country is the United States',
+            'including a consent-required jurisdiction even after an explicit RRGH Analytics Allowed choice',
+            'any unresolved regional state also prevents the Roku pixel from loading',
             'that regional default does not create an affirmative consent record',
+            'does not change GA4 or Pinterest behavior or the shared RRGH Analytics preference',
         )
         for phrase in required:
             with self.subTest(phrase=phrase):

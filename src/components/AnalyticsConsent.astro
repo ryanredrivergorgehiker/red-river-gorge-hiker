@@ -84,6 +84,9 @@ const gaConfig = {
       'united states of america': 1
     };
     const approvedDefaultOnCodes = { 'us': 1 };
+    const isUnitedStatesCountry = (country) => Boolean(
+      approvedDefaultOn[country] || approvedDefaultOnCodes[country]
+    );
 
     const toggleControls = Array.from(document.querySelectorAll('[data-rrgh-analytics-toggle]'));
     let effectiveOn = false;
@@ -286,11 +289,30 @@ const gaConfig = {
       // End Roku Pixel Code
     };
 
+    const loadRokuForUnitedStates = async () => {
+      if (rokuLoaded || !effectiveOn || privacySignalRequiresOff()) return;
+
+      let country = normalizeCountrySignal(window.rrghAutomaticCountry);
+      if (!country) {
+        try {
+          const resolved = await determineAutomaticCountry();
+          country = resolved.country;
+          window.rrghAutomaticCountry = country;
+          window.rrghAutomaticCountrySource = resolved.source;
+        } catch {
+          return;
+        }
+      }
+
+      if (!effectiveOn || privacySignalRequiresOff() || !isUnitedStatesCountry(country)) return;
+      loadRoku();
+    };
+
     const turnMeasurementOn = (source) => {
       showEffectiveState(true, source);
       loadGoogleAnalytics();
       loadPinterest();
-      loadRoku();
+      void loadRokuForUnitedStates();
     };
 
     const turnMeasurementOff = (source, cleanup) => {

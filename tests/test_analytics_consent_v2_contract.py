@@ -359,7 +359,9 @@ class UnifiedRrghAnalyticsContract(unittest.TestCase):
         self.assertEqual(result['effectiveSource'], 'explicit-allowed')
         self.assertTrue(any(GA_ID in url for url in result['appendedScripts']))
         self.assertIn(PINTEREST_CORE, result['appendedScripts'])
-        self.assertEqual(result['fetches'], [])
+        self.assertFalse(result['rokuLoaded'])
+        self.assertEqual(len(result['fetches']), 1)
+        self.assertEqual(result['fetches'][0]['url'], CLOUDFLARE_TRACE)
 
     def test_shared_decline_overrides_us_regional_default(self):
         result = self.run_scenario(country='United States', cookies={SHARED_COOKIE: 'declined'})
