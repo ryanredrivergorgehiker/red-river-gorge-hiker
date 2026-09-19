@@ -58,7 +58,7 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn("Ryan's story",about)
         self.assertIn('The goal is not to make one person the center of the story.',about)
         self.assertIn('Red River Gorge Hiker | Explore the Gorge, Art & Gear',home)
-        self.assertIn("Explore Kentucky’s Red River Gorge with stories, maps, landforms, trails, camping, safety and search-and-rescue resources, plus photography, art and gear.",home)
+        self.assertIn("Explore Kentucky's Red River Gorge with stories, maps, landforms, trails, camping, safety and search-and-rescue resources, plus photography, art and gear.",home)
 
     def test_commerce_and_measurement_boundaries_are_not_reauthored(self):
         products=read('src/data/products.ts')
