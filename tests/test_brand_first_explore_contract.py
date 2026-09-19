@@ -69,6 +69,7 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn('data-story-image-placeholder',story_page)
         self.assertNotIn("import Artwork from",story_page)
         self.assertIn('search-and-rescue/#hiking-safety',story_page)
+        explore=read('src/data/explore.ts')
         self.assertIn('search-and-rescue/#hiking-safety',explore)
 
     def test_brand_contact_footer_about_and_home_metadata(self):

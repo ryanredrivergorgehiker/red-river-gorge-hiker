@@ -114,7 +114,8 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertIn('https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html', HEADER)
         self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }", PHOTO_DETAIL)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }", PHOTO_DETAIL)
-        self.assertIn('photo.copyrightNotice', PHOTO_DETAIL)
+        self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.', PHOTO_DETAIL)
+        self.assertIn('copyrightNotice', PRODUCTS)
 
 
 if __name__ == '__main__':
