@@ -13,12 +13,14 @@ GEAR_URL_SOURCES = GEAR_CATALOG + MERCH
 
 
 class ShopNavigationContractTests(unittest.TestCase):
-    def test_primary_header_uses_wall_art_shop_stories_about(self):
+    def test_primary_header_uses_wall_art_shop_explore_about(self):
         self.assertEqual(HEADER.count('Wall Art <span class="nav-caret"'), 2)
         self.assertEqual(HEADER.count('Shop <span class="nav-caret"'), 2)
         self.assertNotIn('Photography <span class="nav-caret"', HEADER)
-        self.assertIn("['Stories', '/exploring-the-gorge/']", HEADER)
+        self.assertEqual(HEADER.count('Explore <span class="nav-caret"'), 2)
         self.assertIn("['About', '/about/']", HEADER)
+        self.assertIn('EXPLORE ALL', HEADER)
+        self.assertIn("import { exploreSections } from '../data/explore';", HEADER)
         self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
         self.assertNotIn("['Gear','/gear/']", HEADER)
 

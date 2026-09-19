@@ -122,6 +122,19 @@ class SarContract(unittest.TestCase):
         self.assertIn('Download 2026 DBNF dispersed camping guide', SAR_PAGE)
         self.assertIn('downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', SAR_PAGE)
 
+    def test_greater_gorge_regional_context_preserves_wcsart_only_economics(self):
+        self.assertIn('Search &amp; Rescue Across the Greater Red River Gorge', SAR_PAGE)
+        self.assertIn('Powell County Search &amp; Rescue', SAR_PAGE)
+        self.assertIn('Menifee County', SAR_PAGE)
+        self.assertIn('Lee County', SAR_PAGE)
+        self.assertIn('Kentucky Emergency Management Search &amp; Rescue', SAR_PAGE)
+        self.assertIn('RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.', SAR_PAGE)
+        self.assertIn("powellSar: 'https://www.pocosar.org/'", SAR_DATA)
+        self.assertIn("kyemSar: 'https://www.kyem.ky.gov/operations-programs/search-and-rescue'", SAR_DATA)
+        self.assertNotIn('20% of RRGH business profit is allocated to Powell', SAR_PAGE)
+        self.assertNotIn('20% of RRGH business profit is allocated to Menifee', SAR_PAGE)
+        self.assertNotIn('20% of RRGH business profit is allocated to Lee', SAR_PAGE)
+
     def test_no_wcsart_brand_asset_is_committed(self):
         public_files = [str(path).lower() for path in (ROOT / 'public').rglob('*') if path.is_file()]
         self.assertFalse(any('wcsart' in path or 'wolfe-county-search' in path for path in public_files))

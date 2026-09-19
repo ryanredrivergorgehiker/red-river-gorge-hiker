@@ -5,13 +5,13 @@ import { photographs } from '../data/products';
 ---
 <Base
   title="Photography"
-  description="Original photography from Kentucky’s Red River Gorge and Clifty Wilderness by Ryan D. Lewis."
+  description="Selected photography from Kentucky’s Red River Gorge, Clifty Wilderness, and surrounding wild country."
 >
   <div class="page catalog-page">
     <h1>Photography</h1>
     <div class="prose-wide">
-      <p class="lede">Original photographs from Kentucky’s Red River Gorge and Clifty Wilderness.</p>
-      <p>Open any photograph to see the full image, its story, capture details, and available wall-art or puzzle options.</p>
+      <p class="lede">Selected photography from Kentucky’s Red River Gorge, Clifty Wilderness, and surrounding wild country.</p>
+      <p>Open any work to see its creator, story, capture details, and available wall-art or puzzle options.</p>
     </div>
     <div class="grid collection-mosaic">
       {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}

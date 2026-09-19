@@ -16,12 +16,12 @@ def visible(path: str) -> str:
 class LlcWebsiteTransitionStagingContract(unittest.TestCase):
     def test_footer_exact_operator_credit(self):
         text = read("src/components/Footer.astro")
-        self.assertIn("<strong>© Red River Gorge Hiker, LLC.</strong>", text)
-        self.assertIn("<span>All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
+        self.assertIn("<strong>© Red River Gorge Hiker, LLC. All rights reserved.</strong>", text)
+        self.assertNotIn("Photographs © Ryan D. Lewis.", text)
         self.assertNotIn("Operated by Red River Gorge Hiker, LLC.", text)
         self.assertNotIn("<span>© Red River Gorge Hiker, LLC. All rights reserved. Photographs © Ryan D. Lewis.</span>", text)
         self.assertNotIn("<span>© Ryan D. Lewis. All rights reserved.</span>", text)
-        self.assertIn('href="mailto:Ryan@RedRiverGorgeHiker.com"', text)
+        self.assertIn('href="mailto:Info@RedRiverGorgeHiker.com"', text)
         self.assertIn("Privacy & Analytics", text)
         self.assertIn("privacy/#privacy-and-analytics", text)
         self.assertNotIn("Analytics choices", text)
@@ -34,9 +34,9 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         photo = read("src/pages/photographs/[slug].astro")
         self.assertIn("copyrightHolder: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' }", base)
         self.assertIn("publisher: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' }", base)
-        self.assertIn("creator: { '@type': 'Person', name: 'Ryan D. Lewis' }", photo)
-        self.assertIn("copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }", photo)
-        self.assertIn("Photographs © Ryan D. Lewis. All rights reserved.", photo)
+        self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }", photo)
+        self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }", photo)
+        self.assertIn("photo.copyrightNotice", photo)
         self.assertNotIn("Red River Gorge Hiker, LLC", photo)
 
     def test_copyright_and_terms_exact_llc_language(self):
@@ -45,7 +45,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
             "RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. Ryan D. Lewis is the photographer behind the original Red River Gorge Hiker photography and personally retains the copyrights in his photographs.",
             "Photographs displayed on RedRiverGorgeHiker.com that are identified as photography by Ryan D. Lewis are copyrighted and owned by Ryan D. Lewis unless expressly stated otherwise. Formation and operation of Red River Gorge Hiker, LLC does not transfer ownership of those photograph copyrights to the LLC.",
             "The Red River Gorge Hiker website, its written material, graphics, branding elements, layouts, and other content may also be protected by copyright, trademark, or other applicable intellectual-property laws. Nothing on this website should be interpreted as granting a license to copy, reproduce, publish, sell, adapt, distribute, display, or otherwise reuse protected material except as expressly permitted in writing or as independently allowed by applicable law.",
-            "© Red River Gorge Hiker, LLC. All rights reserved. Photographs © Ryan D. Lewis. All rights reserved.",
+            "© Red River Gorge Hiker, LLC. All rights reserved. Creator-specific copyright notices are identified with the applicable work.",
             "You are welcome to view the site and share links to its public pages. Copying, reproducing, publishing, selling, adapting, distributing, displaying, or otherwise reusing photographs or other protected material requires prior written permission unless applicable law independently permits the use.",
             "Purchasing a print, puzzle, gear item, greeting card, or other physical product does not transfer copyright, reproduction rights, or any other intellectual-property rights in the underlying photograph, artwork, branding, or other protected material.",
             "Red River Gorge Hiker, LLC, operating under the Red River Gorge Hiker brand, makes no representation or warranty that any location shown or discussed on the website is currently accessible, publicly accessible, safe, accurately described, or suitable for any particular visitor.",
@@ -66,8 +66,8 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertNotIn("Last updated: Pending production approval", text)
         self.assertIn("RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. It is a static photography and outdoor-interest website. It does not create visitor accounts, run its own online shopping cart, or directly collect payment-card information.", text)
         self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Red River Gorge Hiker measurement tools are described below.", text)
-        self.assertIn("If you email Ryan at Ryan@RedRiverGorgeHiker.com, the information you choose to provide may be retained by Red River Gorge Hiker, LLC when reasonably useful for responding to your message, administering the business, or maintaining ordinary business records.", text)
-        self.assertIn("Privacy questions may be sent to Ryan@RedRiverGorgeHiker.com.", text)
+        self.assertIn("If you email Red River Gorge Hiker at Info@RedRiverGorgeHiker.com, the information you choose to provide may be retained by Red River Gorge Hiker, LLC when reasonably useful for responding to your message, administering the business, or maintaining ordinary business records.", text)
+        self.assertIn("Privacy questions may be sent to Info@RedRiverGorgeHiker.com.", text)
         self.assertIn("RRGH Analytics may be On by default", text)
         self.assertIn("RRGH Analytics remains Off until the visitor affirmatively turns it On", text)
         self.assertIn("Pixels platform analytics operates independently from RRGH Analytics", text)
@@ -78,14 +78,14 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         contact = read("src/pages/contact.astro")
         permissions = read("src/pages/photography-use-and-permissions.astro")
         self.assertIn("Red River Gorge Hiker is operated by Red River Gorge Hiker, LLC.", about)
-        self.assertIn("Red River Gorge Hiker was founded by <strong>Ryan D. Lewis</strong>, a photographer, hiker, backpacker, and backcountry explorer", about)
-        self.assertIn("Red River Gorge Hiker is operated by Red River Gorge Hiker, LLC. Ryan D. Lewis remains the photographer and the contact for photography, image-use, and general Red River Gorge Hiker inquiries.", contact)
-        self.assertIn("Ryan@RedRiverGorgeHiker.com", contact)
+        self.assertIn("Red River Gorge Hiker grew from years spent hiking, backpacking, photographing, and exploring", about)
+        self.assertIn("General public inquiries are handled through the brand’s information address.", contact)
+        self.assertIn("Info@RedRiverGorgeHiker.com", contact)
         self.assertIn("Store orders", contact)
-        self.assertIn("Photographs on Red River Gorge Hiker are copyrighted by Ryan D. Lewis.", permissions)
-        self.assertIn("Red River Gorge Hiker, LLC operates the Red River Gorge Hiker website and business, but ownership of Ryan D. Lewis's photograph copyrights remains with Ryan D. Lewis.", permissions)
-        self.assertIn("Permission is only granted when Ryan confirms it in writing.", permissions)
-        self.assertIn("Ryan@RedRiverGorgeHiker.com", permissions)
+        self.assertIn("Current photographs identified as photography by Ryan D. Lewis remain copyrighted by Ryan D. Lewis", permissions)
+        self.assertIn("the website does not transfer those copyrights to the LLC", permissions)
+        self.assertIn("Permission must be granted in writing by the applicable copyright holder or authorized rights representative.", permissions)
+        self.assertIn("Info@RedRiverGorgeHiker.com", permissions)
 
     def test_sar_business_personal_split_without_financial_logic_changes(self):
         text = visible("src/pages/search-and-rescue.astro")

@@ -18,7 +18,7 @@ const reviewed = new Intl.DateTimeFormat('en-US', {
   day: 'numeric'
 }).format(new Date(`${sarContentReview.campingRules}T12:00:00`));
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
-const pageDescription = 'Red River Gorge search and rescue support, hiking safety, official camping-rule links, maps, preparedness resources, current-condition links, and the Red River Gorge Hiker SAR Match-O-Meter.';
+const pageDescription = 'Search and rescue across the greater Red River Gorge region, including regional response context, hiking safety, preparedness, official resources, and Red River Gorge Hiker support for Wolfe County Search & Rescue.';
 
 const webPageSchema = {
   '@context': 'https://schema.org',
@@ -35,6 +35,8 @@ const webPageSchema = {
   about: [
     { '@type': 'Thing', name: 'Red River Gorge hiking safety' },
     { '@type': 'Thing', name: 'Wolfe County Search & Rescue' },
+    { '@type': 'Thing', name: 'Powell County Search & Rescue' },
+    { '@type': 'Thing', name: 'Kentucky Emergency Management Search & Rescue' },
     { '@type': 'Thing', name: 'Red River Gorge backcountry camping' }
   ]
 };
@@ -235,6 +237,23 @@ const conditionCards = [
           <a class="sar-button sar-button-orange" href={sarLinks.donate} target="_blank" rel="noopener noreferrer">Donate directly to Wolfe County SAR ↗</a>
         </div>
       </div>
+    </section>
+
+    <section class="sar-resources sar-shell" aria-labelledby="regional-sar-title">
+      <div class="sar-section-heading sar-section-heading-wide">
+        <p class="sar-section-kicker">Greater Gorge response context</p>
+        <h2 id="regional-sar-title">Search &amp; Rescue Across the Greater Red River Gorge</h2>
+        <p>The Red River Gorge region crosses county and land-management boundaries. Emergency response can involve county emergency management, law enforcement, fire/EMS, volunteer search-and-rescue resources, neighboring teams, Kentucky Emergency Management, Kentucky State Police, and mutual aid depending on the incident and jurisdiction.</p>
+        <p><strong>RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.</strong> The broader resources below are educational context and do not create or imply an RRGH profit allocation, partnership, sponsorship, or endorsement involving another agency or county.</p>
+      </div>
+      <div class="sar-resource-grid">
+        <article class="sar-resource-card"><span>Wolfe County</span><h3>Wolfe County Search &amp; Rescue</h3><p>WCSART remains the primary search-and-rescue organization supported by Red River Gorge Hiker through the existing 20%-of-positive-business-profit commitment.</p><a href={sarLinks.wcsart} target="_blank" rel="noopener noreferrer">Visit WCSART ↗</a></article>
+        <article class="sar-resource-card"><span>Powell County</span><h3>Powell County Search &amp; Rescue</h3><p>Powell County Search &amp; Rescue is a legitimate Gorge-area rescue resource. This informational link does not change RRGH’s WCSART support commitment.</p><a href={sarLinks.powellSar} target="_blank" rel="noopener noreferrer">Visit Powell County SAR ↗</a></article>
+        <article class="sar-resource-card"><span>Menifee County</span><h3>County and mutual-aid response</h3><p>RRGH does not represent Menifee County as having an organizationally identical dedicated SAR team without authoritative evidence. County public-safety response and mutual aid can coordinate with regional and state resources as circumstances require.</p><a href={sarLinks.menifeeCountyGovernment} target="_blank" rel="noopener noreferrer">Menifee County government contacts ↗</a></article>
+        <article class="sar-resource-card"><span>Lee County</span><h3>Emergency management and mutual aid</h3><p>Lee County’s official county site identifies an Emergency Management Director. Regional incidents may involve county public-safety resources, neighboring teams, and state coordination as appropriate.</p><a href={sarLinks.leeCountyEmergencyManagement} target="_blank" rel="noopener noreferrer">Lee County emergency-management contact ↗</a></article>
+        <article class="sar-resource-card"><span>Kentucky statewide</span><h3>Kentucky Emergency Management Search &amp; Rescue</h3><p>Kentucky Emergency Management provides statewide search-and-rescue coordination and works with local emergency-management systems. County emergency managers are frontline coordinators for local response resources.</p><a href={sarLinks.kyemSar} target="_blank" rel="noopener noreferrer">Kentucky Emergency Management SAR ↗</a></article>
+      </div>
+      <p class="sar-source-note">Kentucky Emergency Management area-office information places Menifee County in Area 7, Wolfe County in Area 8, and Lee and Powell counties in Area 9. Organizational structures and incident response vary; this page does not claim all four counties maintain identical SAR units.</p>
     </section>
 
     <section class="sar-prep sar-shell" aria-labelledby="prep-title">
