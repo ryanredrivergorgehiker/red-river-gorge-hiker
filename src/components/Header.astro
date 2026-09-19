@@ -1,6 +1,7 @@
 ---
 import SarMatchMeter from './SarMatchMeter.astro';
 import { photographs } from '../data/products';
+import { exploreSections } from '../data/explore';
 
 const base = import.meta.env.BASE_URL;
 const path = Astro.url.pathname;
@@ -72,7 +73,6 @@ const shopSections = [
 ] as const;
 
 const primaryLinks = [
-  ['Stories', '/exploring-the-gorge/'],
   ['About', '/about/']
 ] as const;
 
@@ -82,6 +82,10 @@ const relativePath = base !== '/' && path.startsWith(base)
 const isIn = (prefix: string) => relativePath === prefix || relativePath.startsWith(prefix);
 const wallArtActive = isIn('/photography/') || isIn('/photographs/');
 const shopActive = isIn('/gear/') || isIn('/puzzles/');
+const exploreActive = isIn('/explore/') || isIn('/stories/') || isIn('/exploring-the-gorge/') || isIn('/search-and-rescue/');
+
+const exploreHref = (href: string) =>
+  href.startsWith('/') ? `${base}${href.slice(1)}` : href;
 ---
 <header class="site-header">
   <a class="skip" href="#main">Skip to content</a>
@@ -182,6 +186,45 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
             </div>
           </details>
         </li>
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-explore">
+            <summary class:list={['nav-trigger', { 'is-active': exploreActive }]} aria-current={exploreActive ? 'page' : undefined}>
+              Explore <span class="nav-caret" aria-hidden="true"></span>
+            </summary>
+            <div class="nav-panel nav-panel-explore">
+              <p class="nav-section-title nav-explore-title">Explore the Gorge</p>
+              <ul class="nav-submenu nav-explore-choices nav-wall-art-choices">
+                {exploreSections.map((section) => (
+                  <li class="nav-wall-art-choice nav-explore-choice">
+                    <details class="nav-wall-art-choice-details nav-explore-choice-details">
+                      <summary class="nav-wall-art-choice-trigger nav-explore-choice-trigger">
+                        <span>{section.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                      </summary>
+                      <div class="nav-wall-art-flyout nav-explore-flyout">
+                        <p class="nav-explore-description">{section.description}</p>
+                        <ul class="nav-submenu nav-explore-links">
+                          {section.links.map((link) => (
+                            <li>
+                              <a
+                                href={exploreHref(link.href)}
+                                target={link.external ? '_blank' : undefined}
+                                rel={link.external ? 'noopener noreferrer' : undefined}
+                                download={link.download ? true : undefined}
+                              >
+                                {link.label}{link.external ? ' ↗' : ''}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+              <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
+            </div>
+          </details>
+        </li>
         {primaryLinks.map(([label, href]) => (
           <li><a href={`${base}${href.slice(1)}`} aria-current={relativePath === href ? 'page' : undefined}>{label}</a></li>
         ))}
@@ -263,6 +306,45 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
             </div>
           </details>
         </li>
+        <li class="nav-dropdown-item">
+          <details class="nav-details nav-details-explore">
+            <summary class:list={['nav-trigger', { 'is-active': exploreActive }]} aria-current={exploreActive ? 'page' : undefined}>
+              Explore <span class="nav-caret" aria-hidden="true"></span>
+            </summary>
+            <div class="nav-panel nav-panel-explore">
+              <p class="nav-section-title nav-explore-title">Explore the Gorge</p>
+              <ul class="nav-submenu nav-explore-choices nav-wall-art-choices">
+                {exploreSections.map((section) => (
+                  <li class="nav-wall-art-choice nav-explore-choice">
+                    <details class="nav-wall-art-choice-details nav-explore-choice-details">
+                      <summary class="nav-wall-art-choice-trigger nav-explore-choice-trigger">
+                        <span>{section.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
+                      </summary>
+                      <div class="nav-wall-art-flyout nav-explore-flyout">
+                        <p class="nav-explore-description">{section.description}</p>
+                        <ul class="nav-submenu nav-explore-links">
+                          {section.links.map((link) => (
+                            <li>
+                              <a
+                                href={exploreHref(link.href)}
+                                target={link.external ? '_blank' : undefined}
+                                rel={link.external ? 'noopener noreferrer' : undefined}
+                                download={link.download ? true : undefined}
+                              >
+                                {link.label}{link.external ? ' ↗' : ''}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+              <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
+            </div>
+          </details>
+        </li>
         {primaryLinks.map(([label, href]) => (
           <li><a href={`${base}${href.slice(1)}`} aria-current={relativePath === href ? 'page' : undefined}>{label}</a></li>
         ))}
@@ -285,7 +367,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   };
 
   const openWallArtChoice = (choice: HTMLDetailsElement) => {
-    const panel = choice.closest('.nav-panel-wall-art');
+    const panel = choice.closest('.nav-panel');
     panel?.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((other) => {
       if (other !== choice) other.open = false;
     });
@@ -313,7 +395,7 @@ const shopActive = isIn('/gear/') || isIn('/puzzles/');
   wallArtChoices.forEach((choice) => {
     choice.addEventListener('toggle', () => {
       if (!choice.open) return;
-      const panel = choice.closest('.nav-panel-wall-art');
+      const panel = choice.closest('.nav-panel');
       panel?.querySelectorAll<HTMLDetailsElement>('.nav-wall-art-choice-details').forEach((other) => {
         if (other !== choice) other.open = false;
       });

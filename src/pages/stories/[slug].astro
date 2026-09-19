@@ -1,0 +1,54 @@
+---
+import Base from '../../layouts/Base.astro';
+import Artwork from '../../components/Artwork.astro';
+import { stories } from '../../data/stories';
+import { bySlug } from '../../data/products';
+
+export function getStaticPaths(){
+  return stories.map((story)=>({params:{slug:story.slug},props:{story}}));
+}
+const {story}=Astro.props;
+const base=import.meta.env.BASE_URL;
+const relatedPhoto=bySlug(story.relatedPhotoSlug);
+const canonical=new URL(Astro.url.pathname,Astro.site ?? Astro.url.origin).href;
+const schema={
+  '@context':'https://schema.org',
+  '@type':'Article',
+  headline:story.title,
+  author:{'@type':'Person',name:story.authorName},
+  mainEntityOfPage:canonical,
+  publisher:{'@type':'Organization',name:'Red River Gorge Hiker, LLC'}
+};
+---
+<Base title={story.title} description={story.summary} ogType="article">
+  <article class="page story-detail-page">
+    <p class="eyebrow">Red River Gorge Hiker Story</p>
+    <h1>{story.title}</h1>
+    <p class="story-byline">Story by {story.authorName}</p>
+    <p class="lede">{story.summary}</p>
+    {relatedPhoto && (
+      <div class="story-image">
+        <Artwork title={relatedPhoto.title} catalogId={relatedPhoto.catalogId} alt={relatedPhoto.altText} creatorName={relatedPhoto.creatorName} showCaption={true}/>
+      </div>
+    )}
+    <div class="prose story-longform">
+      {story.paragraphs.map((paragraph)=><p set:html={paragraph}/>)}
+    </div>
+    <aside class="story-related">
+      <h2>Keep exploring</h2>
+      <div class="actions">
+        <a class="button secondary" href={`${base}explore/`}>Explore resources</a>
+        <a class="button secondary" href={`${base}stories/`}>All stories</a>
+        {relatedPhoto && <a class="button" href={`${base}photographs/${relatedPhoto.slug}/`}>Related photograph</a>}
+      </div>
+    </aside>
+  </article>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
+</Base>
+<style>
+  .story-detail-page{max-width:var(--content);}
+  .story-byline{font-weight:700;color:var(--pine);}
+  .story-image{max-width:60rem;margin:2rem 0;}
+  .story-longform{max-width:var(--reading);}
+  .story-related{max-width:var(--reading);margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--line);}
+</style>

@@ -22,6 +22,7 @@ interface Props {
   socialImageWidth?: number;
   socialImageHeight?: number;
   ogType?: string;
+  canonicalPath?: string;
 }
 
 const {
@@ -34,11 +35,15 @@ const {
   socialImageAlt = 'Double rainbow above the Red River Gorge after a summer storm.',
   socialImageWidth,
   socialImageHeight,
-  ogType = 'website'
+  ogType = 'website',
+  canonicalPath
 } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const fullTitle = titleTag ?? `${title} | Red River Gorge Hiker`;
 const base = import.meta.env.BASE_URL;
+const canonicalRoute = canonicalPath
+  ? `${base}${canonicalPath.replace(/^\\/+/, '')}`
+  : Astro.url.pathname;
+const canonical = new URL(canonicalRoute, Astro.site ?? Astro.url.origin);
+const fullTitle = titleTag ?? `${title} | Red River Gorge Hiker`;
 const resolvedSocialImagePath = socialImagePath ?? `assets/social/${socialImage}`;
 const socialImageType = suppliedSocialImageType
   ?? (resolvedSocialImagePath.endsWith('.avif') ? 'image/avif'
@@ -93,7 +98,7 @@ if (socialImageType === 'image/jpeg' && (!resolvedSocialImageWidth || !resolvedS
   resolvedSocialImageHeight = dimensions.height;
 }
 
-const schema = {
+const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'Red River Gorge Hiker',
@@ -105,6 +110,19 @@ const schema = {
   ],
   copyrightHolder: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' },
   publisher: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' }
+};
+
+const webPageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: fullTitle,
+  description,
+  url: canonical.href,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Red River Gorge Hiker',
+    url: Astro.site?.toString()
+  }
 };
 ---
 <!doctype html>
@@ -134,7 +152,8 @@ const schema = {
     <meta name="twitter:url" content={canonical} />
     <meta name="twitter:image" content={socialImageUrl.href} />
     <meta name="twitter:image:alt" content={socialImageAlt} />
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)}></script>
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(websiteSchema)}></script>
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(webPageSchema)}></script>
   </head>
   <body>
     <RrghAnalyticsBar />
