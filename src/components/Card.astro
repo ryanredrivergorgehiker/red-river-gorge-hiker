@@ -22,11 +22,8 @@ const sizes = featured
       alt={photo.altText}
       sizes={sizes}
       showCaption={false}
-      creatorName={photo.creatorName}
-      creatorRole={photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole}
     />
     <h3>{photo.title}</h3>
-    <p class="card-creator">{photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole} by {photo.creatorName}</p>
     {showDescription && <p>{photo.shortDescription}</p>}
   </a>
 </article>

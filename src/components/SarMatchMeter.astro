@@ -21,10 +21,10 @@ const target = currency.format(sar.personalAnnualCommitment);
 const exceeded = sar.matchPercentage > 100;
 const achieved = sar.matchPercentage >= 100;
 const stateLabel = exceeded
-  ? `${generated} generated · match goal surpassed`
+  ? `${generated} generated · annual commitment surpassed`
   : achieved
-    ? `Match achieved · ${generated} generated for SAR`
-    : `${generated} of ${target} matched · ${sar.matchPercentage.toFixed(0)}%`;
+    ? `Annual commitment reached · ${generated} generated for SAR`
+    : `${generated} of ${target} commitment · ${sar.matchPercentage.toFixed(0)}%`;
 const headerPrimary = 'Walk the path with us.';
 const headerDetail = 'Support the people who answer the call.';
 const displayStateLabel = variant === 'header' ? `${headerPrimary} ${headerDetail}` : stateLabel;
@@ -45,11 +45,11 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       {variant === 'header' ? (
         <><strong data-sar-meter-primary>{headerPrimary}</strong><span data-sar-meter-detail>{headerDetail}</span></>
       ) : exceeded ? (
-        <><strong data-sar-meter-primary>{generated} generated</strong><span data-sar-meter-detail>Match goal surpassed</span></>
+        <><strong data-sar-meter-primary>{generated} generated</strong><span data-sar-meter-detail>Annual commitment surpassed</span></>
       ) : achieved ? (
-        <><strong data-sar-meter-primary>Match achieved</strong><span data-sar-meter-detail>{generated} generated for SAR</span></>
+        <><strong data-sar-meter-primary>Annual commitment reached</strong><span data-sar-meter-detail>{generated} generated for SAR</span></>
       ) : (
-        <><strong data-sar-meter-primary>RRGH Match: {generated} / {target}</strong><span data-sar-meter-detail>{sar.matchPercentage.toFixed(0)}% of annual milestone</span></>
+        <><strong data-sar-meter-primary>RRGH commitment: {generated} / {target}</strong><span data-sar-meter-detail>{sar.matchPercentage.toFixed(0)}% of annual commitment</span></>
       )}
     </span>
   </span>
@@ -80,7 +80,7 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
     )}
   </span>
 
-  <span class="sar-meter-action">{variant === 'full' ? 'Explore the SAR commitment' : 'SAR details'} <span aria-hidden="true">→</span></span>
+  <span class="sar-meter-action">{variant === 'full' ? 'View the SAR commitment' : 'SAR details'} <span aria-hidden="true">→</span></span>
 </a>
 
 <script is:inline define:vars={{ sarFeedUrl: SAR_PUBLIC_CSV_URL, sarFallback: sar, requiredSarFields: SAR_PUBLIC_FIELDS, mobileHero }}>
@@ -239,15 +239,12 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       }
 
       page.querySelectorAll('.sar-path-number').forEach((node) => node.remove());
-      const historicalStory = page.querySelector('.sar-story-copy > p:first-child');
-      if (historicalStory && historicalStory.textContent.includes('personally supported Wolfe County')) historicalStory.remove();
-
       const match = page.querySelector('#sar-match');
       if (!match) return;
       const kicker = match.querySelector('.sar-section-heading .sar-section-kicker');
       if (kicker) kicker.textContent = `${data.reportingYear} public reporting`;
       const matchIntro = match.querySelector('.sar-section-heading > p:last-child');
-      if (matchIntro) matchIntro.textContent = `The ${formatCurrency(data.personalAnnualCommitment)} target is a milestone, not a cap. RRGH support keeps accumulating when the match is reached or exceeded.`;
+      if (matchIntro) matchIntro.textContent = `The ${formatCurrency(data.personalAnnualCommitment)} RRGH annual commitment is a milestone, not a cap. RRGH support keeps accumulating when the milestone is reached or exceeded.`;
 
       const stats = match.querySelectorAll('#sar-match-details .sar-stat');
       const statValues = [
@@ -263,7 +260,7 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
         if (strong && Number.isFinite(statValues[index])) strong.textContent = formatCurrency(statValues[index]);
       });
       const generatedNote = stats[1]?.querySelector('small');
-      if (generatedNote) generatedNote.textContent = `${data.matchPercentage.toFixed(1)}% of the annual match milestone`;
+      if (generatedNote) generatedNote.textContent = `${data.matchPercentage.toFixed(1)}% of the annual commitment`;
 
       const lifetime = match.querySelectorAll('.sar-lifetime-grid p');
       if (lifetime[0]?.querySelector('strong')) lifetime[0].querySelector('strong').textContent = formatCurrency(data.lifetimePersonalSupport);

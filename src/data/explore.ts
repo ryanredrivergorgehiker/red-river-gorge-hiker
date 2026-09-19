@@ -21,8 +21,7 @@ export const exploreSections: ExploreSection[] = [
     title: 'Stories',
     description: 'First-hand RRGH stories from the Gorge, Clifty Wilderness, and the Sheltowee Trace.',
     links: [
-      ...stories.map((story) => ({ label: story.title, href: `/stories/${story.slug}/` })),
-      { label: 'View All Stories', href: '/stories/' }
+      ...stories.map((story) => ({ label: story.title, href: `/stories/${story.slug}/` }))
     ]
   },
   {
@@ -33,7 +32,6 @@ export const exploreSections: ExploreSection[] = [
       { label: 'Search & Rescue overview', href: '/search-and-rescue/' },
       { label: 'Wolfe County Search & Rescue', href: 'https://wcsart.com/', external: true },
       { label: 'Powell County Search & Rescue', href: 'https://www.pocosar.org/', external: true },
-      { label: 'Kentucky Emergency Management — Search & Rescue', href: 'https://www.kyem.ky.gov/operations-programs/search-and-rescue', external: true },
       { label: 'Hiking preparedness & safety', href: '/search-and-rescue/#prep-title' },
       { label: 'Donate directly to Wolfe County SAR', href: 'https://wcsart.com/donate/', external: true }
     ]

@@ -87,7 +87,7 @@ class SarContract(unittest.TestCase):
         self.assertIn('data.matchPercentage > 100', SAR_METER)
         self.assertIn('data.matchPercentage >= 100', SAR_METER)
         self.assertIn('Math.min(Math.max(data.matchPercentage, 0), 100)', SAR_METER)
-        self.assertIn('Match goal surpassed', SAR_METER)
+        self.assertIn('Annual commitment surpassed', SAR_METER)
         self.assertIn('milestone, not a cap', SAR_PAGE)
 
     def test_requested_uat_polish_is_encoded(self):
@@ -100,7 +100,7 @@ class SarContract(unittest.TestCase):
         self.assertIn('grid-template-columns: auto minmax(0, 1fr)', SAR_POLISH)
         self.assertIn('sar-mobile-hero-ready', SAR_POLISH)
         self.assertIn("page.querySelectorAll('.sar-path-number').forEach((node) => node.remove())", SAR_METER)
-        self.assertIn("historicalStory.remove()", SAR_METER)
+        self.assertNotIn("historicalStory.remove()", SAR_METER)
 
     def test_direct_wcsart_support_is_prominent_and_external(self):
         self.assertIn("donate: 'https://wcsart.com/donate/'", SAR_DATA)
@@ -127,13 +127,17 @@ class SarContract(unittest.TestCase):
         self.assertIn('Powell County Search &amp; Rescue', SAR_PAGE)
         self.assertIn('Menifee County', SAR_PAGE)
         self.assertIn('Lee County', SAR_PAGE)
-        self.assertIn('Kentucky Emergency Management Search &amp; Rescue', SAR_PAGE)
+        self.assertNotIn('Kentucky Emergency Management Search &amp; Rescue', SAR_PAGE)
         self.assertIn('RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.', SAR_PAGE)
+        self.assertIn('RRGH annual commitment', SAR_PAGE)
+        self.assertNotIn('Ryan', SAR_PAGE)
         self.assertIn("powellSar: 'https://www.pocosar.org/'", SAR_DATA)
-        self.assertIn("kyemSar: 'https://www.kyem.ky.gov/operations-programs/search-and-rescue'", SAR_DATA)
+        self.assertNotIn('kyemSar:', SAR_DATA)
         self.assertNotIn('20% of RRGH business profit is allocated to Powell', SAR_PAGE)
         self.assertNotIn('20% of RRGH business profit is allocated to Menifee', SAR_PAGE)
         self.assertNotIn('20% of RRGH business profit is allocated to Lee', SAR_PAGE)
+        sar_css = (ROOT / 'src/styles/sar.css').read_text()
+        self.assertIn('.sar-regional-resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }', sar_css)
 
     def test_no_wcsart_brand_asset_is_committed(self):
         public_files = [str(path).lower() for path in (ROOT / 'public').rglob('*') if path.is_file()]

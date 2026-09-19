@@ -117,9 +117,10 @@ class SiteContract(unittest.TestCase):
 
     def test_sunrise_timeline(self):
         self.assertIn("captureDate: 'December 21, 2025'", DATA)
-        self.assertIn('On December 20, 2025, I led three friends on a hike to Copperas Falls.', DATA)
-        self.assertIn('The next morning, December 21, 2025, I traversed west', DATA)
-        self.assertNotIn('On December 21, 2025, I led three friends on a hike to Copperas Falls.', DATA)
+        self.assertIn('On December 20, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
+        self.assertIn('The next morning, December 21, 2025, he traversed west', DATA)
+        self.assertNotIn('On December 20, 2025, I led three friends on a hike to Copperas Falls.', DATA)
+        self.assertNotIn('On December 21, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
 
     def test_prohibited_photo(self):
         self.assertNotRegex(DATA.lower(), r'rrgh-0006|sunset')
@@ -326,6 +327,8 @@ class SiteContract(unittest.TestCase):
         self.assertTrue((ROOT / 'src/pages/gear/[slug].astro').exists())
         self.assertTrue((ROOT / 'src/pages/puzzles/[slug].astro').exists())
         self.assertTrue((ROOT / 'src/pages/stories/index.astro').exists())
+        stories_index = (ROOT / 'src/pages/stories/index.astro').read_text()
+        self.assertIn('explore/#stories', stories_index)
         self.assertTrue((ROOT / 'src/pages/stories/[slug].astro').exists())
         collection_redirect = (ROOT / 'src/pages/collection.astro').read_text()
         prints_redirect = (ROOT / 'src/pages/prints.astro').read_text()

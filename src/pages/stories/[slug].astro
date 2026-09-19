@@ -9,7 +9,7 @@ export function getStaticPaths(){
 }
 const {story}=Astro.props;
 const base=import.meta.env.BASE_URL;
-const relatedPhoto=story.relatedPhotoSlug ? bySlug(story.relatedPhotoSlug) : undefined;
+const placeholderPhoto=story.placeholderPhotoSlug ? bySlug(story.placeholderPhotoSlug) : undefined;
 const canonical=new URL(Astro.url.pathname,Astro.site ?? Astro.url.origin).href;
 const schema={
   '@context':'https://schema.org',
@@ -26,9 +26,9 @@ const schema={
     <h1>{story.title}</h1>
     <p class="story-byline">Story by {story.authorName}</p>
     <p class="lede">{story.summary}</p>
-    {relatedPhoto && (
-      <div class="story-image">
-        <Artwork title={relatedPhoto.title} catalogId={relatedPhoto.catalogId} alt={relatedPhoto.altText} creatorName={relatedPhoto.creatorName} showCaption={true}/>
+    {placeholderPhoto && (
+      <div class="story-image" data-story-image-placeholder="true">
+        <Artwork title={placeholderPhoto.title} catalogId={placeholderPhoto.catalogId} alt={placeholderPhoto.altText} showCaption={false}/>
       </div>
     )}
     <div class="prose story-longform">
@@ -38,9 +38,7 @@ const schema={
       <h2>Keep exploring</h2>
       <div class="actions">
         <a class="button secondary" href={`${base}explore/`}>Explore resources</a>
-        <a class="button secondary" href={`${base}stories/`}>All stories</a>
         <a class="button secondary" href={`${base}search-and-rescue/#prep-title`}>Hiking safety</a>
-        {relatedPhoto && <a class="button" href={`${base}photographs/${relatedPhoto.slug}/`}>Related photograph</a>}
       </div>
     </aside>
   </article>

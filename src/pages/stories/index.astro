@@ -1,24 +1,4 @@
 ---
-import Base from '../../layouts/Base.astro';
-import { stories } from '../../data/stories';
-const base=import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL;
+return Astro.redirect(`${base}explore/#stories`, 301);
 ---
-<Base title="Stories" description="Red River Gorge Hiker stories from the Gorge, Clifty Wilderness, and the Sheltowee Trace.">
-  <div class="page stories-page">
-    <p class="eyebrow">Red River Gorge Hiker</p>
-    <h1>Stories</h1>
-    <p class="lede stories-intro">First-hand accounts from years spent hiking, backpacking, exploring, and paying attention to the Gorge.</p>
-    <div class="story-accordion-grid">
-      {stories.map((story)=>(
-        <article class="story-accordion">
-          <div class="story-body">
-            <h2>{story.title}</h2>
-            <p><strong>Story by {story.authorName}</strong></p>
-            <p>{story.summary}</p>
-            <a class="button secondary" href={`${base}stories/${story.slug}/`}>Read story</a>
-          </div>
-        </article>
-      ))}
-    </div>
-  </div>
-</Base>

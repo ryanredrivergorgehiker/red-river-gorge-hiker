@@ -259,7 +259,29 @@ const storyRecords = [
     ]
   }
 ];
-const relatedPhotoSlugs = [
+const paragraphPlans: Record<string, readonly number[]> = {
+  'lilis-leap': [4, 3, 4, 6, 6, 5, 5],
+  'the-day-the-gorge-took-13-hours': [5, 8, 6, 5, 6, 5, 5, 4],
+  'the-blank-places-on-the-map': [4, 6, 6, 4, 8, 5, 4, 4],
+  'the-fletcher-ridge-hunt': [5, 4, 5, 4, 4, 5, 4],
+  'granddaddys-arch': [4, 4, 4, 4, 5],
+  'walking-home': [5, 4, 5, 6, 6, 5, 5]
+};
+
+const groupParagraphs = (lines: string[], plan: readonly number[]) => {
+  const grouped: string[] = [];
+  let offset = 0;
+  for (const size of plan) {
+    if (offset >= lines.length) break;
+    grouped.push(lines.slice(offset, offset + size).join(' '));
+    offset += size;
+  }
+  if (offset < lines.length) grouped.push(lines.slice(offset).join(' '));
+  return grouped;
+};
+
+// Temporary staging imagery only. Final story images will be supplied separately.
+const placeholderPhotoSlugs = [
   'splatter-falls',
   'double-rainbow-at-eagles-point-buttress',
   'splatter-falls',
@@ -270,9 +292,10 @@ const relatedPhotoSlugs = [
 
 export const stories = storyRecords.map((story, index) => ({
   ...story,
+  paragraphs: groupParagraphs(story.paragraphs, paragraphPlans[story.id] ?? [story.paragraphs.length]),
   slug: story.id,
   authorName: 'Ryan D. Lewis',
-  relatedPhotoSlug: relatedPhotoSlugs[index]!
+  placeholderPhotoSlug: placeholderPhotoSlugs[index]!
 }));
 
 export const storyBySlug = (slug: string) => stories.find((story) => story.slug === slug);

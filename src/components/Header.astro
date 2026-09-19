@@ -192,35 +192,27 @@ const exploreHref = (href: string) =>
               Explore <span class="nav-caret" aria-hidden="true"></span>
             </summary>
             <div class="nav-panel nav-panel-explore">
-              <p class="nav-section-title nav-explore-title">Explore the Gorge</p>
-              <ul class="nav-submenu nav-explore-choices nav-wall-art-choices">
+              <div class="nav-explore-grid">
                 {exploreSections.map((section) => (
-                  <li class="nav-wall-art-choice nav-explore-choice">
-                    <details class="nav-wall-art-choice-details nav-explore-choice-details">
-                      <summary class="nav-wall-art-choice-trigger nav-explore-choice-trigger">
-                        <span>{section.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
-                      </summary>
-                      <div class="nav-wall-art-flyout nav-explore-flyout">
-                        <p class="nav-explore-description">{section.description}</p>
-                        <ul class="nav-submenu nav-explore-links">
-                          {section.links.map((link) => (
-                            <li>
-                              <a
-                                href={exploreHref(link.href)}
-                                target={link.external ? '_blank' : undefined}
-                                rel={link.external ? 'noopener noreferrer' : undefined}
-                                download={link.download ? true : undefined}
-                              >
-                                {link.label}{link.external ? ' ↗' : ''}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </details>
-                  </li>
+                  <section class="nav-explore-section">
+                    <p class="nav-section-title">{section.title}</p>
+                    <ul class="nav-submenu nav-explore-links">
+                      {section.links.map((link) => (
+                        <li>
+                          <a
+                            href={exploreHref(link.href)}
+                            target={link.external ? '_blank' : undefined}
+                            rel={link.external ? 'noopener noreferrer' : undefined}
+                            download={link.download ? true : undefined}
+                          >
+                            {link.label}{link.external ? ' ↗' : ''}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 ))}
-              </ul>
+              </div>
               <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
             </div>
           </details>
@@ -312,35 +304,27 @@ const exploreHref = (href: string) =>
               Explore <span class="nav-caret" aria-hidden="true"></span>
             </summary>
             <div class="nav-panel nav-panel-explore">
-              <p class="nav-section-title nav-explore-title">Explore the Gorge</p>
-              <ul class="nav-submenu nav-explore-choices nav-wall-art-choices">
+              <div class="nav-explore-grid">
                 {exploreSections.map((section) => (
-                  <li class="nav-wall-art-choice nav-explore-choice">
-                    <details class="nav-wall-art-choice-details nav-explore-choice-details">
-                      <summary class="nav-wall-art-choice-trigger nav-explore-choice-trigger">
-                        <span>{section.title}</span><span class="nav-wall-art-choice-arrow" aria-hidden="true"></span>
-                      </summary>
-                      <div class="nav-wall-art-flyout nav-explore-flyout">
-                        <p class="nav-explore-description">{section.description}</p>
-                        <ul class="nav-submenu nav-explore-links">
-                          {section.links.map((link) => (
-                            <li>
-                              <a
-                                href={exploreHref(link.href)}
-                                target={link.external ? '_blank' : undefined}
-                                rel={link.external ? 'noopener noreferrer' : undefined}
-                                download={link.download ? true : undefined}
-                              >
-                                {link.label}{link.external ? ' ↗' : ''}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </details>
-                  </li>
+                  <section class="nav-explore-section">
+                    <p class="nav-section-title">{section.title}</p>
+                    <ul class="nav-submenu nav-explore-links">
+                      {section.links.map((link) => (
+                        <li>
+                          <a
+                            href={exploreHref(link.href)}
+                            target={link.external ? '_blank' : undefined}
+                            rel={link.external ? 'noopener noreferrer' : undefined}
+                            download={link.download ? true : undefined}
+                          >
+                            {link.label}{link.external ? ' ↗' : ''}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 ))}
-              </ul>
+              </div>
               <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
             </div>
           </details>
@@ -521,6 +505,26 @@ const exploreHref = (href: string) =>
   .site-header .nav-panel-shop {
     right: 0;
     width: min(64rem, calc(100vw - 3rem));
+  }
+
+  .site-header .nav-panel-explore {
+    right: 0;
+    width: min(68rem, calc(100vw - 3rem));
+  }
+
+  .site-header .nav-explore-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.35rem 2rem;
+    align-items: start;
+  }
+
+  .site-header .nav-explore-section {
+    min-width: 0;
+  }
+
+  .site-header .nav-view-all-explore {
+    margin-top: 1.25rem;
   }
 
   .site-header .nav-view-all {
@@ -844,6 +848,19 @@ const exploreHref = (href: string) =>
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.15rem 1.1rem;
       align-items: stretch;
+    }
+
+    .site-header .mobile-primary-nav .nav-explore-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.1rem 1rem;
+    }
+
+    .site-header .mobile-primary-nav .nav-panel-explore {
+      width: min(calc(100vw - .75rem), 42rem);
+    }
+
+    .site-header .mobile-primary-nav .nav-view-all-explore {
+      margin-top: 1rem;
     }
 
     .site-header .mobile-primary-nav .nav-section-title {

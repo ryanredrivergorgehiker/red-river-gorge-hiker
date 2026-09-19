@@ -14,9 +14,15 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertEqual(header.count('Explore <span class="nav-caret"'),2)
         self.assertIn("['About', '/about/']",header)
         self.assertEqual(header.count('EXPLORE ALL'),2)
+        self.assertEqual(header.count('class="nav-explore-grid"'),2)
+        self.assertNotIn('nav-explore-title',header)
+        self.assertNotIn('nav-explore-choice-details',header)
+        self.assertIn('grid-template-columns: repeat(4, minmax(0, 1fr));',header)
         for title in ('Stories','Search & Rescue','Camping','Landforms','Trails','Maps & Guides','Current Conditions','Hiking Safety'):
             self.assertIn(f"title: '{title}'", explore)
         self.assertIn("target={link.external ? '_blank' : undefined}",header)
+        self.assertNotIn('View All Stories',explore)
+        self.assertNotIn('Kentucky Emergency Management — Search & Rescue',explore)
         self.assertIn("rel={link.external ? 'noopener noreferrer' : undefined}",header)
 
     def test_explore_page_and_story_routes(self):
@@ -27,9 +33,12 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertEqual(stories.count("authorName: 'Ryan D. Lewis'"),1)
         for slug in ('lilis-leap','the-day-the-gorge-took-13-hours','the-blank-places-on-the-map','the-fletcher-ridge-hunt','granddaddys-arch','walking-home'):
             self.assertIn(f"id: '{slug}'",stories)
+        stories_index=read('src/pages/stories/index.astro')
+        self.assertIn('explore/#stories',stories_index)
         legacy=read('src/pages/exploring-the-gorge.astro')
-        self.assertIn('canonicalPath="/stories/"',legacy)
+        self.assertIn('canonicalPath="/explore/"',legacy)
         self.assertIn('window.location.replace',legacy)
+        self.assertIn('explore/#stories',legacy)
 
     def test_creator_model_is_data_driven(self):
         products=read('src/data/products.ts')
@@ -39,10 +48,23 @@ class BrandFirstExploreContract(unittest.TestCase):
             self.assertIn(field,products)
         self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }",photo)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }",photo)
-        self.assertIn('Photography',photo)
-        self.assertIn('Story by {photo.storyAuthor}',photo)
+        self.assertIn('<dt>Creator</dt>',photo)
+        self.assertIn('<dt>Copyright holder</dt>',photo)
+        self.assertIn('<dt>Medium</dt><dd>Photography</dd>',photo)
+        self.assertIn('<dt>Creator role</dt>',photo)
+        self.assertIn('<dt>Story author</dt>',photo)
+        self.assertNotIn('Photography by {photo.creatorName}',photo)
+        self.assertNotIn('Story by {photo.storyAuthor}',photo)
         self.assertIn('{photo.copyrightNotice}',photo)
         self.assertNotIn('Photography by Ryan D. Lewis</figcaption>',artwork)
+        card=read('src/components/Card.astro')
+        self.assertNotIn('card-creator',card)
+        stories=read('src/data/stories.ts')
+        self.assertIn('paragraphPlans',stories)
+        self.assertIn('placeholderPhotoSlug',stories)
+        story_page=read('src/pages/stories/[slug].astro')
+        self.assertNotIn('Related photograph',story_page)
+        self.assertNotIn('All stories',story_page)
 
     def test_brand_contact_footer_about_and_home_metadata(self):
         footer=read('src/components/Footer.astro')
@@ -58,6 +80,9 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn("Ryan's story",about)
         self.assertIn('The goal is not to make one person the center of the story.',about)
         self.assertIn('Red River Gorge Hiker | Explore the Gorge, Art & Gear',home)
+        products=read('src/data/products.ts')
+        self.assertIn('On July 19, 2025, Ryan camped near Eagle’s Point Buttress',products)
+        self.assertNotIn('On July 19, 2025, I camped near Eagle’s Point Buttress',products)
         self.assertIn("Explore Kentucky's Red River Gorge with stories, maps, landforms, trails, camping, safety and search-and-rescue resources, plus photography, art and gear.",home)
 
     def test_commerce_and_measurement_boundaries_are_not_reauthored(self):

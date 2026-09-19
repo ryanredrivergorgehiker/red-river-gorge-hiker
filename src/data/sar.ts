@@ -51,8 +51,6 @@ export const sarLinks = {
   npsTenEssentials: 'https://www.nps.gov/articles/10essentials.htm',
   npsHikeSmart: 'https://www.nps.gov/articles/hiking-safety.htm',
   powellSar: 'https://www.pocosar.org/',
-  kyemSar: 'https://www.kyem.ky.gov/operations-programs/search-and-rescue',
-  kyemAreaOffices: 'https://www.kyem.ky.gov/who-we-are/area-offices',
   leeCountyEmergencyManagement: 'https://leecounty.ky.gov/elected/Pages/default.aspx',
   menifeeCountyGovernment: 'https://menifeecounty.ky.gov/Pages/contact.aspx'
 } as const;

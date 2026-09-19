@@ -62,7 +62,6 @@ const artworkSchema = {
 >
   <div class="page photo-page">
     <h1>{photo.title}</h1>
-    <p class="photo-creator"><strong>{photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole} by {photo.creatorName}</strong></p>
     <p class="lede">{photo.shortDescription}</p>
     <div class="photo-context-share-row">
       <ShareControls title={photo.title} url={canonical} />
@@ -112,7 +111,6 @@ const artworkSchema = {
 
     <section class="prose photo-story">
       <h2>The story behind the photograph</h2>
-      <p class="photo-story-byline"><strong>Story by {photo.storyAuthor}</strong></p>
       {splatterReference && splatterStoryParts.length > 1 ? (
         <p>
           {splatterStoryParts[0]}
@@ -130,6 +128,13 @@ const artworkSchema = {
       <dl class="details">
         <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
         <div><dt>Location</dt><dd>{photo.location}</dd></div>
+      </dl>
+      <dl class="details creator-details" aria-label="Creator and rights information">
+        <div><dt>Creator</dt><dd>{photo.creatorName}</dd></div>
+        <div><dt>Copyright holder</dt><dd>{photo.copyrightHolder}</dd></div>
+        <div><dt>Medium</dt><dd>Photography</dd></div>
+        <div><dt>Creator role</dt><dd>{photo.creatorRole}</dd></div>
+        <div><dt>Story author</dt><dd>{photo.storyAuthor}</dd></div>
       </dl>
       <p>{photo.copyrightNotice}</p>
     </section>

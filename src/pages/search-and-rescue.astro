@@ -36,7 +36,6 @@ const webPageSchema = {
     { '@type': 'Thing', name: 'Red River Gorge hiking safety' },
     { '@type': 'Thing', name: 'Wolfe County Search & Rescue' },
     { '@type': 'Thing', name: 'Powell County Search & Rescue' },
-    { '@type': 'Thing', name: 'Kentucky Emergency Management Search & Rescue' },
     { '@type': 'Thing', name: 'Red River Gorge backcountry camping' }
   ]
 };
@@ -159,9 +158,9 @@ const conditionCards = [
         <h2 id="why-title">Giving back was part of the idea from the beginning</h2>
       </div>
       <div class="sar-story-copy">
-        <p>When Red River Gorge Hiker launched, Ryan decided the business itself should give back too. Following formation of Red River Gorge Hiker, LLC, the RRGH business-support commitment continues through the LLC. Separately from that business commitment, Ryan D. Lewis maintains his own personal support of Wolfe County Search &amp; Rescue. Twenty percent of RRGH business profit is allocated to Wolfe County Search &amp; Rescue.</p>
+        <p>Red River Gorge Hiker was built with a commitment to give back to the people who respond when hikers need help. RRGH maintains an annual SAR commitment, and the business also allocates 20% of positive business profit to Wolfe County Search &amp; Rescue.</p>
         <p>Red River Gorge Hiker is meant to be an identity hikers can share. The idea is simple: <em>“I’m a Red River Gorge Hiker.”</em> Supporting the people who come looking when hikers need help is a natural extension of what that identity should stand for.</p>
-        <p class="sar-independent-note">Red River Gorge Hiker, LLC supports Wolfe County Search &amp; Rescue independently through the Red River Gorge Hiker business-support program. Ryan D. Lewis's personal support is separate. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker, LLC does not speak on WCSART's behalf.</p>
+        <p class="sar-independent-note">Red River Gorge Hiker, LLC supports Wolfe County Search &amp; Rescue independently through the Red River Gorge Hiker business-support program. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker, LLC does not speak on WCSART's behalf.</p>
       </div>
     </section>
 
@@ -169,15 +168,15 @@ const conditionCards = [
       <div class="sar-section-heading">
         <p class="sar-section-kicker">{sar.reportingYear} public reporting</p>
         <h2 id="match-title">SAR Match-O-Meter</h2>
-        <p>The {fmt(sar.personalAnnualCommitment)} target is a milestone, not a cap. RRGH support keeps accumulating when the match is reached or exceeded.</p>
+        <p>The {fmt(sar.personalAnnualCommitment)} RRGH annual commitment is a milestone, not a cap. RRGH support keeps accumulating when the milestone is reached or exceeded.</p>
       </div>
       <SarMatchMeter variant="full" href="#sar-match-details" />
 
       <div class="sar-financial-grid" id="sar-match-details">
         <article class="sar-stat sar-stat-benchmark">
-          <span>Ryan’s personal annual commitment</span>
+          <span>RRGH annual commitment</span>
           <strong>{fmt(sar.personalAnnualCommitment)}</strong>
-          <small>Separate personal commitment</small>
+          <small>Annual support milestone</small>
         </article>
         <article class="sar-stat sar-stat-accent">
           <span>RRGH generated for SAR this year</span>
@@ -197,19 +196,19 @@ const conditionCards = [
         <article class="sar-stat">
           <span>Total current-year support</span>
           <strong>{fmt(sar.annualCombinedSupport)}</strong>
-          <small>Actual current-year RRGH transfers + actual Ryan personal contributions</small>
+          <small>Current-year support recorded in the RRGH SAR reporting output</small>
         </article>
         <article class="sar-stat">
-          <span>Historical personal support</span>
+          <span>Historical support</span>
           <strong>{fmt(sar.historicalPersonalSupport)}</strong>
-          <small>Ryan’s personal support before the RRGH program</small>
+          <small>Support recorded before the current RRGH business reporting period</small>
         </article>
       </div>
 
       <details class="sar-lifetime-details">
         <summary>View lifetime support figures</summary>
         <div class="sar-lifetime-grid">
-          <p><span>Lifetime personal support</span><strong>{fmt(sar.lifetimePersonalSupport)}</strong></p>
+          <p><span>Lifetime support before current RRGH business reporting</span><strong>{fmt(sar.lifetimePersonalSupport)}</strong></p>
           <p><span>Lifetime RRGH generated / committed</span><strong>{fmt(sar.lifetimeRrghSupport)}</strong></p>
           <p><span>Lifetime RRGH actually transferred</span><strong>{fmt(sar.lifetimeRrghTransferred)}</strong></p>
           <p><span>Combined lifetime actual support</span><strong>{fmt(sar.combinedLifetimeSupport)}</strong></p>
@@ -243,17 +242,16 @@ const conditionCards = [
       <div class="sar-section-heading sar-section-heading-wide">
         <p class="sar-section-kicker">Greater Gorge response context</p>
         <h2 id="regional-sar-title">Search &amp; Rescue Across the Greater Red River Gorge</h2>
-        <p>The Red River Gorge region crosses county and land-management boundaries. Emergency response can involve county emergency management, law enforcement, fire/EMS, volunteer search-and-rescue resources, neighboring teams, Kentucky Emergency Management, Kentucky State Police, and mutual aid depending on the incident and jurisdiction.</p>
+        <p>The Red River Gorge region crosses county and land-management boundaries. Emergency response can involve county emergency management, law enforcement, fire/EMS, volunteer search-and-rescue resources, neighboring teams, and mutual aid depending on the incident and jurisdiction.</p>
         <p><strong>RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.</strong> The broader resources below are educational context and do not create or imply an RRGH profit allocation, partnership, sponsorship, or endorsement involving another agency or county.</p>
       </div>
-      <div class="sar-resource-grid">
+      <div class="sar-resource-grid sar-regional-resource-grid">
         <article class="sar-resource-card"><span>Wolfe County</span><h3>Wolfe County Search &amp; Rescue</h3><p>WCSART remains the primary search-and-rescue organization supported by Red River Gorge Hiker through the existing 20%-of-positive-business-profit commitment.</p><a href={sarLinks.wcsart} target="_blank" rel="noopener noreferrer">Visit WCSART ↗</a></article>
         <article class="sar-resource-card"><span>Powell County</span><h3>Powell County Search &amp; Rescue</h3><p>Powell County Search &amp; Rescue is a legitimate Gorge-area rescue resource. This informational link does not change RRGH’s WCSART support commitment.</p><a href={sarLinks.powellSar} target="_blank" rel="noopener noreferrer">Visit Powell County SAR ↗</a></article>
-        <article class="sar-resource-card"><span>Menifee County</span><h3>County and mutual-aid response</h3><p>RRGH does not represent Menifee County as having an organizationally identical dedicated SAR team without authoritative evidence. County public-safety response and mutual aid can coordinate with regional and state resources as circumstances require.</p><a href={sarLinks.menifeeCountyGovernment} target="_blank" rel="noopener noreferrer">Menifee County government contacts ↗</a></article>
-        <article class="sar-resource-card"><span>Lee County</span><h3>Emergency management and mutual aid</h3><p>Lee County’s official county site identifies an Emergency Management Director. Regional incidents may involve county public-safety resources, neighboring teams, and state coordination as appropriate.</p><a href={sarLinks.leeCountyEmergencyManagement} target="_blank" rel="noopener noreferrer">Lee County emergency-management contact ↗</a></article>
-        <article class="sar-resource-card"><span>Kentucky statewide</span><h3>Kentucky Emergency Management Search &amp; Rescue</h3><p>Kentucky Emergency Management provides statewide search-and-rescue coordination and works with local emergency-management systems. County emergency managers are frontline coordinators for local response resources.</p><a href={sarLinks.kyemSar} target="_blank" rel="noopener noreferrer">Kentucky Emergency Management SAR ↗</a></article>
+        <article class="sar-resource-card"><span>Menifee County</span><h3>County response and mutual aid</h3><p>Menifee County public-safety and emergency-management resources can coordinate local response and mutual aid. RRGH does not claim the county maintains a dedicated SAR organization identical to Wolfe or Powell County.</p><a href={sarLinks.menifeeCountyGovernment} target="_blank" rel="noopener noreferrer">Menifee County government contacts ↗</a></article>
+        <article class="sar-resource-card"><span>Lee County</span><h3>Emergency management and mutual aid</h3><p>Lee County’s official county site identifies an Emergency Management Director. County public-safety resources can coordinate with neighboring responders and mutual aid when an incident requires it.</p><a href={sarLinks.leeCountyEmergencyManagement} target="_blank" rel="noopener noreferrer">Lee County emergency-management contact ↗</a></article>
       </div>
-      <p class="sar-source-note">Kentucky Emergency Management area-office information places Menifee County in Area 7, Wolfe County in Area 8, and Lee and Powell counties in Area 9. Organizational structures and incident response vary; this page does not claim all four counties maintain identical SAR units.</p>
+      <p class="sar-source-note">Organizational structures and incident response vary by county. This page does not claim all four counties maintain identical SAR units.</p>
     </section>
 
     <section class="sar-prep sar-shell" aria-labelledby="prep-title">
