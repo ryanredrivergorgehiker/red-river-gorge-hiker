@@ -8,6 +8,8 @@ interface Props {
   eager?: boolean;
   sizes?: string;
   showCaption?: boolean;
+  creatorName?: string;
+  creatorRole?: string;
 }
 
 const {
@@ -16,7 +18,9 @@ const {
   alt,
   eager = false,
   sizes = '(max-width: 1120px) calc(100vw - 2rem), 1120px',
-  showCaption = true
+  showCaption = true,
+  creatorName,
+  creatorRole = 'Photography'
 } = Astro.props;
 
 const asset = getArtworkAsset(catalogId);
@@ -57,7 +61,7 @@ const hasAsset = Boolean(largestWebp && webpSrcset);
     </div>
   )}
   <div class="art-overlay" aria-hidden="true"></div>
-  {showCaption && <figcaption>{title} · Photography by Ryan D. Lewis</figcaption>}
+  {showCaption && creatorName && <figcaption>{title} · {creatorRole} by {creatorName}</figcaption>}
 </figure>
 <script>
   document.querySelectorAll('[data-artwork]').forEach((element) => {

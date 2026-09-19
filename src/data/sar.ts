@@ -49,7 +49,12 @@ export const sarLinks = {
   nwsSlade: 'https://forecast.weather.gov/MapClick.php?lat=37.783&lon=-83.683',
   goKy: 'https://goky.ky.gov/',
   npsTenEssentials: 'https://www.nps.gov/articles/10essentials.htm',
-  npsHikeSmart: 'https://www.nps.gov/articles/hiking-safety.htm'
+  npsHikeSmart: 'https://www.nps.gov/articles/hiking-safety.htm',
+  powellSar: 'https://www.pocosar.org/',
+  kyemSar: 'https://www.kyem.ky.gov/operations-programs/search-and-rescue',
+  kyemAreaOffices: 'https://www.kyem.ky.gov/who-we-are/area-offices',
+  leeCountyEmergencyManagement: 'https://leecounty.ky.gov/elected/Pages/default.aspx',
+  menifeeCountyGovernment: 'https://menifeecounty.ky.gov/Pages/contact.aspx'
 } as const;
 
 // These are content-review dates, not financial-calculation dates. Changeable rules stay linked

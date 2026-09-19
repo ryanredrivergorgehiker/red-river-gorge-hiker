@@ -49,9 +49,9 @@ const artworkSchema = {
   identifier: photo.catalogId,
   description: photo.shortDescription,
   dateCreated: photo.captureDate,
-  creator: { '@type': 'Person', name: 'Ryan D. Lewis' },
+  creator: { '@type': 'Person', name: photo.creatorName },
   locationCreated: photo.location,
-  copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }
+  copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }
 };
 ---
 <Base
@@ -62,6 +62,7 @@ const artworkSchema = {
 >
   <div class="page photo-page">
     <h1>{photo.title}</h1>
+    <p class="photo-creator"><strong>{photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole} by {photo.creatorName}</strong></p>
     <p class="lede">{photo.shortDescription}</p>
     <div class="photo-context-share-row">
       <ShareControls title={photo.title} url={canonical} />
@@ -103,12 +104,15 @@ const artworkSchema = {
           alt={photo.altText}
           sizes={imageSizes}
           showCaption={false}
+          creatorName={photo.creatorName}
+          creatorRole={photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole}
         />
       </a>
     </div>
 
     <section class="prose photo-story">
       <h2>The story behind the photograph</h2>
+      <p class="photo-story-byline"><strong>Story by {photo.storyAuthor}</strong></p>
       {splatterReference && splatterStoryParts.length > 1 ? (
         <p>
           {splatterStoryParts[0]}
@@ -127,7 +131,7 @@ const artworkSchema = {
         <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
         <div><dt>Location</dt><dd>{photo.location}</dd></div>
       </dl>
-      <p>Photographs © Ryan D. Lewis. All rights reserved.</p>
+      <p>{photo.copyrightNotice}</p>
     </section>
 
     <aside
