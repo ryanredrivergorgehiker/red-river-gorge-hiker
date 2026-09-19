@@ -108,6 +108,11 @@ class SarContract(unittest.TestCase):
         self.assertIn('RRGH transferred:', SAR_METER)
         self.assertIn('% fulfilled', SAR_METER)
         self.assertIn('Search and Rescue commitment tracker:', SAR_METER)
+        self.assertIn('accessibleStateLabel', SAR_METER)
+        self.assertIn('. View Search and Rescue resources.', SAR_METER)
+        self.assertIn('formatPublicTimestamp', SAR_METER)
+        self.assertIn('formatPublicTimestamp(sar.lastUpdated)', SAR_PAGE)
+        self.assertNotIn('>{sar.lastUpdated}</time>', SAR_PAGE)
         self.assertNotIn('SAR Match-O-Meter', SAR_METER + SAR_PAGE)
         self.assertNotIn('RRGH Match:', SAR_METER + SAR_PAGE)
         self.assertNotIn('milestone, not a cap', SAR_PAGE)
@@ -115,7 +120,7 @@ class SarContract(unittest.TestCase):
 
     def test_public_commitment_wording_and_history(self):
         core = 'Red River Gorge Hiker, LLC maintains two separate commitments to Wolfe County Search &amp; Rescue: at least $500 each calendar year, plus 20% of positive Red River Gorge Hiker business profit.'
-        detail = 'RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets or satisfies the other.'
+        detail = 'RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets nor satisfies the other.'
         self.assertGreaterEqual(SAR_PAGE.count(core), 2)
         self.assertGreaterEqual(SAR_PAGE.count(detail), 2)
         self.assertIn('Before the current RRGH business-support program, Ryan D. Lewis personally contributed', SAR_PAGE)
@@ -205,6 +210,7 @@ class SarContract(unittest.TestCase):
         self.assertNotIn('identifies an Emergency Management Director', SAR_PAGE)
         self.assertNotIn('Kentucky Emergency Management Search &amp; Rescue', SAR_PAGE)
         self.assertIn('RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.', SAR_PAGE)
+        self.assertIn('WCSART is the search-and-rescue organization supported by Red River Gorge Hiker through RRGH’s two separate Company commitments: at least $500 each calendar year plus 20% of positive business profit.', SAR_PAGE)
         self.assertIn("powellSar: 'https://www.pocosar.org/'", SAR_DATA)
         self.assertNotIn('kyemSar:', SAR_DATA)
 

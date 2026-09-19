@@ -28,9 +28,9 @@ export const doubleRainbowGreetingCard: GearProduct = {
     alt: 'Folded greeting card featuring Double Rainbow at Eagle’s Point Buttress displayed on a wooden table.'
   },
   detailPricing: [
-    'Single Card - $6.25',
-    'Pack of 10 - $35.00 total ($3.50 per card)',
-    'Pack of 25 - $53.00 total (Store displays $2.12 per card)'
+    'Single Card: $6.25',
+    'Pack of 10: $35.00 total ($3.50 per card)',
+    'Pack of 25: $53.00 total (Store displays $2.12 per card)'
   ],
   detailCustomizationNote: 'The Red River Gorge Hiker Store allows the buyer to enter an optional inside message.',
   detailFulfillmentNote: 'The Red River Gorge Hiker Store, powered by Pixels, handles quantity selection, optional inside-message customization, checkout, payment, production, fulfillment, and shipping.',

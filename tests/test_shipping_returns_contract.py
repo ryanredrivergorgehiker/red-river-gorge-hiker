@@ -40,14 +40,16 @@ class ShippingReturnsContract(unittest.TestCase):
             'Original shipping charges and return shipping charges are generally not reimbursed. The buyer is responsible for the cost of shipping a non-defective return back to the fulfillment provider.',
             'return-shipping costs can be significant.',
             'The fulfillment provider determines how qualifying quality-defect returns are handled under its current policy.',
-            'Ryan@RedRiverGorgeHiker.com',
+            'Info@RedRiverGorgeHiker.com',
             'the current terms and information presented by the Store at the time of purchase control the transaction.',
         )
         for text in required_copy:
             with self.subTest(text=text):
                 self.assertIn(text, PAGE)
 
-        self.assertIn('href="mailto:Ryan@RedRiverGorgeHiker.com"', PAGE)
+        self.assertIn('href="mailto:Info@RedRiverGorgeHiker.com"', PAGE)
+        self.assertNotIn('Ryan@RedRiverGorgeHiker.com', PAGE)
+        self.assertIn('order-specific questions, including delivery, damage, returns, refunds, and transaction questions, should be directed', PAGE)
 
     def test_footer_has_permanent_shipping_returns_link_with_customer_information_links(self):
         expected = "['Shipping & Returns', 'shipping-and-returns/']"

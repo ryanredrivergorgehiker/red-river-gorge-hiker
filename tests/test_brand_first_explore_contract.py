@@ -112,12 +112,25 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn('On July 19, 2025, I camped near Eagle’s Point Buttress',products)
         self.assertIn("Explore Kentucky's Red River Gorge with stories, maps, landforms, trails, camping, safety and search-and-rescue resources, plus photography, art and gear.",home)
 
-    def test_public_site_source_contains_no_em_dashes(self):
-        text_suffixes={'.astro','.ts','.js','.css','.json','.md','.txt','.csv','.xml','.html'}
-        for root in (ROOT/'src', ROOT/'public'):
-            for path in root.rglob('*'):
-                if path.is_file() and path.suffix.lower() in text_suffixes:
-                    self.assertNotIn('—',path.read_text(encoding='utf-8',errors='ignore'),str(path))
+    def test_copy_correction_pass_uses_natural_visitor_facing_punctuation(self):
+        about=read('src/pages/about.astro')
+        shipping=read('src/pages/shipping-and-returns.astro')
+        stories=read('src/data/stories.ts')
+        products=read('src/data/products.ts')
+        merch=read('src/data/merchandise.ts')
+        gear_catalog=read('src/data/gearCatalog.ts')
+        explore=read('src/data/explore.ts')
+        self.assertIn('a connection to a place—the trails',about)
+        self.assertIn('gets into you—and why you keep coming back',about)
+        self.assertIn('order-specific questions, including delivery, damage, returns, refunds, and transaction questions, should be directed',shipping)
+        self.assertIn('Between Frenchburg and Hemlock Lodge lay the Red River Gorge—and <strong>31.87 miles</strong> of walking.',stories)
+        self.assertIn('Men’s T-Shirt (Athletic Fit) — Chest Logo',merch)
+        self.assertIn('Men’s T-Shirt (Athletic Fit) — Pocket Logo',merch)
+        self.assertIn('Single Card: $6.25',gear_catalog)
+        self.assertIn('Sizes below 2XL: $45',merch)
+        self.assertIn('visitor information, rules, and trip-planning resources',explore)
+        self.assertNotIn('opening across the clearing landscape',products)
+        self.assertNotIn('opened a stronger look at the morning sky',products)
 
     def test_commerce_and_measurement_boundaries_are_not_reauthored(self):
         products=read('src/data/products.ts')

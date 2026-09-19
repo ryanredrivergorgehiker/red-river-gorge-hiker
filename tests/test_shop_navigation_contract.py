@@ -115,7 +115,7 @@ class ShopNavigationContractTests(unittest.TestCase):
             "Women's Tank Tops": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
             'Long Sleeve T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
             'Sweatshirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
-            "Kid's T-Shirts": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
+            'Kids T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
             'Toddler T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
             'Baby One-Pieces': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
         }
@@ -150,7 +150,7 @@ class ShopNavigationContractTests(unittest.TestCase):
             "[\"Women's Tank Tops\", 'https://store.redrivergorgehiker.com/shop/womens+tank+tops']",
             "['Long Sleeve T-Shirts', 'https://store.redrivergorgehiker.com/shop/long+sleeve+tshirts']",
             "['Sweatshirts', 'https://store.redrivergorgehiker.com/shop/sweatshirts']",
-            "[\"Kid's T-Shirts\", 'https://store.redrivergorgehiker.com/shop/kids+tshirts']",
+            "['Kids T-Shirts', 'https://store.redrivergorgehiker.com/shop/kids+tshirts']",
             "['Toddler T-Shirts', 'https://store.redrivergorgehiker.com/shop/toddler+tshirts']",
             "['Baby One-Pieces', 'https://store.redrivergorgehiker.com/shop/baby+one+pieces']",
         )

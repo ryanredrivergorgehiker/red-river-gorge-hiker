@@ -22,7 +22,7 @@ const assetBase = 'assets/merchandise/' as const;
 export const merchandiseProducts: readonly MerchandiseProduct[] = [
   {
     slug: 'tshirt-chest-logo',
-    title: 'Men’s T-Shirt (Athletic Fit) - Chest Logo',
+    title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo',
     description: 'Athletic-fit Red River Gorge Hiker T-shirt with the logo centered on the chest.',
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',
@@ -104,7 +104,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
     description: 'Red River Gorge Hiker pullover sweatshirt with the logo presented on the chest.',
     priceLabel: 'From $45',
     specification: 'Pullover sweatshirt · Chest Logo',
-    optionNote: 'Below 2XL $45 · 2XL $51 · 3XL $57.',
+    optionNote: 'Sizes below 2XL: $45 · 2XL: $51 · 3XL: $57.',
     storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
     image: {
       avif: `${assetBase}rrgh-merch-sweater-df6f24ea.avif`,
@@ -116,7 +116,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
   },
   {
     slug: 'tshirt-pocket-logo',
-    title: 'Men’s T-Shirt (Athletic Fit) - Pocket Logo',
+    title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
     description: 'Athletic-fit Red River Gorge Hiker T-shirt with a small logo at the pocket position.',
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',

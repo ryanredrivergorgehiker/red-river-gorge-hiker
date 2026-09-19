@@ -29,7 +29,7 @@ class AboutVisitorCopyContractTests(unittest.TestCase):
     def test_existing_following_copy_remains(self):
         section = ABOUT.split('<p class="eyebrow">Red River Gorge Hiker</p>', 1)[1]
         self.assertIn("You don't have to take photographs.", section)
-        self.assertIn('You just have to understand why this place gets into you - and why you keep coming back.', section)
+        self.assertIn('You just have to understand why this place gets into you—and why you keep coming back.', section)
         self.assertIn('<strong>For the people who hike it, love it, and keep coming back.</strong>', section)
 
 

@@ -12,6 +12,12 @@ const currency = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0
 });
 const fmt = (value: number) => currency.format(value);
+const formatPublicTimestamp = (value: string) => new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'America/New_York'
+}).format(new Date(value));
 const reviewed = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
   month: 'long',
@@ -168,7 +174,7 @@ const conditionCards = [
       <div class="sar-section-heading">
         <p class="sar-section-kicker">{sar.reportingYear} public reporting</p>
         <h2 id="match-title">RRGH SAR Commitment</h2>
-        <p>RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets or satisfies the other.</p>
+        <p>RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets nor satisfies the other.</p>
       </div>
       <SarMatchMeter variant="full" href="#sar-match-details" />
 
@@ -217,9 +223,9 @@ const conditionCards = [
 
       <div class="sar-data-note">
         <strong>Committed is not the same as transferred.</strong>
-        <p>RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets or satisfies the other. Amounts described as generated, allocated, or committed have not necessarily been transferred. “Donated” or “transferred” is used only after funds have actually been sent to Wolfe County Search &amp; Rescue.</p>
+        <p>RRGH’s $500 annual commitment and its 20%-of-positive-business-profit commitment are separate. Neither commitment offsets nor satisfies the other. Amounts described as generated, allocated, or committed have not necessarily been transferred. “Donated” or “transferred” is used only after funds have actually been sent to Wolfe County Search &amp; Rescue.</p>
         <p>Before the current RRGH business-support program, Ryan D. Lewis personally contributed <span data-sar-value-field="historicalPersonalSupport">{fmt(sar.historicalPersonalSupport)}</span> to Wolfe County Search &amp; Rescue in 2025. That historical personal support remains separate from Red River Gorge Hiker, LLC support.</p>
-        <p>Public figures come from the approved Google Drive ledger reporting output; the website does not calculate RRGH business profit or SAR commitment values. Last updated <time data-sar-last-updated datetime={sar.lastUpdated}>{sar.lastUpdated}</time>.</p>
+        <p>Public figures come from the approved Google Drive ledger reporting output; the website does not calculate RRGH business profit or SAR commitment values. Last updated <time data-sar-last-updated datetime={sar.lastUpdated}>{formatPublicTimestamp(sar.lastUpdated)}</time>.</p>
       </div>
     </section>
 
@@ -247,7 +253,7 @@ const conditionCards = [
         <p><strong>RRGH’s business-support commitment remains solely directed to Wolfe County Search &amp; Rescue.</strong> The broader resources below are educational context and do not create or imply an RRGH profit allocation, partnership, sponsorship, or endorsement involving another agency or county.</p>
       </div>
       <div class="sar-resource-grid sar-regional-resource-grid">
-        <article class="sar-resource-card"><span>WOLFE COUNTY</span><h3>Wolfe County Search &amp; Rescue</h3><p>WCSART remains the primary search-and-rescue organization supported by Red River Gorge Hiker through the existing 20%-of-positive-business-profit commitment.</p><a href={sarLinks.wcsart} target="_blank" rel="noopener noreferrer">Visit WCSART ↗</a></article>
+        <article class="sar-resource-card"><span>WOLFE COUNTY</span><h3>Wolfe County Search &amp; Rescue</h3><p>WCSART is the search-and-rescue organization supported by Red River Gorge Hiker through RRGH’s two separate Company commitments: at least $500 each calendar year plus 20% of positive business profit.</p><a href={sarLinks.wcsart} target="_blank" rel="noopener noreferrer">Visit WCSART ↗</a></article>
         <article class="sar-resource-card"><span>POWELL COUNTY</span><h3>Powell County Search &amp; Rescue</h3><p>Powell County Search &amp; Rescue serves the Powell County side of the Gorge and works alongside other local and regional responders when mutual aid is needed.</p><a href={sarLinks.powellSar} target="_blank" rel="noopener noreferrer">Visit Powell County SAR ↗</a></article>
         <article class="sar-resource-card"><span>MENIFEE COUNTY</span><h3>Menifee County Emergency Response</h3><p>Search-and-rescue incidents in Menifee County may involve local emergency services, neighboring SAR teams, Kentucky State Police, and other mutual-aid resources depending on the location and situation.</p><a href={sarLinks.menifeeCountyGovernment} target="_blank" rel="noopener noreferrer">Menifee County Contacts ↗</a></article>
         <article class="sar-resource-card"><span>LEE COUNTY</span><h3>Lee County Emergency Response</h3><p>Lee County emergency-management and public-safety resources may respond locally and work with neighboring teams and other mutual-aid partners when incidents require additional support.</p><a href={sarLinks.leeCountyEmergencyManagement} target="_blank" rel="noopener noreferrer">Lee County Emergency Management ↗</a></article>

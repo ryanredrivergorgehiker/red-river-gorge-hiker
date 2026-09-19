@@ -25,6 +25,7 @@ const stateLabel = `${transferred} transferred of ${committed} committed, ${fulf
 const headerPrimary = 'Walk the path with us.';
 const headerDetail = 'Support the people who answer the call.';
 const displayStateLabel = variant === 'header' ? `${headerPrimary} ${headerDetail}` : stateLabel;
+const accessibleStateLabel = displayStateLabel.replace(/[.!?]\s*$/, '');
 const nodeLabels = ['0%', '20%', '40%', '60%', '80%', '100%'];
 const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed0141d.webp`;
 ---
@@ -34,7 +35,7 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
   href={targetHref}
   data-sar-meter
   data-sar-meter-variant={variant}
-  aria-label={`Search and Rescue: ${displayStateLabel} View Search and Rescue resources.`}
+  aria-label={`Search and Rescue: ${accessibleStateLabel}. View Search and Rescue resources.`}
 >
   <span class="sar-meter-copy">
     <span class="sar-meter-kicker">Search &amp; Rescue</span>
@@ -104,6 +105,13 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       currency: 'USD',
       maximumFractionDigits: 0
     }).format(value);
+
+    const formatPublicTimestamp = (value) => new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'America/New_York'
+    }).format(new Date(value));
 
     function parseCsvRows(text) {
       const rows = [];
@@ -205,9 +213,10 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
         detail.textContent = `${fulfilled.toFixed(1)}% fulfilled`;
         stateLabel = `${transferred} transferred of ${committed} committed, ${fulfilled.toFixed(1)}% fulfilled`;
       }
+      const accessibleStateLabel = stateLabel.replace(/[.!?]\s*$/, '');
       meter.setAttribute('aria-label', variant === 'header'
-        ? `Search and Rescue: ${stateLabel} View Search and Rescue resources.`
-        : `Search and Rescue commitment tracker: ${stateLabel}. View Search and Rescue resources.`);
+        ? `Search and Rescue: ${accessibleStateLabel}. View Search and Rescue resources.`
+        : `Search and Rescue commitment tracker: ${accessibleStateLabel}. View Search and Rescue resources.`);
     }
 
     function updateSarPage(data) {
@@ -236,7 +245,7 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       });
       const updated = section.querySelector('[data-sar-last-updated]');
       if (updated) {
-        updated.textContent = data.lastUpdated;
+        updated.textContent = formatPublicTimestamp(data.lastUpdated);
         updated.setAttribute('datetime', data.lastUpdated);
       }
     }
