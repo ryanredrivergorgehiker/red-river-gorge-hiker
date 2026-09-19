@@ -90,8 +90,9 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
     def test_sar_business_personal_split_without_financial_logic_changes(self):
         text = visible("src/pages/search-and-rescue.astro")
         self.assertIn("20% of RRGH business profit is allocated to Wolfe County Search & Rescue.", text)
-        self.assertIn("When Red River Gorge Hiker launched, Ryan decided the business itself should give back too. Following formation of Red River Gorge Hiker, LLC, the RRGH business-support commitment continues through the LLC. Separately from that business commitment, Ryan D. Lewis maintains his own personal support of Wolfe County Search & Rescue. Twenty percent of RRGH business profit is allocated to Wolfe County Search & Rescue.", text)
-        self.assertIn("Red River Gorge Hiker, LLC supports Wolfe County Search & Rescue independently through the Red River Gorge Hiker business-support program. Ryan D. Lewis's personal support is separate. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker, LLC does not speak on WCSART's behalf.", text)
+        self.assertIn("Red River Gorge Hiker was built with a commitment to give back to the people who respond when hikers need help. RRGH maintains an annual SAR commitment, and the business also allocates 20% of positive business profit to Wolfe County Search & Rescue.", text)
+        self.assertIn("Red River Gorge Hiker, LLC supports Wolfe County Search & Rescue independently through the Red River Gorge Hiker business-support program. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker, LLC does not speak on WCSART's behalf.", text)
+        self.assertNotIn("Ryan", text)
         for invariant in [
             "sar.personalAnnualCommitment",
             "sar.rrghSarGenerated",

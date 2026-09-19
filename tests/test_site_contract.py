@@ -362,7 +362,7 @@ class SiteContract(unittest.TestCase):
         self.assertEqual(photos.count('href={photo.puzzleUrl}'), 2)
         self.assertEqual(photos.count('data-store-item-type="puzzle"'), 2)
         self.assertNotIn('href={`${base}puzzles/${photo.slug}/`}', photos)
-        self.assertIn("legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/', '/puzzles/', '/exploring-the-gorge/']", config)
+        self.assertIn("legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/', '/puzzles/', '/stories/', '/exploring-the-gorge/']", config)
         self.assertIn('href="https://store.redrivergorgehiker.com/shop/puzzles">View Puzzles</a>', home)
         self.assertIn('<h1>About Red River Gorge Hiker</h1>', about)
         self.assertIn('The goal is not to make one person the center of the story.', about)
