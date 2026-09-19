@@ -117,9 +117,9 @@ class SiteContract(unittest.TestCase):
 
     def test_sunrise_timeline(self):
         self.assertIn("captureDate: 'December 21, 2025'", DATA)
-        self.assertIn('On December 20, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
-        self.assertIn('The next morning, December 21, 2025, he traversed west', DATA)
-        self.assertNotIn('On December 21, 2025, Ryan led three friends on a hike to Copperas Falls.', DATA)
+        self.assertIn('On December 20, 2025, I led three friends on a hike to Copperas Falls.', DATA)
+        self.assertIn('The next morning, December 21, 2025, I traversed west', DATA)
+        self.assertNotIn('On December 21, 2025, I led three friends on a hike to Copperas Falls.', DATA)
 
     def test_prohibited_photo(self):
         self.assertNotRegex(DATA.lower(), r'rrgh-0006|sunset')
@@ -140,7 +140,7 @@ class SiteContract(unittest.TestCase):
         header = (ROOT / 'src/components/Header.astro').read_text()
         self.assertIn('Wall Art <span class="nav-caret"', header)
         self.assertIn('Shop <span class="nav-caret"', header)
-        self.assertIn("['Stories', '/exploring-the-gorge/']", header)
+        self.assertEqual(header.count('Explore <span class="nav-caret"'), 2)
         self.assertIn("['About', '/about/']", header)
         self.assertNotIn("['Puzzles','/puzzles/']", header)
         self.assertNotIn("['Gear','/gear/']", header)
@@ -314,6 +314,7 @@ class SiteContract(unittest.TestCase):
             'merchandise',
             'about',
             'exploring-the-gorge',
+            'explore',
             'photography-use-and-permissions',
             'contact',
             'copyright-and-terms',
@@ -324,6 +325,8 @@ class SiteContract(unittest.TestCase):
             self.assertTrue((ROOT / f'src/pages/{route}.astro').exists(), route)
         self.assertTrue((ROOT / 'src/pages/gear/[slug].astro').exists())
         self.assertTrue((ROOT / 'src/pages/puzzles/[slug].astro').exists())
+        self.assertTrue((ROOT / 'src/pages/stories/index.astro').exists())
+        self.assertTrue((ROOT / 'src/pages/stories/[slug].astro').exists())
         collection_redirect = (ROOT / 'src/pages/collection.astro').read_text()
         prints_redirect = (ROOT / 'src/pages/prints.astro').read_text()
         merchandise_redirect = (ROOT / 'src/pages/merchandise.astro').read_text()
@@ -356,10 +359,10 @@ class SiteContract(unittest.TestCase):
         self.assertEqual(photos.count('href={photo.puzzleUrl}'), 2)
         self.assertEqual(photos.count('data-store-item-type="puzzle"'), 2)
         self.assertNotIn('href={`${base}puzzles/${photo.slug}/`}', photos)
-        self.assertIn("legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/', '/puzzles/']", config)
+        self.assertIn("legacyRedirectRoutes = ['/collection/', '/prints/', '/merchandise/', '/puzzles/', '/exploring-the-gorge/']", config)
         self.assertIn('href="https://store.redrivergorgehiker.com/shop/puzzles">View Puzzles</a>', home)
         self.assertIn('<h1>About Red River Gorge Hiker</h1>', about)
-        self.assertIn('He’s just not the whole story anymore.', about.replace("He's", 'He’s'))
+        self.assertIn('The goal is not to make one person the center of the story.', about)
 
         for path in (ROOT / 'src').rglob('*.astro'):
             if path.name in {'collection.astro', 'prints.astro'}:

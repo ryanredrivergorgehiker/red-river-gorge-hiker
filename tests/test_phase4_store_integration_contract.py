@@ -102,7 +102,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
     def test_primary_navigation_shop_change_and_photo_copyright_remain_intact(self):
         self.assertIn('Wall Art <span class="nav-caret"', HEADER)
         self.assertIn('Shop <span class="nav-caret"', HEADER)
-        self.assertIn("['Stories', '/exploring-the-gorge/']", HEADER)
+        self.assertIn('Explore <span class="nav-caret"', HEADER)
         self.assertIn("['About', '/about/']", HEADER)
         self.assertNotIn("['Store',", HEADER)
         self.assertNotIn("['Puzzles','/puzzles/']", HEADER)
@@ -112,9 +112,9 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertEqual(HEADER.count('href={`${base}photography/`}>View Photography</a>'), 2)
         self.assertEqual(HEADER.count('href={`${base}gear/`}>View All Gear</a>'), 2)
         self.assertIn('https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html', HEADER)
-        self.assertIn("creator: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
-        self.assertIn("copyrightHolder: { '@type': 'Person', name: 'Ryan D. Lewis' }", PHOTO_DETAIL)
-        self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.', PHOTO_DETAIL)
+        self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }", PHOTO_DETAIL)
+        self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }", PHOTO_DETAIL)
+        self.assertIn('photo.copyrightNotice', PHOTO_DETAIL)
 
 
 if __name__ == '__main__':

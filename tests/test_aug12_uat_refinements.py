@@ -42,7 +42,7 @@ class TestAug12UatRefinements(unittest.TestCase):
         prints = (ROOT / 'src/pages/prints.astro').read_text()
         collection = (ROOT / 'src/pages/collection.astro').read_text()
         self.assertIn('<h1>Photography</h1>', photography)
-        self.assertIn('Original photographs from Kentucky’s Red River Gorge and Clifty Wilderness.', photography)
+        self.assertIn('Selected photography from Kentucky’s Red River Gorge, Clifty Wilderness, and surrounding wild country.', photography)
         self.assertIn("Astro.redirect(`${base}photography/`, 301)", prints)
         self.assertIn("Astro.redirect(`${base}photography/`, 301)", collection)
         self.assertNotIn('View on Fine Art America', prints)

@@ -272,7 +272,7 @@ export const stories = storyRecords.map((story, index) => ({
   ...story,
   slug: story.id,
   authorName: 'Ryan D. Lewis',
-  relatedPhotoSlug: relatedPhotoSlugs[index]
+  relatedPhotoSlug: relatedPhotoSlugs[index]!
 }));
 
 export const storyBySlug = (slug: string) => stories.find((story) => story.slug === slug);

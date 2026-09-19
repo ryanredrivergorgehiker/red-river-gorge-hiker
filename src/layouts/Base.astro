@@ -40,7 +40,7 @@ const {
 } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const canonicalRoute = canonicalPath
-  ? `${base}${canonicalPath.replace(/^\\/+/, '')}`
+  ? `${base}${canonicalPath.replace(/^\/+/, '')}`
   : Astro.url.pathname;
 const canonical = new URL(canonicalRoute, Astro.site ?? Astro.url.origin);
 const fullTitle = titleTag ?? `${title} | Red River Gorge Hiker`;

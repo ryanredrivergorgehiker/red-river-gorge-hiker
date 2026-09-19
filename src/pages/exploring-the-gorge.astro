@@ -2,6 +2,8 @@
 import Base from '../layouts/Base.astro';
 import { stories } from '../data/stories';
 const base=import.meta.env.BASE_URL;
+const legacyRoutes=Object.fromEntries(stories.map((story)=>[story.slug, `${base}stories/${story.slug}/`]));
+const legacyScript=`const routes=${JSON.stringify(legacyRoutes)}; const slug=window.location.hash.replace(/^#/, ''); if(routes[slug]) window.location.replace(routes[slug]);`;
 ---
 <Base title="Stories" description="Red River Gorge Hiker stories from the Gorge." canonicalPath="/stories/">
   <div class="page prose">
@@ -9,8 +11,5 @@ const base=import.meta.env.BASE_URL;
     <p class="lede">The Red River Gorge Hiker story archive now lives at <a href={`${base}stories/`}>/stories/</a>.</p>
     <ul>{stories.map((story)=><li><a href={`${base}stories/${story.slug}/`}>{story.title}</a></li>)}</ul>
   </div>
-  <script is:inline define:vars={{base, slugs: stories.map((story)=>story.slug)}}>
-    const slug = window.location.hash.replace(/^#/, '');
-    if (slugs.includes(slug)) window.location.replace(`${base}stories/${slug}/`);
-  </script>
+  <script is:inline set:html={legacyScript}></script>
 </Base>
