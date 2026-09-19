@@ -32,7 +32,7 @@ const { title, url } = Astro.props;
     shareButton.addEventListener('click', async () => {
       const title = controls.dataset.shareTitle ?? document.title;
       const url = controls.dataset.shareUrl ?? window.location.href;
-      const text = `${title} — Red River Gorge Hiker`;
+      const text = `${title} | Red River Gorge Hiker`;
 
       try {
         await navigator.share({ title, text, url });

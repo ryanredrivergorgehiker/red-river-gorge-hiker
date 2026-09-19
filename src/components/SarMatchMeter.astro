@@ -205,15 +205,15 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       } else if (exceeded) {
         primary.textContent = `${generated} generated`;
         detail.textContent = 'Match goal surpassed';
-        stateLabel = `${generated} generated · match goal surpassed`;
+        stateLabel = `${generated} generated · annual commitment surpassed`;
       } else if (achieved) {
-        primary.textContent = 'Match achieved';
+        primary.textContent = 'Annual commitment reached';
         detail.textContent = `${generated} generated for SAR`;
-        stateLabel = `Match achieved · ${generated} generated for SAR`;
+        stateLabel = `Annual commitment reached · ${generated} generated for SAR`;
       } else {
-        primary.textContent = `RRGH Match: ${generated} / ${target}`;
+        primary.textContent = `RRGH commitment: ${generated} / ${target}`;
         detail.textContent = `${percentRounded}% of annual milestone`;
-        stateLabel = `${generated} of ${target} matched · ${percentRounded}%`;
+        stateLabel = `${generated} of ${target} commitment · ${percentRounded}%`;
       }
       meter.setAttribute('aria-label', variant === 'header'
         ? `Search and Rescue: ${stateLabel} View Search and Rescue resources.`

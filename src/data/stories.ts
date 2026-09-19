@@ -13,7 +13,7 @@ const storyRecords = [
   {
     title: 'Lili’s Leap',
     id: 'lilis-leap',
-    summary: 'Sick, exhausted, and alone in the backcountry, Ryan left the known route anyway—and found a 94-foot waterfall he would name for his daughter.',
+    summary: 'Sick, exhausted, and alone in the backcountry, Ryan left the known route anyway, and found a 94-foot waterfall he would name for his daughter.',
     paragraphs: [
       `I had barely slept.`,
       `It was March 2023, and the temperature had fallen to around 20 degrees during the night. Cold was expected. What wasn't expected was spending much of the night sick.`,
@@ -31,7 +31,7 @@ const storyRecords = [
       `I measured it later at approximately 94 feet 3 inches. But standing there that day, measurements weren't really what mattered.`,
       `I had been miserable for hours. I was still sick. I was alone.`,
       `And suddenly I was incredibly happy.`,
-      `I named it ${externalLink('Lili’s Leap Falls', waterfallReferences.lili)}, for my daughter Lili—and because finding it had required exactly that: a leap.`,
+      `I named it ${externalLink('Lili’s Leap Falls', waterfallReferences.lili)}, for my daughter Lili, and because finding it had required exactly that: a leap.`,
       `Finding the waterfall wasn't the end of the day.`,
       `Bushwhacking back out, I eventually found myself traversing down approximately a 20-foot wall. I was solo. I had no rope.`,
       `There wasn't much to do except get myself down it.`,
@@ -70,7 +70,7 @@ const storyRecords = [
       `And when I headed outside, the rain started.`,
       `That was the beginning.`,
       `The destination was Hemlock Lodge.`,
-      `Between Frenchburg and there was the Red River Gorge—and <strong>31.87 miles</strong> of walking.`,
+      `Between Frenchburg and there was the Red River Gorge, and <strong>31.87 miles</strong> of walking.`,
       `The rain didn't politely pass through.`,
       `I walked through it.`,
       `Hour after hour.`,
@@ -126,7 +126,7 @@ const storyRecords = [
       `Every tributary becomes a possibility.`,
       `Every cliff line becomes a question.`,
       `Every contour on a topo map starts suggesting something.`,
-      `The result was that I began documenting features all over the Gorge and Clifty Wilderness—arches, waterfalls, overlooks and other formations.`,
+      `The result was that I began documenting features all over the Gorge and Clifty Wilderness: arches, waterfalls, overlooks and other formations.`,
       `Some were small.`,
       `Some were significant.`,
       `Some eventually became recognized features.`,
@@ -175,7 +175,7 @@ const storyRecords = [
       `There is also a historical symmetry that I didn't understand when I first walked into that drainage.`,
       `Daniel Boone is my ancestor.`,
       `Kentucky's wilderness was part of his world, and today an enormous portion of the landscape I explore carries his name: <strong>Daniel Boone National Forest</strong>.`,
-      `For years, Yahoo Falls—at 113 feet—has been identified by the National Park Service as Kentucky's highest waterfall. The historical record does <strong>not</strong> support saying that Boone discovered Yahoo Falls, and I don't intend to turn family history into mythology just because it makes a better sentence. The distinction between documented history and legend matters.`,
+      `For years, Yahoo Falls, at 113 feet, has been identified by the National Park Service as Kentucky's highest waterfall. The historical record does <strong>not</strong> support saying that Boone discovered Yahoo Falls, and I don't intend to turn family history into mythology just because it makes a better sentence. The distinction between documented history and legend matters.`,
       `The parallel is simpler than that.`,
       `Daniel Boone explored Kentucky wilderness.`,
       `Generations later, one of his descendants spent years exploring remote drainages in the national forest that bears his name.`,
@@ -190,7 +190,7 @@ const storyRecords = [
   {
     title: 'Granddaddy’s Arch',
     id: 'granddaddys-arch',
-    summary: 'An off-trail search produced an arch Ryan named for family history—and marked a shift from using other people’s records to contributing his own.',
+    summary: 'An off-trail search produced an arch Ryan named for family history and marked a shift from using other people’s records to contributing his own.',
     paragraphs: [
       `I went looking in the places people usually passed by.`,
       `That was the game by then.`,
@@ -280,22 +280,11 @@ const groupParagraphs = (lines: string[], plan: readonly number[]) => {
   return grouped;
 };
 
-// Temporary staging imagery only. Final story images will be supplied separately.
-const placeholderPhotoSlugs = [
-  'splatter-falls',
-  'double-rainbow-at-eagles-point-buttress',
-  'splatter-falls',
-  'splatter-falls',
-  'winter-at-red-byrd-arch',
-  'double-rainbow-at-eagles-point-buttress'
-] as const;
-
-export const stories = storyRecords.map((story, index) => ({
+export const stories = storyRecords.map((story) => ({
   ...story,
   paragraphs: groupParagraphs(story.paragraphs, paragraphPlans[story.id] ?? [story.paragraphs.length]),
   slug: story.id,
-  authorName: 'Ryan D. Lewis',
-  placeholderPhotoSlug: placeholderPhotoSlugs[index]!
+  authorName: 'Ryan D. Lewis'
 }));
 
 export const storyBySlug = (slug: string) => stories.find((story) => story.slug === slug);

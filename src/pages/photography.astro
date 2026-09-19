@@ -11,10 +11,17 @@ import { photographs } from '../data/products';
     <h1>Photography</h1>
     <div class="prose-wide">
       <p class="lede">Selected photography from Kentucky’s Red River Gorge, Clifty Wilderness, and surrounding wild country.</p>
-      <p>Open any work to see its creator, story, capture details, and available wall-art or puzzle options.</p>
+      <p>Open any work to see its story, capture details, and available wall-art or puzzle options.</p>
     </div>
     <div class="grid collection-mosaic">
       {photographs.map((photo, index) => <Card photo={photo} featured={index === 0} />)}
     </div>
   </div>
 </Base>
+
+<style>
+  .catalog-page .prose-wide p:last-child { margin-bottom: 0; }
+  .catalog-page .collection-mosaic { margin-top: 1.25rem; }
+  :global(.catalog-page .card .artwork) { margin-bottom: .55rem; }
+  :global(.catalog-page .card h3) { margin-bottom: .3rem; }
+</style>

@@ -15,13 +15,13 @@ STORE_URL = 'https://store.redrivergorgehiker.com/featured/double-rainbow-at-eag
 AVIF = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a.avif'
 SHARE = 'rrgh-merch-double-rainbow-greeting-card-3d945e8a-share.jpg'
 EXPECTED_EXISTING_TITLES = [
-    'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+    'Men’s T-Shirt (Athletic Fit) - Chest Logo',
     'Sticker',
     'Tote Bag',
     'Men’s T-Shirt (Regular Fit)',
     'Women’s T-Shirt',
     'Sweatshirt',
-    'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+    'Men’s T-Shirt (Athletic Fit) - Pocket Logo',
     'Throw Pillow',
     'Women’s Tank Top',
     'Fleece / Sherpa Blanket',
@@ -61,9 +61,9 @@ class DoubleRainbowGreetingCardContract(unittest.TestCase):
             "priceLabel: 'From $6.25'",
             "specification: 'Greeting card only'",
             STORE_URL,
-            'Single Card — $6.25',
-            'Pack of 10 — $35.00 total ($3.50 per card)',
-            'Pack of 25 — $53.00 total (Store displays $2.12 per card)',
+            'Single Card - $6.25',
+            'Pack of 10 - $35.00 total ($3.50 per card)',
+            'Pack of 25 - $53.00 total (Store displays $2.12 per card)',
             'optional inside message',
             'quantity selection, optional inside-message customization, checkout, payment, production, fulfillment, and shipping',
             "lastVerified: '2026-08-22'",

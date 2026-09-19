@@ -46,8 +46,8 @@ class SiteContract(unittest.TestCase):
         self.assertNotIn('.png', MERCH.lower())
         for retired_title in ('Coffee Mug', 'Zip Pouch', 'Bath Towel', 'Beach Towel', 'Ornament'):
             self.assertNotIn(f"title: '{retired_title}'", MERCH)
-        self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo'", MERCH)
-        self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo'", MERCH)
+        self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) - Chest Logo'", MERCH)
+        self.assertIn("title: 'Men’s T-Shirt (Athletic Fit) - Pocket Logo'", MERCH)
         self.assertNotIn('?product=ornament', MERCH)
         self.assertNotIn('Select the Pocket design location on Fine Art America.', MERCH)
         self.assertEqual(MERCH.count('?product=adult-tshirt&completeProductSku='), 2)
@@ -66,13 +66,13 @@ class SiteContract(unittest.TestCase):
         self.assertEqual(
             titles,
             [
-                'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+                'Men’s T-Shirt (Athletic Fit) - Chest Logo',
                 'Sticker',
                 'Tote Bag',
                 'Men’s T-Shirt (Regular Fit)',
                 'Women’s T-Shirt',
                 'Sweatshirt',
-                'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+                'Men’s T-Shirt (Athletic Fit) - Pocket Logo',
                 'Throw Pillow',
                 'Women’s Tank Top',
                 'Fleece / Sherpa Blanket',

@@ -22,7 +22,7 @@ const assetBase = 'assets/merchandise/' as const;
 export const merchandiseProducts: readonly MerchandiseProduct[] = [
   {
     slug: 'tshirt-chest-logo',
-    title: 'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+    title: 'Men’s T-Shirt (Athletic Fit) - Chest Logo',
     description: 'Athletic-fit Red River Gorge Hiker T-shirt with the logo centered on the chest.',
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',
@@ -116,7 +116,7 @@ export const merchandiseProducts: readonly MerchandiseProduct[] = [
   },
   {
     slug: 'tshirt-pocket-logo',
-    title: 'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+    title: 'Men’s T-Shirt (Athletic Fit) - Pocket Logo',
     description: 'Athletic-fit Red River Gorge Hiker T-shirt with a small logo at the pocket position.',
     priceLabel: 'From $25',
     specification: 'Men’s T-Shirt · Athletic Fit',

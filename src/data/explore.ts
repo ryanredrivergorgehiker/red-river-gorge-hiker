@@ -32,7 +32,7 @@ export const exploreSections: ExploreSection[] = [
       { label: 'Search & Rescue overview', href: '/search-and-rescue/' },
       { label: 'Wolfe County Search & Rescue', href: 'https://wcsart.com/', external: true },
       { label: 'Powell County Search & Rescue', href: 'https://www.pocosar.org/', external: true },
-      { label: 'Hiking preparedness & safety', href: '/search-and-rescue/#prep-title' },
+      { label: 'Hiking preparedness & safety', href: '/search-and-rescue/#hiking-safety' },
       { label: 'Donate directly to Wolfe County SAR', href: 'https://wcsart.com/donate/', external: true }
     ]
   },
@@ -52,7 +52,7 @@ export const exploreSections: ExploreSection[] = [
     title: 'Landforms',
     description: 'Independent reference sites for arches, waterfalls, overlooks, and other Kentucky landforms.',
     links: [
-      { label: 'Arches of the Red River Gorge — William H. Patrick', href: 'https://redrivergorgearches.com/', external: true },
+      { label: 'Arches of the Red River Gorge - William H. Patrick', href: 'https://redrivergorgearches.com/', external: true },
       { label: 'Kentucky Arches', href: 'https://kyarches.com/', external: true },
       { label: 'Kentucky Waterfalls', href: 'https://kywaterfalls.com/', external: true },
       { label: 'Kentucky Overlooks', href: 'https://kyoverlooks.com/', external: true },
@@ -86,7 +86,7 @@ export const exploreSections: ExploreSection[] = [
     description: 'Go to the governing source for closures, weather, roads, and park notices.',
     links: [
       { label: 'Daniel Boone National Forest alerts & closures', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
-      { label: 'National Weather Service — Slade area', href: 'https://forecast.weather.gov/MapClick.php?lat=37.783&lon=-83.683', external: true },
+      { label: 'National Weather Service - Slade area', href: 'https://forecast.weather.gov/MapClick.php?lat=37.783&lon=-83.683', external: true },
       { label: 'GoKY road conditions', href: 'https://goky.ky.gov/', external: true },
       { label: 'Natural Bridge / Kentucky State Parks notices', href: 'https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796', external: true }
     ]
@@ -96,7 +96,7 @@ export const exploreSections: ExploreSection[] = [
     title: 'Hiking Safety',
     description: 'RRGH preparedness guidance and established National Park Service safety resources.',
     links: [
-      { label: 'RRGH preparedness section', href: '/search-and-rescue/#prep-title' },
+      { label: 'RRGH preparedness section', href: '/search-and-rescue/#hiking-safety' },
       { label: 'NPS Ten Essentials', href: 'https://www.nps.gov/articles/10essentials.htm', external: true },
       { label: 'NPS Hike Smart', href: 'https://www.nps.gov/articles/hiking-safety.htm', external: true }
     ]

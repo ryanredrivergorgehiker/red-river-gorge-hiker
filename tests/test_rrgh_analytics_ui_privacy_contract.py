@@ -49,7 +49,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
     def test_staging_has_nonvisual_effective_state_diagnostic(self):
         self.assertIn("window.location.hostname.endsWith('github.io')", BAR)
         self.assertIn('data-effective-source', BAR)
-        self.assertIn('Staging diagnostic — source:', BAR)
+        self.assertIn('Staging diagnostic - source:', BAR)
 
     def test_skip_link_stays_outside_bar_until_keyboard_focus(self):
         self.assertIn(':global(.site-header .skip)', BAR)

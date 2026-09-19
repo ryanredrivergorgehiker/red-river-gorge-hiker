@@ -88,6 +88,8 @@ class SarContract(unittest.TestCase):
         self.assertIn('data.matchPercentage >= 100', SAR_METER)
         self.assertIn('Math.min(Math.max(data.matchPercentage, 0), 100)', SAR_METER)
         self.assertIn('Annual commitment surpassed', SAR_METER)
+        self.assertIn('RRGH commitment:', SAR_METER)
+        self.assertNotIn('RRGH Match:', SAR_METER)
         self.assertIn('milestone, not a cap', SAR_PAGE)
 
     def test_requested_uat_polish_is_encoded(self):
@@ -133,11 +135,15 @@ class SarContract(unittest.TestCase):
         self.assertNotIn('Ryan', SAR_PAGE)
         self.assertIn("powellSar: 'https://www.pocosar.org/'", SAR_DATA)
         self.assertNotIn('kyemSar:', SAR_DATA)
+        self.assertIn('id="hiking-safety"', SAR_PAGE)
         self.assertNotIn('20% of RRGH business profit is allocated to Powell', SAR_PAGE)
         self.assertNotIn('20% of RRGH business profit is allocated to Menifee', SAR_PAGE)
         self.assertNotIn('20% of RRGH business profit is allocated to Lee', SAR_PAGE)
         sar_css = (ROOT / 'src/styles/sar.css').read_text()
         self.assertIn('.sar-regional-resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }', sar_css)
+        self.assertIn('.sar-regional-resources > .sar-source-note', sar_css)
+        self.assertIn('scroll-margin-top: 12rem;', sar_css)
+        self.assertIn('padding: 2.25rem 0 3.5rem;', sar_css)
 
     def test_no_wcsart_brand_asset_is_committed(self):
         public_files = [str(path).lower() for path in (ROOT / 'public').rglob('*') if path.is_file()]

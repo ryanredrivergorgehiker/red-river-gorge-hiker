@@ -22,7 +22,7 @@ class BrandFirstExploreContract(unittest.TestCase):
             self.assertIn(f"title: '{title}'", explore)
         self.assertIn("target={link.external ? '_blank' : undefined}",header)
         self.assertNotIn('View All Stories',explore)
-        self.assertNotIn('Kentucky Emergency Management — Search & Rescue',explore)
+        self.assertNotIn('Kentucky Emergency Management - Search & Rescue',explore)
         self.assertIn("rel={link.external ? 'noopener noreferrer' : undefined}",header)
 
     def test_explore_page_and_story_routes(self):
@@ -48,23 +48,28 @@ class BrandFirstExploreContract(unittest.TestCase):
             self.assertIn(field,products)
         self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }",photo)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }",photo)
-        self.assertIn('<dt>Creator</dt>',photo)
-        self.assertIn('<dt>Copyright holder</dt>',photo)
-        self.assertIn('<dt>Medium</dt><dd>Photography</dd>',photo)
-        self.assertIn('<dt>Creator role</dt>',photo)
-        self.assertIn('<dt>Story author</dt>',photo)
+        self.assertNotIn('<dt>Creator</dt>',photo)
+        self.assertNotIn('<dt>Copyright holder</dt>',photo)
+        self.assertNotIn('<dt>Medium</dt><dd>Photography</dd>',photo)
+        self.assertNotIn('<dt>Creator role</dt>',photo)
+        self.assertNotIn('<dt>Story author</dt>',photo)
+        self.assertNotIn('creator-details',photo)
         self.assertNotIn('Photography by {photo.creatorName}',photo)
         self.assertNotIn('Story by {photo.storyAuthor}',photo)
-        self.assertIn('{photo.copyrightNotice}',photo)
+        self.assertIn('Photographs © Ryan D. Lewis. All rights reserved.',photo)
         self.assertNotIn('Photography by Ryan D. Lewis</figcaption>',artwork)
         card=read('src/components/Card.astro')
         self.assertNotIn('card-creator',card)
         stories=read('src/data/stories.ts')
         self.assertIn('paragraphPlans',stories)
-        self.assertIn('placeholderPhotoSlug',stories)
+        self.assertNotIn('placeholderPhotoSlug',stories)
         story_page=read('src/pages/stories/[slug].astro')
         self.assertNotIn('Related photograph',story_page)
         self.assertNotIn('All stories',story_page)
+        self.assertNotIn('data-story-image-placeholder',story_page)
+        self.assertNotIn("import Artwork from",story_page)
+        self.assertIn('search-and-rescue/#hiking-safety',story_page)
+        self.assertIn('search-and-rescue/#hiking-safety',explore)
 
     def test_brand_contact_footer_about_and_home_metadata(self):
         footer=read('src/components/Footer.astro')
@@ -84,6 +89,13 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertIn('On July 19, 2025, Ryan camped near Eagle’s Point Buttress',products)
         self.assertNotIn('On July 19, 2025, I camped near Eagle’s Point Buttress',products)
         self.assertIn("Explore Kentucky's Red River Gorge with stories, maps, landforms, trails, camping, safety and search-and-rescue resources, plus photography, art and gear.",home)
+
+    def test_public_site_source_contains_no_em_dashes(self):
+        text_suffixes={'.astro','.ts','.js','.css','.json','.md','.txt','.csv','.xml','.html'}
+        for root in (ROOT/'src', ROOT/'public'):
+            for path in root.rglob('*'):
+                if path.is_file() and path.suffix.lower() in text_suffixes:
+                    self.assertNotIn('—',path.read_text(encoding='utf-8',errors='ignore'),str(path))
 
     def test_commerce_and_measurement_boundaries_are_not_reauthored(self):
         products=read('src/data/products.ts')

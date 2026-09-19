@@ -291,7 +291,7 @@ async function main() {
 
   const manifest = {
     generatedAt: new Date().toISOString(),
-    stage: 'Stage 1 — photography commerce only',
+    stage: 'Stage 1 - photography commerce only',
     itemCount: rows.length,
     itemGrouping: 'Each of the 46 catalog entries is a standalone product; item_group_id is intentionally omitted.',
     transactionAuthority: STORE_ROOT,

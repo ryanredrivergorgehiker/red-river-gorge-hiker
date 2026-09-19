@@ -157,7 +157,7 @@
   display: grid;
   grid-template-columns: minmax(15rem, .75fr) minmax(0, 1.6fr);
   gap: 3.25rem;
-  padding: 3.25rem 0 4.3rem;
+  padding: 2.5rem 0 2.75rem;
   border-top: 1px solid var(--line);
 }
 .sar-story-heading h2 { font-size: clamp(1.9rem, 3.3vw, 2.8rem); }
@@ -170,7 +170,7 @@
 }
 
 /* Meter and reporting */
-.sar-match-section { padding: 4rem 0 4.5rem; border-top: 1px solid var(--line); }
+.sar-match-section { padding: 2.75rem 0 3rem; border-top: 1px solid var(--line); }
 .sar-financial-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -230,14 +230,18 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(17rem, .65fr);
   gap: 3rem;
   align-items: center;
-  padding-block: 4.5rem;
+  padding-block: 3.5rem;
 }
 .sar-wcsart-inner p { max-width: 52rem; line-height: 1.65; }
-.sar-source-note { color: #d8cdbc; font-size: .86rem; }
+.sar-source-note { color: #4c554e; font-size: .86rem; }
+.sar-wcsart .sar-source-note { color: #d8cdbc; }
 .sar-wcsart-actions { display: grid; gap: .75rem; }
 
 /* Preparedness */
-.sar-prep { padding-block: 4.7rem; }
+.sar-prep {
+  padding: 2.25rem 0 3.5rem;
+  scroll-margin-top: 12rem;
+}
 .sar-prep-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .sar-prep-card {
   min-height: 13.5rem;
@@ -274,7 +278,12 @@
 .sar-emergency-details p { color: #d8cdbc; font-size: .88rem; }
 
 /* Maps and official resources */
-.sar-resources { padding-block: 4.7rem; }
+.sar-resources { padding-block: 3.5rem; }
+.sar-regional-resources { padding-bottom: 1.75rem; }
+.sar-regional-resources > .sar-source-note {
+  margin: .8rem 0 0;
+  color: #465047;
+}
 .sar-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .sar-regional-resource-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .sar-resource-card {
@@ -376,9 +385,9 @@
   .sar-emergency-grid,
   .sar-camping-panel { grid-template-columns: 1fr; gap: 1.6rem; }
   .sar-direct-support { padding-block: 3.2rem; }
-  .sar-story { padding-bottom: 3.6rem; }
+  .sar-story { padding-top: 2rem; padding-bottom: 2.35rem; }
   .sar-wcsart-inner,
-  .sar-emergency-grid { padding-block: 3.7rem; }
+  .sar-emergency-grid { padding-block: 3rem; }
   .sar-emergency-details { padding: 1.5rem 0 0; border-left: 0; border-top: 1px solid rgba(232,220,200,.25); }
   .sar-emergency-details ul { columns: 1; }
   .sar-camping-panel { padding: 1.35rem; }

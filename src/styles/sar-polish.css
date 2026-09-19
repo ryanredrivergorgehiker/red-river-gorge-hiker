@@ -151,7 +151,11 @@
   .sar-page .sar-prep,
   .sar-page .sar-resources,
   .sar-page .sar-education .sar-shell {
-    padding-block: 3rem;
+    padding-block: 2.5rem;
+  }
+
+  .sar-page .sar-regional-resources {
+    padding-bottom: 1.5rem;
   }
 
   .sar-page .sar-camping {
@@ -274,8 +278,12 @@
   }
 
   .sar-page .sar-resources {
-    padding-top: 2.6rem;
-    padding-bottom: 2.6rem;
+    padding-top: 2.35rem;
+    padding-bottom: 2.35rem;
+  }
+
+  .sar-page .sar-regional-resources {
+    padding-bottom: 1.25rem;
   }
 
   .sar-page .sar-education .sar-shell {

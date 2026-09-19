@@ -103,10 +103,9 @@ const artworkSchema = {
           alt={photo.altText}
           sizes={imageSizes}
           showCaption={false}
-          creatorName={photo.creatorName}
-          creatorRole={photo.creatorRole === 'Photographer' ? 'Photography' : photo.creatorRole}
         />
       </a>
+      <p class="photo-copyright-credit">Photographs © Ryan D. Lewis. All rights reserved.</p>
     </div>
 
     <section class="prose photo-story">
@@ -129,14 +128,6 @@ const artworkSchema = {
         <div><dt>Photographed</dt><dd>{photo.captureDate}</dd></div>
         <div><dt>Location</dt><dd>{photo.location}</dd></div>
       </dl>
-      <dl class="details creator-details" aria-label="Creator and rights information">
-        <div><dt>Creator</dt><dd>{photo.creatorName}</dd></div>
-        <div><dt>Copyright holder</dt><dd>{photo.copyrightHolder}</dd></div>
-        <div><dt>Medium</dt><dd>Photography</dd></div>
-        <div><dt>Creator role</dt><dd>{photo.creatorRole}</dd></div>
-        <div><dt>Story author</dt><dd>{photo.storyAuthor}</dd></div>
-      </dl>
-      <p>{photo.copyrightNotice}</p>
     </section>
 
     <aside
@@ -179,7 +170,14 @@ const artworkSchema = {
   .photo-story {
     width: 100%;
     max-width: var(--reading);
-    margin-top: 2.5rem;
+    margin-top: 2.1rem;
+  }
+
+  .photo-copyright-credit {
+    margin: .45rem 0 0;
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.4;
   }
 
   .photo-context-share-row {

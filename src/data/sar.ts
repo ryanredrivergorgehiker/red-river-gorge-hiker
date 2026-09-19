@@ -1,4 +1,4 @@
-export const SAR_REPORTING_SOURCE = 'Red River Gorge Hiker — Bookkeeping Ledger / SAR Public Reporting' as const;
+export const SAR_REPORTING_SOURCE = 'Red River Gorge Hiker - Bookkeeping Ledger / SAR Public Reporting' as const;
 
 export const SAR_PUBLIC_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuKVBO_LFcCBu-gZL9vHVsLwP2w7KNi1bUbgeDTUvCbtdsP5Osc9Ky2Wuz4FgyOfeGy1SY0tbSrif0/pub?gid=1698631448&single=true&output=csv' as const;
 

@@ -11,14 +11,14 @@ ASSET_DIR = ROOT / 'public/assets/merchandise'
 
 EXPECTED_ORDER = [
     'Double Rainbow at Eagle’s Point Buttress Greeting Card',
-    'Men’s T-Shirt (Athletic Fit) — Chest Logo',
+    'Men’s T-Shirt (Athletic Fit) - Chest Logo',
     'Sticker',
     'Tote Bag',
     'Men’s T-Shirt (Regular Fit)',
     'Women’s T-Shirt',
     'Long-Sleeve T-Shirt',
     'Sweatshirt',
-    'Men’s T-Shirt (Athletic Fit) — Pocket Logo',
+    'Men’s T-Shirt (Athletic Fit) - Pocket Logo',
     'Throw Pillow',
     'Men’s Tank Top',
     'Women’s Tank Top',
