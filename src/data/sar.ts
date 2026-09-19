@@ -4,15 +4,20 @@ export const SAR_PUBLIC_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PAC
 
 export const SAR_PUBLIC_FIELDS = [
   'reportingYear',
-  'personalAnnualCommitment',
-  'rrghSarGenerated',
-  'rrghSarDonated',
-  'outstandingCommitment',
-  'matchPercentage',
-  'annualCombinedSupport',
+  'rrghAnnualBaseCommitment',
+  'rrghProfitAllocationGenerated',
+  'rrghTotalCommitment',
+  'rrghBaseCommitmentTransferred',
+  'rrghProfitAllocationTransferred',
+  'rrghTotalTransferred',
+  'outstandingBaseCommitment',
+  'outstandingProfitAllocation',
+  'outstandingRrghCommitment',
+  'commitmentFulfillmentPercentage',
   'historicalPersonalSupport',
   'lifetimePersonalSupport',
-  'lifetimeRrghSupport',
+  'lifetimeRrghCommitted',
+  'lifetimeRrghTransferred',
   'combinedLifetimeSupport',
   'lastUpdated'
 ] as const;
@@ -23,18 +28,22 @@ export const SAR_PUBLIC_FIELDS = [
 // SAR Website Public Data handoff when a production release updates the fallback snapshot.
 export const sar = {
   reportingYear: 2026,
-  personalAnnualCommitment: 500,
-  rrghSarGenerated: 0,
-  rrghSarDonated: 0,
-  outstandingCommitment: 0,
-  matchPercentage: 0,
-  annualCombinedSupport: 0,
+  rrghAnnualBaseCommitment: 500,
+  rrghProfitAllocationGenerated: 0,
+  rrghTotalCommitment: 500,
+  rrghBaseCommitmentTransferred: 0,
+  rrghProfitAllocationTransferred: 0,
+  rrghTotalTransferred: 0,
+  outstandingBaseCommitment: 500,
+  outstandingProfitAllocation: 0,
+  outstandingRrghCommitment: 500,
+  commitmentFulfillmentPercentage: 0,
   historicalPersonalSupport: 500,
   lifetimePersonalSupport: 500,
-  lifetimeRrghSupport: 0,
+  lifetimeRrghCommitted: 500,
   lifetimeRrghTransferred: 0,
   combinedLifetimeSupport: 500,
-  lastUpdated: '2026-08-10T12:08:00-04:00',
+  lastUpdated: '2026-09-19T14:39:00-04:00',
   source: SAR_REPORTING_SOURCE
 } as const;
 

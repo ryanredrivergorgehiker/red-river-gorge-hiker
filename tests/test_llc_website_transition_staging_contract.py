@@ -36,7 +36,8 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("publisher: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' }", base)
         self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }", photo)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }", photo)
-        self.assertIn("Photographs © Ryan D. Lewis. All rights reserved.", photo)
+        self.assertIn("Photograph {photo.copyrightNotice}", photo)
+        self.assertNotIn("Photograph © Ryan D. Lewis. All rights reserved.", photo)
         self.assertNotIn("Red River Gorge Hiker, LLC", photo)
 
     def test_copyright_and_terms_exact_llc_language(self):
@@ -50,7 +51,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
             "Purchasing a print, puzzle, gear item, greeting card, or other physical product does not transfer copyright, reproduction rights, or any other intellectual-property rights in the underlying photograph, artwork, branding, or other protected material.",
             "Red River Gorge Hiker, LLC, operating under the Red River Gorge Hiker brand, makes no representation or warranty that any location shown or discussed on the website is currently accessible, publicly accessible, safe, accurately described, or suitable for any particular visitor.",
             "To the fullest extent permitted by applicable law, Red River Gorge Hiker, LLC shall not be responsible for injuries, losses, damages, expenses, or other consequences arising from a visitor's use of or reliance upon outdoor, geographic, historical, safety, access, or location-related information provided through this website.",
-            "Red River Gorge Hiker, LLC, operating under the Red River Gorge Hiker brand, independently supports Wolfe County Search & Rescue through the RRGH business-support program described on this website. This is separate from Ryan D. Lewis's personal support of Wolfe County Search & Rescue. No formal partnership, sponsorship, endorsement, agency relationship, promotional arrangement, or commercial relationship with Wolfe County Search & Rescue is stated or implied. Neither Red River Gorge Hiker, LLC nor Ryan D. Lewis speaks for Wolfe County Search & Rescue.",
+            "Red River Gorge Hiker, LLC independently supports Wolfe County Search & Rescue. RRGH maintains a minimum $500 annual Company commitment and separately allocates 20% of positive Red River Gorge Hiker business profit. These commitments are separate and additive; neither offsets or satisfies the other. Historical personal support by Ryan D. Lewis remains separate from Company support.",
             "Links inviting visitors to donate directly to Wolfe County Search & Rescue send visitors to WCSART's own public donation system. Direct charitable donations do not pass through Red River Gorge Hiker, LLC or Ryan D. Lewis, and neither Red River Gorge Hiker, LLC nor Ryan D. Lewis processes, holds, or relays those direct donations.",
             "Online product purchases linked from Red River Gorge Hiker are completed through the Red River Gorge Hiker Store at store.RedRiverGorgeHiker.com, which is powered by Pixels / Fine Art America. Pixels operates the checkout and payment system and handles on-demand production, shipping, customer service, and returns. Purchases through the Store are also subject to the applicable Pixels terms, privacy practices, and return policies. Red River Gorge Hiker, LLC does not manufacture or ship Pixels orders, process buyers’ payment cards, or administer Pixels returns.",
             "To the fullest extent permitted by applicable law, Red River Gorge Hiker, LLC shall not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages arising from or related to access to, use of, inability to use, or reliance upon RedRiverGorgeHiker.com or its content.",
@@ -87,27 +88,42 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("Permission must be granted in writing by the applicable copyright holder or authorized rights representative.", permissions)
         self.assertIn("Info@RedRiverGorgeHiker.com", permissions)
 
-    def test_sar_business_personal_split_without_financial_logic_changes(self):
+    def test_sar_leg_dec_0027_company_commitment_contract(self):
         text = visible("src/pages/search-and-rescue.astro")
-        self.assertIn("20% of RRGH business profit is allocated to Wolfe County Search & Rescue.", text)
-        self.assertIn("Red River Gorge Hiker was built with a commitment to give back to the people who respond when hikers need help. RRGH maintains an annual SAR commitment, and the business also allocates 20% of positive business profit to Wolfe County Search & Rescue.", text)
-        self.assertIn("Red River Gorge Hiker, LLC supports Wolfe County Search & Rescue independently through the Red River Gorge Hiker business-support program. This is not a partnership, sponsorship, endorsement, agency relationship, or commercial arrangement, and Red River Gorge Hiker, LLC does not speak on WCSART's behalf.", text)
-        self.assertNotIn("Ryan", text)
+        data = read("src/data/sar.ts")
+        self.assertIn("Red River Gorge Hiker, LLC maintains two separate commitments to Wolfe County Search & Rescue: at least $500 each calendar year, plus 20% of positive Red River Gorge Hiker business profit.", text)
+        self.assertIn("Neither commitment offsets or satisfies the other.", text)
+        self.assertIn("Historical personal support before the RRGH program", text)
         for invariant in [
-            "sar.personalAnnualCommitment",
-            "sar.rrghSarGenerated",
-            "sar.rrghSarDonated",
-            "sar.outstandingCommitment",
-            "sar.annualCombinedSupport",
+            "sar.rrghAnnualBaseCommitment",
+            "sar.rrghProfitAllocationGenerated",
+            "sar.rrghTotalCommitment",
+            "sar.rrghBaseCommitmentTransferred",
+            "sar.rrghProfitAllocationTransferred",
+            "sar.rrghTotalTransferred",
+            "sar.outstandingBaseCommitment",
+            "sar.outstandingProfitAllocation",
+            "sar.outstandingRrghCommitment",
+            "sar.commitmentFulfillmentPercentage",
             "sar.historicalPersonalSupport",
             "sar.lifetimePersonalSupport",
-            "sar.lifetimeRrghSupport",
+            "sar.lifetimeRrghCommitted",
             "sar.lifetimeRrghTransferred",
             "sar.combinedLifetimeSupport",
-            "sar.matchPercentage",
             "sar.lastUpdated",
         ]:
             self.assertIn(invariant, text)
+        for legacy in [
+            "personalAnnualCommitment",
+            "rrghSarGenerated",
+            "rrghSarDonated",
+            "outstandingCommitment",
+            "matchPercentage",
+            "annualCombinedSupport",
+            "lifetimeRrghSupport",
+        ]:
+            self.assertNotIn(legacy, data)
+            self.assertNotIn(f"sar.{legacy}", text)
 
     def test_six_photo_catalog_and_artwork_component_remain_llc_free(self):
         products = read("src/data/products.ts")

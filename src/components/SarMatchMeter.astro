@@ -10,25 +10,22 @@ interface Props {
 const { variant = 'header', href } = Astro.props;
 const base = import.meta.env.BASE_URL;
 const targetHref = href ?? `${base}search-and-rescue/`;
-const progress = Math.min(Math.max(sar.matchPercentage, 0), 100);
+const progress = Math.min(Math.max(sar.commitmentFulfillmentPercentage, 0), 100);
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
   maximumFractionDigits: 0
 });
-const generated = currency.format(sar.rrghSarGenerated);
-const target = currency.format(sar.personalAnnualCommitment);
-const exceeded = sar.matchPercentage > 100;
-const achieved = sar.matchPercentage >= 100;
-const stateLabel = exceeded
-  ? `${generated} generated · annual commitment surpassed`
-  : achieved
-    ? `Annual commitment reached · ${generated} generated for SAR`
-    : `${generated} of ${target} commitment · ${sar.matchPercentage.toFixed(0)}%`;
+const transferred = currency.format(sar.rrghTotalTransferred);
+const committed = currency.format(sar.rrghTotalCommitment);
+const fulfilled = sar.commitmentFulfillmentPercentage;
+const exceeded = fulfilled > 100;
+const achieved = fulfilled >= 100;
+const stateLabel = `${transferred} transferred of ${committed} committed, ${fulfilled.toFixed(1)}% fulfilled`;
 const headerPrimary = 'Walk the path with us.';
 const headerDetail = 'Support the people who answer the call.';
 const displayStateLabel = variant === 'header' ? `${headerPrimary} ${headerDetail}` : stateLabel;
-const nodeAmounts = [0, 100, 200, 300, 400, 500];
+const nodeLabels = ['0%', '20%', '40%', '60%', '80%', '100%'];
 const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed0141d.webp`;
 ---
 
@@ -44,12 +41,8 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
     <span class="sar-meter-status">
       {variant === 'header' ? (
         <><strong data-sar-meter-primary>{headerPrimary}</strong><span data-sar-meter-detail>{headerDetail}</span></>
-      ) : exceeded ? (
-        <><strong data-sar-meter-primary>{generated} generated</strong><span data-sar-meter-detail>Annual commitment surpassed</span></>
-      ) : achieved ? (
-        <><strong data-sar-meter-primary>Annual commitment reached</strong><span data-sar-meter-detail>{generated} generated for SAR</span></>
       ) : (
-        <><strong data-sar-meter-primary>RRGH commitment: {generated} / {target}</strong><span data-sar-meter-detail>{sar.matchPercentage.toFixed(0)}% of annual commitment</span></>
+        <><strong data-sar-meter-primary>RRGH transferred: {transferred} / {committed}</strong><span data-sar-meter-detail>{fulfilled.toFixed(1)}% fulfilled</span></>
       )}
     </span>
   </span>
@@ -75,7 +68,7 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
     </svg>
     {variant === 'full' && (
       <span class="sar-meter-nodes" data-sar-meter-nodes>
-        {nodeAmounts.map((amount) => <span>{currency.format(amount)}</span>)}
+        {nodeLabels.map((label) => <span>{label}</span>)}
       </span>
     )}
   </span>
@@ -88,16 +81,21 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
     if (window.__rrghSarFeedInstalled) return;
     window.__rrghSarFeedInstalled = true;
 
-    const cacheKey = 'rrgh-sar-public-data-v1';
+    const cacheKey = 'rrgh-sar-public-data-v2';
     const moneyFields = new Set([
-      'personalAnnualCommitment',
-      'rrghSarGenerated',
-      'rrghSarDonated',
-      'outstandingCommitment',
-      'annualCombinedSupport',
+      'rrghAnnualBaseCommitment',
+      'rrghProfitAllocationGenerated',
+      'rrghTotalCommitment',
+      'rrghBaseCommitmentTransferred',
+      'rrghProfitAllocationTransferred',
+      'rrghTotalTransferred',
+      'outstandingBaseCommitment',
+      'outstandingProfitAllocation',
+      'outstandingRrghCommitment',
       'historicalPersonalSupport',
       'lifetimePersonalSupport',
-      'lifetimeRrghSupport',
+      'lifetimeRrghCommitted',
+      'lifetimeRrghTransferred',
       'combinedLifetimeSupport'
     ]);
 
@@ -156,12 +154,12 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       }
       normalized.reportingYear = Number.parseInt(String(raw.reportingYear), 10);
       normalized.lastUpdated = String(raw.lastUpdated).trim();
-      normalized.matchPercentage = numberFromPublicValue(raw.matchPercentage);
+      normalized.commitmentFulfillmentPercentage = numberFromPublicValue(raw.commitmentFulfillmentPercentage);
       for (const field of moneyFields) normalized[field] = numberFromPublicValue(raw[field]);
 
       if (!Number.isInteger(normalized.reportingYear) || normalized.reportingYear < 2000) throw new Error('Invalid reportingYear');
       if (!normalized.lastUpdated || Number.isNaN(Date.parse(normalized.lastUpdated))) throw new Error('Invalid lastUpdated');
-      if (!Number.isFinite(normalized.matchPercentage) || normalized.matchPercentage < 0) throw new Error('Invalid matchPercentage');
+      if (!Number.isFinite(normalized.commitmentFulfillmentPercentage) || normalized.commitmentFulfillmentPercentage < 0) throw new Error('Invalid commitmentFulfillmentPercentage');
       for (const field of moneyFields) {
         if (!Number.isFinite(normalized[field]) || normalized[field] < 0) throw new Error(`Invalid SAR value: ${field}`);
       }
@@ -182,12 +180,12 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
     }
 
     function updateMeter(meter, data) {
-      const generated = formatCurrency(data.rrghSarGenerated);
-      const target = formatCurrency(data.personalAnnualCommitment);
-      const percentRounded = data.matchPercentage.toFixed(0);
-      const progress = Math.min(Math.max(data.matchPercentage, 0), 100);
-      const exceeded = data.matchPercentage > 100;
-      const achieved = data.matchPercentage >= 100;
+      const transferred = formatCurrency(data.rrghTotalTransferred);
+      const committed = formatCurrency(data.rrghTotalCommitment);
+      const fulfilled = data.commitmentFulfillmentPercentage;
+      const progress = Math.min(Math.max(fulfilled, 0), 100);
+      const achieved = fulfilled >= 100;
+      const exceeded = fulfilled > 100;
       const primary = meter.querySelector('[data-sar-meter-primary]');
       const detail = meter.querySelector('[data-sar-meter-detail]');
       const progressPath = meter.querySelector('[data-sar-meter-progress]');
@@ -202,30 +200,14 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
         primary.textContent = 'Walk the path with us.';
         detail.textContent = 'Support the people who answer the call.';
         stateLabel = 'Walk the path with us. Support the people who answer the call.';
-      } else if (exceeded) {
-        primary.textContent = `${generated} generated`;
-        detail.textContent = 'Match goal surpassed';
-        stateLabel = `${generated} generated · annual commitment surpassed`;
-      } else if (achieved) {
-        primary.textContent = 'Annual commitment reached';
-        detail.textContent = `${generated} generated for SAR`;
-        stateLabel = `Annual commitment reached · ${generated} generated for SAR`;
       } else {
-        primary.textContent = `RRGH commitment: ${generated} / ${target}`;
-        detail.textContent = `${percentRounded}% of annual milestone`;
-        stateLabel = `${generated} of ${target} commitment · ${percentRounded}%`;
+        primary.textContent = `RRGH transferred: ${transferred} / ${committed}`;
+        detail.textContent = `${fulfilled.toFixed(1)}% fulfilled`;
+        stateLabel = `${transferred} transferred of ${committed} committed, ${fulfilled.toFixed(1)}% fulfilled`;
       }
       meter.setAttribute('aria-label', variant === 'header'
         ? `Search and Rescue: ${stateLabel} View Search and Rescue resources.`
-        : `Search and Rescue Match-O-Meter: ${stateLabel}. View Search and Rescue resources.`);
-
-      if (variant === 'full') {
-        const nodes = meter.querySelectorAll('[data-sar-meter-nodes] span');
-        nodes.forEach((node, index) => {
-          const denominator = Math.max(nodes.length - 1, 1);
-          node.textContent = formatCurrency(data.personalAnnualCommitment * (index / denominator));
-        });
-      }
+        : `Search and Rescue commitment tracker: ${stateLabel}. View Search and Rescue resources.`);
     }
 
     function updateSarPage(data) {
@@ -239,36 +221,20 @@ const mobileHero = `${base}assets/images/RRGH-0004-winter-red-byrd-1600-7caed014
       }
 
       page.querySelectorAll('.sar-path-number').forEach((node) => node.remove());
-      const match = page.querySelector('#sar-match');
-      if (!match) return;
-      const kicker = match.querySelector('.sar-section-heading .sar-section-kicker');
+      const section = page.querySelector('#sar-match');
+      if (!section) return;
+      const kicker = section.querySelector('.sar-section-heading .sar-section-kicker');
       if (kicker) kicker.textContent = `${data.reportingYear} public reporting`;
-      const matchIntro = match.querySelector('.sar-section-heading > p:last-child');
-      if (matchIntro) matchIntro.textContent = `The ${formatCurrency(data.personalAnnualCommitment)} RRGH annual commitment is a milestone, not a cap. RRGH support keeps accumulating when the milestone is reached or exceeded.`;
 
-      const stats = match.querySelectorAll('#sar-match-details .sar-stat');
-      const statValues = [
-        data.personalAnnualCommitment,
-        data.rrghSarGenerated,
-        data.rrghSarDonated,
-        data.outstandingCommitment,
-        data.annualCombinedSupport,
-        data.historicalPersonalSupport
-      ];
-      stats.forEach((stat, index) => {
-        const strong = stat.querySelector('strong');
-        if (strong && Number.isFinite(statValues[index])) strong.textContent = formatCurrency(statValues[index]);
+      section.querySelectorAll('[data-sar-value-field]').forEach((node) => {
+        const field = node.dataset.sarValueField;
+        if (field && Number.isFinite(data[field])) node.textContent = formatCurrency(data[field]);
       });
-      const generatedNote = stats[1]?.querySelector('small');
-      if (generatedNote) generatedNote.textContent = `${data.matchPercentage.toFixed(1)}% of the annual commitment`;
-
-      const lifetime = match.querySelectorAll('.sar-lifetime-grid p');
-      if (lifetime[0]?.querySelector('strong')) lifetime[0].querySelector('strong').textContent = formatCurrency(data.lifetimePersonalSupport);
-      if (lifetime[1]?.querySelector('strong')) lifetime[1].querySelector('strong').textContent = formatCurrency(data.lifetimeRrghSupport);
-      if (lifetime[3]?.querySelector('strong')) lifetime[3].querySelector('strong').textContent = formatCurrency(data.combinedLifetimeSupport);
-      if (lifetime[2]) lifetime[2].remove();
-
-      const updated = match.querySelector('.sar-data-note time');
+      section.querySelectorAll('[data-sar-percent-field]').forEach((node) => {
+        const field = node.dataset.sarPercentField;
+        if (field && Number.isFinite(data[field])) node.textContent = `${data[field].toFixed(1)}%`;
+      });
+      const updated = section.querySelector('[data-sar-last-updated]');
       if (updated) {
         updated.textContent = data.lastUpdated;
         updated.setAttribute('datetime', data.lastUpdated);

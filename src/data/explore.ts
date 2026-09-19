@@ -41,8 +41,7 @@ export const exploreSections: ExploreSection[] = [
     title: 'Camping',
     description: 'RRGH’s camping guide plus current Forest Service visitor information and rules context.',
     links: [
-      { label: '2026 DBNF Dispersed Camping Guide', href: '/search-and-rescue/#camping-title' },
-      { label: 'Download Guide', href: '/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', download: true },
+      { label: '2026 DBNF Dispersed Camping Guide Download', href: '/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', download: true },
       { label: 'Current Forest Service camping restrictions & alerts', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
       { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true }
     ]
