@@ -156,7 +156,7 @@ class FiveProductRetirementContractTests(unittest.TestCase):
             "Women's Tank Tops",
             'Long Sleeve T-Shirts',
             'Sweatshirts',
-            "Kid's T-Shirts",
+            'Kids T-Shirts',
             'Toddler T-Shirts',
             'Baby One-Pieces',
             'View All Gear',

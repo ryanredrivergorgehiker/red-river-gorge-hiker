@@ -92,7 +92,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         text = visible("src/pages/search-and-rescue.astro")
         data = read("src/data/sar.ts")
         self.assertIn("Red River Gorge Hiker, LLC maintains two separate commitments to Wolfe County Search & Rescue: at least $500 each calendar year, plus 20% of positive Red River Gorge Hiker business profit.", text)
-        self.assertIn("Neither commitment offsets or satisfies the other.", text)
+        self.assertIn("Neither commitment offsets nor satisfies the other.", text)
         self.assertIn("Historical personal support before the RRGH program", text)
         for invariant in [
             "sar.rrghAnnualBaseCommitment",
