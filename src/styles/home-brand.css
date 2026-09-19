@@ -60,9 +60,12 @@
 @media (max-width: 620px) {
   .sar-page .sar-hero.home-hero .sar-hero-actions {
     align-items: flex-start;
+    gap: .55rem;
   }
 
   .sar-page .sar-hero.home-hero .sar-hero-actions .sar-button {
     width: min(13rem, 100%);
+    min-height: 2.45rem;
+    padding-block: .5rem;
   }
 }
