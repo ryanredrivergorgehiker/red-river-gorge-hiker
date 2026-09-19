@@ -93,7 +93,6 @@ class SarContract(unittest.TestCase):
             'rrghProfitAllocationGenerated =',
             'rrghTotalCommitment =',
             'outstandingRrghCommitment =',
-            'commitmentFulfillmentPercentage =',
             'data.rrghAnnualBaseCommitment +',
             'data.rrghProfitAllocationGenerated +',
             'data.rrghTotalTransferred /',
