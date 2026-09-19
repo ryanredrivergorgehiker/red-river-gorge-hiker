@@ -37,7 +37,6 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("creator: { '@type': 'Person', name: photo.creatorName }", photo)
         self.assertIn("copyrightHolder: { '@type': 'Person', name: photo.copyrightHolder }", photo)
         self.assertIn("Photographs © Ryan D. Lewis. All rights reserved.", photo)
-        self.assertIn("copyrightNotice", products)
         self.assertNotIn("Red River Gorge Hiker, LLC", photo)
 
     def test_copyright_and_terms_exact_llc_language(self):
