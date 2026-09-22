@@ -38,10 +38,10 @@ class SiteContract(unittest.TestCase):
             self.assertIn(catalog_id, DATA)
 
     def test_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 15)
-        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 15)
-        self.assertEqual(len(re.findall(r"storeUrl:\s*'https://", MERCH)), 15)
-        self.assertEqual(MERCH.count('.avif`'), 15)
+        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 12)
+        self.assertEqual(len(re.findall(r"description:\s*'", MERCH)), 12)
+        self.assertEqual(len(re.findall(r"storeUrl:\s*'https://", MERCH)), 12)
+        self.assertEqual(MERCH.count('.avif`'), 12)
         self.assertNotIn('ARCHIVE', MERCH)
         self.assertNotIn('.png', MERCH.lower())
         for retired_title in ('Coffee Mug', 'Zip Pouch', 'Bath Towel', 'Beach Towel', 'Ornament'):
@@ -55,7 +55,7 @@ class SiteContract(unittest.TestCase):
         self.assertIn('rrgh-merch-tshirt-pocket-v3-', MERCH)
 
         referenced_assets = re.findall(r"avif:\s*`\$\{assetBase\}([^`]+\.avif)`", MERCH)
-        self.assertEqual(len(referenced_assets), 15)
+        self.assertEqual(len(referenced_assets), 12)
         self.assertEqual(len(set(referenced_assets)), 15)
         for asset in referenced_assets:
             self.assertTrue((ROOT / 'public/assets/merchandise' / asset).exists(), asset)
@@ -76,11 +76,8 @@ class SiteContract(unittest.TestCase):
                 'Throw Pillow',
                 'Women’s Tank Top',
                 'Fleece / Sherpa Blanket',
-                'Youth T-Shirt',
                 'Spiral Notebook',
-                'Kids T-Shirt',
                 'Greeting Cards',
-                'Baby One-Piece',
             ],
         )
 
