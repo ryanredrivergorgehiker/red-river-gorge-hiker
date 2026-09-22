@@ -25,11 +25,8 @@ EXPECTED_EXISTING_TITLES = [
     'Throw Pillow',
     'Women’s Tank Top',
     'Fleece / Sherpa Blanket',
-    'Youth T-Shirt',
     'Spiral Notebook',
-    'Kids T-Shirt',
     'Greeting Cards',
-    'Baby One-Piece',
 ]
 
 
@@ -38,8 +35,8 @@ def sha256(path: Path) -> str:
 
 
 class DoubleRainbowGreetingCardContract(unittest.TestCase):
-    def test_greeting_card_remains_first_in_19_product_gear_catalog(self):
-        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 15)
+    def test_greeting_card_remains_first_in_15_product_gear_catalog(self):
+        self.assertEqual(len(re.findall(r"slug:\s*'", MERCH)), 12)
         self.assertEqual(re.findall(r"title:\s*'([^']+)'", MERCH), EXPECTED_EXISTING_TITLES)
         self.assertIn('const orderedGearProducts: readonly GearProduct[] = [\n  doubleRainbowGreetingCard,', CATALOG)
         for marker in (
@@ -47,12 +44,11 @@ class DoubleRainbowGreetingCardContract(unittest.TestCase):
             'longSleeveTshirt,',
             '...merchandiseProducts.slice(5, 8),',
             'mensTankTop,',
-            '...merchandiseProducts.slice(8, 13),',
-            'toddlerTshirt,',
-            '...merchandiseProducts.slice(13)',
+            '...merchandiseProducts.slice(8)',
         ):
             self.assertIn(marker, CATALOG)
         self.assertNotIn('handTowel,', CATALOG)
+        self.assertNotIn('toddlerTshirt,', CATALOG)
 
     def test_greeting_card_content_is_greeting_card_only(self):
         for text in (
