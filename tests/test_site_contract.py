@@ -56,7 +56,7 @@ class SiteContract(unittest.TestCase):
 
         referenced_assets = re.findall(r"avif:\s*`\$\{assetBase\}([^`]+\.avif)`", MERCH)
         self.assertEqual(len(referenced_assets), 12)
-        self.assertEqual(len(set(referenced_assets)), 15)
+        self.assertEqual(len(set(referenced_assets)), 12)
         for asset in referenced_assets:
             self.assertTrue((ROOT / 'public/assets/merchandise' / asset).exists(), asset)
         self.assertFalse((ROOT / 'public/assets/merchandise/rrgh-merch-ornament-2c0c7784.avif').exists())
