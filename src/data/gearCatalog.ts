@@ -71,22 +71,6 @@ export const mensTankTop: GearProduct = {
   lastVerified: '2026-08-28'
 };
 
-export const toddlerTshirt: GearProduct = {
-  slug: 'toddler-tshirt',
-  title: 'Toddler T-Shirt',
-  description: 'A charcoal Red River Gorge Hiker toddler T-shirt featuring the logo centered on the chest.',
-  priceLabel: '$19',
-  specification: 'Toddler T-Shirt · Medium (3T) shown · Charcoal',
-  optionNote: 'Medium (3T) verified at $19 customer retail.',
-  storeUrl: 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
-  image: {
-    avif: `${assetBase}rrgh-merch-tshirt-toddler-f7d76ed9.avif`,
-    width: 1000,
-    height: 941,
-    alt: 'Smiling toddler wearing a charcoal Red River Gorge Hiker logo T-shirt on a wooded trail.'
-  },
-  lastVerified: '2026-08-28'
-};
 
 const storefrontCopy = {
   'double-rainbow-eagles-point-buttress-greeting-card': {
@@ -141,30 +125,14 @@ const storefrontCopy = {
     subtitle: 'Wrap up in Red River Gorge Hiker',
     note: '50 × 60 in. · Plush or Sherpa fleece'
   },
-  'youth-tshirt': {
-    subtitle: 'RRGH style for young explorers',
-    note: 'Chest logo · Multiple sizes available'
-  },
   'spiral-notebook': {
     subtitle: 'A place for trail notes and ideas',
     note: '6 × 8 in. spiral notebook'
-  },
-  'kids-tshirt': {
-    subtitle: 'RRGH style for little explorers',
-    note: 'Chest logo · Multiple sizes available'
-  },
-  'toddler-tshirt': {
-    subtitle: 'RRGH tee for the littlest explorers',
-    note: 'Chest logo · Charcoal shown'
   },
   'greeting-cards': {
     subtitle: 'Share Red River Gorge Hiker with someone',
     note: 'RRGH logo cards · Optional inside message'
   },
-  'baby-one-piece': {
-    subtitle: 'Start them young with RRGH',
-    note: 'Logo one-piece · Multiple sizes available'
-  }
 } as const;
 
 const orderedGearProducts: readonly GearProduct[] = [
@@ -173,9 +141,7 @@ const orderedGearProducts: readonly GearProduct[] = [
   longSleeveTshirt,
   ...merchandiseProducts.slice(5, 8),
   mensTankTop,
-  ...merchandiseProducts.slice(8, 13),
-  toddlerTshirt,
-  ...merchandiseProducts.slice(13)
+  ...merchandiseProducts.slice(8)
 ];
 
 export const gearProducts: readonly StorefrontGearProduct[] = orderedGearProducts.map((product) => {
