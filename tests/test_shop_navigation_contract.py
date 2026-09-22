@@ -115,9 +115,6 @@ class ShopNavigationContractTests(unittest.TestCase):
             "Women's Tank Tops": 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=womens-tank-top',
             'Long Sleeve T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=long-sleeve-tshirt',
             'Sweatshirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=pull-over-hoodie-sweatshirt',
-            'Kids T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
-            'Toddler T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
-            'Baby One-Pieces': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
         }
         preserved_category_expected = {
             'Greeting Cards': 'https://store.redrivergorgehiker.com/shop/greeting+cards',
@@ -137,6 +134,17 @@ class ShopNavigationContractTests(unittest.TestCase):
         for label, url in preserved_category_expected.items():
             quote = '"' if "'" in label else "'"
             self.assertIn(f"[{quote}{label}{quote}, '{url}']", HEADER)
+
+        temporarily_retired_children = {
+            'Youth T-Shirt': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=youth-tshirt',
+            'Kids T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=kids-tshirt',
+            'Toddler T-Shirts': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=toddler-tshirt',
+            'Baby One-Pieces': 'https://store.redrivergorgehiker.com/featured/red-river-gorge-hiker-ryan-d-lewis.html?product=one-piece',
+        }
+        for label, url in temporarily_retired_children.items():
+            self.assertNotIn(label, HEADER)
+            self.assertNotIn(url, HEADER)
+            self.assertNotIn(url, GEAR_URL_SOURCES)
 
         old_product_specific_pairs = (
             "['Throw Pillows', 'https://store.redrivergorgehiker.com/shop/throw+pillows']",
@@ -182,9 +190,9 @@ class ShopNavigationContractTests(unittest.TestCase):
 
         base_product_count = len(re.findall(r"storeUrl:\s*'https://", MERCH))
         added_product_count = len(re.findall(r"export const (?:doubleRainbowGreetingCard|longSleeveTshirt|mensTankTop|toddlerTshirt): GearProduct", GEAR_CATALOG))
-        self.assertEqual(base_product_count, 15)
-        self.assertEqual(added_product_count, 4)
-        self.assertEqual(base_product_count + added_product_count, 19)
+        self.assertEqual(base_product_count, 12)
+        self.assertEqual(added_product_count, 3)
+        self.assertEqual(base_product_count + added_product_count, 15)
 
     def test_navigation_presentation_matches_refined_uat_direction(self):
         self.assertNotIn('⌄', HEADER)
