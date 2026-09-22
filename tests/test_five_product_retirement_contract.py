@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
 GEAR = (ROOT / 'src/data/gearCatalog.ts').read_text(encoding='utf-8')
+TEMP_RETIRED = (ROOT / 'src/data/temporarilyRetiredGear.ts').read_text(encoding='utf-8')
 HEADER = (ROOT / 'src/components/Header.astro').read_text(encoding='utf-8')
 GEAR_DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text(encoding='utf-8')
 
@@ -19,11 +20,8 @@ EXPECTED_MERCH_SLUGS = [
     'throw-pillow',
     'womens-tank-top',
     'fleece-sherpa-blanket',
-    'youth-tshirt',
     'spiral-notebook',
-    'kids-tshirt',
     'greeting-cards',
-    'baby-one-piece',
 ]
 
 EXPECTED_GEAR_ORDER = [
@@ -40,15 +38,12 @@ EXPECTED_GEAR_ORDER = [
     'mens-tank-top',
     'womens-tank-top',
     'fleece-sherpa-blanket',
-    'youth-tshirt',
     'spiral-notebook',
-    'kids-tshirt',
-    'toddler-tshirt',
     'greeting-cards',
-    'baby-one-piece',
 ]
 
-RETIRED_SLUGS = ['coffee-mug', 'zip-pouch', 'hand-towel', 'bath-towel', 'beach-towel', 'ornament']
+TEMP_RETIRED_SLUGS = ['youth-tshirt', 'kids-tshirt', 'toddler-tshirt', 'baby-one-piece']
+LEGACY_RETIRED_SLUGS = ['coffee-mug', 'zip-pouch', 'hand-towel', 'bath-towel', 'beach-towel', 'ornament']
 RETIRED_PUBLIC_FILES = [
     'rrgh-merch-coffee-mug-0d15378a-share.jpg',
     'rrgh-merch-coffee-mug-0d15378a.avif',
@@ -65,35 +60,12 @@ RETIRED_PUBLIC_FILES = [
 ]
 
 
-class FiveProductRetirementContractTests(unittest.TestCase):
-    def test_exact_approved_merchandise_source_order(self):
+class ProductRetirementContractTests(unittest.TestCase):
+    def test_exact_active_merchandise_source_order(self):
         slugs = re.findall(r"\bslug: '([^']+)'", MERCH)
         self.assertEqual(slugs, EXPECTED_MERCH_SLUGS)
 
-    def test_exact_19_product_gear_order(self):
-        order_match = re.search(
-            r"const orderedGearProducts: readonly GearProduct\[\] = \[(?P<body>.*?)\n\];",
-            GEAR,
-            re.S,
-        )
-        self.assertIsNotNone(order_match)
-        body = order_match.group('body')
-        expected_fragments = [
-            'doubleRainbowGreetingCard',
-            '...merchandiseProducts.slice(0, 5)',
-            'longSleeveTshirt',
-            '...merchandiseProducts.slice(5, 8)',
-            'mensTankTop',
-            '...merchandiseProducts.slice(8, 13)',
-            'toddlerTshirt',
-            '...merchandiseProducts.slice(13)',
-        ]
-        cursor = -1
-        for fragment in expected_fragments:
-            next_cursor = body.find(fragment)
-            self.assertGreater(next_cursor, cursor, fragment)
-            cursor = next_cursor
-
+    def test_exact_15_product_active_gear_order(self):
         merch = EXPECTED_MERCH_SLUGS
         derived_order = (
             ['double-rainbow-eagles-point-buttress-greeting-card']
@@ -101,82 +73,65 @@ class FiveProductRetirementContractTests(unittest.TestCase):
             + ['long-sleeve-tshirt']
             + merch[5:8]
             + ['mens-tank-top']
-            + merch[8:13]
-            + ['toddler-tshirt']
-            + merch[13:]
+            + merch[8:]
         )
         self.assertEqual(derived_order, EXPECTED_GEAR_ORDER)
-        self.assertEqual(len(derived_order), 19)
+        self.assertEqual(len(derived_order), 15)
+        self.assertIn('...merchandiseProducts.slice(8)', GEAR)
+        self.assertNotIn('toddlerTshirt', GEAR)
 
-    def test_retired_products_are_absent_from_active_product_data(self):
+    def test_children_apparel_is_temporarily_retired_not_deleted_from_source_history(self):
         active_source = MERCH + '\n' + GEAR
-        for slug in RETIRED_SLUGS:
+        for slug in TEMP_RETIRED_SLUGS:
+            self.assertNotIn(f"slug: '{slug}'", active_source)
+            self.assertIn(f"slug: '{slug}'", TEMP_RETIRED)
+
+        self.assertIn(
+            'TEMPORARILY RETIRED FROM RRGH WEBSITE — FAA/PIXELS CHILDREN’S-APPAREL FULFILLMENT HOLD — 2026-09-22',
+            TEMP_RETIRED,
+        )
+        self.assertEqual(
+            re.findall(r"\bslug: '([^']+)'", TEMP_RETIRED),
+            TEMP_RETIRED_SLUGS,
+        )
+
+    def test_all_15_active_store_handoffs_remain_branded_store_urls(self):
+        urls = re.findall(r"storeUrl: '([^']+)'", MERCH + '\n' + GEAR)
+        self.assertEqual(len(urls), 15)
+        self.assertEqual(len(set(urls)), 15)
+        for url in urls:
+            self.assertTrue(url.startswith('https://store.redrivergorgehiker.com/'), url)
+
+    def test_children_apparel_is_absent_from_shop_navigation_and_active_detail_routes(self):
+        for label in ('Youth T-Shirt', 'Kids T-Shirts', 'Toddler T-Shirts', 'Baby One-Pieces'):
+            self.assertNotIn(label, HEADER)
+        for slug in TEMP_RETIRED_SLUGS:
+            self.assertNotIn(slug, MERCH + '\n' + GEAR)
+        self.assertIn("import { gearProducts, type GearProduct } from '../../data/gearCatalog';", GEAR_DETAIL)
+        self.assertIn('gearProducts.map((product)', GEAR_DETAIL)
+
+    def test_legacy_retired_products_remain_absent_from_active_product_data(self):
+        active_source = MERCH + '\n' + GEAR
+        for slug in LEGACY_RETIRED_SLUGS:
             self.assertNotIn(f"slug: '{slug}'", active_source)
             self.assertNotIn(f"'{slug}': {{", GEAR)
-
         self.assertNotIn('T-style Bottom', active_source)
         self.assertNotIn('T-bottom', active_source)
         self.assertNotIn('coffee-mug-large', active_source)
 
-    def test_all_19_active_store_handoffs_remain_branded_store_urls(self):
-        urls = re.findall(r"storeUrl: '([^']+)'", MERCH + '\n' + GEAR)
-        self.assertEqual(len(urls), 19)
-        self.assertEqual(len(set(urls)), 19)
-        for url in urls:
-            self.assertTrue(url.startswith('https://store.redrivergorgehiker.com/'), url)
-
-    def test_retired_public_website_derivatives_are_removed(self):
+    def test_legacy_retired_public_website_derivatives_remain_removed(self):
         asset_dir = ROOT / 'public/assets/merchandise'
         for filename in RETIRED_PUBLIC_FILES:
             self.assertFalse((asset_dir / filename).exists(), filename)
 
-    def test_shop_header_removes_only_retired_families_and_keeps_surviving_navigation(self):
-        retired_menu_values = [
-            "['Coffee Mugs', 'https://store.redrivergorgehiker.com/shop/coffee+mugs']",
-            "['Hand Towels', 'https://store.redrivergorgehiker.com/shop/hand+towels']",
-            "['Zip Pouches', 'https://store.redrivergorgehiker.com/shop/pouches']",
-            "['Beach Towels', 'https://store.redrivergorgehiker.com/shop/beach+towels']",
-        ]
-        for value in retired_menu_values:
-            self.assertNotIn(value, HEADER)
-
-        surviving_labels = [
-            'Throw Pillows',
-            'Fleece Blankets',
-            'Greeting Cards',
-            'Spiral Notebooks',
-            'Stickers',
-            'Tote Bags',
-            "Men's Apparel",
-            "Women's Apparel",
-            'Jigsaw Puzzles',
-            "Men's T-Shirts",
-            "Men's Tank Tops",
-            "Women's T-Shirts",
-            "Women's Tank Tops",
-            'Long Sleeve T-Shirts',
-            'Sweatshirts',
-            'Kids T-Shirts',
-            'Toddler T-Shirts',
-            'Baby One-Pieces',
-            'View All Gear',
-            'View Photography',
-        ]
-        for label in surviving_labels:
-            self.assertIn(label, HEADER)
-
-        preserved_category_values = [
-            "['Greeting Cards', 'https://store.redrivergorgehiker.com/shop/greeting+cards']",
-            "[\"Men's Apparel\", 'https://store.redrivergorgehiker.com/shop/tshirts']",
-            "[\"Women's Apparel\", 'https://store.redrivergorgehiker.com/shop/womens+tshirts']",
-            "['Jigsaw Puzzles', 'https://store.redrivergorgehiker.com/shop/puzzles']",
-        ]
-        for value in preserved_category_values:
-            self.assertIn(value, HEADER)
-
-    def test_detail_routes_are_generated_from_current_gear_products(self):
-        self.assertIn("import { gearProducts, type GearProduct } from '../../data/gearCatalog';", GEAR_DETAIL)
-        self.assertIn('gearProducts.map((product)', GEAR_DETAIL)
+    def test_temporary_retirement_preserves_source_images_for_later_restoration(self):
+        for filename in (
+            'rrgh-merch-tshirt-youth-f9cdcdd6.avif',
+            'rrgh-merch-tshirt-kids-813c4eae.avif',
+            'rrgh-merch-tshirt-toddler-f7d76ed9.avif',
+            'rrgh-merch-one-piece-37bc434d.avif',
+        ):
+            self.assertTrue((ROOT / 'public/assets/merchandise' / filename).exists(), filename)
 
 
 if __name__ == '__main__':
