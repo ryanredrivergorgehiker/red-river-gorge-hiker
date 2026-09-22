@@ -111,7 +111,7 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn('Read the Stories',home)
         header=read('src/components/Header.astro')
         self.assertIn('.site-header .desktop-nav .nav-view-all-explore {',header)
-        self.assertIn('margin-top: -2.75rem;',header)
+        self.assertIn('margin-top: -3.75rem;',header)
         self.assertIn('.site-header .mobile-primary-nav .nav-view-all-explore {',header)
         self.assertIn('margin-top: 1rem;',header)
         home_css=read('src/styles/home-brand.css')
