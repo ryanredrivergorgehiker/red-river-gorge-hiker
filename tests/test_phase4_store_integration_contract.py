@@ -7,6 +7,7 @@ SRC_FILES = [p for p in (ROOT / 'src').rglob('*') if p.is_file()]
 SRC = '\n'.join(p.read_text(errors='ignore') for p in SRC_FILES)
 MERCH = (ROOT / 'src/data/merchandise.ts').read_text()
 GEAR_DATA = (ROOT / 'src/data/gearCatalog.ts').read_text()
+TEMP_RETIRED = (ROOT / 'src/data/temporarilyRetiredGear.ts').read_text()
 PRODUCTS = (ROOT / 'src/data/products.ts').read_text()
 GEAR = (ROOT / 'src/pages/gear.astro').read_text()
 GEAR_DETAIL = (ROOT / 'src/pages/gear/[slug].astro').read_text()
@@ -45,7 +46,10 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertIn('-designlocation[pocket]', MERCH)
         self.assertIn('double-rainbow-at-eagles-point-buttress-ryan-d-lewis.html', PRODUCTS)
         self.assertIn('double-rainbow-at-eagles-point-ryan-d-lewis.html?product=greeting-card', GEAR_DATA)
-        self.assertEqual((MERCH + GEAR_DATA).count("storeUrl: 'https://store.redrivergorgehiker.com/"), 19)
+        self.assertEqual((MERCH + GEAR_DATA).count("storeUrl: 'https://store.redrivergorgehiker.com/"), 15)
+        for held in ('youth-tshirt', 'kids-tshirt', 'toddler-tshirt', 'baby-one-piece'):
+            self.assertNotIn(f"slug: '{held}'", active_data)
+            self.assertIn(f"slug: '{held}'", TEMP_RETIRED)
 
     def test_six_wall_art_and_three_puzzle_destinations_use_store(self):
         self.assertEqual(PRODUCTS.count("wallArtUrl: 'https://store.redrivergorgehiker.com/"), 6)
