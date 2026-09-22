@@ -51,7 +51,7 @@ class SocialSharingContractTests(unittest.TestCase):
         merchandise = (ROOT / 'src/data/merchandise.ts').read_text(encoding='utf-8')
         catalog = (ROOT / 'src/data/gearCatalog.ts').read_text(encoding='utf-8')
         avif_names = sorted(set(re.findall(r"rrgh-merch-[A-Za-z0-9._-]+\.avif", merchandise + '\n' + catalog)))
-        self.assertEqual(len(avif_names), 19)
+        self.assertEqual(len(avif_names), 15)
         for retired in (
             'rrgh-merch-ornament-2c0c7784.avif',
             'rrgh-merch-coffee-mug-0d15378a.avif',
