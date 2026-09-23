@@ -35,8 +35,7 @@ async function setup(shell) {
       maxZoom: def.maxZoom ?? 19,
       minZoom: def.minZoom ?? 0,
       opacity,
-      attribution: def.attribution,
-      crossOrigin: true
+      attribution: def.attribution
     });
     layer.on('tileerror', () => {
       if (status) status.textContent = 'Some map tiles could not be loaded. The approved RRGH route geometry remains available.';
@@ -72,8 +71,10 @@ async function setup(shell) {
 
   const updateRouteVisibility = () => {
     const enabledTrips = new Set([...shell.querySelectorAll('[data-route-filter]:checked')].map((node) => node.dataset.routeFilter));
+    const enabledTrails = new Set([...shell.querySelectorAll('[data-trail-filter]:checked')].map((node) => node.dataset.trailFilter));
     for (const record of routeRecords) {
-      const allowed = config.mode !== 'full' || enabledTrips.has(record.meta.tripType);
+      const allowed = config.mode !== 'full'
+        || (enabledTrips.has(record.meta.tripType) && enabledTrails.has(record.meta.trailStatus));
       if (allowed && !map.hasLayer(record.line)) record.line.addTo(map);
       if (!allowed && map.hasLayer(record.line)) map.removeLayer(record.line);
     }
@@ -165,7 +166,7 @@ async function setup(shell) {
     showWaypoints = event.target.checked;
     updateWaypoints();
   });
-  shell.querySelectorAll('[data-route-filter]').forEach((input) => input.addEventListener('change', updateRouteVisibility));
+  shell.querySelectorAll('[data-route-filter], [data-trail-filter]').forEach((input) => input.addEventListener('change', updateRouteVisibility));
 
   const gate = shell.querySelector('[data-map-enable]');
   gate?.addEventListener('click', () => {

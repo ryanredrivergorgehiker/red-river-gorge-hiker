@@ -1,0 +1,90 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import RouteMap from '../../components/routes/RouteMap.astro';
+import RouteLegalNotice from '../../components/routes/RouteLegalNotice.astro';
+import ElevationProfile from '../../components/routes/ElevationProfile.astro';
+import '../../styles/routes.css';
+
+export async function getStaticPaths() {
+  const routes = (await getCollection('routes')).filter((route) => route.data.publicationStatus === 'Approved — Publication Ready');
+  return routes.map((route) => ({ params: { slug: route.id }, props: { route } }));
+}
+
+const { route } = Astro.props;
+const data = route.data;
+const base = import.meta.env.BASE_URL;
+const iso = (d: Date) => d.toISOString().slice(0,10);
+const gpxUrl = `${base}${data.gpx.path}`;
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Explore', item: new URL(`${base}explore/`, Astro.site ?? Astro.url.origin).href },
+    { '@type': 'ListItem', position: 2, name: 'Hikes & Routes', item: new URL(`${base}routes/`, Astro.site ?? Astro.url.origin).href },
+    { '@type': 'ListItem', position: 3, name: data.title, item: new URL(`${base}routes/${route.id}/`, Astro.site ?? Astro.url.origin).href }
+  ]
+};
+const dataset = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `${data.title} GPX route data`,
+  description: data.seoDescription,
+  creator: { '@type': 'Organization', name: 'Red River Gorge Hiker, LLC' },
+  distribution: {
+    '@type': 'DataDownload',
+    contentUrl: new URL(gpxUrl, Astro.site ?? Astro.url.origin).href,
+    encodingFormat: 'application/gpx+xml'
+  }
+};
+---
+<Base
+  title={data.title}
+  titleTag={`${data.title} — Hike & Route Guide | Red River Gorge Hiker`}
+  description={data.seoDescription}
+  canonicalPath={`routes/${route.id}/`}
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumb)}></script>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(dataset)}></script>
+  <article class="route-page">
+    <header class="route-hero">
+      <p class="eyebrow">RRGH Hikes &amp; Routes · Class {data.publicationClass}</p>
+      <h1>{data.title}</h1>
+      {data.overview && <p>{data.overview}</p>}
+    </header>
+    <dl class="route-facts">
+      <div class="route-fact"><dt>Trip type</dt><dd>{data.tripType.replace('-', ' ')}</dd></div>
+      <div class="route-fact"><dt>Trail status</dt><dd>{data.trailStatus}</dd></div>
+      <div class="route-fact"><dt>Route shape</dt><dd>{data.shape}</dd></div>
+      <div class="route-fact"><dt>Distance</dt><dd>{data.distanceMi.toFixed(3)} mi</dd></div>
+      <div class="route-fact"><dt>Physical difficulty</dt><dd>{data.physicalDifficulty}</dd></div>
+      <div class="route-fact"><dt>Navigation</dt><dd>{data.navigationDifficulty}</dd></div>
+      {data.estimatedDuration && <div class="route-fact"><dt>Estimated duration</dt><dd>{data.estimatedDuration}</dd></div>}
+      <div class="route-fact"><dt>Last personally traveled</dt><dd>{iso(data.lastPersonallyTraveled)}</dd></div>
+      <div class="route-fact"><dt>Last information review</dt><dd>{iso(data.lastInformationReview)}</dd></div>
+    </dl>
+    <RouteLegalNotice publicationClass={data.publicationClass} />
+    <RouteMap routes={[route]} mode="embedded" heading={`${data.title} Interactive Map`} />
+    <ElevationProfile title={data.title} artifact={data.elevation} status={data.elevationStatus} />
+    <section class="route-section"><h2>Access &amp; Parking</h2><p>{data.accessParking}</p></section>
+    {data.routeDescription && <section class="route-section"><h2>Route Description</h2><p>{data.routeDescription}</p></section>}
+    {data.terrain && <section class="route-section"><h2>Terrain</h2><p>{data.terrain}</p></section>}
+    <section class="route-section"><h2>Hazards &amp; Special Considerations</h2><ul>{data.hazards.map((item) => <li>{item}</li>)}</ul></section>
+    <section class="route-section"><h2>Water &amp; Camping</h2><ul>{data.waterCamping.map((item) => <li>{item}</li>)}</ul></section>
+    <section class="route-section">
+      <h2>Approved Public Waypoints</h2>
+      {data.waypoints.length ? <ul>{data.waypoints.map((point) => <li><strong>{point.name}</strong> — {point.type}{point.description ? `: ${point.description}` : ''}</li>)}</ul> : <p>This approved route package contains no public waypoints.</p>}
+    </section>
+    <section class="route-section">
+      <h2>Land Manager &amp; Source Links</h2>
+      <ul class="source-list">{data.sourceDependencies.map((source) => <li><a href={source.url} target="_blank" rel="noopener noreferrer">{source.label}</a>{source.note ? ` — ${source.note}` : ''}</li>)}</ul>
+    </section>
+    <section class="route-section gpx-panel" aria-labelledby="gpx-download-heading">
+      <h2 id="gpx-download-heading">Download GPX</h2>
+      <p>By downloading this GPX file, you acknowledge that it is historical/informational route data rather than live navigation or an access/safety guarantee, and that conditions, closures, boundaries, and rules may have changed. You agree to the GPX personal-use license and the site Terms. You remain responsible for current access verification, navigation, preparation, and your decision whether or how to travel.</p>
+      <a class="gpx-download" href={gpxUrl} download>Download GPX</a>
+      <p><a href={`${base}copyright-and-terms/`}>Read the GPX personal-use license and site Terms</a>.</p>
+      <p class="small-print">Approved Publication GPX v{data.gpx.version} · {data.gpx.trackPointCount} route points · {data.gpx.waypointCount} approved public waypoints.</p>
+    </section>
+  </article>
+</Base>

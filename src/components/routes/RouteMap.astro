@@ -57,10 +57,16 @@ const enabledOverlays = mapLayers.filter((l) => l.enabled && l.browserLoaded && 
     <label class="map-check"><input type="checkbox" data-map-waypoints checked /> Approved waypoints</label>
     {mode === 'full' && (
       <fieldset class="map-route-filters">
-        <legend>RRGH route overlays</legend>
+        <legend>Trip overlays</legend>
         <label><input type="checkbox" data-route-filter="day-hike" checked /> Day hikes</label>
         <label><input type="checkbox" data-route-filter="backpacking" checked /> Backpacking</label>
         <label><input type="checkbox" data-route-filter="multi-day" checked /> Multi-day</label>
+      </fieldset>
+      <fieldset class="map-route-filters">
+        <legend>Trail overlays</legend>
+        <label><input type="checkbox" data-trail-filter="official" checked /> Official / on-trail</label>
+        <label><input type="checkbox" data-trail-filter="mixed" checked /> Mixed</label>
+        <label><input type="checkbox" data-trail-filter="off-trail" checked /> Selected off-trail</label>
       </fieldset>
     )}
   </div>
