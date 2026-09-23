@@ -1,0 +1,11 @@
+---
+import { STANDARD_ROUTE_NOTICE, ENHANCED_OFF_TRAIL_NOTICE } from '../../data/routes/legal';
+
+interface Props { publicationClass: 'A' | 'B' | 'C'; }
+const { publicationClass } = Astro.props;
+const notice = publicationClass === 'C' ? ENHANCED_OFF_TRAIL_NOTICE : STANDARD_ROUTE_NOTICE;
+---
+<aside class:list={['route-notice', publicationClass === 'C' && 'route-notice-advanced']} aria-label="Route notice">
+  <strong>{publicationClass === 'C' ? 'Off-trail route notice' : 'Route notice'}</strong>
+  <p>{notice}</p>
+</aside>
