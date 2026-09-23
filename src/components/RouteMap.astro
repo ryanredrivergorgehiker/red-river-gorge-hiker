@@ -178,8 +178,8 @@ const enabledSources = enabledBrowserMapSources;
       let index = this.items.length - 1;
       while (index > 0) {
         const parent = Math.floor((index - 1) / 2);
-        if (this.items[parent].distance <= this.items[index].distance) break;
-        [this.items[parent], this.items[index]] = [this.items[index], this.items[parent]];
+        if (this.items[parent]!.distance <= this.items[index]!.distance) break;
+        [this.items[parent], this.items[index]] = [this.items[index]!, this.items[parent]!];
         index = parent;
       }
     }
@@ -195,10 +195,10 @@ const enabledSources = enabledBrowserMapSources;
           const left = index * 2 + 1;
           const right = left + 1;
           let smallest = index;
-          if (left < this.items.length && this.items[left].distance < this.items[smallest].distance) smallest = left;
-          if (right < this.items.length && this.items[right].distance < this.items[smallest].distance) smallest = right;
+          if (left < this.items.length && this.items[left]!.distance < this.items[smallest]!.distance) smallest = left;
+          if (right < this.items.length && this.items[right]!.distance < this.items[smallest]!.distance) smallest = right;
           if (smallest === index) break;
-          [this.items[index], this.items[smallest]] = [this.items[smallest], this.items[index]];
+          [this.items[index], this.items[smallest]] = [this.items[smallest]!, this.items[index]!];
           index = smallest;
         }
       }
@@ -354,10 +354,10 @@ const enabledSources = enabledBrowserMapSources;
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
         keys.push(ensureNode(lat, lng));
       }
-      for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1], keys[i]);
+      for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1]!, keys[i]!);
       if (keys.length) {
-        endpointKeys.push(keys[0]);
-        endpointKeys.push(keys[keys.length - 1]);
+        endpointKeys.push(keys[0]!);
+        endpointKeys.push(keys[keys.length - 1]!);
       }
     };
 
@@ -820,7 +820,7 @@ const enabledSources = enabledBrowserMapSources;
         redrawPlan();
         return;
       }
-      const previous = planStops[planStops.length - 1];
+      const previous = planStops[planStops.length - 1]!;
       const path = shortestTrailPath(previous, snapped.key);
       if (!path) {
         setStatus('Those points are not connected in the available trail data. Try a different visible trail segment.', 'warning');
