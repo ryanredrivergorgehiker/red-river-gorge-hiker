@@ -271,7 +271,7 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         applyWaypointZoom();
         const zoom = map.getZoom();
         for (const { group } of routeGroups.values()) {
-          group.eachLayer((layer) => {
+          group.eachLayer((layer: any) => {
             if (layer.setStyle) layer.setStyle({ weight: zoom < 11 ? 2.5 : 5, opacity: zoom < 10 ? 0.68 : 0.9 });
           });
         }
