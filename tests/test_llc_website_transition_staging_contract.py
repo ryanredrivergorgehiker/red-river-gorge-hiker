@@ -49,8 +49,8 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
             "© Red River Gorge Hiker, LLC. All rights reserved. Creator-specific copyright notices are identified with the applicable work.",
             "You are welcome to view the site and share links to its public pages. Copying, reproducing, publishing, selling, adapting, distributing, displaying, or otherwise reusing photographs or other protected material requires prior written permission unless applicable law independently permits the use.",
             "Purchasing a print, puzzle, gear item, greeting card, or other physical product does not transfer copyright, reproduction rights, or any other intellectual-property rights in the underlying photograph, artwork, branding, or other protected material.",
-            "Red River Gorge Hiker, LLC, operating under the Red River Gorge Hiker brand, makes no representation or warranty that any location shown or discussed on the website is currently accessible, publicly accessible, safe, accurately described, or suitable for any particular visitor.",
-            "To the fullest extent permitted by applicable law, Red River Gorge Hiker, LLC shall not be responsible for injuries, losses, damages, expenses, or other consequences arising from a visitor's use of or reliance upon outdoor, geographic, historical, safety, access, or location-related information provided through this website.",
+            "This information is provided for general information and trip planning. It is not a live navigation service, emergency or rescue service, land survey, title opinion, legal-access determination, or guarantee that any route, trail, road, access point, crossing, boundary, destination, or other location is currently open, legal, accurate, safe, passable, or suitable for you or your trip. Publication of a route does not mean RRGH recommends that every visitor attempt it.",
+            "TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, ROUTE, MAP, GPX, LOCATION, ACCESS, CONDITION, AND OTHER WEBSITE CONTENT IS PROVIDED “AS IS” AND “AS AVAILABLE,” WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED.",
             "Red River Gorge Hiker, LLC independently supports Wolfe County Search & Rescue. RRGH maintains a minimum $500 annual Company commitment and separately allocates 20% of positive Red River Gorge Hiker business profit. These commitments are separate and additive; neither offsets nor satisfies the other. Historical personal support by Ryan D. Lewis remains separate from Company support.",
             "Links inviting visitors to donate directly to Wolfe County Search & Rescue send visitors to WCSART's own public donation system. Direct charitable donations do not pass through Red River Gorge Hiker, LLC or Ryan D. Lewis, and neither Red River Gorge Hiker, LLC nor Ryan D. Lewis processes, holds, or relays those direct donations.",
             "Online product purchases linked from Red River Gorge Hiker are completed through the Red River Gorge Hiker Store at store.RedRiverGorgeHiker.com, which is powered by Pixels / Fine Art America. Pixels operates the checkout and payment system and handles on-demand production, shipping, customer service, and returns. Purchases through the Store are also subject to the applicable Pixels terms, privacy practices, and return policies. Red River Gorge Hiker, LLC does not manufacture or ship Pixels orders, process buyers’ payment cards, or administer Pixels returns.",
@@ -63,7 +63,7 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
 
     def test_privacy_production_ready_copy_and_date(self):
         text = read("src/pages/privacy.astro")
-        self.assertIn("Last updated: September 17, 2026", text)
+        self.assertIn("Last updated: September 23, 2026", text)
         self.assertNotIn("Last updated: Pending production approval", text)
         self.assertIn("RedRiverGorgeHiker.com is operated by Red River Gorge Hiker, LLC under the Red River Gorge Hiker brand. It is a static photography and outdoor-interest website. It does not create visitor accounts, run its own online shopping cart, or directly collect payment-card information.", text)
         self.assertIn("GitHub Pages and ordinary internet infrastructure may process standard technical information needed to deliver and secure the site. Red River Gorge Hiker measurement tools are described below.", text)
@@ -73,6 +73,8 @@ class LlcWebsiteTransitionStagingContract(unittest.TestCase):
         self.assertIn("RRGH Analytics remains Off until the visitor affirmatively turns it On", text)
         self.assertIn("Pixels platform analytics operates independently from RRGH Analytics", text)
         self.assertIn("does not enable Pinterest Enhanced Match", text)
+        self.assertIn("Interactive Maps and Map-Data Services", text)
+        self.assertIn("Third-party map-service requests are separate from RRGH Analytics.", text)
 
     def test_about_contact_and_permissions_exact_copy(self):
         about = read("src/pages/about.astro")
