@@ -19,13 +19,17 @@ const minE = data.stats.minElevationFt;
 const maxE = data.stats.maxElevationFt;
 const spanD = Math.max(0.001, maxD - minD);
 const spanE = Math.max(1, maxE - minE);
-const xy = data.points.map((point) => {
+const xy: Array<[number, number]> = data.points.map((point): [number, number] => {
   const x = padX + ((point.distanceMi - minD) / spanD) * (width - padX * 2);
   const y = height - padY - ((point.elevationFt - minE) / spanE) * (height - padY * 2);
   return [x, y];
 });
 const pathD = xy.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
-const areaD = xy.length ? `${pathD} L ${xy.at(-1)?.[0].toFixed(1)} ${height - padY} L ${xy[0]?.[0].toFixed(1)} ${height - padY} Z` : '';
+const firstPoint = xy[0];
+const lastPoint = xy.at(-1);
+const areaD = firstPoint && lastPoint
+  ? `${pathD} L ${lastPoint[0].toFixed(1)} ${height - padY} L ${firstPoint[0].toFixed(1)} ${height - padY} Z`
+  : '';
 const labelId = `elevation-title-${data.routeId}`;
 const descId = `elevation-desc-${data.routeId}`;
 ---

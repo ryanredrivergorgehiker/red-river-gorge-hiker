@@ -125,7 +125,6 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         container.addEventListener('blur', () => map.scrollWheelZoom.disable());
       }
 
-      const sourceById = new Map(mapSources.map((source) => [source.id, source]));
       const tileLayers = new Map();
       for (const source of mapSources.filter((item) => item.enabled && item.browserLoaded && item.url)) {
         tileLayers.set(source.id, L.tileLayer(source.url!, {
@@ -163,7 +162,7 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
               }
             });
             line.addTo(group);
-            line.eachLayer((layer) => {
+            line.eachLayer((layer: any) => {
               if (layer.getBounds) bounds.extend(layer.getBounds());
             });
           } else if (feature.geometry?.type === 'Point') {
@@ -208,7 +207,7 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         if (!shouldShow && map.hasLayer(waypointLayer)) map.removeLayer(waypointLayer);
       };
 
-      const setBase = (id) => {
+      const setBase = (id: string) => {
         if (activeBase && map.hasLayer(activeBase)) map.removeLayer(activeBase);
         activeBaseId = id;
         activeBase = tileLayers.get(id);
@@ -217,7 +216,8 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         if (select) select.value = id;
       };
 
-      const setOverlay = (id, enabled) => {
+      const setOverlay = (id: string | undefined, enabled: boolean) => {
+        if (!id) return;
         overlayState[id] = enabled;
         const checkbox = container.closest('.route-map-shell')?.querySelector<HTMLInputElement>(`[data-overlay="${id}"]`);
         if (checkbox) checkbox.checked = enabled;
@@ -240,7 +240,8 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         checkbox.addEventListener('change', () => setOverlay(checkbox.dataset.overlay, checkbox.checked));
       }
 
-      const applyPreset = (id) => {
+      const applyPreset = (id: string | undefined) => {
+        if (!id) return;
         const preset = mapPresets[id as keyof typeof mapPresets];
         if (!preset) return;
         setBase(preset.base);

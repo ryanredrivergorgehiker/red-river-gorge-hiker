@@ -24,7 +24,7 @@ const geometryUrl = `${base}${data.webGeometry.publicPath.replace(/^\//, '')}`;
 const gpxUrl = `${base}${data.approvedPublicationGpx.publicPath.replace(/^\//, '')}`;
 const titleTag = `${data.title} — Hike & Route Guide | Red River Gorge Hiker`;
 const description = `${data.title} route guide: ${data.distanceMi.toFixed(2)}-mile ${data.shape} with approved GPX, interactive map, elevation profile, access notes, hazards, and current land-manager resources.`;
-const absolute = (path) => new URL(path, Astro.site ?? Astro.url.origin).href;
+const absolute = (path: string) => new URL(path, Astro.site ?? Astro.url.origin).href;
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
