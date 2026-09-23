@@ -1,0 +1,17 @@
+---
+interface Props { publicationClass: 'A' | 'B' | 'C'; }
+const { publicationClass } = Astro.props;
+---
+<aside class="route-notice" aria-label="Route safety and access notice">
+  {publicationClass === 'C' ? (
+    <>
+      <h2>Off-Trail / Advanced Route</h2>
+      <p>This route includes travel away from maintained trails or on unmaintained terrain. It may involve difficult navigation, steep or unstable terrain, cliffs, water crossings, blowdowns or dense vegetation, limited cell service, and delayed rescue. The route line or GPX documents a previously traveled or compiled path; it is not a marked trail or a promise of safe or legal passage. Verify current access, closures, conditions, water/weather, and land-manager rules. Do not trespass, enter closures, create new trail, or damage natural or cultural resources. Turn back when conditions, equipment, skills, or judgment do not support continuing.</p>
+    </>
+  ) : (
+    <>
+      <h2>Route Notice</h2>
+      <p>Route information is not a safety or access guarantee. Conditions, closures, water levels, roads, trails, crossings, property access, and land-manager rules can change. Verify current authoritative information before departure, carry appropriate navigation and emergency resources, and make your own go/no-go decisions. A map or GPX line may contain error and should not be your only navigation source.</p>
+    </>
+  )}
+</aside>
