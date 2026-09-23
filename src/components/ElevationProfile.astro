@@ -1,0 +1,54 @@
+---
+interface ElevationPoint { distanceMi: number; elevationFt: number; }
+interface ElevationData {
+  routeId: string;
+  source: { name: string; service: string; method: string; lastVerified: string; };
+  stats: { ascentFt: number; descentFt: number; minElevationFt: number; maxElevationFt: number; };
+  sampleCount: number;
+  points: ElevationPoint[];
+}
+interface Props { data: ElevationData; title: string; }
+const { data, title } = Astro.props;
+const width = 800;
+const height = 230;
+const padX = 36;
+const padY = 28;
+const minD = data.points[0]?.distanceMi ?? 0;
+const maxD = data.points.at(-1)?.distanceMi ?? 1;
+const minE = data.stats.minElevationFt;
+const maxE = data.stats.maxElevationFt;
+const spanD = Math.max(0.001, maxD - minD);
+const spanE = Math.max(1, maxE - minE);
+const xy = data.points.map((point) => {
+  const x = padX + ((point.distanceMi - minD) / spanD) * (width - padX * 2);
+  const y = height - padY - ((point.elevationFt - minE) / spanE) * (height - padY * 2);
+  return [x, y];
+});
+const pathD = xy.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+const areaD = xy.length ? `${pathD} L ${xy.at(-1)?.[0].toFixed(1)} ${height - padY} L ${xy[0]?.[0].toFixed(1)} ${height - padY} Z` : '';
+const labelId = `elevation-title-${data.routeId}`;
+const descId = `elevation-desc-${data.routeId}`;
+---
+<section class="elevation-section" aria-labelledby="elevation-heading">
+  <h2 id="elevation-heading">Elevation profile</h2>
+  <div class="route-stat-grid route-stat-grid-compact">
+    <div><span>Ascent</span><strong>{data.stats.ascentFt.toLocaleString()} ft</strong></div>
+    <div><span>Descent</span><strong>{data.stats.descentFt.toLocaleString()} ft</strong></div>
+    <div><span>Low</span><strong>{data.stats.minElevationFt.toLocaleString()} ft</strong></div>
+    <div><span>High</span><strong>{data.stats.maxElevationFt.toLocaleString()} ft</strong></div>
+  </div>
+  <figure class="elevation-profile">
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${labelId} ${descId}`}>
+      <title id={labelId}>{title} elevation profile</title>
+      <desc id={descId}>Elevation sampled at {data.sampleCount} evenly distributed points from the approved route geometry. Minimum {data.stats.minElevationFt} feet and maximum {data.stats.maxElevationFt} feet.</desc>
+      <line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} class="elevation-axis" />
+      <path d={areaD} class="elevation-area" />
+      <path d={pathD} class="elevation-line" />
+      <text x={padX} y={height - 7} class="elevation-label">0 mi</text>
+      <text x={width - padX} y={height - 7} text-anchor="end" class="elevation-label">{maxD.toFixed(2)} mi</text>
+      <text x={padX} y={18} class="elevation-label">{maxE.toLocaleString()} ft</text>
+      <text x={padX} y={height - padY - 8} class="elevation-label">{minE.toLocaleString()} ft</text>
+    </svg>
+    <figcaption>Source: <a href={data.source.service} target="_blank" rel="noopener noreferrer">{data.source.name}</a>. Build-time sampling only; the visitor browser does not contact the elevation service. Method: {data.source.method}</figcaption>
+  </figure>
+</section>

@@ -1,0 +1,32 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import RouteMap from '../../components/RouteMap.astro';
+import '../../styles/routes.css';
+
+const entries = await getCollection('routes');
+const base = import.meta.env.BASE_URL;
+const routes = entries.map((entry) => ({
+  routeId: entry.data.routeId,
+  slug: entry.id,
+  title: entry.data.title,
+  tripType: entry.data.tripType,
+  trailStatus: entry.data.trailStatus,
+  publicationClass: entry.data.publicationClass,
+  geometryUrl: `${base}${entry.data.webGeometry.publicPath.replace(/^\//, '')}`
+}));
+---
+<Base
+  title="Interactive Hikes & Routes Map"
+  titleTag="Interactive Hikes & Routes Map | Red River Gorge Hiker"
+  description="Layer-rich Red River Gorge Hiker planning map with approved RRGH routes, public waypoints, Kentucky topo, Kentucky LiDAR hillshade, aerial imagery and USGS topo."
+  canonicalPath="/routes/map/"
+>
+  <div class="page route-page route-map-page">
+    <p class="eyebrow">Routes &amp; Tracks</p>
+    <h1>Interactive Hikes &amp; Routes Map</h1>
+    <p class="route-lede">Start simple, then add terrain and planning context as needed. Only Lane 19-approved public route geometry and public waypoints are shown. Parcel/private-property boundaries are not enabled.</p>
+    <p><a class="route-text-link" href={`${base}routes/`}>Browse route library →</a></p>
+    <RouteMap routes={routes} mode="full" initialPreset="simple" />
+  </div>
+</Base>

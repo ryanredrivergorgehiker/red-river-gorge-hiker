@@ -1,0 +1,158 @@
+---
+import { getCollection } from 'astro:content';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import Base from '../../layouts/Base.astro';
+import RouteMap from '../../components/RouteMap.astro';
+import RouteNotice from '../../components/RouteNotice.astro';
+import GpxDownload from '../../components/GpxDownload.astro';
+import ElevationProfile from '../../components/ElevationProfile.astro';
+import '../../styles/routes.css';
+
+export async function getStaticPaths() {
+  const routes = await getCollection('routes');
+  return routes.map((route) => ({ params: { slug: route.id }, props: { route } }));
+}
+
+const { route } = Astro.props;
+const data = route.data;
+const slug = route.id;
+const base = import.meta.env.BASE_URL;
+const elevationFile = join(process.cwd(), 'public', data.elevation.publicPath.replace(/^\//, ''));
+const elevation = JSON.parse(readFileSync(elevationFile, 'utf8'));
+const geometryUrl = `${base}${data.webGeometry.publicPath.replace(/^\//, '')}`;
+const gpxUrl = `${base}${data.approvedPublicationGpx.publicPath.replace(/^\//, '')}`;
+const titleTag = `${data.title} — Hike & Route Guide | Red River Gorge Hiker`;
+const description = `${data.title} route guide: ${data.distanceMi.toFixed(2)}-mile ${data.shape} with approved GPX, interactive map, elevation profile, access notes, hazards, and current land-manager resources.`;
+const absolute = (path) => new URL(path, Astro.site ?? Astro.url.origin).href;
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Explore', item: absolute(`${base}explore/`) },
+    { '@type': 'ListItem', position: 2, name: 'Hikes & Routes', item: absolute(`${base}routes/`) },
+    { '@type': 'ListItem', position: 3, name: data.title, item: absolute(`${base}routes/${slug}/`) }
+  ]
+};
+const datasetSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `${data.title} GPX route`,
+  description,
+  url: absolute(`${base}routes/${slug}/`),
+  license: absolute(`${base}copyright-and-terms/#gpx-download-license`),
+  distribution: {
+    '@type': 'DataDownload',
+    encodingFormat: 'application/gpx+xml',
+    contentUrl: absolute(gpxUrl)
+  }
+};
+---
+<Base title={data.title} titleTag={titleTag} description={description} canonicalPath={`/routes/${slug}/`}>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(datasetSchema)}></script>
+  <article class="page route-page">
+    <nav class="route-breadcrumbs" aria-label="Breadcrumb">
+      <a href={`${base}explore/`}>Explore</a><span aria-hidden="true">/</span>
+      <a href={`${base}routes/`}>Hikes &amp; Routes</a><span aria-hidden="true">/</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+    <header class="route-hero">
+      <p class="eyebrow">Class {data.publicationClass} · {data.publicationStatus}</p>
+      <h1>{data.title}</h1>
+      <p class="route-lede">Current Lane 19-approved route package with approved geometry, public waypoints, GPX download, build-time elevation profile, access information, hazards, and land-manager resources.</p>
+    </header>
+
+    <section class="route-stat-grid" aria-label="Route facts">
+      <div><span>Distance</span><strong>{data.distanceMi.toFixed(2)} mi</strong></div>
+      <div><span>Ascent</span><strong>{elevation.stats.ascentFt.toLocaleString()} ft</strong></div>
+      <div><span>Descent</span><strong>{elevation.stats.descentFt.toLocaleString()} ft</strong></div>
+      <div><span>Elevation</span><strong>{elevation.stats.minElevationFt.toLocaleString()}–{elevation.stats.maxElevationFt.toLocaleString()} ft</strong></div>
+      <div><span>Trip type</span><strong>{data.tripType.replace('-', ' ')}</strong></div>
+      <div><span>Trail status</span><strong>{data.trailStatusDisplay}</strong></div>
+      <div><span>Route shape</span><strong>{data.shape}</strong></div>
+      <div><span>Duration</span><strong>{data.estimatedDuration ?? 'Not supplied in approved package'}</strong></div>
+      <div><span>Physical difficulty</span><strong>{data.physicalDifficulty}</strong></div>
+      <div><span>Navigation</span><strong>{data.navigationDifficulty}</strong></div>
+      <div><span>Last traveled</span><strong>{data.lastPersonallyTraveled}</strong></div>
+      <div><span>Last reviewed</span><strong>{data.lastInformationReview}</strong></div>
+    </section>
+
+    <RouteNotice publicationClass={data.publicationClass} />
+
+    <RouteMap
+      routes={[{
+        routeId: data.routeId,
+        slug,
+        title: data.title,
+        tripType: data.tripType,
+        trailStatus: data.trailStatus,
+        publicationClass: data.publicationClass,
+        geometryUrl
+      }]}
+      mode="embedded"
+      initialPreset="terrain"
+    />
+    <p class="route-map-open"><a class="route-text-link" href={`${base}routes/map/?route=${slug}`}>Open full planning map →</a></p>
+
+    <ElevationProfile data={elevation} title={data.title} />
+
+    <div class="route-content-grid">
+      <section>
+        <h2>Route overview</h2>
+        <p>{data.physicalDifficultyDetail}</p>
+        <p>{data.navigationDifficultyDetail}</p>
+      </section>
+      <section>
+        <h2>Access &amp; parking</h2>
+        <p>{data.accessParking}</p>
+      </section>
+      <section>
+        <h2>Route description / terrain</h2>
+        <p>Approved route shape: {data.shape}. Approved trail classification: {data.trailStatusDisplay}. The interactive map and downloadable GPX use the current Lane 19-approved geometry; no turn-by-turn narrative beyond the approved package is added here.</p>
+      </section>
+      <section>
+        <h2>Water &amp; camping</h2>
+        <ul>{data.waterCamping.map((item) => <li>{item}</li>)}</ul>
+      </section>
+      <section>
+        <h2>Hazards / special considerations</h2>
+        <ul>{data.hazards.map((item) => <li>{item}</li>)}</ul>
+      </section>
+      <section>
+        <h2>Land / access review</h2>
+        <p>{data.landAccessReview}</p>
+      </section>
+    </div>
+
+    <section aria-labelledby="waypoints-heading">
+      <h2 id="waypoints-heading">Approved public waypoints</h2>
+      {data.publicWaypoints.length ? (
+        <ul class="route-waypoint-list">
+          {data.publicWaypoints.map((waypoint) => (
+            <li><strong>{waypoint.name}</strong> <span>({waypoint.type})</span> — {waypoint.description}</li>
+          ))}
+        </ul>
+      ) : <p>No public waypoints are included in this approved route package.</p>}
+    </section>
+
+    <section aria-labelledby="land-manager-heading">
+      <h2 id="land-manager-heading">Current land-manager resources</h2>
+      <ul>
+        {data.landManagerResources.map((resource) => (
+          <li><a href={resource.href} target="_blank" rel="noopener noreferrer">{resource.label}<span class="sr-only"> (opens in a new tab)</span></a></li>
+        ))}
+      </ul>
+    </section>
+
+    <GpxDownload href={gpxUrl} filename={data.approvedPublicationGpx.filename} />
+
+    <section class="route-source-panel" aria-labelledby="route-source-heading">
+      <h2 id="route-source-heading">Route data &amp; source notes</h2>
+      <p>Approved Publication GPX v{data.approvedPublicationGpx.version}: SHA-256 <code>{data.approvedPublicationGpx.sha256}</code>.</p>
+      <p>Approved web geometry v{data.webGeometry.version}: SHA-256 <code>{data.webGeometry.sha256}</code>.</p>
+      <p>Elevation is generated at build time from USGS 3DEP using the Website-approved method. Raw Gaia elevation is not used.</p>
+      <p>Active browser map providers are identified in the map source panel. Their direct tile requests are separate from RRGH Analytics.</p>
+    </section>
+  </article>
+</Base>
