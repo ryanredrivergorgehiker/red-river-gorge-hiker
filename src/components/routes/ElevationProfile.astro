@@ -1,0 +1,52 @@
+---
+interface Props { url: string; title: string; }
+const { url, title } = Astro.props;
+---
+<section class="route-section route-elevation" data-elevation-profile data-elevation-url={url}>
+  <div class="route-section-heading">
+    <div>
+      <p class="eyebrow">Terrain</p>
+      <h2>Elevation profile</h2>
+    </div>
+    <p class="route-elevation-method">USGS 3DEP bare-earth DEM · RRGH build-time sampling</p>
+  </div>
+  <p class="route-elevation-summary" aria-live="polite">Loading the locally generated elevation profile…</p>
+  <svg class="route-elevation-chart" viewBox="0 0 720 220" role="img" aria-label={title + ' elevation profile'}>
+    <title>{title} elevation profile</title>
+    <polyline class="route-elevation-line" points=""></polyline>
+  </svg>
+  <noscript><p>The numeric route facts remain available above; JavaScript is required only to draw this profile.</p></noscript>
+</section>
+<script>
+  const renderProfile = async (section) => {
+    const url = section.dataset.elevationUrl;
+    const summary = section.querySelector('.route-elevation-summary');
+    const svg = section.querySelector('.route-elevation-chart');
+    const line = section.querySelector('.route-elevation-line');
+    try {
+      const response = await fetch(url, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('profile unavailable');
+      const profile = await response.json();
+      const samples = profile.samples ?? [];
+      if (samples.length < 2) throw new Error('profile empty');
+      const width = 720, height = 220, pad = 22;
+      const maxDistance = Math.max(...samples.map((s) => s.distanceMi));
+      const minEle = Math.min(...samples.map((s) => s.elevationFt));
+      const maxEle = Math.max(...samples.map((s) => s.elevationFt));
+      const span = Math.max(1, maxEle - minEle);
+      const points = samples.map((sample) => {
+        const x = pad + (sample.distanceMi / maxDistance) * (width - pad * 2);
+        const y = height - pad - ((sample.elevationFt - minEle) / span) * (height - pad * 2);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+      line.setAttribute('points', points);
+      const label = profile.routeTitle + ' elevation profile. Minimum ' + profile.stats.minElevationFt + ' feet, maximum ' + profile.stats.maxElevationFt + ' feet, ascent ' + profile.stats.ascentFt + ' feet, descent ' + profile.stats.descentFt + ' feet.';
+      svg.setAttribute('aria-label', label);
+      summary.textContent = 'USGS 3DEP-derived profile: ' + profile.stats.minElevationFt + '–' + profile.stats.maxElevationFt + ' ft · +' + profile.stats.ascentFt + ' / −' + profile.stats.descentFt + ' ft. Horizontal route geometry is unchanged.';
+    } catch {
+      summary.textContent = 'Elevation profile could not be loaded. Use the route facts and map; do not rely on a single elevation source for field navigation.';
+      svg.hidden = true;
+    }
+  };
+  document.querySelectorAll('[data-elevation-profile]').forEach((section) => renderProfile(section));
+</script>
