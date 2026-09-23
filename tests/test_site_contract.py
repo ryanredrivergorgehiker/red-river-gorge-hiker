@@ -221,7 +221,12 @@ class SiteContract(unittest.TestCase):
         footer = (ROOT / 'src/components/Footer.astro').read_text()
         for heading in (
             'Photography and Copyright',
-            'Outdoor Safety and Location Disclaimer',
+            'Routes, Maps, GPS Tracks, and Location Information',
+            'Outdoor and Backcountry Risk; User Responsibility',
+            'Conditions, Closures, and Navigation',
+            'Property, Boundaries, and Access',
+            'GPX Download License',
+            'Map, Data, and Third-Party Sources',
             'Accuracy and Changes',
             'Prints, Puzzles, Gear, and Third-Party Services',
             'Merchandise Pricing',

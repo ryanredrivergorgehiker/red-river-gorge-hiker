@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import RouteMap from '../../components/routes/RouteMap.astro';
+import '../../styles/routes.css';
+const routes = (await getCollection('routes')).filter((route) => route.data.publicationStatus === 'Approved — Publication Ready');
+---
+<Base
+  title="Interactive Route Map"
+  titleTag="Interactive Route Map | Red River Gorge Hiker"
+  description="Layered RRGH route-planning map with approved routes, public waypoints, Kentucky topo, LiDAR-derived hillshade, aerial imagery, and USGS topo."
+  canonicalPath="routes/map/"
+>
+  <div class="routes-page">
+    <header class="routes-hero">
+      <p class="eyebrow">Maps &amp; Guides</p>
+      <h1>RRGH Interactive Route Map</h1>
+      <p>Use the clean default view or switch to Terrain, Route Planning, Land &amp; Access, or All Layers. Only Lane 19-approved public route geometry and approved public waypoints are shown.</p>
+    </header>
+    <RouteMap routes={routes} mode="full" heading="Red River Gorge Hiker Route Map" />
+  </div>
+</Base>

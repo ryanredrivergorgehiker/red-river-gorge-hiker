@@ -1,0 +1,29 @@
+name: Routes elevation bootstrap
+
+on:
+  pull_request:
+    paths:
+      - 'public/data/routes/**'
+      - 'scripts/generate-route-elevation.mjs'
+      - '.github/workflows/routes-elevation-bootstrap.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  skybridge-elevation:
+    name: Generate Skybridge 3DEP profile artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Generate from USGS 3DEP EPQS
+        run: node scripts/generate-route-elevation.mjs --geometry public/data/routes/skybridge-arch.geojson --output /tmp/skybridge-arch.elevation.json
+      - name: Upload generated profile
+        uses: actions/upload-artifact@v4
+        with:
+          name: skybridge-arch-elevation
+          path: /tmp/skybridge-arch.elevation.json
+          if-no-files-found: error

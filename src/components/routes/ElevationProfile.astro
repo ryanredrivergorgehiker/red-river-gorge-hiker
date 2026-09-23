@@ -1,0 +1,51 @@
+---
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+interface Props {
+  title: string;
+  artifact: { path: string; version: string; sha256: string } | null;
+  status: string;
+}
+const { title, artifact, status } = Astro.props;
+let profile: any = null;
+if (artifact) {
+  profile = JSON.parse(readFileSync(join(process.cwd(), 'public', artifact.path), 'utf8'));
+}
+const width = 760;
+const height = 220;
+const pad = 34;
+const samples = profile?.samples ?? [];
+const minE = profile?.stats?.minElevationFt ?? 0;
+const maxE = profile?.stats?.maxElevationFt ?? 1;
+const maxD = samples.length ? samples[samples.length - 1].distanceMi : 1;
+const points = samples.map((sample: any) => {
+  const x = pad + (sample.distanceMi / Math.max(maxD, 0.001)) * (width - pad * 2);
+  const y = height - pad - ((sample.elevationFt - minE) / Math.max(maxE - minE, 1)) * (height - pad * 2);
+  return `${x.toFixed(1)},${y.toFixed(1)}`;
+}).join(' ');
+---
+<section class="route-section elevation-profile" aria-labelledby="elevation-profile-heading">
+  <h2 id="elevation-profile-heading">Elevation Profile</h2>
+  {profile ? (
+    <>
+      <p class="elevation-summary">
+        USGS 3DEP-derived profile: {profile.stats.minElevationFt}–{profile.stats.maxElevationFt} ft;
+        approximately {profile.stats.ascentFt} ft ascent and {profile.stats.descentFt} ft descent.
+      </p>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Elevation profile for ${title}, from ${profile.stats.minElevationFt} to ${profile.stats.maxElevationFt} feet`}>
+        <title>{title} elevation profile</title>
+        <line x1={pad} y1={height-pad} x2={width-pad} y2={height-pad} class="profile-axis" />
+        <line x1={pad} y1={pad} x2={pad} y2={height-pad} class="profile-axis" />
+        <polyline points={points} class="profile-line" />
+        <text x={pad} y={height-8}>0 mi</text>
+        <text x={width-pad-45} y={height-8}>{maxD.toFixed(2)} mi</text>
+        <text x="2" y={pad+4}>{maxE} ft</text>
+        <text x="2" y={height-pad}>{minE} ft</text>
+      </svg>
+      <p class="small-print">{profile.method.description}</p>
+    </>
+  ) : (
+    <p>{status}</p>
+  )}
+</section>

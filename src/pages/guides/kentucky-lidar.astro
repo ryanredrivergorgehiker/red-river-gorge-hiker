@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import { mapLayers } from '../../data/map/layers';
+import '../../styles/routes.css';
+const hillshade = mapLayers.find((layer) => layer.id === 'ky-hillshade');
+const kytopo = mapLayers.find((layer) => layer.id === 'kytopo');
+---
+<Base
+  title="Kentucky LiDAR & Custom Map Sources"
+  titleTag="Kentucky LiDAR Guide | Red River Gorge Hiker"
+  description="Current RRGH guide to authorized Kentucky LiDAR and topo custom-source setup in Gaia GPS and CalTopo."
+  canonicalPath="guides/kentucky-lidar/"
+>
+  <article class="lidar-guide prose">
+    <p class="eyebrow">Maps &amp; Guides</p>
+    <h1>Kentucky LiDAR &amp; Custom Map Sources</h1>
+    <p><small>Last reviewed: September 23, 2026</small></p>
+    <p>This guide uses the same Kentucky source registry as the RRGH map. Recheck platform instructions, subscription requirements, and source endpoints before relying on them later.</p>
+    <section>
+      <h2>Approved Kentucky source URLs</h2>
+      <p><strong>Multidirectional hillshade:</strong></p><code class="lidar-code">{hillshade?.url}</code>
+      <p><strong>KyTopo:</strong></p><code class="lidar-code">{kytopo?.url}</code>
+      <p>Credit the Kentucky source as identified in the service metadata: KyFromAbove / Kentucky Division of Geographic Information.</p>
+    </section>
+    <section>
+      <h2>Gaia GPS</h2>
+      <p>Gaia GPS supports adding a custom TMS map source. In Gaia’s current custom-source workflow, create a new custom map source and supply the authorized tile URL template above. Ryan’s layered workflow—using multiple map sources together—requires Gaia Premium under Gaia’s current feature documentation.</p>
+      <p><a href="https://help.gaiagps.com/hc/en-us/articles/115003639068-Adding-a-TMS-Map-Source" target="_blank" rel="noopener noreferrer">Current Gaia GPS custom TMS instructions</a></p>
+      <p>Gaia remains a private field/planning tool for RRGH. RRGH does not republish Gaia Premium or proprietary overlays.</p>
+    </section>
+    <section>
+      <h2>CalTopo</h2>
+      <p>CalTopo’s current Custom Source Layers workflow accepts Tile/TMS/WMS sources and currently requires a Pro-or-higher subscription. Add only an authorized external source such as the Kentucky services above; do not copy or rehost CalTopo’s proprietary maps or tiles.</p>
+      <p><a href="https://training.caltopo.com/all_users/base-layers/custom-source" target="_blank" rel="noopener noreferrer">Current CalTopo custom-source instructions</a></p>
+    </section>
+    <section>
+      <h2>Prior helpful source</h2>
+      <p>Anne’s Sky / The View from Osage Hill previously published a helpful Kentucky tiled-map article. RRGH credits that earlier resource while independently maintaining these instructions from current official and platform documentation.</p>
+      <p><a href="https://annessky.net/blog/?p=3414" target="_blank" rel="noopener noreferrer">Anne’s Sky — Kentucky tiled maps article</a></p>
+    </section>
+  </article>
+</Base>

@@ -1,0 +1,90 @@
+---
+import { mapLayers } from '../../data/map/layers';
+import { mapPresets } from '../../data/map/presets';
+
+interface RouteInput {
+  id: string;
+  data: any;
+}
+interface Props {
+  routes: RouteInput[];
+  mode?: 'embedded' | 'full';
+  heading?: string;
+}
+const { routes, mode = 'embedded', heading = 'Interactive Route Map' } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const mapId = `route-map-${Math.random().toString(36).slice(2, 9)}`;
+const config = {
+  mode,
+  base,
+  layers: mapLayers,
+  presets: mapPresets,
+  routes: routes.map((route) => ({
+    slug: route.id,
+    routeId: route.data.routeId,
+    title: route.data.title,
+    publicationClass: route.data.publicationClass,
+    tripType: route.data.tripType,
+    trailStatus: route.data.trailStatus,
+    geometryUrl: `${base}${route.data.geometry.path}`,
+    waypoints: route.data.waypoints
+  }))
+};
+const enabledBase = mapLayers.filter((l) => l.enabled && l.browserLoaded && l.kind === 'base');
+const enabledOverlays = mapLayers.filter((l) => l.enabled && l.browserLoaded && l.kind === 'overlay');
+---
+<section class:list={['route-map-shell', mode === 'full' && 'route-map-shell-full']} aria-labelledby={`${mapId}-heading`}>
+  <div class="route-map-heading-row">
+    <div>
+      <p class="eyebrow">RRGH Hikes &amp; Routes</p>
+      <h2 id={`${mapId}-heading`}>{heading}</h2>
+    </div>
+    {mode === 'embedded' && <a class="route-map-open" href={`${base}routes/map/`}>Open full map</a>}
+  </div>
+  <div class="route-map-controls" aria-label="Map controls">
+    <fieldset class="map-presets">
+      <legend>Preset</legend>
+      {mapPresets.map((preset) => <button type="button" class="map-preset-button" data-map-preset={preset.id}>{preset.label}</button>)}
+    </fieldset>
+    <label>Base map
+      <select data-map-base>
+        {enabledBase.map((layer) => <option value={layer.id}>{layer.label}</option>)}
+      </select>
+    </label>
+    {enabledOverlays.map((layer) => (
+      <label class="map-check"><input type="checkbox" data-map-overlay={layer.id} /> {layer.label}</label>
+    ))}
+    <label class="map-check"><input type="checkbox" data-map-waypoints checked /> Approved waypoints</label>
+    {mode === 'full' && (
+      <fieldset class="map-route-filters">
+        <legend>Trip overlays</legend>
+        <label><input type="checkbox" data-route-filter="day-hike" checked /> Day hikes</label>
+        <label><input type="checkbox" data-route-filter="backpacking" checked /> Backpacking</label>
+        <label><input type="checkbox" data-route-filter="multi-day" checked /> Multi-day</label>
+      </fieldset>
+      <fieldset class="map-route-filters">
+        <legend>Trail overlays</legend>
+        <label><input type="checkbox" data-trail-filter="official" checked /> Official / on-trail</label>
+        <label><input type="checkbox" data-trail-filter="mixed" checked /> Mixed</label>
+        <label><input type="checkbox" data-trail-filter="off-trail" checked /> Selected off-trail</label>
+      </fieldset>
+    )}
+  </div>
+  {mode === 'embedded' && <button class="map-interaction-gate" type="button" data-map-enable>Enable map wheel zoom</button>}
+  <div id={mapId} class:list={['route-map-canvas', mode === 'full' && 'route-map-canvas-full']} data-route-map tabindex="0" aria-label={heading}></div>
+  <p class="map-status" data-map-status aria-live="polite"></p>
+  <details class="map-source-panel">
+    <summary>Map sources &amp; privacy</summary>
+    <p>Browser-loaded map tiles are separate from RRGH Analytics. The map provider receives the ordinary technical request needed to return a tile. Turning RRGH Analytics Off does not block those functional map requests.</p>
+    <ul>
+      {mapLayers.filter((layer) => layer.enabled).map((layer) => (
+        <li><strong>{layer.label}:</strong> {layer.implementation} <a href={layer.sourceUrl} target="_blank" rel="noopener noreferrer">Source</a></li>
+      ))}
+    </ul>
+    <p><strong>Parcel/private-property boundaries:</strong> disabled. No authorized source is active.</p>
+  </details>
+  <script type="application/json" id={`${mapId}-config`} set:html={JSON.stringify(config)}></script>
+</section>
+<script>
+  import '../../scripts/route-map.js';
+</script>

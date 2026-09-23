@@ -1,0 +1,104 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import '../../styles/routes.css';
+
+const base = import.meta.env.BASE_URL;
+const routes = (await getCollection('routes'))
+  .filter((route) => route.data.publicationStatus === 'Approved — Publication Ready')
+  .sort((a,b) => a.data.title.localeCompare(b.data.title));
+---
+<Base
+  title="Hikes & Routes"
+  titleTag="Hikes & Routes | Red River Gorge Hiker"
+  description="Search approved Red River Gorge Hiker route pages with route facts, maps, public waypoints, land-manager links, and downloadable GPX files."
+  canonicalPath="routes/"
+>
+  <div class="routes-page">
+    <header class="routes-hero">
+      <p class="eyebrow">Explore the Gorge</p>
+      <h1>RRGH Hikes &amp; Routes</h1>
+      <p>Search route pages built from Lane 19-approved publication packages. Publication is selective: RRGH publishes routes to help people explore the Gorge responsibly; publication is not automatic simply because Ryan knows how to get somewhere.</p>
+      <div class="routes-actions">
+        <a class="route-button" href={`${base}routes/map/`}>Open Interactive Map</a>
+        <a class="route-button secondary" href={`${base}guides/kentucky-lidar/`}>Kentucky LiDAR Guide</a>
+      </div>
+    </header>
+    <section aria-labelledby="route-library-heading">
+      <h2 id="route-library-heading">Route Library</h2>
+      <div class="route-library-controls">
+        <label class="route-search-label">Search
+          <input type="search" placeholder="Search routes" data-route-search />
+        </label>
+        <label>Trip type
+          <select data-route-trip>
+            <option value="">All</option>
+            <option value="day-hike">Day hike</option>
+            <option value="backpacking">Backpacking</option>
+            <option value="multi-day">Multi-day</option>
+          </select>
+        </label>
+        <label>Trail status
+          <select data-route-trail>
+            <option value="">All</option>
+            <option value="official">Official</option>
+            <option value="mixed">Mixed</option>
+            <option value="off-trail">Off-trail</option>
+          </select>
+        </label>
+        <label>Publication class
+          <select data-route-class>
+            <option value="">All</option>
+            <option value="A">A — Official / Standard</option>
+            <option value="B">B — Established Unofficial</option>
+            <option value="C">C — Selected Off-Trail</option>
+          </select>
+        </label>
+      </div>
+      <p data-route-count aria-live="polite">{routes.length} route{routes.length === 1 ? '' : 's'}</p>
+      <div class="route-grid">
+        {routes.map((route) => (
+          <article
+            class="route-card"
+            data-route-card
+            data-search={`${route.data.title} ${route.data.physicalDifficulty} ${route.data.navigationDifficulty}`.toLowerCase()}
+            data-trip={route.data.tripType}
+            data-trail={route.data.trailStatus}
+            data-class={route.data.publicationClass}
+          >
+            <p class="eyebrow">Class {route.data.publicationClass} · {route.data.tripType.replace('-', ' ')}</p>
+            <h2><a href={`${base}routes/${route.id}/`}>{route.data.title}</a></h2>
+            <p>{route.data.distanceMi.toFixed(3)} mi · {route.data.shape} · {route.data.physicalDifficulty}</p>
+            <p>{route.data.navigationDifficulty}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</Base>
+<script>
+  const search = document.querySelector('[data-route-search]');
+  const trip = document.querySelector('[data-route-trip]');
+  const trail = document.querySelector('[data-route-trail]');
+  const klass = document.querySelector('[data-route-class]');
+  const cards = [...document.querySelectorAll('[data-route-card]')];
+  const count = document.querySelector('[data-route-count]');
+  const apply = () => {
+    const q = search instanceof HTMLInputElement ? search.value.trim().toLowerCase() : '';
+    const tripValue = trip instanceof HTMLSelectElement ? trip.value : '';
+    const trailValue = trail instanceof HTMLSelectElement ? trail.value : '';
+    const classValue = klass instanceof HTMLSelectElement ? klass.value : '';
+    let shown = 0;
+    for (const card of cards) {
+      if (!(card instanceof HTMLElement)) continue;
+      const visible = (!q || (card.dataset.search ?? '').includes(q))
+        && (!tripValue || card.dataset.trip === tripValue)
+        && (!trailValue || card.dataset.trail === trailValue)
+        && (!classValue || card.dataset.class === classValue);
+      card.hidden = !visible;
+      if (visible) shown += 1;
+    }
+    if (count) count.textContent = `${shown} route${shown === 1 ? '' : 's'}`;
+  };
+  [search, trip, trail, klass].forEach((control) => control?.addEventListener('input', apply));
+</script>
