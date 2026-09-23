@@ -124,7 +124,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Parcel / Private Property', LAYERS)
 
     def test_full_map_presets_and_filters_exist(self):
-        for label in ('Simple', 'Terrain', 'Route Planning', 'Land & Access', 'All Layers'):
+        for label in ('Simple', 'Terrain', 'Route Planning', 'Land &amp; Access', 'All Layers'):
             self.assertIn(label, MAP)
         for label in ('Day hikes', 'Backpacking', 'Multi-day', 'Official / on-trail', 'Mixed', 'Selected off-trail'):
             self.assertIn(label, MAP)

@@ -78,7 +78,7 @@ class Phase4StoreIntegrationContract(unittest.TestCase):
         self.assertIn('Store Customer Service', CONTACT)
 
     def test_privacy_and_terms_store_disclosures(self):
-        self.assertIn('Last updated: September 17, 2026', PRIVACY)
+        self.assertIn('Last updated: September 23, 2026', PRIVACY)
         self.assertNotIn('Last updated: Pending production approval', PRIVACY)
         self.assertIn('<h2>Red River Gorge Hiker Store and Pixels</h2>', PRIVACY)
         self.assertIn('does not treat the placement of an order, by itself, as consent', PRIVACY)
