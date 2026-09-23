@@ -1,0 +1,194 @@
+---
+import { rasterLayers, disabledReferenceLayers } from '../../data/map/layers';
+import { mapPresets } from '../../data/map/presets';
+
+interface MapRoute {
+  routeId: string;
+  title: string;
+  geometryUrl: string;
+  routeUrl: string;
+}
+interface Props {
+  routes: MapRoute[];
+  mapId: string;
+  fullScreen?: boolean;
+}
+const { routes, mapId, fullScreen = false } = Astro.props;
+---
+<section class:list={['route-map-shell', fullScreen && 'route-map-shell-full']} data-route-map data-routes={JSON.stringify(routes)} data-layers={JSON.stringify(rasterLayers)} data-presets={JSON.stringify(mapPresets)}>
+  <div class="route-map-toolbar">
+    <fieldset>
+      <legend>Map preset</legend>
+      <div class="route-map-preset-buttons">
+        {mapPresets.map((preset) => <button type="button" data-map-preset={preset.id}>{preset.label}</button>)}
+      </div>
+    </fieldset>
+    <details class="route-map-layers">
+      <summary>Layers &amp; sources</summary>
+      <fieldset>
+        <legend>Base map</legend>
+        {rasterLayers.filter((layer) => layer.kind === 'base').map((layer, index) => (
+          <label><input type="radio" name={mapId + '-base'} value={layer.id} checked={index === 0} /> {layer.label}</label>
+        ))}
+      </fieldset>
+      <fieldset>
+        <legend>Overlays</legend>
+        <label><input type="checkbox" data-map-overlay="hillshade" /> Kentucky LiDAR hillshade</label>
+        <label><input type="checkbox" data-map-overlay="waypoints" checked /> Approved public waypoints</label>
+      </fieldset>
+      <div class="route-map-source-list">
+        <strong>Active source registry</strong>
+        <ul>{rasterLayers.map((layer) => <li>{layer.label} — {layer.attribution}</li>)}</ul>
+        <strong>Not enabled</strong>
+        <ul>{disabledReferenceLayers.map((layer) => <li>{layer.label}: {layer.reason}</li>)}</ul>
+      </div>
+    </details>
+  </div>
+  <p class="route-map-focus-note">Map tiles are requested from the identified government providers. These functional requests are separate from RRGH Analytics. Click or focus the map before using wheel zoom.</p>
+  <div id={mapId} class="route-map" tabindex="0" aria-label={fullScreen ? 'RRGH Hikes and Routes interactive map' : 'Interactive route map'}></div>
+  <p class="route-map-status" aria-live="polite"></p>
+</section>
+<script>
+  // @ts-nocheck
+  import L from 'leaflet';
+  import 'leaflet/dist/leaflet.css';
+
+  const initMap = async (shell) => {
+    const mapNode = shell.querySelector('.route-map');
+    const status = shell.querySelector('.route-map-status');
+    const routes = JSON.parse(shell.dataset.routes || '[]');
+    const sources = JSON.parse(shell.dataset.layers || '[]');
+    const presets = JSON.parse(shell.dataset.presets || '[]');
+    const baseSources = sources.filter((source) => source.kind === 'base');
+    const hillshadeSource = sources.find((source) => source.id === 'kentucky-hillshade');
+
+    const map = L.map(mapNode, { scrollWheelZoom: false, zoomControl: true, keyboard: true });
+    mapNode.addEventListener('focus', () => map.scrollWheelZoom.enable());
+    mapNode.addEventListener('blur', () => map.scrollWheelZoom.disable());
+
+    const tileLayers = new Map();
+    for (const source of sources) {
+      const layer = L.tileLayer(source.tileUrl, {
+        maxZoom: source.maxZoom,
+        opacity: source.opacity ?? 1,
+        attribution: source.attribution,
+        crossOrigin: true
+      });
+      layer.on('tileerror', () => {
+        if (status) status.textContent = source.label + ' tiles are temporarily unavailable. Route geometry and details remain available.';
+      });
+      tileLayers.set(source.id, layer);
+    }
+    tileLayers.get('kytopo')?.addTo(map);
+    L.control.scale({ imperial: true, metric: false }).addTo(map);
+
+    const routeLayer = L.featureGroup().addTo(map);
+    const waypointLayer = L.layerGroup();
+    let waypointsVisible = true;
+
+    const refreshWaypointVisibility = () => {
+      const shouldShow = waypointsVisible && map.getZoom() >= 15;
+      if (shouldShow && !map.hasLayer(waypointLayer)) waypointLayer.addTo(map);
+      if (!shouldShow && map.hasLayer(waypointLayer)) map.removeLayer(waypointLayer);
+    };
+
+    for (const route of routes) {
+      const response = await fetch(route.geometryUrl, { credentials: 'same-origin' });
+      if (!response.ok) throw new Error('Could not load ' + route.title + ' geometry');
+      const collection = await response.json();
+      const lineFeatures = collection.features.filter((feature) => ['LineString', 'MultiLineString'].includes(feature.geometry?.type));
+      const pointFeatures = collection.features.filter((feature) => feature.geometry?.type === 'Point');
+
+      for (const feature of lineFeatures) {
+        L.geoJSON(feature, {
+          style: { color: '#7a3f1d', weight: 5, opacity: 0.92 }
+        }).bindTooltip(route.title).addTo(routeLayer);
+      }
+
+      for (const feature of pointFeatures) {
+        const lon = feature.geometry.coordinates[0];
+        const lat = feature.geometry.coordinates[1];
+        const name = feature.properties?.name ?? 'Approved waypoint';
+        const type = feature.properties?.type ?? 'Waypoint';
+        const icon = L.divIcon({
+          className: 'rrgh-waypoint-icon',
+          html: '<span aria-hidden="true"></span>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9]
+        });
+        const marker = L.marker([lat, lon], { icon, title: name, keyboard: true, riseOnHover: true })
+          .bindPopup('<strong>' + name + '</strong><br>' + type);
+        marker.on('add', () => {
+          const el = marker.getElement();
+          if (el) {
+            el.setAttribute('aria-label', name + ', ' + type);
+            el.setAttribute('role', 'button');
+          }
+        });
+        marker.addTo(waypointLayer);
+      }
+    }
+
+    if (routeLayer.getBounds().isValid()) {
+      map.fitBounds(routeLayer.getBounds(), { padding: [28, 28], maxZoom: 16 });
+    } else {
+      map.setView([37.8187, -83.5798], 14);
+    }
+
+    map.on('zoomend', refreshWaypointVisibility);
+    refreshWaypointVisibility();
+
+    const setBase = (id) => {
+      for (const source of baseSources) {
+        const layer = tileLayers.get(source.id);
+        if (layer && map.hasLayer(layer)) map.removeLayer(layer);
+      }
+      tileLayers.get(id)?.addTo(map);
+      const radio = shell.querySelector('input[type="radio"][value="' + id + '"]');
+      if (radio) radio.checked = true;
+    };
+    const setHillshade = (on) => {
+      const layer = hillshadeSource ? tileLayers.get(hillshadeSource.id) : null;
+      if (layer) {
+        if (on && !map.hasLayer(layer)) layer.addTo(map);
+        if (!on && map.hasLayer(layer)) map.removeLayer(layer);
+      }
+      const checkbox = shell.querySelector('[data-map-overlay="hillshade"]');
+      if (checkbox) checkbox.checked = on;
+    };
+    const setWaypoints = (on) => {
+      waypointsVisible = on;
+      const checkbox = shell.querySelector('[data-map-overlay="waypoints"]');
+      if (checkbox) checkbox.checked = on;
+      refreshWaypointVisibility();
+    };
+
+    shell.querySelectorAll('input[type="radio"]').forEach((input) => {
+      input.addEventListener('change', () => setBase(input.value));
+    });
+    shell.querySelector('[data-map-overlay="hillshade"]')?.addEventListener('change', (event) => setHillshade(event.currentTarget.checked));
+    shell.querySelector('[data-map-overlay="waypoints"]')?.addEventListener('change', (event) => setWaypoints(event.currentTarget.checked));
+    shell.querySelectorAll('[data-map-preset]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const preset = presets.find((candidate) => candidate.id === button.dataset.mapPreset);
+        if (!preset) return;
+        setBase(preset.base);
+        setHillshade(Boolean(preset.hillshade));
+        setWaypoints(Boolean(preset.waypoints));
+        shell.querySelectorAll('[data-map-preset]').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+        if (status) status.textContent = preset.label + ' preset applied.';
+      });
+    });
+    const firstPreset = shell.querySelector('[data-map-preset]');
+    firstPreset?.setAttribute('aria-pressed', 'true');
+    if (status) status.textContent = routes.length + ' approved route' + (routes.length === 1 ? '' : 's') + ' loaded.';
+  };
+
+  document.querySelectorAll('[data-route-map]').forEach((shell) => {
+    initMap(shell).catch((error) => {
+      const status = shell.querySelector('.route-map-status');
+      if (status) status.textContent = 'The interactive map could not be loaded. Route details and GPX download remain available.';
+      console.error(error);
+    });
+  });
+</script>
