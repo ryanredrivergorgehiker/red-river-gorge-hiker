@@ -1,4 +1,4 @@
-export type MapSourceKind = 'base' | 'overlay' | 'reference' | 'elevation';
+export type MapSourceKind = 'tile' | 'vector' | 'reference' | 'elevation';
 
 export interface MapSource {
   id: string;
@@ -16,74 +16,126 @@ export interface MapSource {
   opacity?: number;
 }
 
+const RRG_QUERY_BOUNDS = '-84.02,37.52,-83.18,38.15';
+
+const arcgisGeoJsonQuery = (serviceUrl: string, outFields: string) => {
+  const params = new URLSearchParams({
+    where: '1=1',
+    geometry: RRG_QUERY_BOUNDS,
+    geometryType: 'esriGeometryEnvelope',
+    inSR: '4326',
+    spatialRel: 'esriSpatialRelIntersects',
+    outFields,
+    returnGeometry: 'true',
+    outSR: '4326',
+    f: 'geojson'
+  });
+  return `${serviceUrl}/query?${params.toString()}`;
+};
+
+const trailService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublishWithDataStatus_01/MapServer/0';
+const roadService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RoadBasic_01/MapServer/0';
+const countyService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0';
+
 export const mapSources: readonly MapSource[] = [
   {
     id: 'kytopo',
-    label: 'Kentucky Topo / KyTopo',
-    kind: 'base',
+    label: 'Kentucky Topo',
+    kind: 'tile',
     enabled: true,
     browserLoaded: true,
     url: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_KyTopo_Map_Series_WGS84WM/MapServer/tile/{z}/{y}/{x}',
     serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_KyTopo_Map_Series_WGS84WM/MapServer',
     attribution: 'KyFromAbove Partners / Kentucky Division of Geographic Information',
     termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'Browser tile requests go directly to kygisserver.ky.gov and are separate from RRGH Analytics.',
+    privacyNote: 'Map tiles are requested directly from the Kentucky Division of Geographic Information.',
     minZoom: 5,
-    maxZoom: 19
+    maxZoom: 19,
+    opacity: 1
   },
   {
     id: 'kyaerial-phase3',
-    label: 'Kentucky Phase 3 Aerial',
-    kind: 'base',
+    label: 'Aerial imagery',
+    kind: 'tile',
     enabled: true,
     browserLoaded: true,
     url: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase3_3IN_WGS84WM/MapServer/tile/{z}/{y}/{x}',
     serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase3_3IN_WGS84WM/MapServer',
     attribution: 'KyFromAbove / Commonwealth of Kentucky',
     termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'Browser tile requests go directly to kygisserver.ky.gov and are separate from RRGH Analytics.',
+    privacyNote: 'Imagery tiles are requested directly from the Kentucky Division of Geographic Information.',
     minZoom: 5,
-    maxZoom: 20
-  },
-  {
-    id: 'ky-hillshade',
-    label: 'Kentucky LiDAR / Multidirectional Hillshade',
-    kind: 'overlay',
-    enabled: true,
-    browserLoaded: true,
-    url: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_MultiDirectional_Hillshade_WGS84WM/MapServer/tile/{z}/{y}/{x}',
-    serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_MultiDirectional_Hillshade_WGS84WM/MapServer',
-    attribution: 'KyFromAbove / Commonwealth of Kentucky',
-    termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'Browser tile requests go directly to kygisserver.ky.gov and are separate from RRGH Analytics.',
-    minZoom: 5,
-    maxZoom: 19,
-    opacity: 0.52
+    maxZoom: 20,
+    opacity: 0.7
   },
   {
     id: 'usgs-topo',
     label: 'USGS Topo',
-    kind: 'base',
+    kind: 'tile',
     enabled: true,
     browserLoaded: true,
     url: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
     serviceUrl: 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer',
     attribution: 'USGS The National Map',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Browser tile requests go directly to basemap.nationalmap.gov and are separate from RRGH Analytics.',
+    privacyNote: 'Topo tiles are requested directly from USGS The National Map.',
     minZoom: 5,
-    maxZoom: 16
+    maxZoom: 16,
+    opacity: 0.7
   },
   {
-    id: 'usfs-reference-snapshots',
-    label: 'USFS Trails / Roads / MVUM / Wilderness / NFS Land Units',
-    kind: 'reference',
-    enabled: false,
-    browserLoaded: false,
-    serviceUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    id: 'ky-hillshade',
+    label: 'LiDAR hillshade',
+    kind: 'tile',
+    enabled: true,
+    browserLoaded: true,
+    url: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_MultiDirectional_Hillshade_WGS84WM/MapServer/tile/{z}/{y}/{x}',
+    serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_MultiDirectional_Hillshade_WGS84WM/MapServer',
+    attribution: 'KyFromAbove / Commonwealth of Kentucky',
+    termsUrl: 'https://kyfromabove.ky.gov/',
+    privacyNote: 'Hillshade tiles are requested directly from the Kentucky Division of Geographic Information.',
+    minZoom: 5,
+    maxZoom: 19,
+    opacity: 0.28
+  },
+  {
+    id: 'usfs-trails',
+    label: 'Forest Service trails',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(trailService, 'trail_name,trail_no,trail_class,attributesubset'),
+    serviceUrl: trailService,
     attribution: 'USDA Forest Service',
     termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
-    privacyNote: 'Registered for future clipped local snapshots; no live Forest Service browser layer is enabled in this initial staging implementation.'
+    privacyNote: 'Trail geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 1
+  },
+  {
+    id: 'usfs-roads',
+    label: 'Forest Service roads',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(roadService, 'name,id,route_status,oper_maint_level'),
+    serviceUrl: roadService,
+    attribution: 'USDA Forest Service',
+    termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    privacyNote: 'Road geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 0.78
+  },
+  {
+    id: 'ky-counties',
+    label: 'County boundaries',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(countyService, 'NAME,ABBREVTN'),
+    serviceUrl: countyService,
+    attribution: 'Kentucky Division of Geographic Information',
+    termsUrl: 'https://kygeoportal.ky.gov/',
+    privacyNote: 'County boundary geometry is requested directly from the Kentucky Division of Geographic Information.',
+    opacity: 0.7
   },
   {
     id: 'parcel-private-property',
@@ -94,7 +146,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: '',
     attribution: '',
     termsUrl: '',
-    privacyNote: 'Disabled. No authorized source is approved under LEG-DEC-0028.'
+    privacyNote: 'Disabled. No authorized parcel/private-property source is currently approved for this map.'
   },
   {
     id: 'usgs-3dep-bare-earth-dem',

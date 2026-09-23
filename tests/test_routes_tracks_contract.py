@@ -16,12 +16,16 @@ NOTICE = (ROOT / 'src/components/RouteNotice.astro').read_text(encoding='utf-8')
 GPX_COMPONENT = (ROOT / 'src/components/GpxDownload.astro').read_text(encoding='utf-8')
 DETAIL = (ROOT / 'src/pages/routes/[slug].astro').read_text(encoding='utf-8')
 INDEX = (ROOT / 'src/pages/routes/index.astro').read_text(encoding='utf-8')
+LIBRARY = (ROOT / 'src/components/RouteLibrary.astro').read_text(encoding='utf-8')
 FULL_MAP = (ROOT / 'src/pages/routes/map.astro').read_text(encoding='utf-8')
 GUIDE = (ROOT / 'src/pages/guides/kentucky-lidar.astro').read_text(encoding='utf-8')
+PRIVACY = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
+
 
 def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 class RoutesTracksContractTests(unittest.TestCase):
     def test_skybridge_public_package_identity(self):
@@ -76,13 +80,23 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("publicationClass: z.enum(['A', 'B', 'C'])", CONTENT_CONFIG)
         self.assertNotIn("publicationClass: z.enum(['A', 'B', 'C', 'D'])", CONTENT_CONFIG)
 
-    def test_map_source_registry_enables_only_approved_browser_sources(self):
-        for source in ('KyTopo', 'Ky_Imagery_Phase3_3IN_WGS84WM', 'Ky_MultiDirectional_Hillshade_WGS84WM', 'USGSTopo'):
+    def test_map_source_registry_includes_real_planning_context(self):
+        for source in (
+            'Ky_KyTopo_Map_Series_WGS84WM',
+            'Ky_Imagery_Phase3_3IN_WGS84WM',
+            'Ky_MultiDirectional_Hillshade_WGS84WM',
+            'USGSTopo',
+            'EDW_TrailNFSPublishWithDataStatus_01',
+            'EDW_RoadBasic_01',
+            'Ky_CountyLines_WGS84WM',
+        ):
             self.assertIn(source, LAYERS)
+        self.assertIn("id: 'usfs-trails'", LAYERS)
+        self.assertIn("id: 'usfs-roads'", LAYERS)
+        self.assertIn("id: 'ky-counties'", LAYERS)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
         self.assertIn('enabled: false', parcel)
-        self.assertIn("id: 'usfs-reference-snapshots'", LAYERS)
         self.assertNotIn('Gaia', LAYERS)
         self.assertNotIn('CalTopo', LAYERS)
 
@@ -105,30 +119,55 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('By downloading this GPX file, you acknowledge', GPX_COMPONENT)
         self.assertIn('GPX Download License and site Terms', GPX_COMPONENT)
         terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
-        privacy = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
         explore = (ROOT / 'src/data/explore.ts').read_text(encoding='utf-8')
         self.assertIn('id="gpx-download-license"', terms)
         self.assertIn('Routes, Maps, GPS Tracks, and Location Information', terms)
-        self.assertIn('Interactive Maps and Map-Data Services', privacy)
+        self.assertIn('Interactive Maps and Map-Data Services', PRIVACY)
+        self.assertIn('default map layers begin loading immediately', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
         self.assertIn('Kentucky LiDAR Guide', explore)
 
-    def test_map_accessibility_and_deliberate_external_loading(self):
-        self.assertIn('No external map tiles are requested until you load the interactive map.', MAP)
-        self.assertIn('Load interactive map', MAP)
-        self.assertIn("alt: name", MAP)
+    def test_map_is_immediately_interactive_and_layer_mixable(self):
+        self.assertNotIn('Load interactive map', MAP)
+        self.assertNotIn('No external map tiles are requested until', MAP)
+        self.assertNotIn('data-preset=', MAP)
+        for layer in (
+            'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
+            'usfs-trails', 'usfs-roads', 'ky-counties', 'routes', 'landmarks'
+        ):
+            self.assertIn('data-map-layer="' + layer + '"', MAP)
+            self.assertIn('data-opacity="' + layer + '"', MAP)
+        self.assertIn('type="range"', MAP)
+        self.assertIn('credentials: \'omit\'', MAP)
         self.assertIn("keyboard: true", MAP)
-        self.assertIn("scrollWheelZoom: mode === 'full'", MAP)
-        self.assertIn("map.getZoom() >= 14", MAP)
-        self.assertIn('Parcel / Private Property', LAYERS)
+        self.assertIn("scrollWheelZoom: true", MAP)
 
-    def test_full_map_presets_and_filters_exist(self):
-        for label in ('Simple', 'Terrain', 'Route Planning', 'Land &amp; Access', 'All Layers'):
-            self.assertIn(label, MAP)
-        for label in ('Day hikes', 'Backpacking', 'Multi-day', 'Official / on-trail', 'Mixed', 'Selected off-trail'):
-            self.assertIn(label, MAP)
-        self.assertIn('Interactive Hikes &amp; Routes Map', FULL_MAP)
+    def test_map_has_measurement_and_trail_snap_planning(self):
+        self.assertIn('data-map-tool="measure"', MAP)
+        self.assertIn('data-map-tool="plan"', MAP)
+        self.assertIn('Plan on trails', MAP)
+        self.assertIn('shortestTrailPath', MAP)
+        self.assertIn('nearestNode', MAP)
+        self.assertIn('No snap point within 250 m', MAP)
+        self.assertIn('County boundaries', MAP)
+        self.assertIn('Forest Service trails', MAP)
+        self.assertIn('Forest Service roads', MAP)
+        self.assertIn('trail-snapped planning', FULL_MAP)
+
+    def test_public_route_ui_avoids_internal_workflow_language(self):
+        public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP])
+        for prohibited in (
+            'Publication Ready',
+            'Lane 19',
+            'Approved public waypoints',
+            'Approved waypoints',
+            'current Lane 19-approved route package',
+            'Approved route shape',
+        ):
+            self.assertNotIn(prohibited, public_ui)
+        self.assertIn('Landmarks &amp; viewpoints', DETAIL)
+        self.assertIn('Map &amp; route data sources', DETAIL)
 
     def test_lidar_guide_keeps_gaia_caltopo_as_education_only(self):
         self.assertIn('Kentucky LiDAR &amp; Custom Map Sources', GUIDE)
@@ -136,6 +175,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('CalTopo', GUIDE)
         self.assertIn('does not publish or redistribute Gaia proprietary/Premium overlays', GUIDE)
         self.assertIn('Do not copy or rehost CalTopo proprietary map tiles', GUIDE)
+
 
 if __name__ == '__main__':
     unittest.main()

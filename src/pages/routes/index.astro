@@ -13,16 +13,18 @@ const base = import.meta.env.BASE_URL;
 <Base
   title="Hikes & Routes"
   titleTag="Hikes & Routes | Red River Gorge Hiker"
-  description="Search Red River Gorge Hiker route guides, approved GPX downloads, maps, elevation profiles, access notes, hazards, and current land-manager resources."
+  description="Search Red River Gorge Hiker route guides, GPX downloads, maps, elevation profiles, access notes, hazards, and current land-manager resources."
   canonicalPath="/routes/"
 >
   <div class="page route-page route-library-page">
     <p class="eyebrow">Exploration &amp; planning</p>
     <h1>RRGH Hikes &amp; Routes</h1>
-    <p class="route-lede">RRGH publishes routes to help people explore the Gorge responsibly; publication is not automatic simply because Ryan knows how to get somewhere. Every route shown here has completed the Lane 19 publication process.</p>
+    <p class="route-lede">
+      Field-tested routes with practical access notes, terrain context, downloadable GPX files, and map tools for planning your own day in the Gorge.
+    </p>
     <div class="route-page-actions">
-      <a class="route-action" href={`${base}routes/map/`}>Open interactive map</a>
-      <a class="route-text-link" href={`${base}guides/kentucky-lidar/`}>Kentucky LiDAR guide →</a>
+      <a class="route-action" href={base + 'routes/map/'}>Open interactive map</a>
+      <a class="route-text-link" href={base + 'guides/kentucky-lidar/'}>Kentucky LiDAR guide →</a>
     </div>
     <RouteLibrary routes={routes} />
   </div>
