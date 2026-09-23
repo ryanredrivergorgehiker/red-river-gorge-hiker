@@ -7,13 +7,14 @@
     "dev": "astro dev",
     "build": "npm run validate && astro build",
     "preview": "astro preview",
-    "validate": "tsx scripts/validate-products.ts",
+    "validate": "tsx scripts/validate-products.ts && tsx scripts/validate-routes.ts",
     "test": "python3 -m unittest discover -s tests -p \"test*.py\" -v",
     "check": "astro check && npm test && npm run build"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.1.5"
+    "astro": "^7.1.5",
+    "leaflet": "1.9.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
