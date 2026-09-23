@@ -1,0 +1,65 @@
+---
+const { routes, base } = Astro.props;
+---
+<section class="route-library" aria-labelledby="routes-heading">
+  <div class="route-library-tools" aria-label="Route filters">
+    <label>Search routes
+      <input type="search" data-route-search placeholder="Route name or feature" />
+    </label>
+    <label>Trip type
+      <select data-route-filter="trip">
+        <option value="">All</option>
+        <option value="day-hike">Day hike</option>
+        <option value="backpacking">Backpacking</option>
+        <option value="multi-day">Multi-day</option>
+      </select>
+    </label>
+    <label>Trail status
+      <select data-route-filter="trail">
+        <option value="">All</option>
+        <option value="official">Official</option>
+        <option value="mixed">Mixed</option>
+        <option value="off-trail">Off-trail</option>
+      </select>
+    </label>
+  </div>
+  <p class="route-filter-status" aria-live="polite"></p>
+  <div class="route-card-grid" data-route-grid>
+    {routes.map((route) => (
+      <article class="route-card" data-route-card data-trip={route.data.tripType} data-trail={route.data.trailStatus} data-search={(route.data.title + ' ' + route.data.physicalDifficulty + ' ' + route.data.navigationDifficulty).toLowerCase()}>
+        <p class="eyebrow">{route.data.publicationClass === 'A' ? 'Official / standard' : route.data.publicationClass === 'B' ? 'Established unofficial' : 'Selected off-trail'}</p>
+        <h2><a href={base + 'routes/' + route.id + '/'}>{route.data.title}</a></h2>
+        <dl class="route-card-facts">
+          <div><dt>Distance</dt><dd>{route.data.distanceMi.toFixed(2)} mi</dd></div>
+          <div><dt>Trip</dt><dd>{route.data.tripType.replace('-', ' ')}</dd></div>
+          <div><dt>Shape</dt><dd>{route.data.shape.replaceAll('-', ' ')}</dd></div>
+          <div><dt>Difficulty</dt><dd>{route.data.physicalDifficulty}</dd></div>
+        </dl>
+        <a class="text-link" href={base + 'routes/' + route.id + '/'}>View route →</a>
+      </article>
+    ))}
+  </div>
+</section>
+<script>
+  const search = document.querySelector('[data-route-search]');
+  const filters = [...document.querySelectorAll('[data-route-filter]')];
+  const cards = [...document.querySelectorAll('[data-route-card]')];
+  const status = document.querySelector('.route-filter-status');
+  const apply = () => {
+    const query = (search?.value ?? '').trim().toLowerCase();
+    const trip = document.querySelector('[data-route-filter="trip"]')?.value ?? '';
+    const trail = document.querySelector('[data-route-filter="trail"]')?.value ?? '';
+    let shown = 0;
+    for (const card of cards) {
+      const matches = (!query || card.dataset.search.includes(query))
+        && (!trip || card.dataset.trip === trip)
+        && (!trail || card.dataset.trail === trail);
+      card.hidden = !matches;
+      if (matches) shown += 1;
+    }
+    if (status) status.textContent = shown + ' route' + (shown === 1 ? '' : 's') + ' shown.';
+  };
+  search?.addEventListener('input', apply);
+  filters.forEach((filter) => filter.addEventListener('change', apply));
+  apply();
+</script>
