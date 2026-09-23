@@ -79,7 +79,7 @@ const relativePath = base !== '/' && path.startsWith(base)
 const isIn = (prefix: string) => relativePath === prefix || relativePath.startsWith(prefix);
 const wallArtActive = isIn('/photography/') || isIn('/photographs/');
 const shopActive = isIn('/gear/') || isIn('/puzzles/');
-const exploreActive = isIn('/explore/') || isIn('/stories/') || isIn('/exploring-the-gorge/') || isIn('/search-and-rescue/');
+const exploreActive = isIn('/explore/') || isIn('/stories/') || isIn('/exploring-the-gorge/') || isIn('/search-and-rescue/') || isIn('/routes/') || isIn('/guides/kentucky-lidar/');
 
 const exploreHref = (href: string) =>
   href.startsWith('/') ? `${base}${href.slice(1)}` : href;

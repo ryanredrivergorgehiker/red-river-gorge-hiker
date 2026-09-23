@@ -128,7 +128,7 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
       const sourceById = new Map(mapSources.map((source) => [source.id, source]));
       const tileLayers = new Map();
       for (const source of mapSources.filter((item) => item.enabled && item.browserLoaded && item.url)) {
-        tileLayers.set(source.id, L.tileLayer(source.url, {
+        tileLayers.set(source.id, L.tileLayer(source.url!, {
           attribution: source.attribution,
           minZoom: source.minZoom,
           maxZoom: source.maxZoom,
@@ -200,7 +200,7 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
         group.addTo(routesLayer);
       }
 
-      const overlayState = { routes: true, waypoints: true, 'ky-hillshade': false };
+      const overlayState: Record<string, boolean> = { routes: true, waypoints: true, 'ky-hillshade': false };
 
       const applyWaypointZoom = () => {
         const shouldShow = overlayState.waypoints && map.getZoom() >= 14;
@@ -241,11 +241,11 @@ const parcel = mapSources.find((source) => source.id === 'parcel-private-propert
       }
 
       const applyPreset = (id) => {
-        const preset = mapPresets[id];
+        const preset = mapPresets[id as keyof typeof mapPresets];
         if (!preset) return;
         setBase(preset.base);
         for (const overlayId of ['ky-hillshade', 'routes', 'waypoints']) {
-          setOverlay(overlayId, preset.overlays.includes(overlayId));
+          setOverlay(overlayId, (preset.overlays as readonly string[]).includes(overlayId));
         }
       };
       for (const button of shell?.querySelectorAll<HTMLButtonElement>('[data-preset]') ?? []) {

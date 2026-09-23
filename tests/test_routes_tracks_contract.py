@@ -88,7 +88,7 @@ class RoutesTracksContractTests(unittest.TestCase):
 
     def test_elevation_is_build_time_usgs_3dep_only(self):
         self.assertIn('3DEPElevation/ImageServer/getSamples', GENERATOR)
-        self.assertIn("sampleCount:100", (ROOT / 'src/data/routes/skybridge-arch.json').read_text(encoding='utf-8').replace(' ', '').replace('\n',''))
+        self.assertEqual(ROUTE['elevation']['sampleCount'], 100)
         self.assertIn('RSP_BilinearInterpolation', GENERATOR)
         self.assertIn('Build-time only', LAYERS)
         self.assertNotIn('elevation.nationalmap.gov', MAP)
@@ -104,6 +104,15 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Route information is not a safety or access guarantee.', NOTICE)
         self.assertIn('By downloading this GPX file, you acknowledge', GPX_COMPONENT)
         self.assertIn('GPX Download License and site Terms', GPX_COMPONENT)
+        terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
+        privacy = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
+        explore = (ROOT / 'src/data/explore.ts').read_text(encoding='utf-8')
+        self.assertIn('id="gpx-download-license"', terms)
+        self.assertIn('Routes, Maps, GPS Tracks, and Location Information', terms)
+        self.assertIn('Interactive Maps and Map-Data Services', privacy)
+        self.assertIn('RRGH Hikes & Routes', explore)
+        self.assertIn('RRGH Interactive Map', explore)
+        self.assertIn('Kentucky LiDAR Guide', explore)
 
     def test_map_accessibility_and_deliberate_external_loading(self):
         self.assertIn('No external map tiles are requested until you load the interactive map.', MAP)

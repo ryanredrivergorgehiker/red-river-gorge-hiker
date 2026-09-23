@@ -63,6 +63,7 @@ export const exploreSections: ExploreSection[] = [
     title: 'Trails',
     description: 'Authoritative and established trail-planning resources for the Gorge and surrounding country.',
     links: [
+      { label: 'RRGH Hikes & Routes', href: '/routes/' },
       { label: 'Sheltowee Trace Association', href: 'https://sheltoweetrace.org/', external: true },
       { label: 'Daniel Boone National Forest Maps & Guides', href: 'https://www.fs.usda.gov/r08/danielboone/maps-guides', external: true },
       { label: 'Clifty Wilderness', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/clifty-wilderness', external: true }
@@ -73,6 +74,8 @@ export const exploreSections: ExploreSection[] = [
     title: 'Maps & Guides',
     description: 'Land-manager maps, visitor information, and park resources.',
     links: [
+      { label: 'RRGH Interactive Map', href: '/routes/map/' },
+      { label: 'Kentucky LiDAR Guide', href: '/guides/kentucky-lidar/' },
       { label: 'Daniel Boone National Forest Maps & Guides', href: 'https://www.fs.usda.gov/r08/danielboone/maps-guides', external: true },
       { label: 'Clifty Wilderness', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/clifty-wilderness', external: true },
       { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true },
