@@ -70,7 +70,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         ])
         for prohibited in (
             'drive.google.com', 'RAW Gaia', 'PROPOSED', '1w0Uq5LPJxmVKEQCqJ6SIvdSGOEAnP_lM',
-            '1PaL0N8YX811a7q0n5X7rmvT4DYVil6HK', 'eagle nest', "eagle's nest"
+            '1PaL0N8YX811a7q0n5X7rmvT4DYVil6HK', 'eagle nest', "eagle's nest", 'Lane 19'
         ):
             self.assertNotIn(prohibited.lower(), combined.lower())
 
@@ -156,7 +156,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('trail-snapped planning', FULL_MAP)
 
     def test_public_route_ui_avoids_internal_workflow_language(self):
-        public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP])
+        public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP, (ROOT / 'src/components/ElevationProfile.astro').read_text(encoding='utf-8')])
         for prohibited in (
             'Publication Ready',
             'Lane 19',
@@ -164,6 +164,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'Approved waypoints',
             'current Lane 19-approved route package',
             'Approved route shape',
+            'approved route geometry',
         ):
             self.assertNotIn(prohibited, public_ui)
         self.assertIn('Landmarks &amp; viewpoints', DETAIL)

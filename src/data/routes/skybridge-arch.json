@@ -62,7 +62,7 @@
     "publicPath": "/data/routes/skybridge-arch.elevation.json",
     "sourceId": "usgs-3dep-bare-earth-dem",
     "sampleCount": 100,
-    "method": "Sample the Lane 19-approved WGS84 LineString at 100 evenly distributed points through USGS 3DEP getSamples using bilinear interpolation; convert meters to feet; compute cumulative horizontal distance; derive min/max/ascent/descent from the sampled series without altering approved horizontal geometry.",
+    "method": "Sample the public WGS84 route LineString at 100 evenly distributed points through USGS 3DEP getSamples using bilinear interpolation; convert meters to feet; compute cumulative horizontal distance; derive min/max/ascent/descent from the sampled series without altering the horizontal route geometry.",
     "generatedAtBuild": true
   },
   "landManagerResources": [

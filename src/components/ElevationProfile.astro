@@ -44,7 +44,7 @@ const descId = `elevation-desc-${data.routeId}`;
   <figure class="elevation-profile">
     <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${labelId} ${descId}`}>
       <title id={labelId}>{title} elevation profile</title>
-      <desc id={descId}>Elevation sampled at {data.sampleCount} evenly distributed points from the approved route geometry. Minimum {data.stats.minElevationFt} feet and maximum {data.stats.maxElevationFt} feet.</desc>
+      <desc id={descId}>Elevation sampled at {data.sampleCount} evenly distributed points from the route geometry. Minimum {data.stats.minElevationFt} feet and maximum {data.stats.maxElevationFt} feet.</desc>
       <line x1={padX} y1={height - padY} x2={width - padX} y2={height - padY} class="elevation-axis" />
       <path d={areaD} class="elevation-area" />
       <path d={pathD} class="elevation-line" />
