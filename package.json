@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run validate && astro build",
+    "build": "npm run generate:route-elevation && npm run build:site",
     "preview": "astro preview",
     "validate": "tsx scripts/validate-products.ts",
     "test": "python3 -m unittest discover -s tests -p \"test*.py\" -v",
-    "check": "astro check && npm test && npm run build"
+    "check": "npm run generate:route-elevation && astro check && npm test && npm run build:site",
+    "generate:route-elevation": "node scripts/generate-route-elevation.mjs",
+    "validate:routes": "node scripts/validate-routes.mjs",
+    "build:site": "npm run validate && npm run validate:routes && astro build"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.1.5"
+    "astro": "^7.1.5",
+    "leaflet": "1.9.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",

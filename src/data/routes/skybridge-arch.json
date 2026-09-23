@@ -1,0 +1,90 @@
+{
+  "routeId": "RTE-0001",
+  "title": "Skybridge Arch",
+  "publicationClass": "A",
+  "publicationStatus": "Approved — Publication Ready",
+  "tripType": "day-hike",
+  "trailStatus": "official",
+  "trailStatusDisplay": "Mostly official trail",
+  "shape": "loop",
+  "distanceMi": 0.784,
+  "estimatedDuration": null,
+  "physicalDifficulty": "Moderate",
+  "physicalDifficultyDetail": "Moderate — USDA Forest Service Trail #214 reference; Ryan describes it as suitable for ordinary hikers.",
+  "navigationDifficulty": "Straightforward official-trail navigation",
+  "navigationDifficultyDetail": "Straightforward official-trail navigation; Ryan reports no special navigation issue not conveyed by the GPX.",
+  "lastPersonallyTraveled": "2026-05-16",
+  "lastInformationReview": "2026-09-23",
+  "accessParking": "Sky Bridge Picnic Area. Ryan reports ample parking and picnic facilities. There is a gate on the access road that is sometimes closed, including during winter and at other times. USDA Forest Service materials may list the developed picnic area as open all year, but that does not establish continuous road/gate access. Route copy must tell visitors to verify current DBNF alerts, road conditions, and gate/access status before departure.",
+  "hazards": [
+    "Cliff/exposure exists at Sky Bridge and overlooks.",
+    "Historical USDA Forest Service Trail #214 map notes the crossing over Sky Bridge has no guardrail and cautions about falls; climbing/rappelling within 300 ft of Sky Bridge is prohibited."
+  ],
+  "waterCamping": [
+    "Ryan reports no water on the route.",
+    "No overnight camping at the Sky Bridge picnic/parking area; Forest Service Red River Gorge rules prohibit camping in picnic/parking areas and within 300 ft of developed roads/trails. Picnic use is appropriate; grill availability remains owner-observed/not independently verified for publication."
+  ],
+  "landAccessReview": "Daniel Boone National Forest / Red River Gorge Geological Area. Official Sky Bridge Trail #214 reference located. Current alerts/closures must be checked before publication/use; authoritative current land-manager information overrides RRGH.",
+  "publicWaypoints": [
+    {
+      "waypointId": "WP-0001",
+      "name": "Skybridge Arch",
+      "type": "Landmark",
+      "lat": 37.81886,
+      "lon": -83.57903,
+      "description": "Natural arch landmark along the route."
+    },
+    {
+      "waypointId": "WP-0002",
+      "name": "Turnaround Overlook",
+      "type": "Viewpoint",
+      "lat": 37.81913,
+      "lon": -83.57684,
+      "description": "Scenic overlook at the route turnaround."
+    }
+  ],
+  "relatedContent": [],
+  "approvedPublicationGpx": {
+    "filename": "Skybridge_Arch_APPROVED_v1.gpx",
+    "publicPath": "/downloads/routes/Skybridge_Arch_APPROVED_v1.gpx",
+    "version": "1",
+    "sha256": "2469c85ebaddd3e701ba6dc8eea3664d90a0667dcd86f2aab43ae1445986830d",
+    "trackPointCount": 100,
+    "waypointCount": 2
+  },
+  "webGeometry": {
+    "filename": "skybridge-arch-v1.geojson",
+    "publicPath": "/data/routes/skybridge-arch-v1.geojson",
+    "version": "1",
+    "sha256": "123fdb57e1142299f86c714367cc466b70f18fa90cfbaabb92b0d9ced157dc66"
+  },
+  "elevation": {
+    "publicPath": "/data/routes/skybridge-arch.elevation.json",
+    "sourceId": "usgs-3dep-bare-earth-dem",
+    "sampleCount": 100,
+    "method": "Sample the Lane 19-approved WGS84 LineString at 100 evenly distributed points through USGS 3DEP getSamples using bilinear interpolation; convert meters to feet; compute cumulative horizontal distance; derive min/max/ascent/descent from the sampled series without altering approved horizontal geometry.",
+    "generatedAtBuild": true
+  },
+  "landManagerResources": [
+    {
+      "label": "Daniel Boone National Forest alerts & closures",
+      "href": "https://www.fs.usda.gov/r08/danielboone/alerts"
+    },
+    {
+      "label": "Daniel Boone National Forest maps & guides",
+      "href": "https://www.fs.usda.gov/r08/danielboone/maps-guides"
+    },
+    {
+      "label": "Red River Gorge visitor/rules pamphlet",
+      "href": "https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprdb5276793.pdf"
+    }
+  ],
+  "sourceDependencyIds": [
+    "LEG-DEC-0028",
+    "KyTopo cached Web Mercator MapServer",
+    "KyFromAbove Phase 3 3-inch Web Mercator imagery",
+    "KyFromAbove current hillshade / LiDAR relief",
+    "USGS Topo MapServer",
+    "USGS 3DEP Bare Earth DEM — 3DEPElevation ImageServer"
+  ]
+}
