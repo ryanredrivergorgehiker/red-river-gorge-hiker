@@ -515,6 +515,10 @@ const enabledSources = enabledBrowserMapSources;
       return map.unproject(northWestPoint.add(L.point(size.x / 2, size.y / 2)), homeZoom);
     };
     const setHomeView = () => map.setView(homeCenterForViewport(), homeZoom, { animate: false });
+    const syncViewportDiagnostics = () => {
+      const northWest = map.getBounds().getNorthWest();
+      container.dataset.mapNorthWest = northWest.lat.toFixed(6) + ',' + northWest.lng.toFixed(6);
+    };
 
     if (mode === 'full') {
       setHomeView();
@@ -2466,6 +2470,7 @@ const enabledSources = enabledBrowserMapSources;
       redrawPlan();
     });
 
+    map.on('moveend', syncViewportDiagnostics);
     map.on('zoomend', syncContextLabels);
     map.on('zoomend', () => {
       const zoom = map.getZoom();
@@ -2482,6 +2487,7 @@ const enabledSources = enabledBrowserMapSources;
     setTimeout(() => {
       map.invalidateSize();
       if (mode === 'full') setHomeView();
+      syncViewportDiagnostics();
     }, 50);
 
     if (vectorFailures.length) {
