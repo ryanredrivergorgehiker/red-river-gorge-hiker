@@ -13,6 +13,7 @@ export interface MapSource {
   privacyNote: string;
   minZoom?: number;
   maxZoom?: number;
+  maxNativeZoom?: number;
   opacity?: number;
 }
 
@@ -50,7 +51,8 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://kyfromabove.ky.gov/',
     privacyNote: 'Map tiles are requested directly from the Kentucky Division of Geographic Information.',
     minZoom: 5,
-    maxZoom: 19,
+    maxZoom: 20,
+    maxNativeZoom: 19,
     opacity: 1
   },
   {
@@ -80,7 +82,8 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
     privacyNote: 'Topo tiles are requested directly from USGS The National Map.',
     minZoom: 5,
-    maxZoom: 16,
+    maxZoom: 20,
+    maxNativeZoom: 16,
     opacity: 0.7
   },
   {
@@ -95,7 +98,8 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://kyfromabove.ky.gov/',
     privacyNote: 'Hillshade tiles are requested directly from the Kentucky Division of Geographic Information.',
     minZoom: 5,
-    maxZoom: 19,
+    maxZoom: 20,
+    maxNativeZoom: 19,
     opacity: 0.28
   },
   {
@@ -109,7 +113,7 @@ export const mapSources: readonly MapSource[] = [
     attribution: 'USDA Forest Service',
     termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
     privacyNote: 'Trail geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
-    opacity: 1
+    opacity: 0.45
   },
   {
     id: 'usfs-roads',
@@ -122,7 +126,7 @@ export const mapSources: readonly MapSource[] = [
     attribution: 'USDA Forest Service',
     termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
     privacyNote: 'Road geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
-    opacity: 0.78
+    opacity: 0.6
   },
   {
     id: 'ky-counties',
@@ -135,7 +139,7 @@ export const mapSources: readonly MapSource[] = [
     attribution: 'Kentucky Division of Geographic Information',
     termsUrl: 'https://kygeoportal.ky.gov/',
     privacyNote: 'County boundary geometry is requested directly from the Kentucky Division of Geographic Information.',
-    opacity: 0.7
+    opacity: 0.6
   },
   {
     id: 'parcel-private-property',

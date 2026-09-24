@@ -117,17 +117,17 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-row">
             <input type="checkbox" data-map-layer="usfs-trails" checked />
             <span>Forest Service trails</span>
-            <input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" />
+            <input type="range" min="0" max="100" value="45" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" />
           </label>
           <label class="route-layer-row">
             <input type="checkbox" data-map-layer="usfs-roads" checked />
             <span>Forest Service roads</span>
-            <input type="range" min="0" max="100" value="45" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" />
+            <input type="range" min="0" max="100" value="60" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" />
           </label>
           <label class="route-layer-row">
             <input type="checkbox" data-map-layer="ky-counties" checked />
             <span>County boundaries</span>
-            <input type="range" min="0" max="100" value="45" data-opacity="ky-counties" aria-label="County boundaries opacity" />
+            <input type="range" min="0" max="100" value="60" data-opacity="ky-counties" aria-label="County boundaries opacity" />
           </label>
         </div>
 
@@ -259,8 +259,13 @@ const enabledSources = enabledBrowserMapSources;
     const map = L.map(container, {
       zoomControl: false,
       attributionControl: true,
-      scrollWheelZoom: true,
+      scrollWheelZoom: false,
       doubleClickZoom: true,
+      touchZoom: true,
+      dragging: true,
+      boxZoom: true,
+      keyboard: true,
+      maxBoundsViscosity: 1,
       preferCanvas: true
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -286,7 +291,7 @@ const enabledSources = enabledBrowserMapSources;
     }
 
     if (mode === 'full') {
-      map.fitBounds([[37.70, -83.82], [37.93, -83.42]], { padding: [18, 18], maxZoom: 12 });
+      map.fitBounds([[37.58, -83.93], [38.04, -83.25]], { padding: [22, 22], maxZoom: 11 });
     } else {
       map.setView([37.8185, -83.5795], 14);
     }
@@ -324,6 +329,7 @@ const enabledSources = enabledBrowserMapSources;
         attribution: source.attribution,
         minZoom: source.minZoom,
         maxZoom: source.maxZoom,
+        maxNativeZoom: source.maxNativeZoom,
         opacity: opacity(source.id),
         pane: tilePane[source.id] ?? 'tilePane',
         keepBuffer: 3
@@ -594,8 +600,8 @@ const enabledSources = enabledBrowserMapSources;
       const trailLayer = L.geoJSON(trails, {
         pane: 'trails',
         style: {
-          color: '#c34f3c',
-          weight: 3.2,
+          color: '#5d6387',
+          weight: 2.25,
           opacity: opacity('usfs-trails'),
           lineCap: 'round',
           lineJoin: 'round'
@@ -643,11 +649,11 @@ const enabledSources = enabledBrowserMapSources;
       const roadLayer = L.geoJSON(roads, {
         pane: 'roads',
         style: {
-          color: '#554e46',
-          weight: 2,
+          color: '#8a6a46',
+          weight: 2.6,
           opacity: opacity('usfs-roads'),
-          dashArray: '7 5',
-          lineCap: 'round'
+          lineCap: 'round',
+          lineJoin: 'round'
         },
         onEachFeature: (feature: any, layer: any) => {
           const name = featureValue(feature.properties, ['name', 'NAME']);
@@ -667,8 +673,16 @@ const enabledSources = enabledBrowserMapSources;
 
     try {
       const counties = await fetchGeoJson('ky-counties');
+      const gorgeCountyNames = new Set(['Wolfe', 'Powell', 'Menifee', 'Lee']);
+      const gorgeCounties = {
+        ...counties,
+        features: (counties.features ?? []).filter((feature: any) => {
+          const name = featureValue(feature.properties, ['NAME', 'name']);
+          return gorgeCountyNames.has(name);
+        })
+      };
       const seenCounties = new Set<string>();
-      const countyLayer = L.geoJSON(counties, {
+      const countyLayer = L.geoJSON(gorgeCounties, {
         pane: 'counties',
         style: {
           color: '#695f50',
@@ -705,6 +719,17 @@ const enabledSources = enabledBrowserMapSources;
         countyLabelMarkers.forEach((marker) => marker.setOpacity(value));
       });
       syncVisibility('ky-counties');
+
+      if (mode === 'full') {
+        const gorgeBounds = countyLayer.getBounds();
+        if (gorgeBounds.isValid()) {
+          const paddedBounds = gorgeBounds.pad(0.035);
+          map.setMaxBounds(paddedBounds);
+          map.fitBounds(paddedBounds, { padding: [22, 22], maxZoom: 11 });
+          map.setMinZoom(map.getZoom());
+          container.dataset.gorgeOverviewZoom = String(map.getZoom());
+        }
+      }
     } catch (error) {
       console.error(error);
       vectorFailures.push('County boundaries');
@@ -763,27 +788,18 @@ const enabledSources = enabledBrowserMapSources;
       if (name === 'simple') {
         setLayerControl('kytopo', true, 88);
         setLayerControl('usgs-topo', false, 72);
-        setLayerControl('ky-hillshade', true, 22);
+        setLayerControl('ky-hillshade', true, 20);
         setLayerControl('kyaerial-phase3', false, 100);
-        setLayerControl('usfs-trails', true, 100);
-        setLayerControl('usfs-roads', true, 45);
-        setLayerControl('ky-counties', true, 45);
       } else if (name === 'advanced') {
-        setLayerControl('kytopo', false, 65);
+        setLayerControl('kytopo', false, 70);
         setLayerControl('usgs-topo', true, 72);
-        setLayerControl('ky-hillshade', true, 58);
+        setLayerControl('ky-hillshade', true, 45);
         setLayerControl('kyaerial-phase3', false, 100);
-        setLayerControl('usfs-trails', true, 100);
-        setLayerControl('usfs-roads', true, 78);
-        setLayerControl('ky-counties', true, 70);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
         setLayerControl('usgs-topo', false, 70);
         setLayerControl('ky-hillshade', false, 0);
         setLayerControl('kyaerial-phase3', true, 100);
-        setLayerControl('usfs-trails', true, 100);
-        setLayerControl('usfs-roads', true, 65);
-        setLayerControl('ky-counties', true, 55);
       }
       syncContextLabels();
     };
@@ -854,7 +870,7 @@ const enabledSources = enabledBrowserMapSources;
       }
       if (tool === 'measure') setStatus('Straight-line measure: click points anywhere on the map. Distance is direct point-to-point, not trail distance.');
       else if (tool === 'plan') setStatus('Plan on trails: click near a visible trail. Each click snaps to the trail network and follows connected trail geometry.');
-      else if (!vectorFailures.length) setStatus('Explore the map, adjust layers, measure straight-line distance, or build a trail-following plan.');
+      else if (!vectorFailures.length) setStatus('Drag to pan. Use +/−, double-click, or pinch to zoom. Adjust layers, measure straight-line distance, or build a trail-following plan.');
     };
 
     const clearTools = () => {
@@ -1018,8 +1034,8 @@ const enabledSources = enabledBrowserMapSources;
     map.on('zoomend', () => {
       const zoom = map.getZoom();
       routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4 : 6 }));
-      trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2.4 : zoom >= 15 ? 4 : 3.2 }));
-      roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.5 : 1.8 }));
+      trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 1.8 : zoom >= 15 ? 2.8 : 2.25 }));
+      roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.4 : 2.6 }));
     });
 
     syncContextLabels();

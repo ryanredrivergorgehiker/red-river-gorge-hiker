@@ -10,7 +10,7 @@
 
 .route-map-status{position:absolute;z-index:880;left:.8rem;bottom:.8rem;max-width:min(38rem,calc(100% - 7rem));padding:.48rem .65rem;border-radius:8px;background:rgba(32,39,34,.9);color:#fff;font-size:.8rem;line-height:1.35;box-shadow:0 .2rem .8rem rgba(20,29,24,.2);pointer-events:none}.route-map-status[data-kind=warning]{background:rgba(121,72,27,.94)}.route-map-stage[data-active-tool=measure] .route-map,.route-map-stage[data-active-tool=plan] .route-map{cursor:crosshair}
 
-.route-map-sources{margin-top:.8rem;padding:.25rem 0}.route-map-sources summary{cursor:pointer;font-weight:700}.route-map-sources p,.route-map-sources li{font-size:.86rem;line-height:1.5}.route-map-sources ul{margin:.6rem 0;padding-left:1.2rem}.route-map-sources li{margin:.4rem 0}.route-map-popup-meta{margin:.25rem 0;color:#5f675f;font-size:.82rem}.leaflet-popup-content p{margin:.25rem 0}.rrgh-map-tooltip{border:0!important;border-radius:5px!important;background:rgba(251,250,246,.96)!important;color:#202722!important;font-weight:700!important;box-shadow:0 .2rem .6rem rgba(20,29,24,.16)!important}.rrgh-map-tooltip::before{display:none!important}.route-waypoint-icon{background:transparent}.route-waypoint-icon span{display:block;width:18px;height:18px;border:3px solid #fff;border-radius:50%;background:#b86b43;box-shadow:0 0 0 2px #17372d,0 .18rem .45rem rgba(20,29,24,.35)}.rrgh-trail-label,.rrgh-county-label{background:transparent!important;border:0!important}.rrgh-trail-label span{display:inline-block;max-width:160px;padding:.14rem .28rem;border-radius:3px;background:rgba(251,250,246,.78);color:#923b2f;font-size:10px;font-weight:800;line-height:1.1;text-align:center;text-shadow:0 1px 0 #fff;white-space:normal}.rrgh-county-label span{display:inline-block;padding:.15rem .3rem;background:rgba(251,250,246,.64);color:#51483f;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.route-map-sources{margin-top:.8rem;padding:.25rem 0}.route-map-sources summary{cursor:pointer;font-weight:700}.route-map-sources p,.route-map-sources li{font-size:.86rem;line-height:1.5}.route-map-sources ul{margin:.6rem 0;padding-left:1.2rem}.route-map-sources li{margin:.4rem 0}.route-map-popup-meta{margin:.25rem 0;color:#5f675f;font-size:.82rem}.leaflet-popup-content p{margin:.25rem 0}.rrgh-map-tooltip{border:0!important;border-radius:5px!important;background:rgba(251,250,246,.96)!important;color:#202722!important;font-weight:700!important;box-shadow:0 .2rem .6rem rgba(20,29,24,.16)!important}.rrgh-map-tooltip::before{display:none!important}.route-waypoint-icon{background:transparent}.route-waypoint-icon span{display:block;width:18px;height:18px;border:3px solid #fff;border-radius:50%;background:#b86b43;box-shadow:0 0 0 2px #17372d,0 .18rem .45rem rgba(20,29,24,.35)}.rrgh-trail-label,.rrgh-county-label{background:transparent!important;border:0!important}.rrgh-trail-label span{display:inline-block;max-width:160px;padding:.14rem .28rem;border-radius:3px;background:rgba(251,250,246,.78);color:#4f5577;font-size:10px;font-weight:800;line-height:1.1;text-align:center;text-shadow:0 1px 0 #fff;white-space:normal}.rrgh-county-label span{display:inline-block;padding:.15rem .3rem;background:rgba(251,250,246,.64);color:#51483f;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 
 .route-map-open{margin-top:.8rem}.route-content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem 2rem;margin:2rem 0}.route-content-grid section{border-top:1px solid #cfc7b8;padding-top:.6rem}.route-waypoint-list li{margin:.55rem 0}.route-source-panel,.gpx-download{margin:2rem 0;padding:1rem 1.1rem;border:1px solid #d8d1c3;border-radius:8px;background:#faf8f3}.route-source-panel code{overflow-wrap:anywhere}.gpx-acknowledgment{max-width:82ch}.route-small{font-size:.88rem;color:#59665f}.elevation-section{margin:2rem 0}.elevation-profile{margin:1rem 0}.elevation-profile svg{display:block;width:100%;height:auto;max-height:290px;border:1px solid #d8d1c3;border-radius:8px;background:#faf8f3}.elevation-axis{stroke:#777;stroke-width:1}.elevation-area{fill:rgba(22,63,52,.12)}.elevation-line{fill:none;stroke:#163f34;stroke-width:4;stroke-linejoin:round;stroke-linecap:round}.elevation-label{font-size:14px;fill:#38483f}.elevation-profile figcaption{font-size:.88rem;line-height:1.5;margin-top:.5rem}.route-library-controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.8rem;margin:2rem 0 1rem}.route-library-controls label{font-weight:700}.route-library-controls input,.route-library-controls select{display:block;width:100%;min-height:44px;margin-top:.3rem}.route-library-count{font-weight:700}.route-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.route-card{border:1px solid #d8d1c3;border-radius:8px;padding:1rem 1.1rem;background:#fff}.route-card[hidden]{display:none}.route-card h2{margin:.15rem 0 .75rem}.route-card-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}.route-card-facts div{display:flex;gap:.35rem}.route-card-facts dt{font-weight:700}.route-card-facts dd{margin:0}.route-library-empty{padding:1rem;background:#faf8f3}.lidar-guide code{display:block;overflow-wrap:anywhere;padding:.65rem;background:#f4f0e7}
 
@@ -204,5 +204,75 @@
   .route-map-shell-full .route-map-tools{
     max-width:calc(100% - 1.2rem);
     right:.6rem;
+  }
+}
+
+
+/* Planning-map refinement: clean header, fixed four-county interaction, calmer public-land overlays. */
+.route-map-page{
+  padding-top:1.75rem;
+}
+.route-map-page-header{
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:1.5rem;
+  align-items:end;
+  margin-bottom:1rem;
+}
+.route-map-page-title h1{
+  margin:.08rem 0 .28rem;
+  max-width:none;
+  font-size:clamp(2.2rem,3.6vw,3.35rem);
+  line-height:1;
+  white-space:nowrap;
+}
+.route-map-page-subtitle{
+  max-width:64rem;
+  margin:0;
+  color:#46544d;
+  font-size:.94rem;
+  line-height:1.45;
+}
+.route-map-page-library-link{
+  align-self:end;
+  margin-bottom:.2rem;
+  white-space:nowrap;
+}
+.route-map-commandbar{
+  grid-template-columns:minmax(0,1.6fr) minmax(360px,.85fr);
+  gap:.8rem;
+}
+.route-map-commandbar fieldset{
+  padding:.72rem .82rem .82rem;
+}
+.route-map-commandbar legend{
+  background:#f7f3ea;
+  border-radius:4px;
+  padding:.08rem .35rem;
+}
+.route-map{
+  cursor:grab;
+}
+.route-map.leaflet-dragging{
+  cursor:grabbing;
+}
+.route-map-stage[data-active-tool="measure"] .route-map,
+.route-map-stage[data-active-tool="plan"] .route-map{
+  cursor:crosshair;
+}
+
+@media(max-width:980px){
+  .route-map-page-header{
+    grid-template-columns:1fr;
+    gap:.55rem;
+    align-items:start;
+  }
+  .route-map-page-title h1{
+    white-space:normal;
+  }
+  .route-map-page-library-link{
+    margin:0;
+  }
+  .route-map-commandbar{
+    grid-template-columns:1fr;
   }
 }

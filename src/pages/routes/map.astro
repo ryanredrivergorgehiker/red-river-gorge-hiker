@@ -27,14 +27,11 @@ const routes = entries.map((entry) => ({
       <div class="route-map-page-title">
         <p class="eyebrow">Explore the Gorge</p>
         <h1>Interactive Hikes &amp; Routes Map</h1>
-      </div>
-      <div class="route-map-page-intro">
-        <p>
-          Start with a clean view or a more detailed terrain view, then adjust any layer yourself.
-          Filter RRGH routes by trip type, measure direct point-to-point distance, or build a route that follows the available trail network and save it as GPX.
+        <p class="route-map-page-subtitle">
+          Four-county planning view for Wolfe, Powell, Menifee, and Lee counties. Choose a map view, then fine-tune individual layers as needed.
         </p>
-        <a class="route-text-link" href={base + 'routes/'}>Browse route guides →</a>
       </div>
+      <a class="route-text-link route-map-page-library-link" href={base + 'routes/'}>Browse route guides →</a>
     </header>
     <RouteMap routes={routes} mode="full" />
   </div>
