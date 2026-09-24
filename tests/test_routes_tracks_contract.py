@@ -155,10 +155,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
             'usfs-trails', 'usfs-roads', 'osm-informal-trails',
-            'usfs-wilderness', 'usfs-special-management', 'usfs-land-units'
+            'usfs-special-management', 'usfs-land-units'
         ):
             self.assertIn('data-map-layer="' + layer + '"', MAP)
             self.assertIn('data-opacity="' + layer + '"', MAP)
+        self.assertIn('data-map-layer="usfs-wilderness"', MAP)
+        self.assertIn('data-context-full-opacity="usfs-wilderness"', MAP)
+        self.assertNotIn('data-opacity="usfs-wilderness"', MAP)
         for always_on in ('RRGH routes', 'Route starts', 'Trailheads &amp; facilities', 'Landmarks &amp; viewpoints', 'County boundaries'):
             self.assertIn(always_on, MAP)
         self.assertIn('route-static-legend-grid', MAP)
