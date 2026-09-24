@@ -1040,3 +1040,47 @@
     gap:.08rem;
   }
 }
+
+
+/* Routes map UAT refinement — aerial context, wilderness opacity, and planning pan mode. */
+.route-layer-context-opacity-row{
+  display:grid;
+  grid-template-columns:1rem minmax(0,1fr);
+  gap:.48rem;
+  align-items:center;
+  min-height:32px;
+  padding:.12rem 0 .12rem 3.73rem;
+  color:#536159;
+  font-size:.75rem;
+}
+.route-layer-context-opacity-row input{
+  width:1rem;
+  height:1rem;
+  margin:0;
+  accent-color:#17372d;
+}
+.route-layer-opacity-grid input:disabled{
+  opacity:.38;
+  cursor:not-allowed;
+}
+.route-map-shell[data-aerial-active="true"] .swatch-wilderness::before{
+  border-color:#ff4fd8;
+  background:rgba(255,79,216,.18);
+}
+.route-map-shell[data-aerial-active="true"] .swatch-management::before{
+  border-color:#ffe14a;
+  background:rgba(255,225,74,.18);
+}
+.route-map-shell[data-aerial-active="true"] .swatch-land-unit::before{
+  border-color:#62ff9d;
+  background:rgba(98,255,157,.18);
+}
+.route-map-stage[data-plan-pan-mode="true"] .rrgh-plan-segment-hit{
+  pointer-events:none;
+}
+.route-map-stage[data-plan-pan-mode="true"] .route-map{
+  cursor:grab;
+}
+.route-map-stage[data-plan-pan-mode="true"] .route-map:active{
+  cursor:grabbing;
+}
