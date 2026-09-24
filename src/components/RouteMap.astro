@@ -633,6 +633,7 @@ const enabledSources = enabledBrowserMapSources;
           }
         }
       });
+      container.dataset.trailFeatureCount = String(trailPaths.length);
       mapLayers.set('usfs-trails', trailLayer);
       opacitySetters.set('usfs-trails', (value) => {
         trailPaths.forEach((layer) => layer.setStyle({ opacity: value }));
@@ -663,6 +664,7 @@ const enabledSources = enabledBrowserMapSources;
           roadPaths.push(layer);
         }
       });
+      container.dataset.roadFeatureCount = String(roadPaths.length);
       mapLayers.set('usfs-roads', roadLayer);
       opacitySetters.set('usfs-roads', (value) => roadPaths.forEach((layer) => layer.setStyle({ opacity: value })));
       syncVisibility('usfs-roads');
@@ -713,6 +715,7 @@ const enabledSources = enabledBrowserMapSources;
           }
         }
       });
+      container.dataset.gorgeCountyCount = String(gorgeCounties.features.length);
       mapLayers.set('ky-counties', countyLayer);
       opacitySetters.set('ky-counties', (value) => {
         countyPaths.forEach((layer) => layer.setStyle({ opacity: value }));
