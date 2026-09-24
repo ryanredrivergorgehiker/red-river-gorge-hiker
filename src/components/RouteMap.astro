@@ -2158,14 +2158,8 @@ const enabledSources = enabledBrowserMapSources;
         suppressPlanClickUntil = Date.now() + 500;
         map.dragging.disable();
 
-        const latLngFromMouse = (mouse: MouseEvent) => {
-          const rect = container.getBoundingClientRect();
-          const point = L.point(mouse.clientX - rect.left, mouse.clientY - rect.top);
-          return map.containerPointToLatLng(point);
-        };
-
-        const onMove = (mouse: MouseEvent) => {
-          const target = latLngFromMouse(mouse);
+        const onMove = (moveEvent: any) => {
+          const target = moveEvent.latlng;
           const nearTrail = Boolean(startStop.nodeKey && nearestNode(target));
           visibleLine.setLatLngs([L.latLng(startStop.lat, startStop.lng), target]);
           visibleLine.setStyle({
@@ -2174,16 +2168,16 @@ const enabledSources = enabledBrowserMapSources;
           });
         };
 
-        const onUp = (mouse: MouseEvent) => {
-          window.removeEventListener('mousemove', onMove);
-          window.removeEventListener('mouseup', onUp);
+        const finishDrag = (upEvent: any) => {
+          map.off('mousemove', onMove);
+          map.off('mouseup', finishDrag);
           map.dragging.enable();
           suppressPlanClickUntil = Date.now() + 350;
-          movePlanSegmentTarget(segmentIndex, latLngFromMouse(mouse));
+          movePlanSegmentTarget(segmentIndex, upEvent.latlng);
         };
 
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onUp, { once: true });
+        map.on('mousemove', onMove);
+        map.once('mouseup', finishDrag);
       });
     };
 
