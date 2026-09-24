@@ -108,6 +108,8 @@ features=[]
 explicit_informal=0
 candidate_count=0
 official_like_removed=0
+dropped_out_of_bounds_features=0
+clipped_edge_features=0
 for element in elements_by_id.values():
     geom=element.get('geometry') or []
     coords=[[p['lon'],p['lat']] for p in geom if isinstance(p,dict) and 'lon' in p and 'lat' in p]
@@ -117,7 +119,10 @@ for element in elements_by_id.values():
     raw_line=LineString(coords)
     clipped=raw_line.intersection(clip_box)
     if clipped.is_empty:
+        dropped_out_of_bounds_features+=1
         continue
+    if not raw_line.equals(clipped):
+        clipped_edge_features+=1
     if isinstance(clipped,LineString):
         parts=[clipped]
     elif isinstance(clipped,MultiLineString):
@@ -165,7 +170,10 @@ out={
     'official_like_removed':official_like_removed,
     'official_match_buffer_m':30,
     'official_overlap_exclusion_ratio':0.65,
-    'osm_way_count_before_filter':len(elements_by_id)
+    'osm_way_count_before_filter':len(elements_by_id),
+    'bounds_clipped':True,
+    'dropped_out_of_bounds_features':dropped_out_of_bounds_features,
+    'clipped_edge_features':clipped_edge_features
   }
 }
 path=CACHE_PATH
