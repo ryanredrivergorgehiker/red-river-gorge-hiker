@@ -1900,6 +1900,7 @@ const enabledSources = enabledBrowserMapSources;
     let planHistory: PlanSnapshot[] = [{ stops: [], segments: [] }];
     let planHistoryIndex = 0;
     let suppressPlanClickUntil = 0;
+    let segmentDragActive = false;
 
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
 
@@ -2159,22 +2160,17 @@ const enabledSources = enabledBrowserMapSources;
         return map.containerPointToLatLng(L.point(clientX - rect.left, clientY - rect.top));
       };
 
-      const beginDrag = (
-        clientX: number,
-        clientY: number,
-        addMove: (handler: (event: any) => void) => void,
-        removeMove: (handler: (event: any) => void) => void,
-        addEnd: (handler: (event: any) => void) => void,
-        removeEnd: (handler: (event: any) => void) => void,
-        addCancel: (handler: (event?: any) => void) => void,
-        removeCancel: (handler: (event?: any) => void) => void
-      ) => {
+      const beginSegmentDrag = (clientX: number, clientY: number) => {
+        if (segmentDragActive || activeTool !== 'plan') return;
+
         const startStop = planStops[segmentIndex];
         if (!startStop) return;
 
+        segmentDragActive = true;
         suppressPlanClickUntil = Date.now() + 500;
         map.dragging.disable();
         hitElement.style.cursor = 'grabbing';
+        container.dataset.planDragSegment = String(segmentIndex);
 
         let moved = false;
         let lastClientX = clientX;
@@ -2195,22 +2191,28 @@ const enabledSources = enabledBrowserMapSources;
         };
 
         const cleanup = () => {
-          removeMove(onMove);
-          removeEnd(onEnd);
-          removeCancel(onCancel);
+          window.removeEventListener('mousemove', onMove, true);
+          window.removeEventListener('pointermove', onMove, true);
+          window.removeEventListener('mouseup', onEnd, true);
+          window.removeEventListener('pointerup', onEnd, true);
+          window.removeEventListener('pointercancel', onCancel, true);
           window.removeEventListener('blur', onCancel, true);
           hitElement.style.cursor = 'grab';
           map.dragging.enable();
+          segmentDragActive = false;
+          delete container.dataset.planDragSegment;
         };
 
-        const onMove = (moveEvent: any) => {
+        const onMove = (moveEvent: MouseEvent | PointerEvent) => {
+          if (!segmentDragActive) return;
           moved = true;
           lastClientX = moveEvent.clientX;
           lastClientY = moveEvent.clientY;
           previewTarget(toMapLatLng(lastClientX, lastClientY));
         };
 
-        const onEnd = (endEvent: any) => {
+        const onEnd = (endEvent: MouseEvent | PointerEvent) => {
+          if (!segmentDragActive) return;
           lastClientX = endEvent.clientX ?? lastClientX;
           lastClientY = endEvent.clientY ?? lastClientY;
           cleanup();
@@ -2223,48 +2225,43 @@ const enabledSources = enabledBrowserMapSources;
         };
 
         const onCancel = () => {
+          if (!segmentDragActive) return;
           cleanup();
           redrawPlan();
         };
 
-        addMove(onMove);
-        addEnd(onEnd);
-        addCancel(onCancel);
+        window.addEventListener('mousemove', onMove, true);
+        window.addEventListener('pointermove', onMove, true);
+        window.addEventListener('mouseup', onEnd, true);
+        window.addEventListener('pointerup', onEnd, true);
+        window.addEventListener('pointercancel', onCancel, true);
         window.addEventListener('blur', onCancel, true);
       };
+
+      hitLine.on('mousedown', (event: any) => {
+        if (activeTool !== 'plan') return;
+        const original = event.originalEvent as MouseEvent | undefined;
+        if (!original || original.button !== 0) return;
+        original.preventDefault();
+        original.stopPropagation();
+        beginSegmentDrag(original.clientX, original.clientY);
+      });
 
       hitElement.addEventListener('mousedown', (event: MouseEvent) => {
         if (activeTool !== 'plan' || event.button !== 0) return;
         event.preventDefault();
         event.stopPropagation();
-
-        beginDrag(
-          event.clientX,
-          event.clientY,
-          (handler) => window.addEventListener('mousemove', handler, true),
-          (handler) => window.removeEventListener('mousemove', handler, true),
-          (handler) => window.addEventListener('mouseup', handler, true),
-          (handler) => window.removeEventListener('mouseup', handler, true),
-          (handler) => window.addEventListener('mouseleave', handler, true),
-          (handler) => window.removeEventListener('mouseleave', handler, true)
-        );
+        beginSegmentDrag(event.clientX, event.clientY);
       });
 
       hitElement.addEventListener('pointerdown', (event: PointerEvent) => {
-        if (event.pointerType === 'mouse' || activeTool !== 'plan' || event.button !== 0) return;
+        if (activeTool !== 'plan' || event.button !== 0) return;
         event.preventDefault();
         event.stopPropagation();
-
-        beginDrag(
-          event.clientX,
-          event.clientY,
-          (handler) => window.addEventListener('pointermove', handler, true),
-          (handler) => window.removeEventListener('pointermove', handler, true),
-          (handler) => window.addEventListener('pointerup', handler, true),
-          (handler) => window.removeEventListener('pointerup', handler, true),
-          (handler) => window.addEventListener('pointercancel', handler, true),
-          (handler) => window.removeEventListener('pointercancel', handler, true)
-        );
+        try {
+          hitElement.setPointerCapture(event.pointerId);
+        } catch {}
+        beginSegmentDrag(event.clientX, event.clientY);
       });
     };
 
