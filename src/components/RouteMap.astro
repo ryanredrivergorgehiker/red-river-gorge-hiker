@@ -2171,10 +2171,13 @@ const enabledSources = enabledBrowserMapSources;
         map.dragging.disable();
         hitElement.style.cursor = 'grabbing';
         container.dataset.planDragSegment = String(segmentIndex);
+        container.dataset.planDragMoved = 'false';
+        delete container.dataset.planDragPreviewMode;
 
         let moved = false;
         let lastClientX = clientX;
         let lastClientY = clientY;
+        let lastResolvedTarget: PlanPoint | null = null;
 
         const previewTarget = (target: any) => {
           const built = buildAutoPlanSegment(startStop, target);
@@ -2182,6 +2185,8 @@ const enabledSources = enabledBrowserMapSources;
             ? built.segment.points.map((point) => L.latLng(point.lat, point.lng))
             : [L.latLng(startStop.lat, startStop.lng), target];
           const snapped = built?.segment.mode === 'snap';
+          lastResolvedTarget = built?.target ? { ...built.target } : { lat: target.lat, lng: target.lng };
+          container.dataset.planDragPreviewMode = snapped ? 'snap' : 'straight';
 
           visibleLine.setLatLngs(previewPoints);
           visibleLine.setStyle({
@@ -2206,6 +2211,7 @@ const enabledSources = enabledBrowserMapSources;
         const onMove = (moveEvent: MouseEvent | PointerEvent) => {
           if (!segmentDragActive) return;
           moved = true;
+          container.dataset.planDragMoved = 'true';
           lastClientX = moveEvent.clientX;
           lastClientY = moveEvent.clientY;
           previewTarget(toMapLatLng(lastClientX, lastClientY));
@@ -2215,13 +2221,17 @@ const enabledSources = enabledBrowserMapSources;
           if (!segmentDragActive) return;
           lastClientX = endEvent.clientX ?? lastClientX;
           lastClientY = endEvent.clientY ?? lastClientY;
+          const rawDrop = toMapLatLng(lastClientX, lastClientY);
+          const resolvedDrop = lastResolvedTarget
+            ? L.latLng(lastResolvedTarget.lat, lastResolvedTarget.lng)
+            : rawDrop;
           cleanup();
           suppressPlanClickUntil = Date.now() + 350;
           if (!moved) {
             redrawPlan();
             return;
           }
-          movePlanSegmentTarget(segmentIndex, toMapLatLng(lastClientX, lastClientY));
+          movePlanSegmentTarget(segmentIndex, resolvedDrop);
         };
 
         const onCancel = () => {
