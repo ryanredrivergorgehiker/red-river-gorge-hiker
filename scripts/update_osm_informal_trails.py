@@ -71,7 +71,7 @@ for element in payload.get('elements',[]):
     geom=element.get('geometry')
     if not isinstance(geom,list) or len(geom)<2:
         continue
-    coords=[[p['lon'],p['lat']] for p in geom if 'lon' in p and 'lat' in p]
+    coords=[[p['lon'],p['lat']] for p in geom if isinstance(p,dict) and 'lon' in p and 'lat' in p]
     if len(coords)<2:
         continue
 
