@@ -257,6 +257,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("pathElement.addEventListener('pointermove'", MAP)
         self.assertIn("pathElement.addEventListener('pointerup'", MAP)
         self.assertIn("pathElement.addEventListener('pointercancel'", MAP)
+        self.assertIn("map.getContainer().getBoundingClientRect()", MAP)
         self.assertIn("window.addEventListener('mouseup', finishDrag, true)", MAP)
         self.assertIn('buildAutoPlanSegment(startStop, target)', MAP)
         self.assertIn('movePlanSegmentTarget', MAP)
