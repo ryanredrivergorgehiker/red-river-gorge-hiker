@@ -27,6 +27,22 @@ for endpoint in ENDPOINTS:
         data=post_json(endpoint,QUERY)
         if not isinstance(data,dict) or not isinstance(data.get('elements'),list):
             raise RuntimeError('invalid Overpass response')
+
+        points=[]
+        for element in data.get('elements',[]):
+            for point in element.get('geometry') or []:
+                if isinstance(point,dict) and 'lat' in point and 'lon' in point:
+                    points.append((float(point['lat']),float(point['lon'])))
+                    if len(points)>=5000:
+                        break
+            if len(points)>=5000:
+                break
+        if points:
+            south,west,north,east=BBOX
+            in_region=sum(1 for lat,lon in points if south-0.1 <= lat <= north+0.1 and west-0.1 <= lon <= east+0.1)
+            if in_region/len(points) < 0.9:
+                raise RuntimeError(f'geographic sanity check failed: only {in_region}/{len(points)} sampled points near Kentucky bbox')
+
         payload=data
         source=endpoint
         break
