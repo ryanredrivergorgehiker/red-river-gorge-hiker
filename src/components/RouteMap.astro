@@ -92,6 +92,8 @@ const enabledSources = enabledBrowserMapSources;
       <button type="button" data-sheet-open="search" aria-label="Search map">Search</button>
       <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
       <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-out" aria-label="Zoom out">−</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-in" aria-label="Zoom in">+</button>
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
@@ -447,12 +449,11 @@ const enabledSources = enabledBrowserMapSources;
       dragging: true,
       boxZoom: true,
       keyboard: true,
-      minZoom: 6,
+      minZoom: 8,
       maxZoom: 20,
       maxBoundsViscosity: 0.88,
       preferCanvas: true
     });
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.control.scale({ position: 'bottomleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
 
     const panes: Record<string, number> = {
@@ -1608,6 +1609,11 @@ const enabledSources = enabledBrowserMapSources;
         const action = button.dataset.mapAction;
         if (action === 'home') goHome();
         else if (action === 'locate') showMyLocation();
+        else if (action === 'zoom-in') {
+          map.setView(map.getCenter(), Math.min(map.getMaxZoom(), map.getZoom() + 1), { animate: false });
+        } else if (action === 'zoom-out') {
+          map.setView(map.getCenter(), Math.max(map.getMinZoom(), map.getZoom() - 1), { animate: false });
+        }
       });
     }
 
