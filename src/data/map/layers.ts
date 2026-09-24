@@ -41,7 +41,7 @@ const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/E
 const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
 const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0';
-const overpassService = 'https://overpass-api.de/api/interpreter';
+const overpassService = 'https://overpass.private.coffee/api/interpreter';
 
 export const mapSources: readonly MapSource[] = [
   {
@@ -207,8 +207,8 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'This optional layer is requested only when you turn it on. It uses OpenStreetMap path data explicitly tagged informal=yes through the public Overpass API. An informal path is not proof of legal access.',
-    opacity: 0.7
+    privacyNote: 'Community / Informal trails load by default through a public Overpass API service with failover to alternate public instances. The layer uses OpenStreetMap path data explicitly tagged informal=yes. An informal path is not proof of legal access.',
+    opacity: 1
   },
   {
     id: 'parcel-private-property',

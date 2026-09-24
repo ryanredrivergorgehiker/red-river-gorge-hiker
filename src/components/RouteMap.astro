@@ -97,9 +97,8 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
-      <button type="button" data-map-tool="explore" aria-pressed="true">Explore</button>
-      <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
-      <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+      <button type="button" data-sheet-open="explore">Explore</button>
+      <button type="button" data-sheet-open="plan">Plan</button>
     </div>
 
     <div class="route-map-mobile-bar" aria-label="Mobile map controls">
@@ -128,33 +127,29 @@ const enabledSources = enabledBrowserMapSources;
 
         <div class="route-layer-group" aria-label="Primary hiking layers">
           <p class="route-layer-group-title">Hiking</p>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="routes" checked />
+          <div class="route-layer-static-row">
             <span class="route-layer-swatch swatch-route" aria-hidden="true"></span>
-            <span>RRGH routes</span>
-          </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="route-starts" checked />
+            <span>RRGH routes</span><small>Always shown</small>
+          </div>
+          <div class="route-layer-static-row">
             <span class="route-layer-swatch swatch-start" aria-hidden="true"></span>
-            <span>Route starts</span>
-          </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="usfs-recreation-sites" checked />
+            <span>Route starts</span><small>Always shown</small>
+          </div>
+          <div class="route-layer-static-row">
             <span class="route-layer-swatch swatch-trailhead" aria-hidden="true"></span>
-            <span>Trailheads &amp; facilities</span>
-          </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="landmarks" checked />
+            <span>Trailheads &amp; facilities</span><small>Always shown</small>
+          </div>
+          <div class="route-layer-static-row">
             <span class="route-layer-swatch swatch-landmark" aria-hidden="true"></span>
-            <span>Landmarks &amp; viewpoints</span>
-          </label>
+            <span>Landmarks &amp; viewpoints</span><small>Always shown</small>
+          </div>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="usfs-trails" checked />
             <span class="route-layer-swatch swatch-usfs-trail" aria-hidden="true"></span>
             <span>Forest Service trails</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="osm-informal-trails" />
+            <input type="checkbox" data-map-layer="osm-informal-trails" checked />
             <span class="route-layer-swatch swatch-informal" aria-hidden="true"></span>
             <span>Community / Informal trails</span>
           </label>
@@ -192,38 +187,33 @@ const enabledSources = enabledBrowserMapSources;
         <div class="route-layer-group" aria-label="Land management and context">
           <p class="route-layer-group-title">Land management &amp; context</p>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="usfs-wilderness" />
+            <input type="checkbox" data-map-layer="usfs-wilderness" checked />
             <span class="route-layer-swatch swatch-wilderness" aria-hidden="true"></span>
             <span>Wilderness boundaries</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="usfs-special-management" />
+            <input type="checkbox" data-map-layer="usfs-special-management" checked />
             <span class="route-layer-swatch swatch-management" aria-hidden="true"></span>
             <span>Special management areas</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="usfs-land-units" />
+            <input type="checkbox" data-map-layer="usfs-land-units" checked />
             <span class="route-layer-swatch swatch-land-unit" aria-hidden="true"></span>
             <span>National Forest land units</span>
           </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="ky-counties" />
+          <div class="route-layer-static-row">
             <span class="route-layer-swatch swatch-county" aria-hidden="true"></span>
-            <span>County boundaries</span>
-          </label>
+            <span>County boundaries</span><small>Always shown</small>
+          </div>
         </div>
 
         <details class="route-layer-fine-tune">
           <summary>Fine tune layers</summary>
           <p>Opacity changes appearance only. Hiking, Terrain, and Aerial presets reset the base-map and terrain values without changing your hiking/context layers.</p>
           <div class="route-layer-opacity-grid">
-            <label><span>RRGH routes</span><input type="range" min="0" max="100" value="100" data-opacity="routes" /></label>
-            <label><span>Route starts</span><input type="range" min="0" max="100" value="100" data-opacity="route-starts" /></label>
-            <label><span>Trailheads &amp; facilities</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-recreation-sites" /></label>
-            <label><span>Landmarks</span><input type="range" min="0" max="100" value="100" data-opacity="landmarks" /></label>
-            <label><span>Forest Service trails</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-trails" /></label>
-            <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="70" data-opacity="osm-informal-trails" /></label>
-            <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="60" data-opacity="usfs-roads" /></label>
+            <label><span>Forest Service trails</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" /></label>
+            <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" /></label>
+            <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" /></label>
             <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
             <label><span>USGS Topo</span><input type="range" min="0" max="100" value="72" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
@@ -231,11 +221,19 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Wilderness</span><input type="range" min="0" max="100" value="72" data-opacity="usfs-wilderness" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
-            <label><span>County boundaries</span><input type="range" min="0" max="100" value="32" data-opacity="ky-counties" /></label>
           </div>
         </details>
       </div>
     </details>
+
+    <div class="route-explore-panel route-map-sheet" data-map-sheet="explore" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Explore RRGH routes</strong>
+        <button type="button" data-sheet-close aria-label="Close route explorer">×</button>
+      </div>
+      <p class="route-map-sheet-help">Hover a route to highlight it on the map. Select one to center it and open its route card.</p>
+      <div class="route-explore-list" data-explore-route-list></div>
+    </div>
 
     <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
       <div class="route-map-sheet-header">
@@ -246,8 +244,15 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
         <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
       </div>
-      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route snaps clicks to the mapped official trail network and RRGH route geometry.</p>
+      <div class="route-plan-segment-modes" data-plan-segment-modes hidden>
+        <span>Next segment</span>
+        <button type="button" data-plan-segment-mode="snap" aria-pressed="true">Follow mapped trails &amp; roads</button>
+        <button type="button" data-plan-segment-mode="straight" aria-pressed="false">Off-trail straight line</button>
+      </div>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route can alternate between snapped mapped trails/roads and straight off-trail segments in one GPX plan.</p>
       <div class="route-plan-actions">
+        <button type="button" data-plan-action="undo" disabled>Undo</button>
+        <button type="button" data-plan-action="redo" disabled>Redo</button>
         <button type="button" data-map-tool="save" disabled>Export GPX</button>
         <button type="button" data-map-tool="clear">Clear</button>
       </div>
@@ -278,7 +283,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> thin blue-violet lines from USDA Forest Service data.</p>
-      <p><strong>RRGH routes:</strong> thick green highlighted lines for hikes documented by Red River Gorge Hiker.</p>
+      <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Roads:</strong> brown Forest Service road geometry useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
@@ -424,7 +429,12 @@ const enabledSources = enabledBrowserMapSources;
     const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
     const layerPanel = shell.querySelector<HTMLDetailsElement>('.route-layer-panel');
     const searchPanel = shell.querySelector<HTMLElement>('[data-map-sheet="search"]');
+    const explorePanel = shell.querySelector<HTMLElement>('[data-map-sheet="explore"]');
+    const exploreList = shell.querySelector<HTMLElement>('[data-explore-route-list]');
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
+    const planSegmentModes = shell.querySelector<HTMLElement>('[data-plan-segment-modes]');
+    const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
+    const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
     const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
     const searchResults = shell.querySelector<HTMLElement>('[data-map-search-results]');
     const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
@@ -464,11 +474,11 @@ const enabledSources = enabledBrowserMapSources;
       landUnits: 270,
       specialManagement: 285,
       wilderness: 300,
-      counties: 315,
       roads: 350,
       informalTrails: 370,
       trails: 390,
-      routes: 430,
+      counties: 415,
+      routes: 440,
       recreation: 450,
       routeStarts: 460,
       landmarks: 470,
@@ -482,8 +492,11 @@ const enabledSources = enabledBrowserMapSources;
       }
     }
 
+    const homeCenter = L.latLng(37.825, -83.605);
+    const homeZoom = 12;
+
     if (mode === 'full') {
-      map.fitBounds([[37.58, -83.93], [38.04, -83.25]], { padding: [22, 22], maxZoom: 11 });
+      map.setView(homeCenter, homeZoom, { animate: false });
     } else {
       map.setView([37.8185, -83.5795], 14);
     }
@@ -562,14 +575,10 @@ const enabledSources = enabledBrowserMapSources;
     mapLayers.set('route-starts', routeStartGroup);
     mapLayers.set('landmarks', landmarkGroup);
     mapLayers.set('usfs-recreation-sites', recreationGroup);
-    opacitySetters.set('routes', (value) => routePaths.forEach((layer) => layer.setStyle({ opacity: value })));
-    opacitySetters.set('route-starts', (value) => routeStartMarkers.forEach((marker) => marker.setOpacity(value)));
-    opacitySetters.set('landmarks', (value) => landmarkMarkers.forEach((marker) => marker.setOpacity(value)));
-    opacitySetters.set('usfs-recreation-sites', (value) => recreationMarkers.forEach((marker) => marker.setOpacity(value)));
-    syncVisibility('routes');
-    syncVisibility('route-starts');
-    syncVisibility('landmarks');
-    syncVisibility('usfs-recreation-sites');
+    routeGroup.addTo(map);
+    routeStartGroup.addTo(map);
+    landmarkGroup.addTo(map);
+    recreationGroup.addTo(map);
 
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
@@ -710,6 +719,13 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const routeBounds = L.latLngBounds([]);
+    const routePalette = ['#0d6654', '#d66a3a', '#5962a8', '#a54a72', '#3479a4', '#9a7829', '#744e98', '#c24e32'];
+    const routeColorFor = (routeId: string) => {
+      let hash = 0;
+      for (const char of routeId) hash = ((hash * 31) + char.charCodeAt(0)) >>> 0;
+      return routePalette[hash % routePalette.length]!;
+    };
+    const routeExploreEntries = new Map<string, { route: any; color: string; layers: any[]; bounds: any }>();
 
     const routePopup = (route: any) => {
       const popup = document.createElement('div');
@@ -749,12 +765,13 @@ const enabledSources = enabledBrowserMapSources;
 
         for (const feature of geojson.features ?? []) {
           if (feature.geometry?.type === 'LineString' || feature.geometry?.type === 'MultiLineString') {
+            const routeColor = routeColorFor(route.routeId);
             const line = L.geoJSON(feature, {
               pane: 'routes',
               style: {
-                color: '#0d6654',
+                color: routeColor,
                 weight: 7.5,
-                opacity: opacity('routes'),
+                opacity: 1,
                 lineCap: 'round',
                 lineJoin: 'round'
               }
@@ -764,10 +781,19 @@ const enabledSources = enabledBrowserMapSources;
             line.addTo(routeGroup);
             routePaths.push(line);
             routeRecords.push({ layer: line, tripType: route.tripType, trailStatus: route.trailStatus });
+            const exploreEntry = routeExploreEntries.get(route.routeId) ?? {
+              route,
+              color: routeColor,
+              layers: [],
+              bounds: L.latLngBounds([])
+            };
+            exploreEntry.layers.push(line);
+            routeExploreEntries.set(route.routeId, exploreEntry);
 
             const lineBounds = line.getBounds();
             if (lineBounds.isValid()) {
               routeBounds.extend(lineBounds);
+              exploreEntry.bounds.extend(lineBounds);
               searchItems.push({
                 label: route.title,
                 detail: route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · RRGH route',
@@ -793,7 +819,7 @@ const enabledSources = enabledBrowserMapSources;
                   keyboard: true,
                   icon,
                   pane: 'routeStarts',
-                  opacity: opacity('route-starts')
+                  opacity: 1
                 });
                 const startPopup = document.createElement('div');
                 const startHeading = document.createElement('strong');
@@ -832,7 +858,7 @@ const enabledSources = enabledBrowserMapSources;
                     keyboard: true,
                     icon: parkingIcon,
                     pane: 'recreation',
-                    opacity: opacity('usfs-recreation-sites')
+                    opacity: 1
                   });
                   const parkingPopup = document.createElement('div');
                   const parkingHeading = document.createElement('strong');
@@ -873,7 +899,7 @@ const enabledSources = enabledBrowserMapSources;
               keyboard: true,
               icon,
               pane: 'landmarks',
-              opacity: opacity('landmarks')
+              opacity: 1
             });
             const popup = document.createElement('div');
             const heading = document.createElement('strong');
@@ -1033,6 +1059,7 @@ const enabledSources = enabledBrowserMapSources;
           popup.append(meta);
           layer.bindPopup(popup, { maxWidth: 320 });
           roadPaths.push(layer);
+          for (const line of geometryLines(feature.geometry)) addSnapLine(line);
 
           if (layer.getBounds) {
             searchItems.push({
@@ -1089,7 +1116,7 @@ const enabledSources = enabledBrowserMapSources;
           keyboard: true,
           icon,
           pane: 'recreation',
-          opacity: opacity('usfs-recreation-sites')
+          opacity: 1
         });
         const popup = document.createElement('div');
         const heading = document.createElement('strong');
@@ -1141,11 +1168,11 @@ const enabledSources = enabledBrowserMapSources;
       const countyLayer = L.geoJSON(gorgeCounties, {
         pane: 'counties',
         style: {
-          color: '#776f64',
-          weight: 1.4,
-          opacity: opacity('ky-counties'),
+          color: '#665d4f',
+          weight: 2.2,
+          opacity: 0.86,
           fillOpacity: 0,
-          dashArray: '7 6'
+          dashArray: '8 5'
         },
         onEachFeature: (feature: any, layer: any) => {
           const name = featureValue(feature.properties, ['NAME', 'name']);
@@ -1171,11 +1198,7 @@ const enabledSources = enabledBrowserMapSources;
       });
       container.dataset.gorgeCountyCount = String(gorgeCounties.features.length);
       mapLayers.set('ky-counties', countyLayer);
-      opacitySetters.set('ky-counties', (value) => {
-        countyPaths.forEach((layer) => layer.setStyle({ opacity: value }));
-        countyLabelMarkers.forEach((marker) => marker.setOpacity(value));
-      });
-      syncVisibility('ky-counties');
+      countyLayer.addTo(map);
 
       if (mode === 'full') {
         const gorgeBounds = countyLayer.getBounds();
@@ -1183,7 +1206,7 @@ const enabledSources = enabledBrowserMapSources;
           const paddedBounds = gorgeBounds.pad(0.035);
           homeBounds = paddedBounds;
           map.setMaxBounds(paddedBounds);
-          map.fitBounds(paddedBounds, { padding: [22, 22], maxZoom: 11 });
+          map.setView(homeCenter, homeZoom, { animate: false });
           container.dataset.gorgeOverviewZoom = String(map.getZoom());
         }
       }
@@ -1284,16 +1307,32 @@ const enabledSources = enabledBrowserMapSources;
       setStatus('Loading Community / Informal trails from OpenStreetMap…');
 
       const query = '[out:json][timeout:25];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom;';
-      const endpoint = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+      const overpassEndpoints = [
+        'https://overpass.private.coffee/api/interpreter',
+        'https://overpass-api.de/api/interpreter',
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+      ];
 
       try {
-        const response = await fetch(endpoint, {
-          credentials: 'omit',
-          mode: 'cors',
-          referrerPolicy: 'strict-origin-when-cross-origin'
-        });
-        if (!response.ok) throw new Error('Overpass request failed with ' + response.status);
-        const osm = await response.json();
+        let osm: any = null;
+        const failures: string[] = [];
+        for (const base of overpassEndpoints) {
+          try {
+            const response = await fetch(base + '?data=' + encodeURIComponent(query), {
+              credentials: 'omit',
+              mode: 'cors',
+              referrerPolicy: 'strict-origin-when-cross-origin'
+            });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            osm = await response.json();
+            container.dataset.informalTrailSource = new URL(base).hostname;
+            break;
+          } catch (error) {
+            failures.push(base + ': ' + String(error));
+          }
+        }
+        if (!osm) throw new Error('All Overpass endpoints failed: ' + failures.join(' | '));
+
         const features = (osm.elements ?? [])
           .filter((element: any) => Array.isArray(element.geometry) && element.geometry.length > 1)
           .map((element: any) => ({
@@ -1309,10 +1348,10 @@ const enabledSources = enabledBrowserMapSources;
           pane: 'informalTrails',
           style: (feature: any) => {
             const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
-            const restricted = access === 'no' || access === 'private' || access === 'discouraged';
+            const restricted = access === 'no' || access === 'private';
             return {
               color: restricted ? '#9b5b55' : '#805b86',
-              weight: 1.9,
+              weight: 2.2,
               opacity: opacity('osm-informal-trails'),
               dashArray: '5 5',
               lineCap: 'round',
@@ -1324,6 +1363,9 @@ const enabledSources = enabledBrowserMapSources;
             const name = String(props.name ?? 'Informal trail');
             const access = String(props.access ?? props.foot ?? 'not specified');
             const visibility = String(props.trail_visibility ?? 'not specified');
+            const accessLower = access.toLowerCase();
+            const restricted = accessLower === 'no' || accessLower === 'private';
+
             const popup = document.createElement('div');
             const heading = document.createElement('strong');
             heading.textContent = name;
@@ -1334,7 +1376,7 @@ const enabledSources = enabledBrowserMapSources;
             popup.append(warning);
             const meta = document.createElement('p');
             meta.className = 'route-map-popup-meta';
-            meta.textContent = 'Access: ' + access + ' · Trail visibility: ' + visibility;
+            meta.textContent = 'Access: ' + access + ' · Trail visibility: ' + visibility + (restricted ? ' · Not used for route snapping' : ' · Available for route snapping');
             popup.append(meta);
             const source = document.createElement('a');
             source.href = 'https://www.openstreetmap.org/copyright';
@@ -1345,6 +1387,11 @@ const enabledSources = enabledBrowserMapSources;
             featureLayer.bindPopup(popup, { maxWidth: 330 });
             featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
             informalPaths.push(featureLayer);
+
+            if (!restricted) {
+              for (const line of geometryLines(feature.geometry)) addSnapLine(line);
+            }
+
             if (featureLayer.getBounds) {
               searchItems.push({
                 label: name,
@@ -1360,16 +1407,24 @@ const enabledSources = enabledBrowserMapSources;
         map.attributionControl.addAttribution('<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>');
         container.dataset.informalTrailCount = String(informalPaths.length);
         syncVisibility('osm-informal-trails');
-        setStatus('Community / Informal trails loaded. These paths are not treated as routing-authorized trails.');
+        bridgeNearbyEndpoints();
+        container.dataset.plannerNodeCount = String(graph.size);
+        setStatus('Community / Informal trails loaded and available for route snapping except paths tagged private or no access.');
       } catch (error) {
         console.error(error);
         if (checkbox) checkbox.checked = false;
-        setStatus('Community / Informal trails could not be loaded right now.', 'warning');
+        setStatus('Community / Informal trails could not be loaded from the available OpenStreetMap services. You can retry by turning the layer on again.', 'warning');
       } finally {
         if (checkbox) checkbox.disabled = false;
       }
     };
 
+    await Promise.all([
+      loadLandContext('usfs-wilderness'),
+      loadLandContext('usfs-special-management'),
+      loadLandContext('usfs-land-units')
+    ]);
+    await loadInformalTrails();
     bridgeNearbyEndpoints();
     container.dataset.plannerNodeCount = String(graph.size);
     if (graph.size > 1) {
@@ -1417,6 +1472,59 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.visibleRouteCount = String(visibleRoutes);
       container.dataset.visibleRouteStartCount = String(visibleStarts);
       container.dataset.visibleLandmarkCount = String(visibleLandmarks);
+      renderExploreRoutes();
+    };
+
+    const resetRouteHighlight = (entry: any) => {
+      const weight = map.getZoom() < 11 ? 4.5 : 7.5;
+      for (const layer of entry.layers) layer.setStyle({ color: entry.color, weight, opacity: 1 });
+    };
+
+    const renderExploreRoutes = () => {
+      if (!exploreList) return;
+      exploreList.replaceChildren();
+      const entries = Array.from(routeExploreEntries.values())
+        .filter((entry) => tripTypeEnabled(entry.route.tripType) && trailStatusEnabled(entry.route.trailStatus))
+        .sort((a, b) => a.route.title.localeCompare(b.route.title));
+
+      for (const entry of entries) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'route-explore-card';
+
+        const swatch = document.createElement('span');
+        swatch.className = 'route-explore-color';
+        swatch.style.background = entry.color;
+        swatch.setAttribute('aria-hidden', 'true');
+
+        const copy = document.createElement('span');
+        const title = document.createElement('strong');
+        title.textContent = entry.route.title;
+        const meta = document.createElement('small');
+        meta.textContent = entry.route.distanceMi.toFixed(2) + ' mi · ' + entry.route.physicalDifficulty + ' · ' + entry.route.trailStatusDisplay;
+        copy.append(title, meta);
+        button.append(swatch, copy);
+
+        button.addEventListener('pointerenter', () => {
+          for (const layer of entry.layers) {
+            layer.setStyle({ color: entry.color, weight: 11, opacity: 1 });
+            layer.bringToFront?.();
+          }
+        });
+        button.addEventListener('pointerleave', () => resetRouteHighlight(entry));
+        button.addEventListener('click', () => {
+          if (entry.bounds?.isValid?.()) map.fitBounds(entry.bounds.pad(0.35), { maxZoom: 15 });
+          entry.layers[0]?.openPopup?.();
+        });
+        exploreList.append(button);
+      }
+
+      if (!entries.length) {
+        const empty = document.createElement('p');
+        empty.className = 'route-search-empty';
+        empty.textContent = 'No RRGH routes match the current route filters.';
+        exploreList.append(empty);
+      }
     };
 
     const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {
@@ -1462,7 +1570,7 @@ const enabledSources = enabledBrowserMapSources;
       if (trailsVisible && !map.hasLayer(trailLabelGroup)) trailLabelGroup.addTo(map);
       if (!trailsVisible && map.hasLayer(trailLabelGroup)) map.removeLayer(trailLabelGroup);
 
-      const countiesVisible = checked('ky-counties') && map.getZoom() <= 12;
+      const countiesVisible = map.getZoom() <= 13;
       if (countiesVisible && !map.hasLayer(countyLabelGroup)) countyLabelGroup.addTo(map);
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
@@ -1522,8 +1630,15 @@ const enabledSources = enabledBrowserMapSources;
         }
         return;
       }
+      for (const panel of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"]')) {
+        panel.hidden = panel.dataset.mapSheet !== name;
+      }
       const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + name + '"]');
       if (panel) panel.hidden = false;
+      if (name === 'explore') {
+        setTool(null);
+        renderExploreRoutes();
+      }
       if (name === 'search') {
         window.setTimeout(() => searchInput?.focus(), 0);
       }
@@ -1548,12 +1663,8 @@ const enabledSources = enabledBrowserMapSources;
     });
 
     const goHome = () => {
-      if (homeBounds?.isValid?.()) {
-        map.fitBounds(homeBounds, { padding: [22, 22], maxZoom: 11 });
-      } else {
-        map.fitBounds([[37.58, -83.93], [38.04, -83.25]], { padding: [22, 22], maxZoom: 11 });
-      }
-      setStatus('Four-county Red River Gorge overview restored.');
+      map.setView(homeCenter, homeZoom, { animate: false });
+      setStatus('Core Red River Gorge hiking view restored.');
     };
 
     const showMyLocation = () => {
@@ -1697,10 +1808,61 @@ const enabledSources = enabledBrowserMapSources;
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let activeTool: 'measure' | 'plan' | null = null;
     let measurePoints: any[] = [];
-    let planStops: string[] = [];
-    let planPath: string[] = [];
+    let planSegmentMode: 'snap' | 'straight' = 'snap';
+
+    type PlanPoint = { lat: number; lng: number; nodeKey?: string };
+    type PlanSegment = { mode: 'snap' | 'straight'; points: PlanPoint[] };
+    type PlanSnapshot = { stops: PlanPoint[]; segments: PlanSegment[] };
+
+    let planStops: PlanPoint[] = [];
+    let planSegments: PlanSegment[] = [];
+    let planHistory: PlanSnapshot[] = [{ stops: [], segments: [] }];
+    let planHistoryIndex = 0;
 
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
+
+    const clonePlan = (): PlanSnapshot => ({
+      stops: planStops.map((point) => ({ ...point })),
+      segments: planSegments.map((segment) => ({
+        mode: segment.mode,
+        points: segment.points.map((point) => ({ ...point }))
+      }))
+    });
+
+    const updateHistoryButtons = () => {
+      if (undoButton) undoButton.disabled = planHistoryIndex <= 0;
+      if (redoButton) redoButton.disabled = planHistoryIndex >= planHistory.length - 1;
+    };
+
+    const commitPlanHistory = () => {
+      planHistory = planHistory.slice(0, planHistoryIndex + 1);
+      planHistory.push(clonePlan());
+      planHistoryIndex = planHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restorePlanHistory = (index: number) => {
+      const snapshot = planHistory[index];
+      if (!snapshot) return;
+      planStops = snapshot.stops.map((point) => ({ ...point }));
+      planSegments = snapshot.segments.map((segment) => ({
+        mode: segment.mode,
+        points: segment.points.map((point) => ({ ...point }))
+      }));
+      planHistoryIndex = index;
+      redrawPlan();
+      updateHistoryButtons();
+    };
+
+    const setPlanSegmentMode = (modeName: 'snap' | 'straight') => {
+      planSegmentMode = modeName;
+      for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-segment-mode]')) {
+        button.setAttribute('aria-pressed', String(button.dataset.planSegmentMode === modeName));
+      }
+      setStatus(modeName === 'snap'
+        ? 'Next route segment will follow the mapped trail/road network.'
+        : 'Next route segment will be a straight off-trail line between the points you place.');
+    };
 
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
@@ -1709,15 +1871,17 @@ const enabledSources = enabledBrowserMapSources;
         const buttonTool = button.dataset.mapTool;
         if (buttonTool === 'measure' || buttonTool === 'plan') {
           button.setAttribute('aria-pressed', String(buttonTool === tool));
-        } else if (buttonTool === 'explore') {
-          button.setAttribute('aria-pressed', String(tool === null));
         }
       }
+      if (planSegmentModes) planSegmentModes.hidden = tool !== 'plan';
+
       if (tool === 'measure') setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
       else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
-        setStatus('Build trail route: click near a mapped official trail or RRGH route. The planner follows the mapped trail network; Community / Informal trails are not used for routing.');
-      } else if (!vectorFailures.length) setStatus('Explore: drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates.');
+        setStatus(planSegmentMode === 'snap'
+          ? 'Build route: click near a mapped Forest Service trail, Forest Service road, Community / Informal trail, or RRGH route.'
+          : 'Build route: click anywhere to add a straight off-trail segment.');
+      } else if (!vectorFailures.length) setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates.');
     };
 
     const clearTools = () => {
@@ -1725,30 +1889,45 @@ const enabledSources = enabledBrowserMapSources;
       planLayer.clearLayers();
       measurePoints = [];
       planStops = [];
-      planPath = [];
+      planSegments = [];
+      planHistory = [{ stops: [], segments: [] }];
+      planHistoryIndex = 0;
       for (const button of saveButtons) button.disabled = true;
+      updateHistoryButtons();
       if (activeTool === 'measure') setStatus('Measure distance: click points anywhere on the map.');
-      else if (activeTool === 'plan') setStatus('Build trail route: click near a mapped official trail or RRGH route.');
+      else if (activeTool === 'plan') setStatus('Build route: place a first point.');
       else setStatus('Map cleared.');
     };
 
     const xmlEscape = (value: string) =>
       value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
+    const planTrackPoints = () => {
+      const points: PlanPoint[] = [];
+      for (const segment of planSegments) {
+        for (const point of segment.points) {
+          const prior = points[points.length - 1];
+          if (!prior || prior.lat !== point.lat || prior.lng !== point.lng) points.push(point);
+        }
+      }
+      if (!points.length && planStops.length) points.push(...planStops);
+      return points;
+    };
+
     const savePlanGpx = () => {
-      const points = planPath.map((key) => nodeCoords.get(key)).filter(Boolean);
+      const points = planTrackPoints();
       if (points.length < 2) {
-        setStatus('Build a trail plan before saving it.', 'warning');
+        setStatus('Build a route before exporting it.', 'warning');
         return;
       }
 
       const trackPoints = points
-        .map((point: any) => '      <trkpt lat="' + point.lat.toFixed(6) + '" lon="' + point.lng.toFixed(6) + '"></trkpt>')
+        .map((point) => '      <trkpt lat="' + point.lat.toFixed(6) + '" lon="' + point.lng.toFixed(6) + '"></trkpt>')
         .join('\n');
       const gpx = '<?xml version="1.0" encoding="UTF-8"?>\n'
         + '<gpx version="1.1" creator="Red River Gorge Hiker" xmlns="http://www.topografix.com/GPX/1/1">\n'
-        + '  <metadata><name>' + xmlEscape('RRGH planned trail route') + '</name></metadata>\n'
-        + '  <trk><name>' + xmlEscape('RRGH planned trail route') + '</name><trkseg>\n'
+        + '  <metadata><name>' + xmlEscape('RRGH planned route') + '</name></metadata>\n'
+        + '  <trk><name>' + xmlEscape('RRGH planned route') + '</name><trkseg>\n'
         + trackPoints + '\n'
         + '  </trkseg></trk>\n'
         + '</gpx>\n';
@@ -1762,7 +1941,7 @@ const enabledSources = enabledBrowserMapSources;
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 0);
-      setStatus('Planned trail route exported as a GPX file.');
+      setStatus('Planned mixed-mode route exported as a GPX file.');
     };
 
     for (const button of toolButtons) {
@@ -1776,13 +1955,23 @@ const enabledSources = enabledBrowserMapSources;
           savePlanGpx();
           return;
         }
-        if (tool === 'explore') {
-          setTool(null);
-          return;
-        }
         if (tool === 'measure' || tool === 'plan') setTool(activeTool === tool ? null : tool);
       });
     }
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-segment-mode]')) {
+      button.addEventListener('click', () => {
+        const modeName = button.dataset.planSegmentMode;
+        if (modeName === 'snap' || modeName === 'straight') setPlanSegmentMode(modeName);
+      });
+    }
+
+    undoButton?.addEventListener('click', () => {
+      if (planHistoryIndex > 0) restorePlanHistory(planHistoryIndex - 1);
+    });
+    redoButton?.addEventListener('click', () => {
+      if (planHistoryIndex < planHistory.length - 1) restorePlanHistory(planHistoryIndex + 1);
+    });
 
     const redrawMeasure = () => {
       measureLayer.clearLayers();
@@ -1816,22 +2005,24 @@ const enabledSources = enabledBrowserMapSources;
 
     const redrawPlan = () => {
       planLayer.clearLayers();
-      const points = planPath.map((key) => nodeCoords.get(key)).filter(Boolean);
-      if (points.length > 1) {
+
+      for (const segment of planSegments) {
+        const points = segment.points.map((point) => L.latLng(point.lat, point.lng));
+        if (points.length < 2) continue;
         L.polyline(points, {
           pane: 'planning',
-          color: '#e17a35',
-          weight: 6,
-          opacity: 0.95,
+          color: segment.mode === 'snap' ? '#e17a35' : '#8b4e9e',
+          weight: segment.mode === 'snap' ? 6 : 5,
+          opacity: 0.96,
+          dashArray: segment.mode === 'snap' ? undefined : '9 6',
           lineCap: 'round',
           lineJoin: 'round',
           interactive: false
         }).addTo(planLayer);
       }
+
       for (const stop of planStops) {
-        const point = nodeCoords.get(stop);
-        if (!point) continue;
-        L.circleMarker(point, {
+        L.circleMarker([stop.lat, stop.lng], {
           pane: 'planning',
           radius: 6,
           color: '#fff',
@@ -1841,11 +2032,15 @@ const enabledSources = enabledBrowserMapSources;
           interactive: false
         }).addTo(planLayer);
       }
+
+      const points = planTrackPoints().map((point) => L.latLng(point.lat, point.lng));
       let total = 0;
       for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
+
       for (const button of saveButtons) button.disabled = points.length < 2;
-      if (planStops.length === 1) setStatus('Build trail route: start snapped · click another mapped trail point.');
-      else if (planStops.length > 1) setStatus('Trail-following route: ' + formatDistance(total) + ' · click another trail point to extend, or export GPX.');
+      if (!planStops.length) setStatus('Build route: place a first point.');
+      else if (planStops.length === 1) setStatus('Build route: first point set · choose Follow mapped trails & roads or Off-trail straight line for the next segment.');
+      else setStatus('Planned route: ' + formatDistance(total) + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), ' + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s).');
     };
 
     map.on('click', (event: any) => {
@@ -1859,29 +2054,65 @@ const enabledSources = enabledBrowserMapSources;
         return;
       }
       if (activeTool !== 'plan') return;
-      if (!graph.size) {
-        setStatus('Trail network is not available for snapping right now.', 'warning');
-        return;
-      }
-      const snapped = nearestNode(event.latlng);
-      if (!snapped) {
-        setStatus('No trail snap point is close enough. Click within about 90 m of a visible Forest Service trail or RRGH route.', 'warning');
-        return;
-      }
+
       if (!planStops.length) {
-        planStops = [snapped.key];
-        planPath = [snapped.key];
+        if (planSegmentMode === 'snap') {
+          const snapped = nearestNode(event.latlng);
+          if (!snapped) {
+            setStatus('No mapped trail or road snap point is close enough. Switch to Off-trail straight line or click within about 90 m of a mapped trail/road.', 'warning');
+            return;
+          }
+          const point = nodeCoords.get(snapped.key);
+          planStops = [{ lat: point.lat, lng: point.lng, nodeKey: snapped.key }];
+        } else {
+          planStops = [{ lat: event.latlng.lat, lng: event.latlng.lng }];
+        }
+        commitPlanHistory();
         redrawPlan();
         return;
       }
+
       const previous = planStops[planStops.length - 1]!;
-      const path = shortestTrailPath(previous, snapped.key);
-      if (!path) {
-        setStatus('Those points are not connected in the available trail data. Try a different visible trail segment.', 'warning');
+      if (planSegmentMode === 'straight') {
+        const target: PlanPoint = { lat: event.latlng.lat, lng: event.latlng.lng };
+        planSegments.push({ mode: 'straight', points: [{ ...previous }, { ...target }] });
+        planStops.push(target);
+        commitPlanHistory();
+        redrawPlan();
         return;
       }
-      planStops.push(snapped.key);
-      planPath.push(...path.slice(1));
+
+      if (!graph.size) {
+        setStatus('Mapped trail/road network is not available for snapping right now.', 'warning');
+        return;
+      }
+      const targetSnap = nearestNode(event.latlng);
+      if (!targetSnap) {
+        setStatus('No mapped trail or road snap point is close enough. Switch to Off-trail straight line or click within about 90 m of a mapped trail/road.', 'warning');
+        return;
+      }
+      const startSnap = previous.nodeKey ? { key: previous.nodeKey, distance: 0 } : nearestNode(L.latLng(previous.lat, previous.lng));
+      if (!startSnap) {
+        setStatus('Your previous off-trail point is too far from the mapped network. Add a straight segment onto a mapped trail or road before switching back to snapping.', 'warning');
+        return;
+      }
+      const path = shortestTrailPath(startSnap.key, targetSnap.key);
+      if (!path) {
+        setStatus('Those mapped points are not connected in the available trail/road data. Use an off-trail straight segment to bridge the gap, or choose another mapped segment.', 'warning');
+        return;
+      }
+
+      const segmentPoints: PlanPoint[] = [];
+      const snappedStart = nodeCoords.get(startSnap.key);
+      if (previous.lat !== snappedStart.lat || previous.lng !== snappedStart.lng) segmentPoints.push({ ...previous });
+      for (const key of path) {
+        const point = nodeCoords.get(key);
+        if (point) segmentPoints.push({ lat: point.lat, lng: point.lng, nodeKey: key });
+      }
+      const targetPoint = nodeCoords.get(targetSnap.key);
+      planSegments.push({ mode: 'snap', points: segmentPoints });
+      planStops.push({ lat: targetPoint.lat, lng: targetPoint.lng, nodeKey: targetSnap.key });
+      commitPlanHistory();
       redrawPlan();
     });
 
@@ -1889,9 +2120,10 @@ const enabledSources = enabledBrowserMapSources;
     map.on('zoomend', () => {
       const zoom = map.getZoom();
       container.dataset.currentZoom = String(zoom);
-      routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4 : 6 }));
-      trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 1.8 : zoom >= 15 ? 2.8 : 2.25 }));
-      roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.4 : 2.6 }));
+      routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4.5 : 7.5, opacity: 1 }));
+      trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2 : zoom >= 15 ? 3 : 2.5, opacity: opacity('usfs-trails') }));
+      roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.6 : 2.8, opacity: opacity('usfs-roads') }));
+      informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
     });
 
     syncContextLabels();

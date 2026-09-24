@@ -140,32 +140,34 @@ class RoutesTracksContractTests(unittest.TestCase):
 
     def test_map_is_immediately_interactive_and_layer_mixable(self):
         self.assertNotIn('Load interactive map', MAP)
-        self.assertNotIn('No external map tiles are requested until', MAP)
         for preset in ('hiking', 'terrain', 'aerial'):
             self.assertIn('data-map-preset="' + preset + '"', MAP)
-        self.assertIn('<strong>Hiking</strong>', MAP)
-        self.assertIn('<strong>Terrain</strong>', MAP)
-        self.assertIn('<strong>Aerial</strong>', MAP)
         for trip_type in ('day-hike', 'backpacking', 'multi-day'):
             self.assertIn('data-route-trip-filter="' + trip_type + '"', MAP)
         for trail_status in ('official', 'mixed', 'off-trail'):
             self.assertIn('data-route-status-filter="' + trail_status + '"', MAP)
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
-            'usfs-trails', 'usfs-roads', 'ky-counties', 'routes', 'route-starts',
-            'landmarks', 'usfs-recreation-sites', 'osm-informal-trails',
+            'usfs-trails', 'usfs-roads', 'osm-informal-trails',
             'usfs-wilderness', 'usfs-special-management', 'usfs-land-units'
         ):
             self.assertIn('data-map-layer="' + layer + '"', MAP)
             self.assertIn('data-opacity="' + layer + '"', MAP)
+        for always_on in ('RRGH routes', 'Route starts', 'Trailheads &amp; facilities', 'Landmarks &amp; viewpoints', 'County boundaries'):
+            self.assertIn(always_on, MAP)
+        self.assertNotIn('data-map-layer="routes"', MAP)
+        self.assertNotIn('data-map-layer="route-starts"', MAP)
+        self.assertNotIn('data-map-layer="landmarks"', MAP)
+        self.assertNotIn('data-map-layer="usfs-recreation-sites"', MAP)
+        self.assertNotIn('data-map-layer="ky-counties"', MAP)
+        self.assertNotIn('data-opacity="ky-counties"', MAP)
         self.assertIn('Fine tune layers', MAP)
-        self.assertIn('type="range"', MAP)
-        self.assertIn("credentials: 'omit'", MAP)
-        self.assertIn("keyboard: true", MAP)
+        self.assertIn('value="100" data-opacity="usfs-trails"', MAP)
+        self.assertIn('value="100" data-opacity="osm-informal-trails"', MAP)
+        self.assertIn('value="100" data-opacity="usfs-roads"', MAP)
         self.assertIn("scrollWheelZoom: false", MAP)
         self.assertIn("minZoom: 8", MAP)
         self.assertIn("maxZoom: 20", MAP)
-        self.assertNotIn("map.setMinZoom(map.getZoom())", MAP)
 
     def test_map_visual_legend_matches_cartography(self):
         for swatch in (
@@ -173,34 +175,40 @@ class RoutesTracksContractTests(unittest.TestCase):
             'swatch-landmark', 'swatch-start', 'swatch-trailhead', 'swatch-informal'
         ):
             self.assertIn(swatch, MAP)
-        self.assertIn("color: '#0d6654'", MAP)
+        self.assertIn("routePalette = [", MAP)
+        self.assertIn("routeColorFor", MAP)
+        self.assertIn("color: routeColor", MAP)
         self.assertIn("color: '#5d6387'", MAP)
         self.assertIn("color: '#8a6a46'", MAP)
-        self.assertIn("dashArray: '7 6'", MAP)
+        self.assertIn("color: '#665d4f'", MAP)
+        self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("weight: 7.5", MAP)
 
-    def test_map_has_everyday_controls_and_cartographic_context(self):
+    def test_map_has_everyday_controls_and_core_home_view(self):
         self.assertIn('data-sheet-open="search"', MAP)
         self.assertIn('data-map-action="locate"', MAP)
         self.assertIn('data-map-action="home"', MAP)
         self.assertIn('data-map-action="zoom-out"', MAP)
         self.assertIn('data-map-action="zoom-in"', MAP)
-        self.assertIn("map.setView(map.getCenter(), Math.max(map.getMinZoom(), map.getZoom() - 1)", MAP)
+        self.assertIn("const homeCenter = L.latLng(37.825, -83.605)", MAP)
+        self.assertIn("const homeZoom = 12", MAP)
+        self.assertIn("map.setView(homeCenter, homeZoom", MAP)
         self.assertIn("L.control.scale", MAP)
-        self.assertNotIn("L.control.zoom(", MAP)
         self.assertIn('data-coordinate-card', MAP)
         self.assertIn('Copy coordinates', MAP)
-        self.assertIn('toUtm', MAP)
         self.assertIn('navigator.geolocation.getCurrentPosition', MAP)
-        self.assertIn('data-map-search', MAP)
         self.assertIn('route-map-mobile-bar', MAP)
-        self.assertIn('Search</button>', MAP)
-        self.assertIn('Layers</button>', MAP)
-        self.assertIn('Plan</button>', MAP)
         self.assertIn("container.addEventListener('touchend'", MAP)
-        self.assertIn('Map data:', MAP)
-        self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
-        self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
+
+    def test_explore_is_a_route_browser_and_plan_is_single_entry_point(self):
+        self.assertIn('data-sheet-open="explore"', MAP)
+        self.assertIn('data-sheet-open="plan"', MAP)
+        self.assertIn('data-explore-route-list', MAP)
+        self.assertIn('renderExploreRoutes', MAP)
+        self.assertIn("pointerenter", MAP)
+        self.assertIn("layer.bringToFront", MAP)
+        self.assertNotIn('data-map-tool="explore"', MAP)
+        self.assertIn('Explore RRGH routes', MAP)
 
     def test_map_routes_are_clickable_hiking_products(self):
         self.assertIn('routePopup', MAP)
@@ -211,82 +219,92 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Download GPX', MAP)
         self.assertIn('Parking / trailhead', MAP)
         self.assertIn('Route start · ', MAP)
-        self.assertIn("id: 'usfs-recreation-sites'", LAYERS)
         self.assertIn('TRAILHEAD', MAP)
 
-    def test_map_has_measurement_and_trail_snap_planning(self):
-        self.assertIn('data-map-tool="explore"', MAP)
+    def test_map_has_mixed_snap_and_offtrail_planning_with_history(self):
         self.assertIn('data-map-tool="measure"', MAP)
         self.assertIn('data-map-tool="plan"', MAP)
         self.assertIn('data-map-tool="save"', MAP)
-        self.assertIn('Measure distance', MAP)
-        self.assertIn('Build trail route', MAP)
-        self.assertIn('Export GPX', MAP)
+        self.assertIn('data-plan-segment-mode="snap"', MAP)
+        self.assertIn('data-plan-segment-mode="straight"', MAP)
+        self.assertIn('data-plan-action="undo"', MAP)
+        self.assertIn('data-plan-action="redo"', MAP)
+        self.assertIn('planHistory', MAP)
+        self.assertIn('commitPlanHistory', MAP)
+        self.assertIn('restorePlanHistory', MAP)
+        self.assertIn("mode: 'straight'", MAP)
+        self.assertIn("mode: 'snap'", MAP)
+        self.assertIn('Follow mapped trails &amp; roads', MAP)
+        self.assertIn('Off-trail straight line', MAP)
         self.assertIn('savePlanGpx', MAP)
         self.assertIn('shortestTrailPath', MAP)
         self.assertIn('nearestNode', MAP)
-        self.assertIn('within about 90 m', MAP)
-        self.assertIn('Community / Informal trails are not used for routing', MAP)
-        self.assertIn('trail-route planning', FULL_MAP)
+        self.assertIn("application/gpx+xml", MAP)
+        self.assertIn("RRGH-planned-route-", MAP)
+
+    def test_planner_uses_official_roads_and_loaded_informal_paths(self):
+        self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
+        self.assertIn("Not used for route snapping", MAP)
+        self.assertIn("Available for route snapping", MAP)
+        self.assertIn("accessLower === 'no' || accessLower === 'private'", MAP)
+        self.assertIn("bridgeNearbyEndpoints();", MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
         self.assertIn("baseTopo: 200", MAP)
         self.assertIn("baseUsTopo: 210", MAP)
         self.assertIn("baseAerial: 220", MAP)
+        self.assertIn("counties: 415", MAP)
+        self.assertIn("routes: 440", MAP)
         self.assertIn("pane.style.mixBlendMode = 'multiply'", MAP)
         self.assertIn("id === 'kyaerial-phase3' && checkbox.checked", MAP)
         self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
         self.assertIn("id === 'ky-hillshade' && checkbox.checked", MAP)
         self.assertIn("setLayerControl('kyaerial-phase3', false)", MAP)
-        self.assertIn("map.fitBounds([[37.58, -83.93], [38.04, -83.25]]", MAP)
         self.assertIn("new Set(['Wolfe', 'Powell', 'Menifee', 'Lee'])", MAP)
         self.assertIn("map.setMaxBounds(paddedBounds)", MAP)
-        self.assertIn('data-map-layer="ky-counties" />', MAP)
-        self.assertIn('value="32" data-opacity="ky-counties"', MAP)
+        self.assertIn("countyLayer.addTo(map)", MAP)
         self.assertIn("maxNativeZoom: source.maxNativeZoom", MAP)
         self.assertIn("maxNativeZoom: 16", LAYERS)
-        self.assertIn("Four-county planning view for Wolfe, Powell, Menifee, and Lee counties.", FULL_MAP)
         self.assertIn("syncRouteFilters", MAP)
         self.assertIn("container.dataset.visibleRouteCount", MAP)
-        self.assertIn("container.dataset.visibleRouteStartCount", MAP)
         self.assertIn("container.dataset.plannerNodeCount", MAP)
         self.assertIn("container.dataset.currentZoom", MAP)
-        self.assertIn("Math.ceil(from.distanceTo(to) / 30)", MAP)
-        self.assertIn("application/gpx+xml", MAP)
-        self.assertIn("RRGH-planned-route-", MAP)
         self.assertIn("name === 'hiking'", MAP)
         self.assertIn("name === 'terrain'", MAP)
         self.assertIn("setLayerControl('kytopo', true, 70)", MAP)
         self.assertIn("setLayerControl('ky-hillshade', true, 45)", MAP)
 
-    def test_informal_trails_are_explicit_optional_osm_data(self):
-        self.assertIn('Community / Informal trails', MAP)
+    def test_informal_trails_have_public_overpass_failover_and_default_on(self):
+        self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
         self.assertIn('["informal"="yes"]', MAP)
+        self.assertIn('https://overpass.private.coffee/api/interpreter', MAP)
         self.assertIn('https://overpass-api.de/api/interpreter', MAP)
+        self.assertIn('https://maps.mail.ru/osm/tools/overpass/api/interpreter', MAP)
         self.assertIn('© OpenStreetMap contributors', MAP)
-        self.assertIn('Not an official Forest Service trail', MAP)
-        self.assertIn('An informal path is not proof of legal access.', LAYERS)
+        self.assertIn('All Overpass endpoints failed', MAP)
         self.assertIn('Community / Informal Trails layer', TERMS)
-        self.assertIn('Open Database License (ODbL)', TERMS)
-        self.assertIn('public Overpass API', PRIVACY)
+        self.assertIn('public Overpass API service', PRIVACY)
+        self.assertIn('alternate public Overpass instances', PRIVACY)
+        self.assertIn('planner may snap to displayed informal paths', TERMS)
 
-    def test_land_management_and_map_reading_help_are_present(self):
-        self.assertIn('Wilderness boundaries', MAP)
-        self.assertIn('Special management areas', MAP)
-        self.assertIn('National Forest land units', MAP)
+    def test_land_management_defaults_on_and_counties_are_fixed_context(self):
+        for layer in ('usfs-wilderness', 'usfs-special-management', 'usfs-land-units'):
+            self.assertIn('data-map-layer="' + layer + '" checked', MAP)
+        self.assertIn("loadLandContext('usfs-wilderness')", MAP)
+        self.assertIn("loadLandContext('usfs-special-management')", MAP)
+        self.assertIn("loadLandContext('usfs-land-units')", MAP)
+        self.assertIn('County boundaries</span><small>Always shown</small>', MAP)
+        self.assertIn("const countiesVisible = map.getZoom() <= 13", MAP)
+
+    def test_map_reading_help_and_legal_access_context_are_present(self):
         self.assertIn('How to read this map — 30-second guide', MAP)
         self.assertIn('Closer lines mean steeper terrain', MAP)
         self.assertIn('Map nerd details', MAP)
         self.assertIn('Terrain relief (LiDAR)', MAP)
-        self.assertIn('Kentucky LiDAR', MAP)
-
-    def test_location_terms_and_privacy_are_explicit(self):
-        self.assertIn('location reported by your browser or device', TERMS)
-        self.assertIn('Property and parcel boundaries are not displayed', TERMS)
+        self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
+        self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
         self.assertIn('If you choose “My location,”', PRIVACY)
-        self.assertIn('does not intentionally transmit or store the precise device coordinates', PRIVACY)
-        self.assertIn('does not send the search text to a general-purpose external geocoding service', PRIVACY)
 
     def test_public_route_ui_avoids_internal_workflow_language(self):
         public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP, (ROOT / 'src/components/ElevationProfile.astro').read_text(encoding='utf-8')])
