@@ -2146,83 +2146,94 @@ const enabledSources = enabledBrowserMapSources;
         deletePlanSegment(segmentIndex);
       });
 
-      const hitElement = hitLine.getElement?.() as SVGPathElement | null;
-      if (!hitElement) return;
-      hitElement.style.cursor = 'grab';
-      hitElement.style.touchAction = 'none';
+      let bindAttempts = 0;
+      const bindPointerDrag = () => {
+        const hitElement = hitLine.getElement?.() as SVGPathElement | null;
+        if (!hitElement) {
+          bindAttempts += 1;
+          if (bindAttempts <= 4 && map.hasLayer(hitLine)) window.requestAnimationFrame(bindPointerDrag);
+          return;
+        }
+        if (hitElement.dataset.rrghPlanDragBound === 'true') return;
+        hitElement.dataset.rrghPlanDragBound = 'true';
+        hitElement.style.cursor = 'grab';
+        hitElement.style.touchAction = 'none';
 
-      const toMapLatLng = (pointer: PointerEvent) => {
-        const rect = container.getBoundingClientRect();
-        return map.containerPointToLatLng(L.point(pointer.clientX - rect.left, pointer.clientY - rect.top));
+        const toMapLatLng = (pointer: PointerEvent) => {
+          const rect = container.getBoundingClientRect();
+          return map.containerPointToLatLng(L.point(pointer.clientX - rect.left, pointer.clientY - rect.top));
+        };
+
+        hitElement.addEventListener('pointerdown', (event: PointerEvent) => {
+          if (activeTool !== 'plan' || event.button !== 0) return;
+
+          const startStop = planStops[segmentIndex];
+          if (!startStop) return;
+
+          event.preventDefault();
+          event.stopPropagation();
+          suppressPlanClickUntil = Date.now() + 500;
+          map.dragging.disable();
+          hitElement.style.cursor = 'grabbing';
+
+          let moved = false;
+
+          const previewTarget = (target: any) => {
+            const built = buildAutoPlanSegment(startStop, target);
+            const previewPoints = built?.segment.points?.length
+              ? built.segment.points.map((point) => L.latLng(point.lat, point.lng))
+              : [L.latLng(startStop.lat, startStop.lng), target];
+            const snapped = built?.segment.mode === 'snap';
+
+            visibleLine.setLatLngs(previewPoints);
+            visibleLine.setStyle({
+              color: snapped ? '#e17a35' : '#8b4e9e',
+              dashArray: snapped ? undefined : '9 6'
+            });
+          };
+
+          const cleanup = () => {
+            window.removeEventListener('pointermove', onPointerMove, true);
+            window.removeEventListener('pointerup', onPointerUp, true);
+            window.removeEventListener('pointercancel', onPointerCancel, true);
+            window.removeEventListener('blur', onWindowBlur, true);
+            hitElement.style.cursor = 'grab';
+            map.dragging.enable();
+          };
+
+          const onPointerMove = (moveEvent: PointerEvent) => {
+            moved = true;
+            previewTarget(toMapLatLng(moveEvent));
+          };
+
+          const onPointerUp = (upEvent: PointerEvent) => {
+            cleanup();
+            suppressPlanClickUntil = Date.now() + 350;
+            if (!moved) {
+              redrawPlan();
+              return;
+            }
+            movePlanSegmentTarget(segmentIndex, toMapLatLng(upEvent));
+          };
+
+          const onPointerCancel = () => {
+            cleanup();
+            redrawPlan();
+          };
+
+          const onWindowBlur = () => {
+            cleanup();
+            redrawPlan();
+          };
+
+          window.addEventListener('pointermove', onPointerMove, true);
+          window.addEventListener('pointerup', onPointerUp, true);
+          window.addEventListener('pointercancel', onPointerCancel, true);
+          window.addEventListener('blur', onWindowBlur, true);
+        });
       };
 
-      hitElement.addEventListener('pointerdown', (event: PointerEvent) => {
-        if (activeTool !== 'plan' || event.button !== 0) return;
-
-        const startStop = planStops[segmentIndex];
-        if (!startStop) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        suppressPlanClickUntil = Date.now() + 500;
-        map.dragging.disable();
-        hitElement.style.cursor = 'grabbing';
-
-        let moved = false;
-
-        const previewTarget = (target: any) => {
-          const built = buildAutoPlanSegment(startStop, target);
-          const previewPoints = built?.segment.points?.length
-            ? built.segment.points.map((point) => L.latLng(point.lat, point.lng))
-            : [L.latLng(startStop.lat, startStop.lng), target];
-          const snapped = built?.segment.mode === 'snap';
-
-          visibleLine.setLatLngs(previewPoints);
-          visibleLine.setStyle({
-            color: snapped ? '#e17a35' : '#8b4e9e',
-            dashArray: snapped ? undefined : '9 6'
-          });
-        };
-
-        const cleanup = () => {
-          window.removeEventListener('pointermove', onPointerMove, true);
-          window.removeEventListener('pointerup', onPointerUp, true);
-          window.removeEventListener('pointercancel', onPointerCancel, true);
-          window.removeEventListener('blur', onWindowBlur, true);
-          hitElement.style.cursor = 'grab';
-          map.dragging.enable();
-        };
-
-        const onPointerMove = (moveEvent: PointerEvent) => {
-          moved = true;
-          previewTarget(toMapLatLng(moveEvent));
-        };
-
-        const onPointerUp = (upEvent: PointerEvent) => {
-          cleanup();
-          suppressPlanClickUntil = Date.now() + 350;
-          if (!moved) {
-            redrawPlan();
-            return;
-          }
-          movePlanSegmentTarget(segmentIndex, toMapLatLng(upEvent));
-        };
-
-        const onPointerCancel = () => {
-          cleanup();
-          redrawPlan();
-        };
-
-        const onWindowBlur = () => {
-          cleanup();
-          redrawPlan();
-        };
-
-        window.addEventListener('pointermove', onPointerMove, true);
-        window.addEventListener('pointerup', onPointerUp, true);
-        window.addEventListener('pointercancel', onPointerCancel, true);
-        window.addEventListener('blur', onWindowBlur, true);
-      });
+      bindPointerDrag();
     };
 
     const redrawPlan = () => {
