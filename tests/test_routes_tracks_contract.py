@@ -160,7 +160,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('County boundaries', MAP)
         self.assertIn('Forest Service trails', MAP)
         self.assertIn('Forest Service roads', MAP)
-        self.assertIn('trail-snapped planning', FULL_MAP)
+        self.assertIn('trail-following planning', FULL_MAP)
 
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
