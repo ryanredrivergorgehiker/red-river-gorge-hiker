@@ -12,8 +12,8 @@
     "check": "astro check && npm test && npm run build"
   },
   "dependencies": {
-    "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.1.5"
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
