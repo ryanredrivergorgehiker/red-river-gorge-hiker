@@ -97,14 +97,14 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
-      <button type="button" data-sheet-open="explore">Explore</button>
-      <button type="button" data-sheet-open="plan">Plan</button>
+      <button type="button" data-sheet-open="explore" disabled>Explore</button>
+      <button type="button" data-sheet-open="plan" disabled>Plan</button>
     </div>
 
     <div class="route-map-mobile-bar" aria-label="Mobile map controls">
       <button type="button" data-sheet-open="search">Search</button>
       <button type="button" data-sheet-open="layers">Layers</button>
-      <button type="button" data-sheet-open="plan">Plan</button>
+      <button type="button" data-sheet-open="plan" disabled>Plan</button>
     </div>
 
     <div class="route-search-panel route-map-sheet" data-map-sheet="search" hidden>
@@ -143,6 +143,10 @@ const enabledSources = enabledBrowserMapSources;
             <div class="route-layer-static-row">
               <span class="route-layer-swatch swatch-landmark" aria-hidden="true"></span>
               <span>Landmarks &amp; viewpoints</span>
+            </div>
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-county" aria-hidden="true"></span>
+              <span>County boundaries</span>
             </div>
           </div>
           <label class="route-layer-toggle-row">
@@ -203,10 +207,6 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-land-unit" aria-hidden="true"></span>
             <span>National Forest land units</span>
           </label>
-          <div class="route-layer-static-row">
-            <span class="route-layer-swatch swatch-county" aria-hidden="true"></span>
-            <span>County boundaries</span><small>Always shown</small>
-          </div>
         </div>
 
         <details class="route-layer-fine-tune">
@@ -246,12 +246,7 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
         <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
       </div>
-      <div class="route-plan-segment-modes" data-plan-segment-modes hidden>
-        <span>Next segment</span>
-        <button type="button" data-plan-segment-mode="snap" aria-pressed="true">Follow mapped trails &amp; roads</button>
-        <button type="button" data-plan-segment-mode="straight" aria-pressed="false">Off-trail straight line</button>
-      </div>
-      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route can alternate between snapped mapped trails/roads and straight off-trail segments in one GPX plan.</p>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near a mapped trail or road to snap to it; click clearly off trail for a dashed straight segment. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
       <div class="route-plan-actions">
         <button type="button" data-plan-action="undo" disabled>Undo</button>
         <button type="button" data-plan-action="redo" disabled>Redo</button>
@@ -300,7 +295,7 @@ const enabledSources = enabledBrowserMapSources;
   <details class="route-map-sources">
     <summary>Map data, attribution &amp; privacy</summary>
     <p>
-      Core map controls are available immediately. Remote context layers, including Community / Informal trails, load in the background and can fail without blocking the map.
+      Search, location, Home, Layers, zoom and pan are available while map context loads. Explore and Plan unlock after Community / Informal trail data loads successfully.
       External map and GIS requests are separate from RRGH Analytics.
     </p>
     <ul>
@@ -431,12 +426,13 @@ const enabledSources = enabledBrowserMapSources;
     const stage = shell.querySelector<HTMLElement>('.route-map-stage');
     const planButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="plan"]'));
     const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
+    const explorePlanOpenButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open="explore"], [data-sheet-open="plan"]'));
+    let informalTrailsReady = false;
     const layerPanel = shell.querySelector<HTMLDetailsElement>('.route-layer-panel');
     const searchPanel = shell.querySelector<HTMLElement>('[data-map-sheet="search"]');
     const explorePanel = shell.querySelector<HTMLElement>('[data-map-sheet="explore"]');
     const exploreList = shell.querySelector<HTMLElement>('[data-explore-route-list]');
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
-    const planSegmentModes = shell.querySelector<HTMLElement>('[data-plan-segment-modes]');
     const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
     const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
     const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
@@ -447,6 +443,15 @@ const enabledSources = enabledBrowserMapSources;
     const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
 
     if (layerPanel) layerPanel.open = false;
+
+    const setExplorePlanReady = (ready: boolean) => {
+      informalTrailsReady = ready;
+      for (const button of explorePlanOpenButtons) button.disabled = !ready;
+      for (const button of planButtons) button.disabled = !ready || graph.size <= 1;
+      container.dataset.trailPlanningReady = String(ready);
+    };
+
+    setExplorePlanReady(false);
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (!status) return;
@@ -496,7 +501,7 @@ const enabledSources = enabledBrowserMapSources;
       }
     }
 
-    const homeCenter = L.latLng(37.819, -83.595);
+    const homeCenter = L.latLng(37.831, -83.615);
     const homeZoom = 13;
 
     if (mode === 'full') {
@@ -673,6 +678,8 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
+    const planSnapToleranceMeters = 90;
+
     const nearestNode = (latlng: any) => {
       let bestKey = '';
       let bestDistance = Infinity;
@@ -683,7 +690,7 @@ const enabledSources = enabledBrowserMapSources;
           bestKey = key;
         }
       }
-      return bestKey && bestDistance <= 90 ? { key: bestKey, distance: bestDistance } : null;
+      return bestKey && bestDistance <= planSnapToleranceMeters ? { key: bestKey, distance: bestDistance } : null;
     };
 
     const shortestTrailPath = (start: string, end: string) => {
@@ -1303,12 +1310,14 @@ const enabledSources = enabledBrowserMapSources;
     const loadInformalTrails = async () => {
       if (mapLayers.has('osm-informal-trails')) {
         syncVisibility('osm-informal-trails');
+        setExplorePlanReady(true);
         return;
       }
 
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="osm-informal-trails"]');
       if (checkbox) checkbox.disabled = true;
-      setStatus('Map ready · loading Community / Informal trails from the RRGH OpenStreetMap cache…');
+      setExplorePlanReady(false);
+      setStatus('Loading Community / Informal trails… Explore and Plan will unlock when trail data is ready.');
 
       const cachedUrl = import.meta.env.BASE_URL + 'data/map/osm-informal-trails.geojson';
       const query = '[out:json][timeout:45];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom qt;';
@@ -1456,19 +1465,23 @@ const enabledSources = enabledBrowserMapSources;
 
         bridgeNearbyEndpoints();
         container.dataset.plannerNodeCount = String(graph.size);
-        if (graph.size > 1) {
-          for (const button of planButtons) button.disabled = false;
-        }
+        setExplorePlanReady(true);
 
         setStatus(
           informalPaths.length
             ? 'Community / Informal trails loaded.'
-            : 'OpenStreetMap data loaded, but no community/informal trail candidates were available in the current map area.'
+            : 'OpenStreetMap trail data loaded. Explore and Plan are ready.'
         );
+        window.setTimeout(() => {
+          if (informalTrailsReady && activeTool === null) {
+            setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+          }
+        }, 1600);
       } catch (error) {
         console.error(error);
         if (checkbox) checkbox.checked = false;
-        setStatus('Community / Informal trails are temporarily unavailable. The rest of the map remains fully usable.', 'warning');
+        setExplorePlanReady(false);
+        setStatus('Community / Informal trails are temporarily unavailable. Explore and Plan remain disabled until trail data loads successfully.', 'warning');
       } finally {
         if (checkbox) checkbox.disabled = false;
       }
@@ -1476,9 +1489,6 @@ const enabledSources = enabledBrowserMapSources;
 
     bridgeNearbyEndpoints();
     container.dataset.plannerNodeCount = String(graph.size);
-    if (graph.size > 1) {
-      for (const button of planButtons) button.disabled = false;
-    }
 
     const tripTypeEnabled = (tripType: string) =>
       shell.querySelector<HTMLInputElement>('[data-route-trip-filter="' + tripType + '"]')?.checked ?? true;
@@ -1601,9 +1611,9 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('ky-hillshade', true, 18);
         setLayerControl('kyaerial-phase3', false, 100);
       } else if (name === 'terrain') {
-        setLayerControl('kytopo', true, 70);
+        setLayerControl('kytopo', true, 72);
         setLayerControl('usgs-topo', true, 72);
-        setLayerControl('ky-hillshade', true, 45);
+        setLayerControl('ky-hillshade', true, 72);
         setLayerControl('kyaerial-phase3', false, 100);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -1634,8 +1644,10 @@ const enabledSources = enabledBrowserMapSources;
         if (presetLayerIds.has(id)) clearPresetState();
 
         if (id === 'kyaerial-phase3' && checkbox.checked) {
+          setLayerControl('kytopo', false);
+          setLayerControl('usgs-topo', false);
           setLayerControl('ky-hillshade', false);
-        } else if (id === 'ky-hillshade' && checkbox.checked) {
+        } else if ((id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked) {
           setLayerControl('kyaerial-phase3', false);
         }
 
@@ -1877,7 +1889,6 @@ const enabledSources = enabledBrowserMapSources;
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let activeTool: 'measure' | 'plan' | null = null;
     let measurePoints: any[] = [];
-    let planSegmentMode: 'snap' | 'straight' = 'snap';
 
     type PlanPoint = { lat: number; lng: number; nodeKey?: string };
     type PlanSegment = { mode: 'snap' | 'straight'; points: PlanPoint[] };
@@ -1887,6 +1898,7 @@ const enabledSources = enabledBrowserMapSources;
     let planSegments: PlanSegment[] = [];
     let planHistory: PlanSnapshot[] = [{ stops: [], segments: [] }];
     let planHistoryIndex = 0;
+    let suppressPlanClickUntil = 0;
 
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
 
@@ -1923,14 +1935,56 @@ const enabledSources = enabledBrowserMapSources;
       updateHistoryButtons();
     };
 
-    const setPlanSegmentMode = (modeName: 'snap' | 'straight') => {
-      planSegmentMode = modeName;
-      for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-segment-mode]')) {
-        button.setAttribute('aria-pressed', String(button.dataset.planSegmentMode === modeName));
+    const snappedPlanPoint = (latlng: any): PlanPoint => {
+      const snapped = graph.size ? nearestNode(latlng) : null;
+      if (!snapped) return { lat: latlng.lat, lng: latlng.lng };
+      const point = nodeCoords.get(snapped.key);
+      if (!point) return { lat: latlng.lat, lng: latlng.lng };
+      return { lat: point.lat, lng: point.lng, nodeKey: snapped.key };
+    };
+
+    const buildAutoPlanSegment = (previous: PlanPoint, targetLatLng: any): { segment: PlanSegment; target: PlanPoint } | null => {
+      const snappedTarget = snappedPlanPoint(targetLatLng);
+      if (previous.lat === snappedTarget.lat && previous.lng === snappedTarget.lng) return null;
+
+      if (previous.nodeKey && snappedTarget.nodeKey) {
+        const path = shortestTrailPath(previous.nodeKey, snappedTarget.nodeKey);
+        if (path && path.length > 1) {
+          const points: PlanPoint[] = [];
+          for (const key of path) {
+            const point = nodeCoords.get(key);
+            if (point) points.push({ lat: point.lat, lng: point.lng, nodeKey: key });
+          }
+          if (points.length > 1) return { segment: { mode: 'snap', points }, target: snappedTarget };
+        }
       }
-      setStatus(modeName === 'snap'
-        ? 'Next route segment will follow the mapped trail/road network.'
-        : 'Next route segment will be a straight off-trail line between the points you place.');
+
+      return {
+        segment: { mode: 'straight', points: [{ ...previous }, { ...snappedTarget }] },
+        target: snappedTarget
+      };
+    };
+
+    const rebuildPlanFromStops = () => {
+      if (planStops.length < 2) {
+        planSegments = [];
+        return;
+      }
+      const intendedStops = planStops.map((point) => ({ ...point }));
+      const rebuiltStops: PlanPoint[] = [{ ...intendedStops[0]! }];
+      const rebuiltSegments: PlanSegment[] = [];
+
+      for (let index = 1; index < intendedStops.length; index += 1) {
+        const previous = rebuiltStops[rebuiltStops.length - 1]!;
+        const intended = intendedStops[index]!;
+        const built = buildAutoPlanSegment(previous, L.latLng(intended.lat, intended.lng));
+        if (!built) continue;
+        rebuiltSegments.push(built.segment);
+        rebuiltStops.push(built.target);
+      }
+
+      planStops = rebuiltStops;
+      planSegments = rebuiltSegments;
     };
 
     const setTool = (tool: 'measure' | 'plan' | null) => {
@@ -1942,15 +1996,15 @@ const enabledSources = enabledBrowserMapSources;
           button.setAttribute('aria-pressed', String(buttonTool === tool));
         }
       }
-      if (planSegmentModes) planSegmentModes.hidden = tool !== 'plan';
 
-      if (tool === 'measure') setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
-      else if (tool === 'plan') {
+      if (tool === 'measure') {
+        setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
+      } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
-        setStatus(planSegmentMode === 'snap'
-          ? 'Build route: click near a mapped Forest Service trail, Forest Service road, Community / Informal trail, or RRGH route.'
-          : 'Build route: click anywhere to add a straight off-trail segment.');
-      } else if (!vectorFailures.length) setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates.');
+        setStatus('Build route: click near a mapped trail or road to snap automatically; click clearly off trail for a dashed straight segment. Drag a segment to adjust it; right-click a segment to delete it.');
+      } else if (!vectorFailures.length && informalTrailsReady) {
+        setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+      }
     };
 
     const clearTools = () => {
@@ -1964,7 +2018,7 @@ const enabledSources = enabledBrowserMapSources;
       for (const button of saveButtons) button.disabled = true;
       updateHistoryButtons();
       if (activeTool === 'measure') setStatus('Measure distance: click points anywhere on the map.');
-      else if (activeTool === 'plan') setStatus('Build route: place a first point.');
+      else if (activeTool === 'plan') setStatus('Build route: place a first point near a trail to snap, or clearly off trail to start off trail.');
       else setStatus('Map cleared.');
     };
 
@@ -2010,7 +2064,7 @@ const enabledSources = enabledBrowserMapSources;
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 0);
-      setStatus('Planned mixed-mode route exported as a GPX file.');
+      setStatus('Planned route exported as a GPX file.');
     };
 
     for (const button of toolButtons) {
@@ -2025,13 +2079,6 @@ const enabledSources = enabledBrowserMapSources;
           return;
         }
         if (tool === 'measure' || tool === 'plan') setTool(activeTool === tool ? null : tool);
-      });
-    }
-
-    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-segment-mode]')) {
-      button.addEventListener('click', () => {
-        const modeName = button.dataset.planSegmentMode;
-        if (modeName === 'snap' || modeName === 'straight') setPlanSegmentMode(modeName);
       });
     }
 
@@ -2072,13 +2119,82 @@ const enabledSources = enabledBrowserMapSources;
       setStatus(measurePoints.length > 1 ? 'Measured distance: ' + formatDistance(total) + ' · straight point-to-point segments.' : 'Measure distance: first point set · click another point.');
     };
 
+    const deletePlanSegment = (segmentIndex: number) => {
+      if (segmentIndex < 0 || segmentIndex >= planSegments.length) return;
+      planStops.splice(segmentIndex + 1, 1);
+      rebuildPlanFromStops();
+      commitPlanHistory();
+      redrawPlan();
+      setStatus('Planned segment deleted. Continue clicking to extend the route, drag another segment to adjust it, or right-click another segment to delete it.');
+    };
+
+    const movePlanSegmentTarget = (segmentIndex: number, latlng: any) => {
+      if (segmentIndex < 0 || segmentIndex >= planSegments.length || !planStops[segmentIndex + 1]) return;
+      planStops[segmentIndex + 1] = { lat: latlng.lat, lng: latlng.lng };
+      rebuildPlanFromStops();
+      commitPlanHistory();
+      redrawPlan();
+    };
+
+    const attachPlanSegmentInteraction = (hitLine: any, visibleLine: any, segmentIndex: number) => {
+      hitLine.on('contextmenu', (event: any) => {
+        if (activeTool !== 'plan') return;
+        const original = event.originalEvent;
+        original?.preventDefault?.();
+        original?.stopPropagation?.();
+        suppressPlanClickUntil = Date.now() + 300;
+        deletePlanSegment(segmentIndex);
+      });
+
+      hitLine.on('mousedown', (event: any) => {
+        if (activeTool !== 'plan') return;
+        const original = event.originalEvent as MouseEvent | undefined;
+        if (original?.button !== undefined && original.button !== 0) return;
+        original?.preventDefault?.();
+        original?.stopPropagation?.();
+
+        const startStop = planStops[segmentIndex];
+        if (!startStop) return;
+        suppressPlanClickUntil = Date.now() + 500;
+        map.dragging.disable();
+
+        const latLngFromMouse = (mouse: MouseEvent) => {
+          const rect = container.getBoundingClientRect();
+          const point = L.point(mouse.clientX - rect.left, mouse.clientY - rect.top);
+          return map.containerPointToLatLng(point);
+        };
+
+        const onMove = (mouse: MouseEvent) => {
+          const target = latLngFromMouse(mouse);
+          const nearTrail = Boolean(startStop.nodeKey && nearestNode(target));
+          visibleLine.setLatLngs([L.latLng(startStop.lat, startStop.lng), target]);
+          visibleLine.setStyle({
+            color: nearTrail ? '#e17a35' : '#8b4e9e',
+            dashArray: nearTrail ? undefined : '9 6'
+          });
+        };
+
+        const onUp = (mouse: MouseEvent) => {
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+          map.dragging.enable();
+          suppressPlanClickUntil = Date.now() + 350;
+          movePlanSegmentTarget(segmentIndex, latLngFromMouse(mouse));
+        };
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp, { once: true });
+      });
+    };
+
     const redrawPlan = () => {
       planLayer.clearLayers();
 
-      for (const segment of planSegments) {
+      planSegments.forEach((segment, segmentIndex) => {
         const points = segment.points.map((point) => L.latLng(point.lat, point.lng));
-        if (points.length < 2) continue;
-        L.polyline(points, {
+        if (points.length < 2) return;
+
+        const visibleLine = L.polyline(points, {
           pane: 'planning',
           color: segment.mode === 'snap' ? '#e17a35' : '#8b4e9e',
           weight: segment.mode === 'snap' ? 6 : 5,
@@ -2088,7 +2204,19 @@ const enabledSources = enabledBrowserMapSources;
           lineJoin: 'round',
           interactive: false
         }).addTo(planLayer);
-      }
+
+        const hitLine = L.polyline(points, {
+          pane: 'planning',
+          color: '#000',
+          weight: 18,
+          opacity: 0.001,
+          lineCap: 'round',
+          lineJoin: 'round',
+          interactive: true,
+          bubblingMouseEvents: false
+        }).addTo(planLayer);
+        attachPlanSegmentInteraction(hitLine, visibleLine, segmentIndex);
+      });
 
       for (const stop of planStops) {
         L.circleMarker([stop.lat, stop.lng], {
@@ -2096,7 +2224,7 @@ const enabledSources = enabledBrowserMapSources;
           radius: 6,
           color: '#fff',
           weight: 2,
-          fillColor: '#e17a35',
+          fillColor: stop.nodeKey ? '#e17a35' : '#8b4e9e',
           fillOpacity: 1,
           interactive: false
         }).addTo(planLayer);
@@ -2107,12 +2235,18 @@ const enabledSources = enabledBrowserMapSources;
       for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
 
       for (const button of saveButtons) button.disabled = points.length < 2;
-      if (!planStops.length) setStatus('Build route: place a first point.');
-      else if (planStops.length === 1) setStatus('Build route: first point set · choose Follow mapped trails & roads or Off-trail straight line for the next segment.');
-      else setStatus('Planned route: ' + formatDistance(total) + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), ' + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s).');
+      if (!planStops.length) {
+        setStatus('Build route: place a first point near a trail to snap, or clearly off trail to start off trail.');
+      } else if (planStops.length === 1) {
+        setStatus('First point set. Click near a trail or road for an automatic snapped segment, or clearly off trail for a dashed straight segment.');
+      } else {
+        setStatus('Planned route: ' + formatDistance(total) + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), ' + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s). Drag a segment to adjust it; right-click to delete.');
+      }
     };
 
     map.on('click', (event: any) => {
+      if (Date.now() < suppressPlanClickUntil) return;
+
       if (activeTool === null) {
         showCoordinate(event.latlng);
         return;
@@ -2125,62 +2259,21 @@ const enabledSources = enabledBrowserMapSources;
       if (activeTool !== 'plan') return;
 
       if (!planStops.length) {
-        if (planSegmentMode === 'snap') {
-          const snapped = nearestNode(event.latlng);
-          if (!snapped) {
-            setStatus('No mapped trail or road snap point is close enough. Switch to Off-trail straight line or click within about 90 m of a mapped trail/road.', 'warning');
-            return;
-          }
-          const point = nodeCoords.get(snapped.key);
-          planStops = [{ lat: point.lat, lng: point.lng, nodeKey: snapped.key }];
-        } else {
-          planStops = [{ lat: event.latlng.lat, lng: event.latlng.lng }];
-        }
+        planStops = [snappedPlanPoint(event.latlng)];
         commitPlanHistory();
         redrawPlan();
         return;
       }
 
       const previous = planStops[planStops.length - 1]!;
-      if (planSegmentMode === 'straight') {
-        const target: PlanPoint = { lat: event.latlng.lat, lng: event.latlng.lng };
-        planSegments.push({ mode: 'straight', points: [{ ...previous }, { ...target }] });
-        planStops.push(target);
-        commitPlanHistory();
-        redrawPlan();
+      const built = buildAutoPlanSegment(previous, event.latlng);
+      if (!built) {
+        setStatus('That point is effectively the same as the current route endpoint. Choose another point.', 'warning');
         return;
       }
 
-      if (!graph.size) {
-        setStatus('Mapped trail/road network is not available for snapping right now.', 'warning');
-        return;
-      }
-      const targetSnap = nearestNode(event.latlng);
-      if (!targetSnap) {
-        setStatus('No mapped trail or road snap point is close enough. Switch to Off-trail straight line or click within about 90 m of a mapped trail/road.', 'warning');
-        return;
-      }
-      const startSnap = previous.nodeKey ? { key: previous.nodeKey, distance: 0 } : nearestNode(L.latLng(previous.lat, previous.lng));
-      if (!startSnap) {
-        setStatus('Your previous off-trail point is too far from the mapped network. Add a straight segment onto a mapped trail or road before switching back to snapping.', 'warning');
-        return;
-      }
-      const path = shortestTrailPath(startSnap.key, targetSnap.key);
-      if (!path) {
-        setStatus('Those mapped points are not connected in the available trail/road data. Use an off-trail straight segment to bridge the gap, or choose another mapped segment.', 'warning');
-        return;
-      }
-
-      const segmentPoints: PlanPoint[] = [];
-      const snappedStart = nodeCoords.get(startSnap.key);
-      if (previous.lat !== snappedStart.lat || previous.lng !== snappedStart.lng) segmentPoints.push({ ...previous });
-      for (const key of path) {
-        const point = nodeCoords.get(key);
-        if (point) segmentPoints.push({ lat: point.lat, lng: point.lng, nodeKey: key });
-      }
-      const targetPoint = nodeCoords.get(targetSnap.key);
-      planSegments.push({ mode: 'snap', points: segmentPoints });
-      planStops.push({ lat: targetPoint.lat, lng: targetPoint.lng, nodeKey: targetSnap.key });
+      planSegments.push(built.segment);
+      planStops.push(built.target);
       commitPlanHistory();
       redrawPlan();
     });
@@ -2205,9 +2298,9 @@ const enabledSources = enabledBrowserMapSources;
       setTool(null);
     }
 
-    // Optional remote context loads after the map is already interactive.
-    // Never await these during initialization: a slow third-party GIS/API must not freeze Search,
-    // Home, Layers, Explore, Plan, zoom, pan, measurement, or route browsing.
+    // Optional land context can load in the background. Community / Informal trail data is the
+    // planning-readiness gate: Search, location, Home, Layers, zoom and pan remain available while
+    // trail data loads, but Explore and Plan stay disabled until the trail graph is ready.
     window.setTimeout(() => {
       void loadLandContext('usfs-wilderness');
       void loadLandContext('usfs-special-management');
