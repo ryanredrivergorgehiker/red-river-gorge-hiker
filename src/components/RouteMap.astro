@@ -1395,7 +1395,9 @@ const enabledSources = enabledBrowserMapSources;
           },
           onEachFeature: (feature: any, featureLayer: any) => {
             const props = feature.properties ?? {};
-            const name = String(props.name ?? 'Informal trail');
+            const classification = String(props.rrgh_classification ?? (props.informal === 'yes' ? 'informal' : 'community-candidate'));
+            const label = classification === 'informal' ? 'Informal trail' : 'Community trail candidate';
+            const name = String(props.name ?? label);
             const access = String(props.access ?? props.foot ?? 'not specified');
             const visibility = String(props.trail_visibility ?? 'not specified');
             const accessLower = access.toLowerCase();
@@ -1408,7 +1410,9 @@ const enabledSources = enabledBrowserMapSources;
 
             const warning = document.createElement('p');
             warning.className = 'route-map-popup-warning';
-            warning.textContent = 'Community / informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.';
+            warning.textContent = classification === 'informal'
+              ? 'Mapped by OpenStreetMap as an informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.'
+              : 'OpenStreetMap trail-like path that does not substantially match the authoritative Forest Service trail geometry. Treat it as a community/unofficial candidate, not proof of legal access or current conditions.';
             popup.append(warning);
 
             const meta = document.createElement('p');
@@ -1434,7 +1438,7 @@ const enabledSources = enabledBrowserMapSources;
             if (featureLayer.getBounds) {
               searchItems.push({
                 label: name,
-                detail: 'Community / Informal trail · OpenStreetMap',
+                detail: label + ' · OpenStreetMap',
                 bounds: featureLayer.getBounds(),
                 open: () => featureLayer.openPopup()
               });

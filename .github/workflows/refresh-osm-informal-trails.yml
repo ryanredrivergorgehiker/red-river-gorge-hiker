@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install spatial cache dependencies
+        run: python -m pip install --disable-pip-version-check shapely pyproj
       - name: Refresh cached OpenStreetMap informal trails
         run: python scripts/update_osm_informal_trails.py
       - name: Commit refreshed cache
