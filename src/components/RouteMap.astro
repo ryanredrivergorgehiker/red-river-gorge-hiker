@@ -2166,14 +2166,17 @@ const enabledSources = enabledBrowserMapSources;
         });
       };
 
+      let segmentDragActive = false;
+
       if (pathElement && 'PointerEvent' in window) {
         pathElement.style.cursor = 'grab';
         pathElement.addEventListener('pointerdown', (downEvent: PointerEvent) => {
-          if (activeTool !== 'plan' || downEvent.button !== 0) return;
+          if (activeTool !== 'plan' || downEvent.button !== 0 || segmentDragActive) return;
 
           const startStop = planStops[segmentIndex];
           if (!startStop) return;
 
+          segmentDragActive = true;
           downEvent.preventDefault();
           downEvent.stopPropagation();
           suppressPlanClickUntil = Date.now() + 500;
@@ -2190,6 +2193,7 @@ const enabledSources = enabledBrowserMapSources;
             window.removeEventListener('pointercancel', cancelPointerDrag, true);
             if (pathElement.hasPointerCapture?.(pointerId)) pathElement.releasePointerCapture(pointerId);
             pathElement.style.cursor = 'grab';
+            segmentDragActive = false;
             map.dragging.enable();
           };
 
@@ -2220,13 +2224,14 @@ const enabledSources = enabledBrowserMapSources;
           window.addEventListener('pointerup', finishPointerDrag, true);
           window.addEventListener('pointercancel', cancelPointerDrag, true);
         }, true);
-        return;
       }
 
-      // Older-browser fallback: capture mouse movement at window level so releasing
+      // Mouse fallback: keep this alongside Pointer Events. Some automation stacks and
+      // older browsers deliver the compatible mouse sequence without a usable pointer drag.
+      // segmentDragActive prevents both paths from owning the same physical drag.
       // over another Leaflet layer still completes the drag.
       hitLine.on('mousedown', (event: any) => {
-        if (activeTool !== 'plan') return;
+        if (activeTool !== 'plan' || segmentDragActive) return;
         const original = event.originalEvent as MouseEvent | undefined;
         if (original?.button !== undefined && original.button !== 0) return;
         original?.preventDefault?.();
@@ -2234,6 +2239,7 @@ const enabledSources = enabledBrowserMapSources;
 
         const startStop = planStops[segmentIndex];
         if (!startStop) return;
+        segmentDragActive = true;
         suppressPlanClickUntil = Date.now() + 500;
         map.dragging.disable();
 
@@ -2249,11 +2255,13 @@ const enabledSources = enabledBrowserMapSources;
         };
         const cancelDrag = () => {
           removeFallbackListeners();
+          segmentDragActive = false;
           map.dragging.enable();
           redrawPlan();
         };
         const finishDrag = (upEvent: MouseEvent) => {
           removeFallbackListeners();
+          segmentDragActive = false;
           map.dragging.enable();
           suppressPlanClickUntil = Date.now() + 350;
           if (!moved) {
