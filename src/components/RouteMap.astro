@@ -2290,9 +2290,12 @@ const enabledSources = enabledBrowserMapSources;
           opacity: 0.001,
           lineCap: 'round',
           lineJoin: 'round',
+          className: 'rrgh-plan-segment-hit',
           interactive: true,
           bubblingMouseEvents: false
         }).addTo(planLayer);
+        const hitElement = hitLine.getElement?.() as SVGPathElement | null;
+        if (hitElement) hitElement.dataset.planSegmentIndex = String(segmentIndex);
         attachPlanSegmentInteraction(hitLine, visibleLine, segmentIndex);
       });
 
