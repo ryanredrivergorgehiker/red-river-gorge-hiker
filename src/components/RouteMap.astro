@@ -1304,7 +1304,7 @@ const enabledSources = enabledBrowserMapSources;
 
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="osm-informal-trails"]');
       if (checkbox) checkbox.disabled = true;
-      setStatus('Loading Community / Informal trails from OpenStreetMap…');
+      setStatus('Map ready · loading Community / Informal trails from OpenStreetMap in the background…');
 
       const query = '[out:json][timeout:25];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom;';
       const overpassEndpoints = [
@@ -1318,15 +1318,22 @@ const enabledSources = enabledBrowserMapSources;
         const failures: string[] = [];
         for (const base of overpassEndpoints) {
           try {
-            const response = await fetch(base + '?data=' + encodeURIComponent(query), {
-              credentials: 'omit',
-              mode: 'cors',
-              referrerPolicy: 'strict-origin-when-cross-origin'
-            });
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            osm = await response.json();
-            container.dataset.informalTrailSource = new URL(base).hostname;
-            break;
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 4000);
+            try {
+              const response = await fetch(base + '?data=' + encodeURIComponent(query), {
+                credentials: 'omit',
+                mode: 'cors',
+                referrerPolicy: 'strict-origin-when-cross-origin',
+                signal: controller.signal
+              });
+              if (!response.ok) throw new Error('HTTP ' + response.status);
+              osm = await response.json();
+              container.dataset.informalTrailSource = new URL(base).hostname;
+              break;
+            } finally {
+              window.clearTimeout(timeoutId);
+            }
           } catch (error) {
             failures.push(base + ': ' + String(error));
           }
@@ -1409,6 +1416,9 @@ const enabledSources = enabledBrowserMapSources;
         syncVisibility('osm-informal-trails');
         bridgeNearbyEndpoints();
         container.dataset.plannerNodeCount = String(graph.size);
+        if (graph.size > 1) {
+          for (const button of planButtons) button.disabled = false;
+        }
         setStatus('Community / Informal trails loaded and available for route snapping except paths tagged private or no access.');
       } catch (error) {
         console.error(error);
@@ -1419,12 +1429,6 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
-    await Promise.all([
-      loadLandContext('usfs-wilderness'),
-      loadLandContext('usfs-special-management'),
-      loadLandContext('usfs-land-units')
-    ]);
-    await loadInformalTrails();
     bridgeNearbyEndpoints();
     container.dataset.plannerNodeCount = String(graph.size);
     if (graph.size > 1) {
@@ -2135,6 +2139,16 @@ const enabledSources = enabledBrowserMapSources;
     } else {
       setTool(null);
     }
+
+    // Optional remote context loads after the map is already interactive.
+    // Never await these during initialization: a slow third-party GIS/API must not freeze Search,
+    // Home, Layers, Explore, Plan, zoom, pan, measurement, or route browsing.
+    window.setTimeout(() => {
+      void loadLandContext('usfs-wilderness');
+      void loadLandContext('usfs-special-management');
+      void loadLandContext('usfs-land-units');
+      void loadInformalTrails();
+    }, 0);
   };
 
   for (const shell of document.querySelectorAll<HTMLElement>('[data-route-map-shell]')) {
