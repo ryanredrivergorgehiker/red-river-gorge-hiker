@@ -12,14 +12,20 @@ const routes = entries.map((entry) => ({
   title: entry.data.title,
   tripType: entry.data.tripType,
   trailStatus: entry.data.trailStatus,
+  trailStatusDisplay: entry.data.trailStatusDisplay,
   publicationClass: entry.data.publicationClass,
-  geometryUrl: base + entry.data.webGeometry.publicPath.replace(/^\//, '')
+  distanceMi: entry.data.distanceMi,
+  physicalDifficulty: entry.data.physicalDifficulty,
+  accessParking: entry.data.accessParking,
+  geometryUrl: base + entry.data.webGeometry.publicPath.replace(/^\//, ''),
+  guideUrl: base + 'routes/' + entry.id + '/',
+  gpxUrl: base + entry.data.approvedPublicationGpx.publicPath.replace(/^\//, '')
 }));
 ---
 <Base
   title="Interactive Hikes & Routes Map"
   titleTag="Interactive Hikes & Routes Map | Red River Gorge Hiker"
-  description="Interactive Red River Gorge planning map with route-type filters, RRGH routes, Forest Service trails and roads, county boundaries, Kentucky topo, LiDAR hillshade, aerial imagery, USGS topo, straight-line measurement, trail-following planning, and GPX export."
+  description="Interactive Red River Gorge hiking map with RRGH routes, trailheads, landmarks, Forest Service trails and roads, community informal trails, terrain relief, land-management context, search, location, measurement, trail-route planning, and GPX export."
   canonicalPath="/routes/map/"
 >
   <div class="page route-page route-map-page">

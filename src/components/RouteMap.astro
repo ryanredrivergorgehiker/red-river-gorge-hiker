@@ -9,8 +9,14 @@ interface PublicRouteMapItem {
   title: string;
   tripType: 'day-hike' | 'backpacking' | 'multi-day';
   trailStatus: 'official' | 'mixed' | 'off-trail';
+  trailStatusDisplay: string;
   publicationClass: 'A' | 'B' | 'C';
+  distanceMi: number;
+  physicalDifficulty: string;
+  accessParking: string;
   geometryUrl: string;
+  guideUrl: string;
+  gpxUrl: string;
 }
 
 interface Props {
@@ -35,7 +41,7 @@ const enabledSources = enabledBrowserMapSources;
         <h2 id={mapId + '-heading'}>Map &amp; route</h2>
       </div>
       <p class="route-map-intro">
-        Blend map layers, measure straight-line distance, or build a trail-following plan.
+        Explore the route, read landmarks and trail context, measure distance, or build a trail-following plan.
       </p>
     </div>
   ) : (
@@ -43,23 +49,29 @@ const enabledSources = enabledBrowserMapSources;
       <fieldset class="route-map-preset-group">
         <legend>Map view</legend>
         <div class="route-map-preset-buttons">
-          <button type="button" data-map-preset="simple" aria-pressed="true">
-            <strong>Simple</strong><span>Clean topo + light terrain</span>
+          <button type="button" data-map-preset="hiking" aria-pressed="true">
+            <strong>Hiking</strong><span>Clean topo + light terrain relief</span>
           </button>
-          <button type="button" data-map-preset="advanced" aria-pressed="false">
-            <strong>Advanced</strong><span>Topo + stronger LiDAR + context</span>
+          <button type="button" data-map-preset="terrain" aria-pressed="false">
+            <strong>Terrain</strong><span>Topo + stronger terrain relief</span>
           </button>
           <button type="button" data-map-preset="aerial" aria-pressed="false">
-            <strong>Aerial</strong><span>Imagery + trails + context</span>
+            <strong>Aerial</strong><span>Imagery + hiking context</span>
           </button>
         </div>
       </fieldset>
+
       <fieldset class="route-map-trip-group">
         <legend>Show RRGH routes</legend>
         <div class="route-map-trip-options">
           <label><input type="checkbox" data-route-trip-filter="day-hike" checked /> Day hikes</label>
           <label><input type="checkbox" data-route-trip-filter="backpacking" checked /> Backpacking</label>
           <label><input type="checkbox" data-route-trip-filter="multi-day" checked /> Multi-day</label>
+        </div>
+        <div class="route-map-status-options" aria-label="Route navigation style">
+          <label><input type="checkbox" data-route-status-filter="official" checked /> Official</label>
+          <label><input type="checkbox" data-route-status-filter="mixed" checked /> Mixed</label>
+          <label><input type="checkbox" data-route-status-filter="off-trail" checked /> Off-trail</label>
         </div>
       </fieldset>
     </div>
@@ -76,91 +88,215 @@ const enabledSources = enabledBrowserMapSources;
       aria-label={mode === 'full' ? 'Interactive Red River Gorge planning map' : 'Interactive route map'}
     ></div>
 
-    <div class="route-map-tools" role="toolbar" aria-label="Map tools">
-      <button type="button" data-map-tool="measure" aria-pressed="false">Straight-line measure</button>
-      <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Plan on trails</button>
-      <button type="button" data-map-tool="save" disabled>Save plan (.gpx)</button>
-      <button type="button" data-map-tool="clear">Clear</button>
+    <div class="route-map-utility-tools" role="toolbar" aria-label="Map utilities">
+      <button type="button" data-sheet-open="search" aria-label="Search map">Search</button>
+      <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
+      <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
     </div>
 
-    <details class="route-layer-panel" open={mode === 'full'}>
+    <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
+      <button type="button" data-map-tool="explore" aria-pressed="true">Explore</button>
+      <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
+      <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+    </div>
+
+    <div class="route-map-mobile-bar" aria-label="Mobile map controls">
+      <button type="button" data-sheet-open="search">Search</button>
+      <button type="button" data-sheet-open="layers">Layers</button>
+      <button type="button" data-sheet-open="plan">Plan</button>
+    </div>
+
+    <div class="route-search-panel route-map-sheet" data-map-sheet="search" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Search this map</strong>
+        <button type="button" data-sheet-close aria-label="Close search">×</button>
+      </div>
+      <label class="route-search-label">
+        <span class="sr-only">Search routes, landmarks, trails, roads, and places</span>
+        <input type="search" data-map-search placeholder="Search Sky Bridge, Trail 214, landmarks…" autocomplete="off" />
+      </label>
+      <p class="route-map-sheet-help">Searches RRGH routes and landmarks plus loaded Forest Service trails, roads, and recreation sites. Informal trails are searchable after that layer is loaded.</p>
+      <div class="route-search-results" data-map-search-results aria-live="polite"></div>
+    </div>
+
+    <details class="route-layer-panel route-map-sheet" data-map-sheet="layers">
       <summary>Layers</summary>
       <div class="route-layer-panel-body">
-        <p class="route-layer-help">Mix layers directly. Topo sits above LiDAR hillshade so terrain can show through when topo opacity is reduced. Aerial imagery and LiDAR are mutually exclusive.</p>
+        <p class="route-layer-help">Symbols in this panel match the map. Turn layers on or off first; open <strong>Fine tune layers</strong> only when you want opacity controls.</p>
 
-        <div class="route-layer-group" aria-label="Map imagery">
-          <p class="route-layer-group-title">Base &amp; terrain</p>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="kytopo" checked />
-            <span>Kentucky Topo</span>
-            <input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" />
-          </label>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="usgs-topo" />
-            <span>USGS Topo</span>
-            <input type="range" min="0" max="100" value="72" data-opacity="usgs-topo" aria-label="USGS Topo opacity" />
-          </label>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="ky-hillshade" checked />
-            <span>LiDAR hillshade</span>
-            <input type="range" min="0" max="100" value="22" data-opacity="ky-hillshade" aria-label="LiDAR hillshade opacity" />
-          </label>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="kyaerial-phase3" />
-            <span>Aerial imagery</span>
-            <input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Aerial imagery opacity" />
-          </label>
-        </div>
-
-        <div class="route-layer-group" aria-label="Reference layers">
-          <p class="route-layer-group-title">Trails & context</p>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="usfs-trails" checked />
-            <span>Forest Service trails</span>
-            <input type="range" min="0" max="100" value="45" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" />
-          </label>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="usfs-roads" checked />
-            <span>Forest Service roads</span>
-            <input type="range" min="0" max="100" value="60" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" />
-          </label>
-          <label class="route-layer-row">
-            <input type="checkbox" data-map-layer="ky-counties" checked />
-            <span>County boundaries</span>
-            <input type="range" min="0" max="100" value="60" data-opacity="ky-counties" aria-label="County boundaries opacity" />
-          </label>
-        </div>
-
-        <div class="route-layer-group" aria-label="Red River Gorge Hiker layers">
-          <p class="route-layer-group-title">RRGH</p>
-          <label class="route-layer-row">
+        <div class="route-layer-group" aria-label="Primary hiking layers">
+          <p class="route-layer-group-title">Hiking</p>
+          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="routes" checked />
-            <span>Hikes & routes</span>
-            <input type="range" min="0" max="100" value="100" data-opacity="routes" aria-label="RRGH routes opacity" />
+            <span class="route-layer-swatch swatch-route" aria-hidden="true"></span>
+            <span>RRGH routes</span>
           </label>
-          <label class="route-layer-row">
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="route-starts" checked />
+            <span class="route-layer-swatch swatch-start" aria-hidden="true"></span>
+            <span>Route starts</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-recreation-sites" checked />
+            <span class="route-layer-swatch swatch-trailhead" aria-hidden="true"></span>
+            <span>Trailheads &amp; facilities</span>
+          </label>
+          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="landmarks" checked />
-            <span>Landmarks & viewpoints</span>
-            <input type="range" min="0" max="100" value="100" data-opacity="landmarks" aria-label="Landmarks and viewpoints opacity" />
+            <span class="route-layer-swatch swatch-landmark" aria-hidden="true"></span>
+            <span>Landmarks &amp; viewpoints</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-trails" checked />
+            <span class="route-layer-swatch swatch-usfs-trail" aria-hidden="true"></span>
+            <span>Forest Service trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="osm-informal-trails" />
+            <span class="route-layer-swatch swatch-informal" aria-hidden="true"></span>
+            <span>Community / Informal trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-roads" checked />
+            <span class="route-layer-swatch swatch-usfs-road" aria-hidden="true"></span>
+            <span>Forest Service roads</span>
           </label>
         </div>
+
+        <div class="route-layer-group" aria-label="Base and terrain layers">
+          <p class="route-layer-group-title">Base &amp; terrain</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kytopo" checked />
+            <span class="route-layer-swatch swatch-topo" aria-hidden="true"></span>
+            <span>Kentucky Topo</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usgs-topo" />
+            <span class="route-layer-swatch swatch-topo-usgs" aria-hidden="true"></span>
+            <span>USGS Topo</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="ky-hillshade" checked />
+            <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
+            <span>Terrain relief (LiDAR)</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kyaerial-phase3" />
+            <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
+            <span>Aerial imagery</span>
+          </label>
+        </div>
+
+        <div class="route-layer-group" aria-label="Land management and context">
+          <p class="route-layer-group-title">Land management &amp; context</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-wilderness" />
+            <span class="route-layer-swatch swatch-wilderness" aria-hidden="true"></span>
+            <span>Wilderness boundaries</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-special-management" />
+            <span class="route-layer-swatch swatch-management" aria-hidden="true"></span>
+            <span>Special management areas</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-land-units" />
+            <span class="route-layer-swatch swatch-land-unit" aria-hidden="true"></span>
+            <span>National Forest land units</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="ky-counties" />
+            <span class="route-layer-swatch swatch-county" aria-hidden="true"></span>
+            <span>County boundaries</span>
+          </label>
+        </div>
+
+        <details class="route-layer-fine-tune">
+          <summary>Fine tune layers</summary>
+          <p>Opacity changes appearance only. Hiking, Terrain, and Aerial presets reset the base-map and terrain values without changing your hiking/context layers.</p>
+          <div class="route-layer-opacity-grid">
+            <label><span>RRGH routes</span><input type="range" min="0" max="100" value="100" data-opacity="routes" /></label>
+            <label><span>Route starts</span><input type="range" min="0" max="100" value="100" data-opacity="route-starts" /></label>
+            <label><span>Trailheads &amp; facilities</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-recreation-sites" /></label>
+            <label><span>Landmarks</span><input type="range" min="0" max="100" value="100" data-opacity="landmarks" /></label>
+            <label><span>Forest Service trails</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-trails" /></label>
+            <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="70" data-opacity="osm-informal-trails" /></label>
+            <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="60" data-opacity="usfs-roads" /></label>
+            <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
+            <label><span>USGS Topo</span><input type="range" min="0" max="100" value="72" data-opacity="usgs-topo" /></label>
+            <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
+            <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
+            <label><span>Wilderness</span><input type="range" min="0" max="100" value="72" data-opacity="usfs-wilderness" /></label>
+            <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
+            <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
+            <label><span>County boundaries</span><input type="range" min="0" max="100" value="32" data-opacity="ky-counties" /></label>
+          </div>
+        </details>
       </div>
     </details>
+
+    <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Plan</strong>
+        <button type="button" data-sheet-close aria-label="Close planning controls">×</button>
+      </div>
+      <div class="route-plan-mode-buttons">
+        <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
+        <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+      </div>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route snaps clicks to the mapped official trail network and RRGH route geometry.</p>
+      <div class="route-plan-actions">
+        <button type="button" data-map-tool="save" disabled>Export GPX</button>
+        <button type="button" data-map-tool="clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="route-coordinate-card" data-coordinate-card hidden>
+      <div>
+        <strong>Map point</strong>
+        <span data-coordinate-dd></span>
+        <span data-coordinate-utm></span>
+      </div>
+      <button type="button" data-coordinate-copy>Copy coordinates</button>
+    </div>
 
     <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
   </div>
 
+  <div class="route-map-context-strip">
+    <p><strong>Map data:</strong> Kentucky GIS · USGS · USDA Forest Service · OpenStreetMap when informal trails are enabled.</p>
+    <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
+    <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#hiking-safety'}>Before you go: check closures, road access &amp; conditions →</a></p>
+  </div>
+
+  <details class="route-map-read-guide">
+    <summary>How to read this map — 30-second guide</summary>
+    <div class="route-map-read-grid">
+      <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
+      <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
+      <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
+      <p><strong>Official trails:</strong> thin blue-violet lines from USDA Forest Service data.</p>
+      <p><strong>RRGH routes:</strong> thick green highlighted lines for hikes documented by Red River Gorge Hiker.</p>
+      <p><strong>Roads:</strong> brown Forest Service road geometry useful for access context.</p>
+    </div>
+    <details class="route-map-nerd-details">
+      <summary>Map nerd details</summary>
+      <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. Click an empty point on the map for decimal-degree and UTM coordinates.</p>
+      <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
+    </details>
+  </details>
+
   <details class="route-map-sources">
-    <summary>Map data, attribution & privacy</summary>
+    <summary>Map data, attribution &amp; privacy</summary>
     <p>
-      Default map layers load when this map is displayed. External map and GIS requests are separate from RRGH Analytics.
-      Turn off any layer you do not want to request or display.
+      Default map layers load when this map is displayed. Optional layers such as Community / Informal trails load only when you turn them on.
+      External map and GIS requests are separate from RRGH Analytics.
     </p>
     <ul>
       {enabledSources.map((source) => (
         <li>
           <strong>{source.label}:</strong>
-          <a href={source.serviceUrl} target="_blank" rel="noopener noreferrer">{source.attribution}</a>.
+          <a href={source.termsUrl || source.serviceUrl} target="_blank" rel="noopener noreferrer">{source.attribution}</a>.
           {source.privacyNote}
         </li>
       ))}
@@ -177,6 +313,44 @@ const enabledSources = enabledBrowserMapSources;
     const miles = meters / 1609.344;
     if (miles >= 0.1) return miles.toFixed(miles < 10 ? 2 : 1) + ' mi';
     return Math.round(meters * 3.28084).toLocaleString() + ' ft';
+  };
+
+  const toUtm = (lat: number, lon: number) => {
+    const a = 6378137;
+    const eccSquared = 0.00669438;
+    const k0 = 0.9996;
+    const zoneNumber = Math.floor((lon + 180) / 6) + 1;
+    const longOrigin = (zoneNumber - 1) * 6 - 180 + 3;
+    const latRad = lat * Math.PI / 180;
+    const lonRad = lon * Math.PI / 180;
+    const longOriginRad = longOrigin * Math.PI / 180;
+    const eccPrimeSquared = eccSquared / (1 - eccSquared);
+    const N = a / Math.sqrt(1 - eccSquared * Math.sin(latRad) * Math.sin(latRad));
+    const T = Math.tan(latRad) * Math.tan(latRad);
+    const C = eccPrimeSquared * Math.cos(latRad) * Math.cos(latRad);
+    const A = Math.cos(latRad) * (lonRad - longOriginRad);
+    const M = a * (
+      (1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared ** 3 / 256) * latRad
+      - (3 * eccSquared / 8 + 3 * eccSquared * eccSquared / 32 + 45 * eccSquared ** 3 / 1024) * Math.sin(2 * latRad)
+      + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared ** 3 / 1024) * Math.sin(4 * latRad)
+      - (35 * eccSquared ** 3 / 3072) * Math.sin(6 * latRad)
+    );
+    const easting = k0 * N * (
+      A + (1 - T + C) * A ** 3 / 6
+      + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared) * A ** 5 / 120
+    ) + 500000;
+    let northing = k0 * (
+      M + N * Math.tan(latRad) * (
+        A * A / 2
+        + (5 - T + 9 * C + 4 * C * C) * A ** 4 / 24
+        + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A ** 6 / 720
+      )
+    );
+    if (lat < 0) northing += 10000000;
+    const bandLetters = 'CDEFGHJKLMNPQRSTUVWXX';
+    const bandIndex = Math.max(0, Math.min(bandLetters.length - 1, Math.floor((lat + 80) / 8)));
+    const band = bandLetters[bandIndex] ?? 'N';
+    return zoneNumber + band + ' ' + Math.round(easting).toLocaleString() + ' m E · ' + Math.round(northing).toLocaleString() + ' m N';
   };
 
   const featureValue = (properties: Record<string, unknown> | undefined, names: string[]) => {
@@ -244,11 +418,19 @@ const enabledSources = enabledBrowserMapSources;
     const routeConfigs = JSON.parse(container.dataset.routes ?? '[]');
     const status = shell.querySelector<HTMLElement>('[data-map-status]');
     const stage = shell.querySelector<HTMLElement>('.route-map-stage');
-    const planButton = shell.querySelector<HTMLButtonElement>('[data-map-tool="plan"]');
-    const saveButton = shell.querySelector<HTMLButtonElement>('[data-map-tool="save"]');
+    const planButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="plan"]'));
+    const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
     const layerPanel = shell.querySelector<HTMLDetailsElement>('.route-layer-panel');
+    const searchPanel = shell.querySelector<HTMLElement>('[data-map-sheet="search"]');
+    const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
+    const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
+    const searchResults = shell.querySelector<HTMLElement>('[data-map-search-results]');
+    const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
+    const coordinateDd = shell.querySelector<HTMLElement>('[data-coordinate-dd]');
+    const coordinateUtm = shell.querySelector<HTMLElement>('[data-coordinate-utm]');
+    const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
 
-    if (window.matchMedia('(max-width: 700px)').matches && layerPanel) layerPanel.open = false;
+    if (layerPanel) layerPanel.open = false;
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (!status) return;
@@ -265,22 +447,29 @@ const enabledSources = enabledBrowserMapSources;
       dragging: true,
       boxZoom: true,
       keyboard: true,
-      maxBoundsViscosity: 1,
+      maxBoundsViscosity: 0.88,
       preferCanvas: true
     });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.scale({ position: 'bottomleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
 
     const panes: Record<string, number> = {
       hillshade: 180,
       baseTopo: 200,
       baseUsTopo: 210,
       baseAerial: 220,
-      counties: 330,
-      roads: 360,
+      landUnits: 270,
+      specialManagement: 285,
+      wilderness: 300,
+      counties: 315,
+      roads: 350,
+      informalTrails: 370,
       trails: 390,
-      routes: 420,
-      landmarks: 450,
-      planning: 480
+      routes: 430,
+      recreation: 450,
+      routeStarts: 460,
+      landmarks: 470,
+      planning: 490
     };
     for (const [name, zIndex] of Object.entries(panes)) {
       const pane = map.createPane(name);
@@ -298,6 +487,10 @@ const enabledSources = enabledBrowserMapSources;
 
     const mapLayers = new Map<string, any>();
     const opacitySetters = new Map<string, (value: number) => void>();
+    let homeBounds: any = null;
+    let locationLayer: any = null;
+    let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
+    const searchItems: Array<{ label: string; detail: string; bounds?: any; latlng?: any; open?: () => void }> = [];
     const sourceById = (id: string) => mapSources.find((source) => source.id === id);
 
     const checked = (id: string) => shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]')?.checked ?? false;
@@ -340,25 +533,40 @@ const enabledSources = enabledBrowserMapSources;
     }
 
     const routeGroup = L.layerGroup();
+    const routeStartGroup = L.layerGroup();
     const landmarkGroup = L.layerGroup();
+    const recreationGroup = L.layerGroup();
     const trailLabelGroup = L.layerGroup();
     const countyLabelGroup = L.layerGroup();
     const routePaths: any[] = [];
+    const routeStartMarkers: any[] = [];
     const landmarkMarkers: any[] = [];
-    const routeRecords: Array<{ layer: any; tripType: string }> = [];
-    const landmarkRecords: Array<{ layer: any; tripType: string }> = [];
+    const recreationMarkers: any[] = [];
+    const routeRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const routeStartRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const landmarkRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
     const trailPaths: any[] = [];
     const roadPaths: any[] = [];
     const countyPaths: any[] = [];
+    const informalPaths: any[] = [];
+    const wildernessPaths: any[] = [];
+    const specialManagementPaths: any[] = [];
+    const landUnitPaths: any[] = [];
     const trailLabelMarkers: any[] = [];
     const countyLabelMarkers: any[] = [];
 
     mapLayers.set('routes', routeGroup);
+    mapLayers.set('route-starts', routeStartGroup);
     mapLayers.set('landmarks', landmarkGroup);
+    mapLayers.set('usfs-recreation-sites', recreationGroup);
     opacitySetters.set('routes', (value) => routePaths.forEach((layer) => layer.setStyle({ opacity: value })));
+    opacitySetters.set('route-starts', (value) => routeStartMarkers.forEach((marker) => marker.setOpacity(value)));
     opacitySetters.set('landmarks', (value) => landmarkMarkers.forEach((marker) => marker.setOpacity(value)));
+    opacitySetters.set('usfs-recreation-sites', (value) => recreationMarkers.forEach((marker) => marker.setOpacity(value)));
     syncVisibility('routes');
+    syncVisibility('route-starts');
     syncVisibility('landmarks');
+    syncVisibility('usfs-recreation-sites');
 
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
@@ -500,39 +708,158 @@ const enabledSources = enabledBrowserMapSources;
 
     const routeBounds = L.latLngBounds([]);
 
+    const routePopup = (route: any) => {
+      const popup = document.createElement('div');
+      popup.className = 'route-map-route-card';
+
+      const heading = document.createElement('strong');
+      heading.className = 'route-map-route-card-title';
+      heading.textContent = route.title;
+      popup.append(heading);
+
+      const meta = document.createElement('p');
+      meta.className = 'route-map-route-card-meta';
+      meta.textContent = route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · ' + route.trailStatusDisplay;
+      popup.append(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'route-map-route-card-actions';
+      const guide = document.createElement('a');
+      guide.href = route.guideUrl;
+      guide.textContent = 'View route guide';
+      const gpx = document.createElement('a');
+      gpx.href = route.gpxUrl;
+      gpx.textContent = 'Download GPX';
+      gpx.setAttribute('download', '');
+      actions.append(guide, gpx);
+      popup.append(actions);
+      return popup;
+    };
+
     for (const route of routeConfigs) {
       try {
         const response = await fetch(route.geometryUrl, { credentials: 'same-origin' });
         if (!response.ok) throw new Error('Route geometry request failed');
         const geojson = await response.json();
         indexGeometry(geojson);
+        let routeStartAdded = false;
 
         for (const feature of geojson.features ?? []) {
           if (feature.geometry?.type === 'LineString' || feature.geometry?.type === 'MultiLineString') {
             const line = L.geoJSON(feature, {
               pane: 'routes',
               style: {
-                color: route.publicationClass === 'C' ? '#a4572d' : '#0d6654',
-                weight: 6,
+                color: '#0d6654',
+                weight: 7.5,
                 opacity: opacity('routes'),
                 lineCap: 'round',
                 lineJoin: 'round'
               }
             });
-            line.bindTooltip(route.title, { sticky: true, className: 'rrgh-map-tooltip' });
+            line.bindTooltip(route.title, { sticky: true, className: 'rrgh-map-tooltip rrgh-route-tooltip' });
+            line.bindPopup(routePopup(route), { maxWidth: 330 });
             line.addTo(routeGroup);
             routePaths.push(line);
-            routeRecords.push({ layer: line, tripType: route.tripType });
-            line.eachLayer((child: any) => {
-              if (child.getBounds) routeBounds.extend(child.getBounds());
-            });
+            routeRecords.push({ layer: line, tripType: route.tripType, trailStatus: route.trailStatus });
+
+            const lineBounds = line.getBounds();
+            if (lineBounds.isValid()) {
+              routeBounds.extend(lineBounds);
+              searchItems.push({
+                label: route.title,
+                detail: route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · RRGH route',
+                bounds: lineBounds,
+                open: () => line.openPopup()
+              });
+            }
+
+            if (!routeStartAdded) {
+              const firstLine = geometryLines(feature.geometry)[0] ?? [];
+              const first = firstLine[0];
+              if (first) {
+                const [lng, lat] = first;
+                const icon = L.divIcon({
+                  className: 'route-start-icon',
+                  html: '<span aria-hidden="true"></span>',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12]
+                });
+                const marker = L.marker([lat, lng], {
+                  title: route.title + ' route start',
+                  alt: route.title + ' route start',
+                  keyboard: true,
+                  icon,
+                  pane: 'routeStarts',
+                  opacity: opacity('route-starts')
+                });
+                const startPopup = document.createElement('div');
+                const startHeading = document.createElement('strong');
+                startHeading.textContent = 'Route start · ' + route.title;
+                startPopup.append(startHeading);
+                if (route.accessParking) {
+                  const parking = document.createElement('p');
+                  parking.textContent = route.accessParking;
+                  startPopup.append(parking);
+                }
+                const routeLink = document.createElement('a');
+                routeLink.href = route.guideUrl;
+                routeLink.textContent = 'View route guide';
+                startPopup.append(routeLink);
+                marker.bindPopup(startPopup, { maxWidth: 330 });
+                marker.addTo(routeStartGroup);
+                routeStartMarkers.push(marker);
+                routeStartRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
+                searchItems.push({
+                  label: route.title + ' route start',
+                  detail: 'RRGH route start',
+                  latlng: L.latLng(lat, lng),
+                  open: () => marker.openPopup()
+                });
+
+                if (route.accessParking) {
+                  const parkingIcon = L.divIcon({
+                    className: 'route-parking-icon',
+                    html: '<span aria-hidden="true">P</span>',
+                    iconSize: [24, 24],
+                    iconAnchor: [30, 12]
+                  });
+                  const parkingMarker = L.marker([lat, lng], {
+                    title: route.title + ' parking / trailhead',
+                    alt: route.title + ' parking / trailhead',
+                    keyboard: true,
+                    icon: parkingIcon,
+                    pane: 'recreation',
+                    opacity: opacity('usfs-recreation-sites')
+                  });
+                  const parkingPopup = document.createElement('div');
+                  const parkingHeading = document.createElement('strong');
+                  parkingHeading.textContent = 'Parking / trailhead · ' + route.title;
+                  parkingPopup.append(parkingHeading);
+                  const parkingBody = document.createElement('p');
+                  parkingBody.textContent = route.accessParking;
+                  parkingPopup.append(parkingBody);
+                  parkingMarker.bindPopup(parkingPopup, { maxWidth: 330 });
+                  parkingMarker.addTo(recreationGroup);
+                  recreationMarkers.push(parkingMarker);
+                  searchItems.push({
+                    label: route.title + ' parking / trailhead',
+                    detail: 'RRGH access note',
+                    latlng: L.latLng(lat, lng),
+                    open: () => parkingMarker.openPopup()
+                  });
+                }
+
+                routeStartAdded = true;
+              }
+            }
           } else if (feature.geometry?.type === 'Point') {
             const [lng, lat] = feature.geometry.coordinates;
             const name = featureValue(feature.properties, ['name']);
             const type = featureValue(feature.properties, ['type']);
             const description = featureValue(feature.properties, ['description']);
+            const kindClass = /view/i.test(type) ? 'is-viewpoint' : /arch|landmark/i.test(type) ? 'is-landmark' : 'is-landmark';
             const icon = L.divIcon({
-              className: 'route-waypoint-icon',
+              className: 'route-waypoint-icon ' + kindClass,
               html: '<span aria-hidden="true"></span>',
               iconSize: [22, 22],
               iconAnchor: [11, 11]
@@ -563,8 +890,14 @@ const enabledSources = enabledBrowserMapSources;
             marker.bindPopup(popup);
             marker.addTo(landmarkGroup);
             landmarkMarkers.push(marker);
-            landmarkRecords.push({ layer: marker, tripType: route.tripType });
+            landmarkRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
             routeBounds.extend([lat, lng]);
+            searchItems.push({
+              label: name,
+              detail: (type || 'Landmark') + ' · ' + route.title,
+              latlng: L.latLng(lat, lng),
+              open: () => marker.openPopup()
+            });
           }
         }
       } catch (error) {
@@ -609,11 +942,34 @@ const enabledSources = enabledBrowserMapSources;
         onEachFeature: (feature: any, layer: any) => {
           const name = featureValue(feature.properties, ['trail_name', 'TRAIL_NAME']);
           const number = featureValue(feature.properties, ['trail_no', 'TRAIL_NO']);
+          const trailClass = featureValue(feature.properties, ['trail_class', 'TRAIL_CLASS']);
+          const status = featureValue(feature.properties, ['attributesubset', 'ATTRIBUTE_SUBSET']);
           const label = name || (number ? 'Trail ' + number : 'Forest Service trail');
           const detail = name && number ? name + ' · Trail ' + number : label;
           layer.bindTooltip(detail, { sticky: true, className: 'rrgh-map-tooltip' });
-          layer.bindPopup('<strong>' + detail.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string)) + '</strong><p>USDA Forest Service trail data</p>');
+
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = detail;
+          popup.append(heading);
+          const meta = document.createElement('p');
+          meta.className = 'route-map-popup-meta';
+          meta.textContent = ['USDA Forest Service trail', trailClass, status].filter(Boolean).join(' · ');
+          popup.append(meta);
+          const source = document.createElement('p');
+          source.textContent = 'Source: USDA Forest Service Enterprise Data Warehouse';
+          popup.append(source);
+          layer.bindPopup(popup, { maxWidth: 320 });
           trailPaths.push(layer);
+
+          if (layer.getBounds) {
+            searchItems.push({
+              label: detail,
+              detail: 'Forest Service trail',
+              bounds: layer.getBounds(),
+              open: () => layer.openPopup()
+            });
+          }
 
           if (name && !seenLabels.has(name) && seenLabels.size < 80 && layer.getBounds) {
             seenLabels.add(name);
@@ -659,9 +1015,30 @@ const enabledSources = enabledBrowserMapSources;
         onEachFeature: (feature: any, layer: any) => {
           const name = featureValue(feature.properties, ['name', 'NAME']);
           const id = featureValue(feature.properties, ['id', 'ID']);
+          const routeStatus = featureValue(feature.properties, ['route_status', 'ROUTE_STATUS']);
+          const maintenance = featureValue(feature.properties, ['oper_maint_level', 'OPER_MAINT_LEVEL']);
           const label = name || (id ? 'Forest Road ' + id : 'Forest Service road');
           layer.bindTooltip(label, { sticky: true, className: 'rrgh-map-tooltip' });
+
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = label;
+          popup.append(heading);
+          const meta = document.createElement('p');
+          meta.className = 'route-map-popup-meta';
+          meta.textContent = ['USDA Forest Service road', routeStatus && ('Status: ' + routeStatus), maintenance && ('Maintenance level: ' + maintenance)].filter(Boolean).join(' · ');
+          popup.append(meta);
+          layer.bindPopup(popup, { maxWidth: 320 });
           roadPaths.push(layer);
+
+          if (layer.getBounds) {
+            searchItems.push({
+              label,
+              detail: 'Forest Service road',
+              bounds: layer.getBounds(),
+              open: () => layer.openPopup()
+            });
+          }
         }
       });
       container.dataset.roadFeatureCount = String(roadPaths.length);
@@ -671,6 +1048,80 @@ const enabledSources = enabledBrowserMapSources;
     } catch (error) {
       console.error(error);
       vectorFailures.push('Forest Service roads');
+    }
+
+    try {
+      const sites = await fetchGeoJson('usfs-recreation-sites');
+      const allowedSiteTypes = new Set([
+        'TRAILHEAD',
+        'DAY USE AREA',
+        'PICNIC SITE',
+        'INFO SITE/FEE STATION',
+        'INTERPRETIVE VISITOR CENTER (MAJOR)',
+        'INTERPRETIVE VISITOR CENTER (MINOR)',
+        'OBSERVATION SITE'
+      ]);
+      const recreationFeatures = (sites.features ?? []).filter((feature: any) => {
+        const type = featureValue(feature.properties, ['site_type', 'SITE_TYPE']).toUpperCase();
+        return allowedSiteTypes.has(type);
+      });
+
+      for (const feature of recreationFeatures) {
+        if (feature.geometry?.type !== 'Point') continue;
+        const [lng, lat] = feature.geometry.coordinates;
+        const name = featureValue(feature.properties, ['public_site_name', 'site_name', 'SITE_NAME']) || 'Forest Service recreation site';
+        const type = featureValue(feature.properties, ['site_type', 'SITE_TYPE']);
+        const seasonalStatus = featureValue(feature.properties, ['seasonal_operational_status', 'SEASONAL_OPERATIONAL_STATUS']);
+        const portalUrl = featureValue(feature.properties, ['usda_portal_url', 'USDA_PORTAL_URL']);
+        const isTrailhead = /TRAILHEAD/i.test(type);
+        const icon = L.divIcon({
+          className: isTrailhead ? 'route-trailhead-icon' : 'route-facility-icon',
+          html: isTrailhead ? '<span aria-hidden="true">▲</span>' : '<span aria-hidden="true">i</span>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        const marker = L.marker([lat, lng], {
+          title: name,
+          alt: name,
+          keyboard: true,
+          icon,
+          pane: 'recreation',
+          opacity: opacity('usfs-recreation-sites')
+        });
+        const popup = document.createElement('div');
+        const heading = document.createElement('strong');
+        heading.textContent = name;
+        popup.append(heading);
+        const meta = document.createElement('p');
+        meta.className = 'route-map-popup-meta';
+        meta.textContent = [type, seasonalStatus && ('Status: ' + seasonalStatus)].filter(Boolean).join(' · ');
+        popup.append(meta);
+        const source = document.createElement('p');
+        source.textContent = 'Source: USDA Forest Service recreation-site data';
+        popup.append(source);
+        if (portalUrl) {
+          const link = document.createElement('a');
+          link.href = portalUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Open Forest Service site information';
+          popup.append(link);
+        }
+        marker.bindPopup(popup, { maxWidth: 320 });
+        marker.addTo(recreationGroup);
+        recreationMarkers.push(marker);
+        searchItems.push({
+          label: name,
+          detail: type || 'Forest Service recreation site',
+          latlng: L.latLng(lat, lng),
+          open: () => marker.openPopup()
+        });
+      }
+      container.dataset.recreationSiteCount = String(recreationMarkers.length);
+      syncVisibility('usfs-recreation-sites');
+    } catch (error) {
+      console.error(error);
+      vectorFailures.push('Trailheads & facilities');
     }
 
     try {
@@ -687,11 +1138,11 @@ const enabledSources = enabledBrowserMapSources;
       const countyLayer = L.geoJSON(gorgeCounties, {
         pane: 'counties',
         style: {
-          color: '#695f50',
-          weight: 2,
+          color: '#776f64',
+          weight: 1.4,
           opacity: opacity('ky-counties'),
           fillOpacity: 0,
-          dashArray: '8 5'
+          dashArray: '7 6'
         },
         onEachFeature: (feature: any, layer: any) => {
           const name = featureValue(feature.properties, ['NAME', 'name']);
@@ -727,9 +1178,9 @@ const enabledSources = enabledBrowserMapSources;
         const gorgeBounds = countyLayer.getBounds();
         if (gorgeBounds.isValid()) {
           const paddedBounds = gorgeBounds.pad(0.035);
+          homeBounds = paddedBounds;
           map.setMaxBounds(paddedBounds);
           map.fitBounds(paddedBounds, { padding: [22, 22], maxZoom: 11 });
-          map.setMinZoom(map.getZoom());
           container.dataset.gorgeOverviewZoom = String(map.getZoom());
         }
       }
@@ -738,26 +1189,220 @@ const enabledSources = enabledBrowserMapSources;
       vectorFailures.push('County boundaries');
     }
 
+    const loadPolygonLayer = async (
+      id: string,
+      pane: string,
+      style: Record<string, unknown>,
+      nameFields: string[],
+      detailLabel: string,
+      pathStore: any[]
+    ) => {
+      if (mapLayers.has(id)) {
+        syncVisibility(id);
+        return;
+      }
+      const data = await fetchGeoJson(id);
+      const layer = L.geoJSON(data, {
+        pane,
+        style: { ...style, opacity: opacity(id) },
+        onEachFeature: (feature: any, featureLayer: any) => {
+          const name = featureValue(feature.properties, nameFields) || detailLabel;
+          featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = name;
+          popup.append(heading);
+          const body = document.createElement('p');
+          body.textContent = detailLabel + ' · USDA Forest Service';
+          popup.append(body);
+          featureLayer.bindPopup(popup);
+          pathStore.push(featureLayer);
+          if (featureLayer.getBounds) {
+            searchItems.push({
+              label: name,
+              detail: detailLabel,
+              bounds: featureLayer.getBounds(),
+              open: () => featureLayer.openPopup()
+            });
+          }
+        }
+      });
+      mapLayers.set(id, layer);
+      opacitySetters.set(id, (value) => pathStore.forEach((path) => path.setStyle({ opacity: value })));
+      syncVisibility(id);
+    };
+
+    const loadLandContext = async (id: string) => {
+      try {
+        if (id === 'usfs-wilderness') {
+          await loadPolygonLayer(
+            id,
+            'wilderness',
+            { color: '#356b4a', weight: 2.2, fillColor: '#75a86d', fillOpacity: 0.06, dashArray: '5 4' },
+            ['wildernessname', 'WILDERNESSNAME'],
+            'National Wilderness boundary',
+            wildernessPaths
+          );
+        } else if (id === 'usfs-special-management') {
+          await loadPolygonLayer(
+            id,
+            'specialManagement',
+            { color: '#a57c34', weight: 2, fillColor: '#d8b86c', fillOpacity: 0.05, dashArray: '8 4 2 4' },
+            ['areaname', 'casename', 'AREANAME', 'CASENAME'],
+            'Forest Service special management area',
+            specialManagementPaths
+          );
+        } else if (id === 'usfs-land-units') {
+          await loadPolygonLayer(
+            id,
+            'landUnits',
+            { color: '#55715b', weight: 1.5, fillColor: '#94ad8d', fillOpacity: 0.04 },
+            ['nfslandunitname', 'NFSLANDUNITNAME'],
+            'National Forest land unit',
+            landUnitPaths
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus('That land-management layer is unavailable right now.', 'warning');
+        const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+        if (checkbox) checkbox.checked = false;
+      }
+    };
+
+    const loadInformalTrails = async () => {
+      if (mapLayers.has('osm-informal-trails')) {
+        syncVisibility('osm-informal-trails');
+        return;
+      }
+
+      const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="osm-informal-trails"]');
+      if (checkbox) checkbox.disabled = true;
+      setStatus('Loading Community / Informal trails from OpenStreetMap…');
+
+      const query = '[out:json][timeout:25];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom;';
+      const endpoint = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+      try {
+        const response = await fetch(endpoint, {
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin'
+        });
+        if (!response.ok) throw new Error('Overpass request failed with ' + response.status);
+        const osm = await response.json();
+        const features = (osm.elements ?? [])
+          .filter((element: any) => Array.isArray(element.geometry) && element.geometry.length > 1)
+          .map((element: any) => ({
+            type: 'Feature',
+            properties: { ...(element.tags ?? {}), osm_id: element.id },
+            geometry: {
+              type: 'LineString',
+              coordinates: element.geometry.map((point: any) => [point.lon, point.lat])
+            }
+          }));
+
+        const layer = L.geoJSON({ type: 'FeatureCollection', features } as any, {
+          pane: 'informalTrails',
+          style: (feature: any) => {
+            const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
+            const restricted = access === 'no' || access === 'private' || access === 'discouraged';
+            return {
+              color: restricted ? '#9b5b55' : '#805b86',
+              weight: 1.9,
+              opacity: opacity('osm-informal-trails'),
+              dashArray: '5 5',
+              lineCap: 'round',
+              lineJoin: 'round'
+            };
+          },
+          onEachFeature: (feature: any, featureLayer: any) => {
+            const props = feature.properties ?? {};
+            const name = String(props.name ?? 'Informal trail');
+            const access = String(props.access ?? props.foot ?? 'not specified');
+            const visibility = String(props.trail_visibility ?? 'not specified');
+            const popup = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = name;
+            popup.append(heading);
+            const warning = document.createElement('p');
+            warning.className = 'route-map-popup-warning';
+            warning.textContent = 'Community / informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.';
+            popup.append(warning);
+            const meta = document.createElement('p');
+            meta.className = 'route-map-popup-meta';
+            meta.textContent = 'Access: ' + access + ' · Trail visibility: ' + visibility;
+            popup.append(meta);
+            const source = document.createElement('a');
+            source.href = 'https://www.openstreetmap.org/copyright';
+            source.target = '_blank';
+            source.rel = 'noopener noreferrer';
+            source.textContent = 'Map data © OpenStreetMap contributors';
+            popup.append(source);
+            featureLayer.bindPopup(popup, { maxWidth: 330 });
+            featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+            informalPaths.push(featureLayer);
+            if (featureLayer.getBounds) {
+              searchItems.push({
+                label: name,
+                detail: 'Community / Informal trail · OpenStreetMap',
+                bounds: featureLayer.getBounds(),
+                open: () => featureLayer.openPopup()
+              });
+            }
+          }
+        });
+        mapLayers.set('osm-informal-trails', layer);
+        opacitySetters.set('osm-informal-trails', (value) => informalPaths.forEach((path) => path.setStyle({ opacity: value })));
+        map.attributionControl.addAttribution('<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>');
+        container.dataset.informalTrailCount = String(informalPaths.length);
+        syncVisibility('osm-informal-trails');
+        setStatus('Community / Informal trails loaded. These paths are not treated as routing-authorized trails.');
+      } catch (error) {
+        console.error(error);
+        if (checkbox) checkbox.checked = false;
+        setStatus('Community / Informal trails could not be loaded right now.', 'warning');
+      } finally {
+        if (checkbox) checkbox.disabled = false;
+      }
+    };
+
     bridgeNearbyEndpoints();
-    if (planButton && graph.size > 1) planButton.disabled = false;
+    if (graph.size > 1) {
+      for (const button of planButtons) button.disabled = false;
+    }
 
     const tripTypeEnabled = (tripType: string) =>
       shell.querySelector<HTMLInputElement>('[data-route-trip-filter="' + tripType + '"]')?.checked ?? true;
+    const trailStatusEnabled = (trailStatus: string) =>
+      shell.querySelector<HTMLInputElement>('[data-route-status-filter="' + trailStatus + '"]')?.checked ?? true;
 
-    const syncRouteTripFilters = () => {
+    const routeRecordEnabled = (record: { tripType: string; trailStatus: string }) =>
+      tripTypeEnabled(record.tripType) && trailStatusEnabled(record.trailStatus);
+
+    const syncRouteFilters = () => {
       let visibleRoutes = 0;
       let visibleLandmarks = 0;
+      let visibleStarts = 0;
 
       for (const record of routeRecords) {
-        if (tripTypeEnabled(record.tripType)) {
+        if (routeRecordEnabled(record)) {
           routeGroup.addLayer(record.layer);
           visibleRoutes += 1;
         } else {
           routeGroup.removeLayer(record.layer);
         }
       }
+      for (const record of routeStartRecords) {
+        if (routeRecordEnabled(record)) {
+          routeStartGroup.addLayer(record.layer);
+          visibleStarts += 1;
+        } else {
+          routeStartGroup.removeLayer(record.layer);
+        }
+      }
       for (const record of landmarkRecords) {
-        if (tripTypeEnabled(record.tripType)) {
+        if (routeRecordEnabled(record)) {
           landmarkGroup.addLayer(record.layer);
           visibleLandmarks += 1;
         } else {
@@ -766,6 +1411,7 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       container.dataset.visibleRouteCount = String(visibleRoutes);
+      container.dataset.visibleRouteStartCount = String(visibleStarts);
       container.dataset.visibleLandmarkCount = String(visibleLandmarks);
     };
 
@@ -788,14 +1434,14 @@ const enabledSources = enabledBrowserMapSources;
       clearPresetState();
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
 
-      if (name === 'simple') {
+      if (name === 'hiking') {
         setLayerControl('kytopo', true, 88);
         setLayerControl('usgs-topo', false, 72);
-        setLayerControl('ky-hillshade', true, 20);
+        setLayerControl('ky-hillshade', true, 18);
         setLayerControl('kyaerial-phase3', false, 100);
-      } else if (name === 'advanced') {
-        setLayerControl('kytopo', false, 70);
-        setLayerControl('usgs-topo', true, 72);
+      } else if (name === 'terrain') {
+        setLayerControl('kytopo', true, 70);
+        setLayerControl('usgs-topo', false, 72);
         setLayerControl('ky-hillshade', true, 45);
         setLayerControl('kyaerial-phase3', false, 100);
       } else if (name === 'aerial') {
@@ -817,11 +1463,14 @@ const enabledSources = enabledBrowserMapSources;
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
 
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3']);
+    const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
+
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
-      checkbox.addEventListener('change', () => {
+      checkbox.addEventListener('change', async () => {
         const id = checkbox.dataset.mapLayer;
         if (!id) return;
-        clearPresetState();
+        if (presetLayerIds.has(id)) clearPresetState();
 
         if (id === 'kyaerial-phase3' && checkbox.checked) {
           setLayerControl('ky-hillshade', false);
@@ -829,7 +1478,13 @@ const enabledSources = enabledBrowserMapSources;
           setLayerControl('kyaerial-phase3', false);
         }
 
-        syncVisibility(id);
+        if (checkbox.checked && id === 'osm-informal-trails') {
+          await loadInformalTrails();
+        } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
+          await loadLandContext(id);
+        } else {
+          syncVisibility(id);
+        }
         syncContextLabels();
       });
     }
@@ -838,7 +1493,7 @@ const enabledSources = enabledBrowserMapSources;
       slider.addEventListener('input', () => {
         const id = slider.dataset.opacity;
         if (!id) return;
-        clearPresetState();
+        if (presetLayerIds.has(id)) clearPresetState();
         syncOpacity(id);
       });
     }
@@ -850,10 +1505,184 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
-    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]')) {
-      checkbox.addEventListener('change', syncRouteTripFilters);
+    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter], [data-route-status-filter]')) {
+      checkbox.addEventListener('change', syncRouteFilters);
     }
-    syncRouteTripFilters();
+    syncRouteFilters();
+
+    const openSheet = (name: string) => {
+      if (name === 'layers') {
+        if (layerPanel) {
+          layerPanel.open = true;
+          layerPanel.dataset.mobileOpen = 'true';
+        }
+        return;
+      }
+      const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + name + '"]');
+      if (panel) panel.hidden = false;
+      if (name === 'search') {
+        window.setTimeout(() => searchInput?.focus(), 0);
+      }
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open]')) {
+      button.addEventListener('click', () => {
+        const target = button.dataset.sheetOpen;
+        if (target) openSheet(target);
+      });
+    }
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-close]')) {
+      button.addEventListener('click', () => {
+        const panel = button.closest<HTMLElement>('[data-map-sheet]');
+        if (panel) panel.hidden = true;
+      });
+    }
+
+    layerPanel?.addEventListener('toggle', () => {
+      if (!layerPanel.open) delete layerPanel.dataset.mobileOpen;
+    });
+
+    const goHome = () => {
+      if (homeBounds?.isValid?.()) {
+        map.fitBounds(homeBounds, { padding: [22, 22], maxZoom: 11 });
+      } else {
+        map.fitBounds([[37.58, -83.93], [38.04, -83.25]], { padding: [22, 22], maxZoom: 11 });
+      }
+      setStatus('Four-county Red River Gorge overview restored.');
+    };
+
+    const showMyLocation = () => {
+      if (!('geolocation' in navigator)) {
+        setStatus('This browser does not provide device location.', 'warning');
+        return;
+      }
+      setStatus('Requesting your device location…');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+          if (homeBounds?.isValid?.() && !homeBounds.contains(latlng)) {
+            setStatus('Your reported device location is outside this Wolfe / Powell / Menifee / Lee planning map. The map will remain in the Gorge.', 'warning');
+            return;
+          }
+          if (locationLayer) map.removeLayer(locationLayer);
+          const accuracy = Math.max(1, position.coords.accuracy || 1);
+          const group = L.layerGroup();
+          L.circle(latlng, {
+            radius: accuracy,
+            color: '#2f6e99',
+            weight: 1.5,
+            opacity: 0.8,
+            fillColor: '#2f6e99',
+            fillOpacity: 0.12,
+            pane: 'landmarks'
+          }).addTo(group);
+          L.circleMarker(latlng, {
+            radius: 7,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#2f6e99',
+            fillOpacity: 1,
+            pane: 'landmarks'
+          }).bindPopup('Your device location · accuracy about ' + Math.round(accuracy) + ' m. Device GPS can be inaccurate and is not a substitute for dedicated backcountry navigation.').addTo(group);
+          group.addTo(map);
+          locationLayer = group;
+          map.setView(latlng, Math.max(map.getZoom(), 15));
+          setStatus('Device location shown with its reported accuracy. GPS accuracy can vary.');
+        },
+        (error) => {
+          const message = error.code === 1
+            ? 'Location permission was not granted.'
+            : 'Your device location could not be determined.';
+          setStatus(message, 'warning');
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      );
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-action]')) {
+      button.addEventListener('click', () => {
+        const action = button.dataset.mapAction;
+        if (action === 'home') goHome();
+        else if (action === 'locate') showMyLocation();
+      });
+    }
+
+    const renderSearchResults = () => {
+      if (!searchResults || !searchInput) return;
+      const query = searchInput.value.trim().toLowerCase();
+      searchResults.replaceChildren();
+      if (!query) return;
+
+      const matches = searchItems
+        .filter((item) => (item.label + ' ' + item.detail).toLowerCase().includes(query))
+        .slice(0, 10);
+
+      if (!matches.length) {
+        const empty = document.createElement('p');
+        empty.className = 'route-search-empty';
+        empty.textContent = 'No loaded map feature matches that search.';
+        searchResults.append(empty);
+        return;
+      }
+
+      for (const item of matches) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'route-search-result';
+        const label = document.createElement('strong');
+        label.textContent = item.label;
+        const detail = document.createElement('span');
+        detail.textContent = item.detail;
+        button.append(label, detail);
+        button.addEventListener('click', () => {
+          if (item.bounds?.isValid?.()) map.fitBounds(item.bounds.pad ? item.bounds.pad(0.35) : item.bounds, { maxZoom: 16 });
+          else if (item.latlng) map.setView(item.latlng, 16);
+          item.open?.();
+          if (searchPanel) searchPanel.hidden = true;
+        });
+        searchResults.append(button);
+      }
+    };
+    searchInput?.addEventListener('input', renderSearchResults);
+
+    const showCoordinate = (latlng: any) => {
+      const lat = Number(latlng.lat);
+      const lng = Number(latlng.lng);
+      const utm = toUtm(lat, lng);
+      coordinatePoint = { lat, lng, utm };
+      if (coordinateDd) coordinateDd.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      if (coordinateUtm) coordinateUtm.textContent = 'UTM ' + utm;
+      if (coordinateCard) coordinateCard.hidden = false;
+    };
+
+    coordinateCopy?.addEventListener('click', async () => {
+      if (!coordinatePoint) return;
+      const textValue = coordinatePoint.lat.toFixed(6) + ', ' + coordinatePoint.lng.toFixed(6) + ' · UTM ' + coordinatePoint.utm;
+      try {
+        await navigator.clipboard.writeText(textValue);
+        setStatus('Coordinates copied.');
+      } catch {
+        setStatus('Copy was blocked by the browser. Select the displayed coordinates instead.', 'warning');
+      }
+    });
+
+    let lastTapAt = 0;
+    container.addEventListener('touchend', (event) => {
+      if (activeTool !== null || event.changedTouches.length !== 1 || event.touches.length !== 0) return;
+      const now = Date.now();
+      if (now - lastTapAt < 320) {
+        const touch = event.changedTouches[0]!;
+        const rect = container.getBoundingClientRect();
+        const point = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+        const latlng = map.containerPointToLatLng(point);
+        map.setView(latlng, Math.min(map.getZoom() + 1, map.getMaxZoom()), { animate: true });
+        lastTapAt = 0;
+        event.preventDefault();
+      } else {
+        lastTapAt = now;
+      }
+    }, { passive: false });
 
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
@@ -866,14 +1695,20 @@ const enabledSources = enabledBrowserMapSources;
 
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
-      stage?.setAttribute('data-active-tool', tool ?? '');
+      stage?.setAttribute('data-active-tool', tool ?? 'explore');
       for (const button of toolButtons) {
         const buttonTool = button.dataset.mapTool;
-        if (buttonTool === 'measure' || buttonTool === 'plan') button.setAttribute('aria-pressed', String(buttonTool === tool));
+        if (buttonTool === 'measure' || buttonTool === 'plan') {
+          button.setAttribute('aria-pressed', String(buttonTool === tool));
+        } else if (buttonTool === 'explore') {
+          button.setAttribute('aria-pressed', String(tool === null));
+        }
       }
-      if (tool === 'measure') setStatus('Straight-line measure: click points anywhere on the map. Distance is direct point-to-point, not trail distance.');
-      else if (tool === 'plan') setStatus('Plan on trails: click near a visible trail. Each click snaps to the trail network and follows connected trail geometry.');
-      else if (!vectorFailures.length) setStatus('Drag to pan. Use +/−, double-click, or pinch to zoom. Adjust layers, measure straight-line distance, or build a trail-following plan.');
+      if (tool === 'measure') setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
+      else if (tool === 'plan') {
+        if (planPanel) planPanel.hidden = false;
+        setStatus('Build trail route: click near a mapped official trail or RRGH route. The planner follows the mapped trail network; Community / Informal trails are not used for routing.');
+      } else if (!vectorFailures.length) setStatus('Explore: drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates.');
     };
 
     const clearTools = () => {
@@ -882,9 +1717,9 @@ const enabledSources = enabledBrowserMapSources;
       measurePoints = [];
       planStops = [];
       planPath = [];
-      if (saveButton) saveButton.disabled = true;
-      if (activeTool === 'measure') setStatus('Straight-line measure: click points anywhere on the map.');
-      else if (activeTool === 'plan') setStatus('Plan on trails: click near a visible trail to set the first point.');
+      for (const button of saveButtons) button.disabled = true;
+      if (activeTool === 'measure') setStatus('Measure distance: click points anywhere on the map.');
+      else if (activeTool === 'plan') setStatus('Build trail route: click near a mapped official trail or RRGH route.');
       else setStatus('Map cleared.');
     };
 
@@ -918,7 +1753,7 @@ const enabledSources = enabledBrowserMapSources;
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 0);
-      setStatus('Trail plan saved as a GPX file.');
+      setStatus('Planned trail route exported as a GPX file.');
     };
 
     for (const button of toolButtons) {
@@ -930,6 +1765,10 @@ const enabledSources = enabledBrowserMapSources;
         }
         if (tool === 'save') {
           savePlanGpx();
+          return;
+        }
+        if (tool === 'explore') {
+          setTool(null);
           return;
         }
         if (tool === 'measure' || tool === 'plan') setTool(activeTool === tool ? null : tool);
@@ -963,7 +1802,7 @@ const enabledSources = enabledBrowserMapSources;
       }
       let total = 0;
       for (let i = 1; i < measurePoints.length; i += 1) total += measurePoints[i - 1].distanceTo(measurePoints[i]);
-      setStatus(measurePoints.length > 1 ? 'Straight-line distance: ' + formatDistance(total) + ' · click to continue.' : 'Straight-line measure: first point set · click another point.');
+      setStatus(measurePoints.length > 1 ? 'Measured distance: ' + formatDistance(total) + ' · straight point-to-point segments.' : 'Measure distance: first point set · click another point.');
     };
 
     const redrawPlan = () => {
@@ -995,12 +1834,16 @@ const enabledSources = enabledBrowserMapSources;
       }
       let total = 0;
       for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
-      if (saveButton) saveButton.disabled = points.length < 2;
-      if (planStops.length === 1) setStatus('Trail plan: start snapped · click another trail point.');
-      else if (planStops.length > 1) setStatus('Trail-following plan: ' + formatDistance(total) + ' · click another trail point to extend, or save the GPX.');
+      for (const button of saveButtons) button.disabled = points.length < 2;
+      if (planStops.length === 1) setStatus('Build trail route: start snapped · click another mapped trail point.');
+      else if (planStops.length > 1) setStatus('Trail-following route: ' + formatDistance(total) + ' · click another trail point to extend, or export GPX.');
     };
 
     map.on('click', (event: any) => {
+      if (activeTool === null) {
+        showCoordinate(event.latlng);
+        return;
+      }
       if (activeTool === 'measure') {
         measurePoints.push(event.latlng);
         redrawMeasure();

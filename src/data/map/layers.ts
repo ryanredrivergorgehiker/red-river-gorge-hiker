@@ -37,6 +37,11 @@ const arcgisGeoJsonQuery = (serviceUrl: string, outFields: string) => {
 const trailService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublishWithDataStatus_01/MapServer/0';
 const roadService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RoadBasic_01/MapServer/0';
 const countyService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0';
+const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RecInfraRecreationSites_02/MapServer/0';
+const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
+const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
+const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0';
+const overpassService = 'https://overpass-api.de/api/interpreter';
 
 export const mapSources: readonly MapSource[] = [
   {
@@ -88,7 +93,7 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'ky-hillshade',
-    label: 'LiDAR hillshade',
+    label: 'Terrain relief (LiDAR)',
     kind: 'tile',
     enabled: true,
     browserLoaded: true,
@@ -140,6 +145,70 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://kygeoportal.ky.gov/',
     privacyNote: 'County boundary geometry is requested directly from the Kentucky Division of Geographic Information.',
     opacity: 0.6
+  },
+  {
+    id: 'usfs-recreation-sites',
+    label: 'Trailheads & facilities',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(recreationSiteService, 'site_name,public_site_name,site_type,seasonal_operational_status,development_status,recarea_name,usda_portal_url,latitude,longitude'),
+    serviceUrl: recreationSiteService,
+    attribution: 'USDA Forest Service',
+    termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    privacyNote: 'Recreation-site locations and public site information are requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 1
+  },
+  {
+    id: 'usfs-wilderness',
+    label: 'Wilderness boundaries',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(wildernessService, 'wildernessname,boundarystatus,gis_acres'),
+    serviceUrl: wildernessService,
+    attribution: 'USDA Forest Service',
+    termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    privacyNote: 'Wilderness boundaries are requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 0.72
+  },
+  {
+    id: 'usfs-special-management',
+    label: 'Special management areas',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(specialManagementService, 'casename,areaname,areatype,boundarystatus'),
+    serviceUrl: specialManagementService,
+    attribution: 'USDA Forest Service',
+    termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    privacyNote: 'Special-interest management-area boundaries are requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 0.66
+  },
+  {
+    id: 'usfs-land-units',
+    label: 'National Forest land units',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    url: arcgisGeoJsonQuery(nfsLandUnitService, 'nfslandunitname,nfslandunittype'),
+    serviceUrl: nfsLandUnitService,
+    attribution: 'USDA Forest Service',
+    termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
+    privacyNote: 'National Forest System land-unit boundaries are requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    opacity: 0.45
+  },
+  {
+    id: 'osm-informal-trails',
+    label: 'Community / Informal trails',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: overpassService,
+    attribution: '© OpenStreetMap contributors',
+    termsUrl: 'https://www.openstreetmap.org/copyright',
+    privacyNote: 'This optional layer is requested only when you turn it on. It uses OpenStreetMap path data explicitly tagged informal=yes through the public Overpass API. An informal path is not proof of legal access.',
+    opacity: 0.7
   },
   {
     id: 'parcel-private-property',
