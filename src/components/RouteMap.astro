@@ -1368,6 +1368,7 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     bridgeNearbyEndpoints();
+    container.dataset.plannerNodeCount = String(graph.size);
     if (graph.size > 1) {
       for (const button of planButtons) button.disabled = false;
     }
@@ -1879,12 +1880,14 @@ const enabledSources = enabledBrowserMapSources;
     map.on('zoomend', syncContextLabels);
     map.on('zoomend', () => {
       const zoom = map.getZoom();
+      container.dataset.currentZoom = String(zoom);
       routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4 : 6 }));
       trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 1.8 : zoom >= 15 ? 2.8 : 2.25 }));
       roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.4 : 2.6 }));
     });
 
     syncContextLabels();
+    container.dataset.currentZoom = String(map.getZoom());
     setTimeout(() => map.invalidateSize(), 50);
 
     if (vectorFailures.length) {

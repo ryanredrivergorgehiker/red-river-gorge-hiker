@@ -244,6 +244,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("syncRouteFilters", MAP)
         self.assertIn("container.dataset.visibleRouteCount", MAP)
         self.assertIn("container.dataset.visibleRouteStartCount", MAP)
+        self.assertIn("container.dataset.plannerNodeCount", MAP)
+        self.assertIn("container.dataset.currentZoom", MAP)
         self.assertIn("Math.ceil(from.distanceTo(to) / 30)", MAP)
         self.assertIn("application/gpx+xml", MAP)
         self.assertIn("RRGH-planned-route-", MAP)
