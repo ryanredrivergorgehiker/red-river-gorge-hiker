@@ -207,6 +207,10 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-land-unit" aria-hidden="true"></span>
             <span>National Forest land units</span>
           </label>
+          <label class="route-layer-context-opacity-row">
+            <input type="checkbox" data-context-full-opacity="usfs-wilderness" checked />
+            <span>Wilderness full opacity (100%)</span>
+          </label>
         </div>
 
         <details class="route-layer-fine-tune">
@@ -220,7 +224,6 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>USGS Topo</span><input type="range" min="0" max="100" value="72" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
-            <label><span>Wilderness</span><input type="range" min="0" max="100" value="72" data-opacity="usfs-wilderness" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
           </div>
@@ -245,6 +248,7 @@ const enabledSources = enabledBrowserMapSources;
       <div class="route-plan-mode-buttons">
         <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
         <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+        <button type="button" data-plan-pan aria-pressed="false" hidden>✥ Pan map</button>
       </div>
       <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near a mapped trail or road to snap to it; click clearly off trail for a dashed straight segment. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
       <div class="route-plan-actions">
@@ -435,6 +439,8 @@ const enabledSources = enabledBrowserMapSources;
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
     const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
     const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
+    const planPanButton = shell.querySelector<HTMLButtonElement>('[data-plan-pan]');
+    const wildernessFullOpacity = shell.querySelector<HTMLInputElement>('[data-context-full-opacity="usfs-wilderness"]');
     const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
     const searchResults = shell.querySelector<HTMLElement>('[data-map-search-results]');
     const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
@@ -501,11 +507,17 @@ const enabledSources = enabledBrowserMapSources;
       }
     }
 
-    const homeCenter = L.latLng(37.831, -83.615);
+    const homeNorthWest = L.latLng(37.878846, -83.744659);
     const homeZoom = 13;
+    const homeCenterForViewport = () => {
+      const size = map.getSize();
+      const northWestPoint = map.project(homeNorthWest, homeZoom);
+      return map.unproject(northWestPoint.add(L.point(size.x / 2, size.y / 2)), homeZoom);
+    };
+    const setHomeView = () => map.setView(homeCenterForViewport(), homeZoom, { animate: false });
 
     if (mode === 'full') {
-      map.setView(homeCenter, homeZoom, { animate: false });
+      setHomeView();
     } else {
       map.setView([37.8185, -83.5795], 14);
     }
@@ -579,6 +591,46 @@ const enabledSources = enabledBrowserMapSources;
     const landUnitPaths: any[] = [];
     const trailLabelMarkers: any[] = [];
     const countyLabelMarkers: any[] = [];
+
+    const normalContextStyles: Record<string, Record<string, unknown>> = {
+      'usfs-wilderness': { color: '#356b4a', weight: 2.2, fillColor: '#75a86d', fillOpacity: 0.06, dashArray: '5 4' },
+      'usfs-special-management': { color: '#a57c34', weight: 2, fillColor: '#d8b86c', fillOpacity: 0.05, dashArray: '8 4 2 4' },
+      'usfs-land-units': { color: '#55715b', weight: 1.5, fillColor: '#94ad8d', fillOpacity: 0.04 }
+    };
+    const aerialContextStyles: Record<string, Record<string, unknown>> = {
+      'usfs-wilderness': { color: '#ff4fd8', weight: 3.2, fillColor: '#ff4fd8', fillOpacity: 0.08, dashArray: '7 4' },
+      'usfs-special-management': { color: '#ffe14a', weight: 3, fillColor: '#ffe14a', fillOpacity: 0.07, dashArray: '10 4 2 4' },
+      'usfs-land-units': { color: '#62ff9d', weight: 2.8, fillColor: '#62ff9d', fillOpacity: 0.06 }
+    };
+
+    const wildernessDisplayOpacity = () => wildernessFullOpacity?.checked === false ? 0.72 : 1;
+
+    const syncLandContextStyles = () => {
+      const aerialActive = checked('kyaerial-phase3');
+      shell.dataset.aerialActive = String(aerialActive);
+      const styles = aerialActive ? aerialContextStyles : normalContextStyles;
+      const apply = (id: string, paths: any[]) => {
+        const style = styles[id];
+        if (!style) return;
+        const displayOpacity = id === 'usfs-wilderness' ? wildernessDisplayOpacity() : opacity(id);
+        for (const path of paths) path.setStyle({ ...style, opacity: displayOpacity });
+      };
+      apply('usfs-wilderness', wildernessPaths);
+      apply('usfs-special-management', specialManagementPaths);
+      apply('usfs-land-units', landUnitPaths);
+    };
+
+    const syncAerialControlState = () => {
+      const aerialActive = checked('kyaerial-phase3');
+      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade']) {
+        const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+        if (slider) {
+          slider.disabled = aerialActive;
+          slider.title = aerialActive ? 'Unavailable while aerial imagery is active.' : '';
+        }
+      }
+      syncLandContextStyles();
+    };
 
     mapLayers.set('routes', routeGroup);
     mapLayers.set('route-starts', routeStartGroup);
@@ -1217,7 +1269,7 @@ const enabledSources = enabledBrowserMapSources;
           const paddedBounds = gorgeBounds.pad(0.035);
           homeBounds = paddedBounds;
           map.setMaxBounds(paddedBounds);
-          map.setView(homeCenter, homeZoom, { animate: false });
+          setHomeView();
           container.dataset.gorgeOverviewZoom = String(map.getZoom());
         }
       }
@@ -1275,7 +1327,7 @@ const enabledSources = enabledBrowserMapSources;
           await loadPolygonLayer(
             id,
             'wilderness',
-            { color: '#356b4a', weight: 2.2, fillColor: '#75a86d', fillOpacity: 0.06, dashArray: '5 4' },
+            normalContextStyles['usfs-wilderness']!,
             ['wildernessname', 'WILDERNESSNAME'],
             'National Wilderness boundary',
             wildernessPaths
@@ -1284,7 +1336,7 @@ const enabledSources = enabledBrowserMapSources;
           await loadPolygonLayer(
             id,
             'specialManagement',
-            { color: '#a57c34', weight: 2, fillColor: '#d8b86c', fillOpacity: 0.05, dashArray: '8 4 2 4' },
+            normalContextStyles['usfs-special-management']!,
             ['areaname', 'casename', 'AREANAME', 'CASENAME'],
             'Forest Service special management area',
             specialManagementPaths
@@ -1293,12 +1345,13 @@ const enabledSources = enabledBrowserMapSources;
           await loadPolygonLayer(
             id,
             'landUnits',
-            { color: '#55715b', weight: 1.5, fillColor: '#94ad8d', fillOpacity: 0.04 },
+            normalContextStyles['usfs-land-units']!,
             ['nfslandunitname', 'NFSLANDUNITNAME'],
             'National Forest land unit',
             landUnitPaths
           );
         }
+        syncLandContextStyles();
       } catch (error) {
         console.error(error);
         setStatus('That land-management layer is unavailable right now.', 'warning');
@@ -1610,17 +1663,22 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('usgs-topo', true, 72);
         setLayerControl('ky-hillshade', true, 18);
         setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('usfs-wilderness', true);
+        if (wildernessFullOpacity) wildernessFullOpacity.checked = true;
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 72);
         setLayerControl('usgs-topo', true, 72);
         setLayerControl('ky-hillshade', true, 72);
         setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('usfs-wilderness', true);
+        if (wildernessFullOpacity) wildernessFullOpacity.checked = true;
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
         setLayerControl('usgs-topo', false, 70);
         setLayerControl('ky-hillshade', false, 0);
         setLayerControl('kyaerial-phase3', true, 100);
       }
+      syncAerialControlState();
       syncContextLabels();
     };
 
@@ -1658,6 +1716,7 @@ const enabledSources = enabledBrowserMapSources;
         } else {
           syncVisibility(id);
         }
+        syncAerialControlState();
         syncContextLabels();
       });
     }
@@ -1665,11 +1724,16 @@ const enabledSources = enabledBrowserMapSources;
     for (const slider of shell.querySelectorAll<HTMLInputElement>('[data-opacity]')) {
       slider.addEventListener('input', () => {
         const id = slider.dataset.opacity;
-        if (!id) return;
+        if (!id || slider.disabled) return;
         if (presetLayerIds.has(id)) clearPresetState();
         syncOpacity(id);
+        if (optionalLandLayerIds.has(id)) syncLandContextStyles();
       });
     }
+
+    wildernessFullOpacity?.addEventListener('change', () => {
+      syncLandContextStyles();
+    });
 
     for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
       button.addEventListener('click', () => {
@@ -1744,7 +1808,7 @@ const enabledSources = enabledBrowserMapSources;
     });
 
     const goHome = () => {
-      map.setView(homeCenter, homeZoom, { animate: false });
+      setHomeView();
       setStatus('Core Red River Gorge hiking view restored.');
     };
 
@@ -1889,6 +1953,7 @@ const enabledSources = enabledBrowserMapSources;
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let activeTool: 'measure' | 'plan' | null = null;
+    let planPanMode = false;
     let measurePoints: any[] = [];
 
     type PlanPoint = { lat: number; lng: number; nodeKey?: string };
@@ -1989,9 +2054,30 @@ const enabledSources = enabledBrowserMapSources;
       planSegments = rebuiltSegments;
     };
 
+    const setPlanPanMode = (enabled: boolean) => {
+      planPanMode = activeTool === 'plan' && enabled;
+      stage?.setAttribute('data-plan-pan-mode', String(planPanMode));
+      if (planPanButton) {
+        planPanButton.hidden = activeTool !== 'plan';
+        planPanButton.setAttribute('aria-pressed', String(planPanMode));
+        planPanButton.textContent = planPanMode ? '✥ Resume route' : '✥ Pan map';
+      }
+      map.dragging.enable();
+      if (planPanMode) {
+        setStatus('Pan mode: drag the map to another area, then choose Resume route to keep building.');
+      }
+    };
+
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
+      if (tool !== 'plan') planPanMode = false;
       stage?.setAttribute('data-active-tool', tool ?? 'explore');
+      stage?.setAttribute('data-plan-pan-mode', String(planPanMode));
+      if (planPanButton) {
+        planPanButton.hidden = tool !== 'plan';
+        planPanButton.setAttribute('aria-pressed', 'false');
+        planPanButton.textContent = '✥ Pan map';
+      }
       for (const button of toolButtons) {
         const buttonTool = button.dataset.mapTool;
         if (buttonTool === 'measure' || buttonTool === 'plan') {
@@ -2003,7 +2089,7 @@ const enabledSources = enabledBrowserMapSources;
         setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
       } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
-        setStatus('Build route: click near a mapped trail or road to snap automatically; click clearly off trail for a dashed straight segment. Drag a segment to adjust it; right-click a segment to delete it.');
+        setStatus('Build route: click near a mapped trail or road to snap automatically; click clearly off trail for a dashed straight segment. Use ✥ Pan map to move the map without adding a route point. Drag a segment to adjust it; right-click a segment to delete it.');
       } else if (!vectorFailures.length && informalTrailsReady) {
         setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
       }
@@ -2084,6 +2170,13 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
+    planPanButton?.addEventListener('click', () => {
+      setPlanPanMode(!planPanMode);
+      if (!planPanMode && activeTool === 'plan') {
+        setStatus('Route building resumed. Click near a mapped trail or road to snap, or clearly off trail for a dashed segment.');
+      }
+    });
+
     undoButton?.addEventListener('click', () => {
       if (planHistoryIndex > 0) restorePlanHistory(planHistoryIndex - 1);
     });
@@ -2142,7 +2235,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const attachPlanSegmentInteraction = (hitLine: any, visibleLine: any, segmentIndex: number) => {
       hitLine.on('contextmenu', (event: any) => {
-        if (activeTool !== 'plan') return;
+        if (activeTool !== 'plan' || planPanMode) return;
         const original = event.originalEvent;
         original?.preventDefault?.();
         original?.stopPropagation?.();
@@ -2161,7 +2254,7 @@ const enabledSources = enabledBrowserMapSources;
       };
 
       const beginSegmentDrag = (clientX: number, clientY: number) => {
-        if (segmentDragActive || activeTool !== 'plan') return;
+        if (segmentDragActive || activeTool !== 'plan' || planPanMode) return;
 
         const startStop = planStops[segmentIndex];
         if (!startStop) return;
@@ -2351,6 +2444,7 @@ const enabledSources = enabledBrowserMapSources;
         return;
       }
       if (activeTool !== 'plan') return;
+      if (planPanMode) return;
 
       if (!planStops.length) {
         planStops = [snappedPlanPoint(event.latlng)];
@@ -2382,9 +2476,13 @@ const enabledSources = enabledBrowserMapSources;
       informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
     });
 
+    syncAerialControlState();
     syncContextLabels();
     container.dataset.currentZoom = String(map.getZoom());
-    setTimeout(() => map.invalidateSize(), 50);
+    setTimeout(() => {
+      map.invalidateSize();
+      if (mode === 'full') setHomeView();
+    }, 50);
 
     if (vectorFailures.length) {
       setStatus('Map ready. Unavailable right now: ' + vectorFailures.join(', ') + '.', 'warning');
