@@ -2185,9 +2185,9 @@ const enabledSources = enabledBrowserMapSources;
           const pointerId = downEvent.pointerId;
 
           const cleanup = () => {
-            pathElement.removeEventListener('pointermove', onPointerMove, true);
-            pathElement.removeEventListener('pointerup', finishPointerDrag, true);
-            pathElement.removeEventListener('pointercancel', cancelPointerDrag, true);
+            window.removeEventListener('pointermove', onPointerMove, true);
+            window.removeEventListener('pointerup', finishPointerDrag, true);
+            window.removeEventListener('pointercancel', cancelPointerDrag, true);
             if (pathElement.hasPointerCapture?.(pointerId)) pathElement.releasePointerCapture(pointerId);
             pathElement.style.cursor = 'grab';
             map.dragging.enable();
@@ -2216,9 +2216,9 @@ const enabledSources = enabledBrowserMapSources;
             redrawPlan();
           };
 
-          pathElement.addEventListener('pointermove', onPointerMove, true);
-          pathElement.addEventListener('pointerup', finishPointerDrag, { capture: true, once: true });
-          pathElement.addEventListener('pointercancel', cancelPointerDrag, { capture: true, once: true });
+          window.addEventListener('pointermove', onPointerMove, true);
+          window.addEventListener('pointerup', finishPointerDrag, true);
+          window.addEventListener('pointercancel', cancelPointerDrag, true);
         }, true);
         return;
       }
