@@ -1885,6 +1885,7 @@ const enabledSources = enabledBrowserMapSources;
       }
     }, { passive: false });
 
+    const planningRenderer = L.svg({ pane: 'planning' });
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let activeTool: 'measure' | 'plan' | null = null;
@@ -2095,6 +2096,7 @@ const enabledSources = enabledBrowserMapSources;
         for (const point of measurePoints) {
           L.circleMarker(point, {
             pane: 'planning',
+            renderer: planningRenderer,
             radius: 5,
             color: '#fff',
             weight: 2,
@@ -2107,6 +2109,7 @@ const enabledSources = enabledBrowserMapSources;
       if (measurePoints.length > 1) {
         L.polyline(measurePoints, {
           pane: 'planning',
+          renderer: planningRenderer,
           color: '#d9892b',
           weight: 4,
           opacity: 1,
@@ -2274,6 +2277,7 @@ const enabledSources = enabledBrowserMapSources;
 
         const visibleLine = L.polyline(points, {
           pane: 'planning',
+          renderer: planningRenderer,
           color: segment.mode === 'snap' ? '#e17a35' : '#8b4e9e',
           weight: segment.mode === 'snap' ? 6 : 5,
           opacity: 0.96,
@@ -2285,6 +2289,7 @@ const enabledSources = enabledBrowserMapSources;
 
         const hitLine = L.polyline(points, {
           pane: 'planning',
+          renderer: planningRenderer,
           color: '#000',
           weight: 18,
           opacity: 0.001,
@@ -2302,6 +2307,7 @@ const enabledSources = enabledBrowserMapSources;
       for (const stop of planStops) {
         L.circleMarker([stop.lat, stop.lng], {
           pane: 'planning',
+          renderer: planningRenderer,
           radius: 6,
           color: '#fff',
           weight: 2,
