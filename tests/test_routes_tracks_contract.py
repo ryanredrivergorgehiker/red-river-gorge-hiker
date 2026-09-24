@@ -221,7 +221,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('nearestNode', MAP)
         self.assertIn('within about 90 m', MAP)
         self.assertIn('Community / Informal trails are not used for routing', MAP)
-        self.assertIn('trail-following planning', FULL_MAP)
+        self.assertIn('trail-route planning', FULL_MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
@@ -257,7 +257,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('["informal"="yes"]', MAP)
         self.assertIn('https://overpass-api.de/api/interpreter', MAP)
         self.assertIn('© OpenStreetMap contributors', MAP)
-        self.assertIn('not an official Forest Service trail', MAP)
+        self.assertIn('Not an official Forest Service trail', MAP)
         self.assertIn('An informal path is not proof of legal access.', LAYERS)
         self.assertIn('Community / Informal Trails layer', TERMS)
         self.assertIn('Open Database License (ODbL)', TERMS)
