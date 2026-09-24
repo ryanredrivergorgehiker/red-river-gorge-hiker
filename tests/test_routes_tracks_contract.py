@@ -251,6 +251,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('nearestNode', MAP)
         self.assertIn('deletePlanSegment', MAP)
         self.assertIn("hitLine.on('contextmenu'", MAP)
+        self.assertIn("window.requestAnimationFrame(bindPointerDrag)", MAP)
+        self.assertIn("hitElement.dataset.rrghPlanDragBound = 'true'", MAP)
         self.assertIn("hitElement.addEventListener('pointerdown'", MAP)
         self.assertIn("window.addEventListener('pointermove', onPointerMove, true)", MAP)
         self.assertIn("window.addEventListener('pointerup', onPointerUp, true)", MAP)
