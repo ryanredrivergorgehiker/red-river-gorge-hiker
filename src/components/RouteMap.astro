@@ -1148,7 +1148,7 @@ const enabledSources = enabledBrowserMapSources;
         });
       }
       container.dataset.recreationSiteCount = String(recreationMarkers.length);
-      syncVisibility('usfs-recreation-sites');
+      if (!map.hasLayer(recreationGroup)) recreationGroup.addTo(map);
     } catch (error) {
       console.error(error);
       vectorFailures.push('Trailheads & facilities');
