@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json, urllib.parse, urllib.request, pathlib
-from shapely.geometry import LineString, shape
+from shapely.geometry import LineString, MultiLineString, box, shape
 from shapely.ops import transform, unary_union
 from pyproj import Transformer
 
@@ -92,6 +92,7 @@ for feat in fs.get('features',[]):
     except Exception:
         pass
 official_buffer=unary_union(official_lines).buffer(30) if official_lines else None
+clip_box=box(BBOX[1],BBOX[0],BBOX[3],BBOX[2])
 
 features=[]
 explicit_informal=0
@@ -103,29 +104,43 @@ for element in elements_by_id.values():
     if len(coords)<2:
         continue
 
+    raw_line=LineString(coords)
+    clipped=raw_line.intersection(clip_box)
+    if clipped.is_empty:
+        continue
+    if isinstance(clipped,LineString):
+        parts=[clipped]
+    elif isinstance(clipped,MultiLineString):
+        parts=[part for part in clipped.geoms if not part.is_empty and len(part.coords)>=2]
+    else:
+        parts=[]
+
     tags=dict(element.get('tags') or {})
-    line_utm=transform(to_utm,LineString(coords))
     informal=str(tags.get('informal','')).lower()=='yes'
 
-    overlap_ratio=0.0
-    if official_buffer is not None and line_utm.length>0:
-        overlap_ratio=line_utm.intersection(official_buffer).length/line_utm.length
+    for part_index,part in enumerate(parts):
+        line_utm=transform(to_utm,part)
+        overlap_ratio=0.0
+        if official_buffer is not None and line_utm.length>0:
+            overlap_ratio=line_utm.intersection(official_buffer).length/line_utm.length
 
-    if not informal and overlap_ratio>=0.65:
-        official_like_removed+=1
-        continue
+        if not informal and overlap_ratio>=0.65:
+            official_like_removed+=1
+            continue
 
-    classification='informal' if informal else 'community-candidate'
-    if informal:
-        explicit_informal+=1
-    else:
-        candidate_count+=1
+        classification='informal' if informal else 'community-candidate'
+        if informal:
+            explicit_informal+=1
+        else:
+            candidate_count+=1
 
-    props=tags
-    props['osm_id']=element.get('id')
-    props['rrgh_classification']=classification
-    props['rrgh_official_overlap_ratio']=round(overlap_ratio,3)
-    features.append({'type':'Feature','properties':props,'geometry':{'type':'LineString','coordinates':coords}})
+        props=dict(tags)
+        props['osm_id']=element.get('id')
+        props['rrgh_part']=part_index
+        props['rrgh_classification']=classification
+        props['rrgh_official_overlap_ratio']=round(overlap_ratio,3)
+        part_coords=[[float(x),float(y)] for x,y in part.coords]
+        features.append({'type':'Feature','properties':props,'geometry':{'type':'LineString','coordinates':part_coords}})
 
 out={
   'type':'FeatureCollection',
