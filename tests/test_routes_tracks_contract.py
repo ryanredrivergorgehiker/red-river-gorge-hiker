@@ -251,6 +251,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('nearestNode', MAP)
         self.assertIn('deletePlanSegment', MAP)
         self.assertIn("hitLine.on('contextmenu'", MAP)
+        self.assertIn("const planningRenderer = L.svg({ pane: 'planning' })", MAP)
+        self.assertGreaterEqual(MAP.count("renderer: planningRenderer"), 5)
         self.assertIn("className: 'rrgh-plan-segment-hit'", MAP)
         self.assertIn("hitElement.dataset.planSegmentIndex = String(segmentIndex)", MAP)
         self.assertIn("hitElement.addEventListener('mousedown'", MAP)
