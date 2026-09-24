@@ -19,16 +19,23 @@ const routes = entries.map((entry) => ({
 <Base
   title="Interactive Hikes & Routes Map"
   titleTag="Interactive Hikes & Routes Map | Red River Gorge Hiker"
-  description="Interactive Red River Gorge planning map with RRGH routes, Forest Service trails and roads, county boundaries, Kentucky topo, LiDAR hillshade, aerial imagery, USGS topo, distance measurement, and trail-snapped planning."
+  description="Interactive Red River Gorge planning map with route-type filters, RRGH routes, Forest Service trails and roads, county boundaries, Kentucky topo, LiDAR hillshade, aerial imagery, USGS topo, straight-line measurement, trail-following planning, and GPX export."
   canonicalPath="/routes/map/"
 >
   <div class="page route-page route-map-page">
-    <p class="eyebrow">Explore the Gorge</p>
-    <h1>Interactive Hikes &amp; Routes Map</h1>
-    <p class="route-lede">
-      Build the map you want: stack topo, aerial, LiDAR, trails, roads, counties, RRGH routes, and landmarks; change each layer’s opacity; measure freehand distance; or click visible trails to build a snapped route plan.
-    </p>
-    <p><a class="route-text-link" href={base + 'routes/'}>Browse route guides →</a></p>
+    <header class="route-map-page-header">
+      <div class="route-map-page-title">
+        <p class="eyebrow">Explore the Gorge</p>
+        <h1>Interactive Hikes &amp; Routes Map</h1>
+      </div>
+      <div class="route-map-page-intro">
+        <p>
+          Start with a clean view or a more detailed terrain view, then adjust any layer yourself.
+          Filter RRGH routes by trip type, measure direct point-to-point distance, or build a route that follows the available trail network and save it as GPX.
+        </p>
+        <a class="route-text-link" href={base + 'routes/'}>Browse route guides →</a>
+      </div>
+    </header>
     <RouteMap routes={routes} mode="full" />
   </div>
 </Base>

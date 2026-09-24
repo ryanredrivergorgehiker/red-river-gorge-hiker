@@ -131,7 +131,10 @@ class RoutesTracksContractTests(unittest.TestCase):
     def test_map_is_immediately_interactive_and_layer_mixable(self):
         self.assertNotIn('Load interactive map', MAP)
         self.assertNotIn('No external map tiles are requested until', MAP)
-        self.assertNotIn('data-preset=', MAP)
+        for preset in ('simple', 'advanced', 'aerial'):
+            self.assertIn('data-map-preset="' + preset + '"', MAP)
+        for trip_type in ('day-hike', 'backpacking', 'multi-day'):
+            self.assertIn('data-route-trip-filter="' + trip_type + '"', MAP)
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
             'usfs-trails', 'usfs-roads', 'ky-counties', 'routes', 'landmarks'
@@ -146,14 +149,34 @@ class RoutesTracksContractTests(unittest.TestCase):
     def test_map_has_measurement_and_trail_snap_planning(self):
         self.assertIn('data-map-tool="measure"', MAP)
         self.assertIn('data-map-tool="plan"', MAP)
+        self.assertIn('data-map-tool="save"', MAP)
+        self.assertIn('Straight-line measure', MAP)
         self.assertIn('Plan on trails', MAP)
+        self.assertIn('Save plan (.gpx)', MAP)
+        self.assertIn('savePlanGpx', MAP)
         self.assertIn('shortestTrailPath', MAP)
         self.assertIn('nearestNode', MAP)
-        self.assertIn('No snap point within 250 m', MAP)
+        self.assertIn('within about 90 m', MAP)
         self.assertIn('County boundaries', MAP)
         self.assertIn('Forest Service trails', MAP)
         self.assertIn('Forest Service roads', MAP)
         self.assertIn('trail-snapped planning', FULL_MAP)
+
+
+    def test_map_layer_logic_matches_outdoor_planning_behavior(self):
+        self.assertIn("hillshade: 180", MAP)
+        self.assertIn("baseTopo: 200", MAP)
+        self.assertIn("baseUsTopo: 210", MAP)
+        self.assertIn("baseAerial: 220", MAP)
+        self.assertIn("id === 'kyaerial-phase3' && checkbox.checked", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
+        self.assertIn("id === 'ky-hillshade' && checkbox.checked", MAP)
+        self.assertIn("setLayerControl('kyaerial-phase3', false)", MAP)
+        self.assertIn("map.fitBounds([[37.70, -83.82], [37.93, -83.42]]", MAP)
+        self.assertIn("syncRouteTripFilters", MAP)
+        self.assertIn("Math.ceil(from.distanceTo(to) / 30)", MAP)
+        self.assertIn("application/gpx+xml", MAP)
+        self.assertIn("RRGH-planned-route-", MAP)
 
     def test_public_route_ui_avoids_internal_workflow_language(self):
         public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP, (ROOT / 'src/components/ElevationProfile.astro').read_text(encoding='utf-8')])
