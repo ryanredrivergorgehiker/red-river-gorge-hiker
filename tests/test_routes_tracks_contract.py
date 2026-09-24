@@ -168,6 +168,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("baseTopo: 200", MAP)
         self.assertIn("baseUsTopo: 210", MAP)
         self.assertIn("baseAerial: 220", MAP)
+        self.assertIn("pane.style.mixBlendMode = 'multiply'", MAP)
         self.assertIn("id === 'kyaerial-phase3' && checkbox.checked", MAP)
         self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
         self.assertIn("id === 'ky-hillshade' && checkbox.checked", MAP)

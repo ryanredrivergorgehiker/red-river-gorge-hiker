@@ -280,6 +280,9 @@ const enabledSources = enabledBrowserMapSources;
     for (const [name, zIndex] of Object.entries(panes)) {
       const pane = map.createPane(name);
       pane.style.zIndex = String(zIndex);
+      if (name === 'baseTopo' || name === 'baseUsTopo') {
+        pane.style.mixBlendMode = 'multiply';
+      }
     }
 
     if (mode === 'full') {
