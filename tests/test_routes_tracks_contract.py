@@ -134,6 +134,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         explore = (ROOT / 'src/data/explore.ts').read_text(encoding='utf-8')
         self.assertIn('id="gpx-download-license"', terms)
         self.assertIn('Routes, Maps, GPS Tracks, and Location Information', terms)
+        self.assertIn('id="outdoor-safety-location-disclaimer"', terms)
+        self.assertIn('Outdoor safety and location disclaimer', MAP)
+        self.assertIn('copyright-and-terms/#outdoor-safety-location-disclaimer', MAP)
         self.assertIn('Interactive Maps and Map-Data Services', PRIVACY)
         self.assertIn('default map layers begin loading immediately', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
@@ -182,8 +185,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("routePalette = [", MAP)
         self.assertIn("routeColorFor", MAP)
         self.assertIn("color: routeColor", MAP)
-        self.assertIn("color: '#5d6387'", MAP)
-        self.assertIn("color: '#8a6a46'", MAP)
+        self.assertIn("color: '#00c8ff'", MAP)
+        self.assertIn("color: '#ffcf33'", MAP)
+        self.assertIn("color: restricted ? '#f2f2f2' : '#b8f34a'", MAP)
         self.assertIn("color: '#665d4f'", MAP)
         self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("weight: 7.5", MAP)
@@ -194,7 +198,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-map-action="home"', MAP)
         self.assertIn('data-map-action="zoom-out"', MAP)
         self.assertIn('data-map-action="zoom-in"', MAP)
-        self.assertIn("const homeCenter = L.latLng(37.825, -83.605)", MAP)
+        self.assertIn("const homeCenter = L.latLng(37.819, -83.595)", MAP)
         self.assertIn("const homeZoom = 13", MAP)
         self.assertIn("map.setView(homeCenter, homeZoom", MAP)
         self.assertIn("L.control.scale", MAP)
@@ -279,6 +283,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("name === 'hiking'", MAP)
         self.assertIn("name === 'terrain'", MAP)
         self.assertIn("setLayerControl('kytopo', true, 70)", MAP)
+        self.assertGreaterEqual(MAP.count("setLayerControl('usgs-topo', true, 72)"), 2)
+        self.assertIn('data-map-layer="usgs-topo" checked', MAP)
         self.assertIn("setLayerControl('ky-hillshade', true, 45)", MAP)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
@@ -334,6 +340,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Terrain relief (LiDAR)', MAP)
         self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
         self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
+        self.assertIn('Outdoor safety and location disclaimer', MAP)
         self.assertIn('If you choose “My location,”', PRIVACY)
 
     def test_public_route_ui_avoids_internal_workflow_language(self):
