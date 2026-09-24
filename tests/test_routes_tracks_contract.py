@@ -163,6 +163,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("credentials: 'omit'", MAP)
         self.assertIn("keyboard: true", MAP)
         self.assertIn("scrollWheelZoom: false", MAP)
+        self.assertIn("minZoom: 6", MAP)
+        self.assertIn("maxZoom: 20", MAP)
         self.assertNotIn("map.setMinZoom(map.getZoom())", MAP)
 
     def test_map_visual_legend_matches_cartography(self):
