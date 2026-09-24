@@ -257,6 +257,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("window.addEventListener('pointermove', onPointerMove, true)", MAP)
         self.assertIn("window.addEventListener('pointerup', finishPointerDrag, true)", MAP)
         self.assertIn("window.addEventListener('pointercancel', cancelPointerDrag, true)", MAP)
+        self.assertIn('let segmentDragActive = false', MAP)
+        self.assertIn("hitLine.on('mousedown'", MAP)
         self.assertIn("map.getContainer().getBoundingClientRect()", MAP)
         self.assertIn("window.addEventListener('mouseup', finishDrag, true)", MAP)
         self.assertIn('buildAutoPlanSegment(startStop, target)', MAP)
