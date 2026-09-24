@@ -717,14 +717,28 @@ const enabledSources = enabledBrowserMapSources;
       shell.querySelector<HTMLInputElement>('[data-route-trip-filter="' + tripType + '"]')?.checked ?? true;
 
     const syncRouteTripFilters = () => {
+      let visibleRoutes = 0;
+      let visibleLandmarks = 0;
+
       for (const record of routeRecords) {
-        if (tripTypeEnabled(record.tripType)) routeGroup.addLayer(record.layer);
-        else routeGroup.removeLayer(record.layer);
+        if (tripTypeEnabled(record.tripType)) {
+          routeGroup.addLayer(record.layer);
+          visibleRoutes += 1;
+        } else {
+          routeGroup.removeLayer(record.layer);
+        }
       }
       for (const record of landmarkRecords) {
-        if (tripTypeEnabled(record.tripType)) landmarkGroup.addLayer(record.layer);
-        else landmarkGroup.removeLayer(record.layer);
+        if (tripTypeEnabled(record.tripType)) {
+          landmarkGroup.addLayer(record.layer);
+          visibleLandmarks += 1;
+        } else {
+          landmarkGroup.removeLayer(record.layer);
+        }
       }
+
+      container.dataset.visibleRouteCount = String(visibleRoutes);
+      container.dataset.visibleLandmarkCount = String(visibleLandmarks);
     };
 
     const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {

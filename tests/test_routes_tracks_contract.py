@@ -175,6 +175,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('kyaerial-phase3', false)", MAP)
         self.assertIn("map.fitBounds([[37.70, -83.82], [37.93, -83.42]]", MAP)
         self.assertIn("syncRouteTripFilters", MAP)
+        self.assertIn("container.dataset.visibleRouteCount", MAP)
+        self.assertIn("container.dataset.visibleLandmarkCount", MAP)
         self.assertIn("Math.ceil(from.distanceTo(to) / 30)", MAP)
         self.assertIn("application/gpx+xml", MAP)
         self.assertIn("RRGH-planned-route-", MAP)
