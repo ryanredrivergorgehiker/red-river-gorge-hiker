@@ -451,7 +451,7 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.trailPlanningReady = String(ready);
     };
 
-    setExplorePlanReady(false);
+    container.dataset.trailPlanningReady = 'false';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (!status) return;
