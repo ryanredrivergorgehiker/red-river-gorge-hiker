@@ -2148,8 +2148,8 @@ const enabledSources = enabledBrowserMapSources;
 
       const pathElement = hitLine.getElement?.() as SVGPathElement | null;
       const toMapLatLng = (clientX: number, clientY: number) => {
-        const rect = container.getBoundingClientRect();
-        return map.containerPointToLatLng(L.point(clientX - rect.left, clientY - rect.top));
+        const mapRect = map.getContainer().getBoundingClientRect();
+        return map.containerPointToLatLng(L.point(clientX - mapRect.left, clientY - mapRect.top));
       };
 
       const previewTarget = (startStop: PlanPoint, target: any) => {
