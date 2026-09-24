@@ -273,7 +273,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("pane.style.mixBlendMode = 'multiply'", MAP)
         self.assertIn("id === 'kyaerial-phase3' && checkbox.checked", MAP)
         self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
-        self.assertIn("id === 'ky-hillshade' && checkbox.checked", MAP)
+        self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
         self.assertIn("setLayerControl('kyaerial-phase3', false)", MAP)
         self.assertIn("new Set(['Wolfe', 'Powell', 'Menifee', 'Lee'])", MAP)
         self.assertIn("map.setMaxBounds(paddedBounds)", MAP)
@@ -313,7 +313,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('© OpenStreetMap contributors', MAP)
         self.assertIn("window.setTimeout(() => {", MAP)
         self.assertIn("void loadInformalTrails();", MAP)
-        self.assertIn('RRGH OpenStreetMap cache', MAP)
+        self.assertIn("container.dataset.informalTrailSource = 'rrgh-cache'", MAP)
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap data', PRIVACY)
         self.assertIn('planner may snap to displayed community/informal paths', TERMS)
         self.assertIn('do not substantially match the authoritative USDA Forest Service trail geometry', TERMS)
@@ -342,7 +342,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("loadLandContext('usfs-wilderness')", MAP)
         self.assertIn("loadLandContext('usfs-special-management')", MAP)
         self.assertIn("loadLandContext('usfs-land-units')", MAP)
-        self.assertIn('<span>County boundaries</span><small>Always shown</small>', MAP)
+        self.assertIn('<span>County boundaries</span>', MAP)
+        self.assertNotIn('Always shown', MAP)
         self.assertIn("const countiesVisible = map.getZoom() <= 13", MAP)
 
     def test_map_reading_help_and_legal_access_context_are_present(self):
