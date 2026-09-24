@@ -41,7 +41,7 @@ const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/E
 const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
 const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0';
-const overpassService = 'https://overpass.private.coffee/api/interpreter';
+const overpassService = 'https://www.openstreetmap.org/copyright';
 
 export const mapSources: readonly MapSource[] = [
   {
@@ -207,7 +207,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'Community / Informal trails load by default through a public Overpass API service with failover to alternate public instances. The layer uses OpenStreetMap path data explicitly tagged informal=yes. An informal path is not proof of legal access.',
+    privacyNote: 'Community / Informal trails normally load from an RRGH-hosted OpenStreetMap-derived cache. Public Overpass API instances are used only as a browser fallback if the cache is unavailable. The layer uses OpenStreetMap path data explicitly tagged informal=yes. An informal path is not proof of legal access.',
     opacity: 1
   },
   {

@@ -958,3 +958,85 @@
     margin-top:-.22rem;
   }
 }
+
+
+/* Visual UAT corrections — compact legend, unified utility bar, clean sheet toggles. */
+.route-map-utility-tools{
+  display:flex;
+  gap:0!important;
+  align-items:stretch;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:13px;
+  background:#17372d;
+  box-shadow:0 .14rem .5rem rgba(20,29,24,.2);
+}
+.route-map-utility-tools button{
+  min-width:auto;
+  min-height:40px;
+  margin:0!important;
+  padding:.5rem .78rem!important;
+  border:0!important;
+  border-right:1px solid rgba(255,255,255,.18)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.route-map-utility-tools button:last-child{
+  border-right:0!important;
+}
+.route-map-utility-tools button:hover,
+.route-map-utility-tools button:focus-visible,
+.route-map-utility-tools button[aria-pressed="true"]{
+  background:rgba(255,255,255,.12)!important;
+}
+.route-map-utility-tools .route-map-desktop-zoom{
+  width:42px;
+  height:auto;
+  padding:0!important;
+  border-radius:0!important;
+  font-size:1.18rem;
+}
+
+.route-static-legend-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.2rem .9rem;
+  margin:.15rem 0 .45rem;
+}
+.route-static-legend-grid .route-layer-static-row{
+  display:flex;
+  align-items:center;
+  gap:.48rem;
+  min-height:32px;
+  padding:.12rem 0;
+  color:#33433a;
+  font-size:.82rem;
+  line-height:1.2;
+}
+.route-static-legend-grid .route-layer-static-row small{
+  display:none!important;
+}
+.route-static-legend-grid .route-layer-swatch{
+  flex:0 0 2.15rem;
+}
+.route-map-tools-desktop button[aria-pressed="true"]{
+  background:#c96f43;
+  color:#fff;
+}
+
+@media(max-width:700px){
+  .route-map-utility-tools{
+    max-width:calc(100% - 1rem);
+    border-radius:12px;
+  }
+  .route-map-utility-tools button{
+    min-height:38px;
+    padding:.42rem .58rem!important;
+    font-size:.72rem;
+  }
+  .route-static-legend-grid{
+    grid-template-columns:1fr;
+    gap:.08rem;
+  }
+}
