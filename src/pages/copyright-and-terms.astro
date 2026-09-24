@@ -18,7 +18,7 @@ import Base from '../layouts/Base.astro';
       <p>Purchasing a print, puzzle, gear item, greeting card, or other physical product does not transfer copyright, reproduction rights, or any other intellectual-property rights in the underlying photograph, artwork, branding, or other protected material.</p>
     </section>
 
-    <section>
+    <section id="outdoor-safety-location-disclaimer">
       <h2>Outdoor Safety and Location Disclaimer</h2>
       <p>Red River Gorge Hiker contains photographs, stories, descriptions, observations, route information, maps, GPS tracks, GPX downloads, and general information concerning outdoor locations, including backcountry and off-trail areas. Routes &amp; Tracks information is provided for general information and trip planning under the additional terms below and is not a live navigation service, emergency or rescue service, land survey, title opinion, legal-access determination, or substitute for current information from the appropriate land-management agency or other responsible authority.</p>
       <p>Hiking, backpacking, climbing, scrambling, creek travel, off-trail exploration, and other backcountry activities involve inherent risks, including difficult terrain, cliffs, falling rock, changing weather, flooding, high water, falling trees and limbs, wildlife, navigation errors, inaccessible routes, injury, and death. Conditions can change substantially after photographs are taken or information is published.</p>
@@ -41,8 +41,8 @@ import Base from '../layouts/Base.astro';
 
 
     <section id="routes-maps-gpx">
-      <h2 id="outdoor-safety-location-disclaimer">Outdoor Safety and Location Disclaimer</h2>
-      <p><strong>Routes, Maps, GPS Tracks, and Location Information.</strong> Red River Gorge Hiker, LLC (“RRGH”) may publish route descriptions, maps, GPS tracks, downloadable GPX files, coordinates, elevation profiles, photographs, land-management information, and other location information documenting routes that have previously been traveled, researched, compiled, or reviewed. RRGH may include official trails, established unofficial routes, selected off-trail routes, roads, access points, crossings, public-land or management boundaries, and other geographic information.</p>
+      <h2>Routes, Maps, GPS Tracks, and Location Information</h2>
+      <p>Red River Gorge Hiker, LLC (“RRGH”) may publish route descriptions, maps, GPS tracks, downloadable GPX files, coordinates, elevation profiles, photographs, land-management information, and other location information documenting routes that have previously been traveled, researched, compiled, or reviewed. RRGH may include official trails, established unofficial routes, selected off-trail routes, roads, access points, crossings, public-land or management boundaries, and other geographic information.</p>
       <p>This information is provided for general information and trip planning. It is not a live navigation service, emergency or rescue service, land survey, title opinion, legal-access determination, or guarantee that any route, trail, road, access point, crossing, boundary, destination, or other location is currently open, legal, accurate, safe, passable, or suitable for you or your trip. Publication of a route does not mean RRGH recommends that every visitor attempt it.</p>
     </section>
 
@@ -124,3 +124,9 @@ import Base from '../layouts/Base.astro';
     </section>
   </div>
 </Base>
+
+<style>
+  #outdoor-safety-location-disclaimer {
+    scroll-margin-top: clamp(7rem, 12vw, 10rem);
+  }
+</style>
