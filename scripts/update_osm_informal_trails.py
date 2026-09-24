@@ -5,6 +5,7 @@ from shapely.ops import transform, unary_union
 from pyproj import Transformer
 
 BBOX=(37.45,-83.93,38.05,-83.25)  # south, west, north, east
+CACHE_PATH=pathlib.Path('public/data/map/osm-informal-trails.geojson')
 TILES=[
   (37.45,-83.93,37.75,-83.59),
   (37.45,-83.59,37.75,-83.25),
@@ -43,6 +44,7 @@ def valid_for_tile(data,tile):
 elements_by_id={}
 used_sources=[]
 errors=[]
+successful_tiles=0
 for tile in TILES:
     south,west,north,east=tile
     query=f'[out:json][timeout:40];way["highway"~"^(path|footway)$"]({south},{west},{north},{east});out tags geom qt;'
@@ -60,10 +62,18 @@ for tile in TILES:
         except Exception as exc:
             errors.append(f'{tile} {endpoint}: {exc}')
     if tile_data is None:
-        raise SystemExit('No valid Overpass response for tile '+repr(tile)+' | '+' | '.join(errors[-4:]))
+        print('WARNING: no valid Overpass response for tile '+repr(tile)+' | '+' | '.join(errors[-4:]))
+        continue
+    successful_tiles+=1
     for element in tile_data.get('elements',[]):
         if element.get('type')=='way' and element.get('id') is not None:
             elements_by_id[element['id']]=element
+
+if successful_tiles != len(TILES):
+    if CACHE_PATH.exists():
+        print(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles); preserving existing cache at {CACHE_PATH}.')
+        raise SystemExit(0)
+    raise SystemExit(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles) and no existing cache is available.')
 
 # USDA Forest Service authoritative trail geometry for subtraction.
 service='https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublishWithDataStatus_01/MapServer/0/query'
@@ -158,7 +168,7 @@ out={
     'osm_way_count_before_filter':len(elements_by_id)
   }
 }
-path=pathlib.Path('public/data/map/osm-informal-trails.geojson')
+path=CACHE_PATH
 path.parent.mkdir(parents=True,exist_ok=True)
 path.write_text(json.dumps(out,separators=(',',':'))+'\n',encoding='utf-8')
 print(f'Wrote {len(features)} community/informal trails ({explicit_informal} explicit informal, {candidate_count} candidates); removed {official_like_removed} official-like OSM paths from {len(elements_by_id)} OSM ways.')

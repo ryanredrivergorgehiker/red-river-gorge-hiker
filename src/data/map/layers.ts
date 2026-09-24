@@ -207,7 +207,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'Community / Informal trails normally load from an RRGH-hosted OpenStreetMap-derived cache. Public Overpass API instances are used only as a browser fallback if the cache is unavailable. The layer uses OpenStreetMap path data explicitly tagged informal=yes. An informal path is not proof of legal access.',
+    privacyNote: 'Community / Informal trails normally load from an RRGH-hosted OpenStreetMap-derived cache. Public Overpass API instances are used only as a browser fallback if the cache is unavailable. The cache includes paths explicitly tagged informal plus community-mapped path/footway candidates that do not substantially match RRGH\'s authoritative USDA Forest Service trail geometry. Appearance on this layer is not proof of legal access, maintenance, or official status.',
     opacity: 1
   },
   {

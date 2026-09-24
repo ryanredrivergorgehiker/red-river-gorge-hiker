@@ -21,6 +21,8 @@ FULL_MAP = (ROOT / 'src/pages/routes/map.astro').read_text(encoding='utf-8')
 GUIDE = (ROOT / 'src/pages/guides/kentucky-lidar.astro').read_text(encoding='utf-8')
 PRIVACY = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
 TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
+OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
+OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
 
 
@@ -295,7 +297,26 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("void loadInformalTrails();", MAP)
         self.assertIn('RRGH OpenStreetMap cache', MAP)
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap data', PRIVACY)
-        self.assertIn('planner may snap to displayed informal paths', TERMS)
+        self.assertIn('planner may snap to displayed community/informal paths', TERMS)
+        self.assertIn('do not substantially match the authoritative USDA Forest Service trail geometry', TERMS)
+
+    def test_cached_osm_candidates_are_nonempty_and_geographically_bounded(self):
+        self.assertEqual(OSM_CACHE.get('type'), 'FeatureCollection')
+        self.assertGreater(len(OSM_CACHE.get('features', [])), 50)
+        meta = OSM_CACHE.get('rrgh_cache', {})
+        self.assertTrue(meta.get('bounds_clipped'))
+        self.assertEqual(meta.get('bbox'), [37.45, -83.93, 38.05, -83.25])
+        classifications = {feature.get('properties', {}).get('rrgh_classification') for feature in OSM_CACHE['features']}
+        self.assertIn('community-candidate', classifications)
+        south, west, north, east = meta['bbox']
+        for feature in OSM_CACHE['features']:
+            coords = feature.get('geometry', {}).get('coordinates', [])
+            self.assertGreaterEqual(len(coords), 2)
+            for lon, lat in coords:
+                self.assertGreaterEqual(lat, south)
+                self.assertLessEqual(lat, north)
+                self.assertGreaterEqual(lon, west)
+                self.assertLessEqual(lon, east)
 
     def test_land_management_defaults_on_and_counties_are_fixed_context(self):
         for layer in ('usfs-wilderness', 'usfs-special-management', 'usfs-land-units'):
