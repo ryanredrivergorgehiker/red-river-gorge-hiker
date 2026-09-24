@@ -251,6 +251,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('nearestNode', MAP)
         self.assertIn('deletePlanSegment', MAP)
         self.assertIn("hitLine.on('contextmenu'", MAP)
+        self.assertIn("className: 'rrgh-plan-segment-hit'", MAP)
+        self.assertIn("hitElement.dataset.planSegmentIndex = String(segmentIndex)", MAP)
         self.assertIn("hitElement.addEventListener('mousedown'", MAP)
         self.assertIn("window.addEventListener('mousemove', handler, true)", MAP)
         self.assertIn("window.addEventListener('mouseup', handler, true)", MAP)
