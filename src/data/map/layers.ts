@@ -226,11 +226,11 @@ export const mapSources: readonly MapSource[] = [
     label: 'USGS 3DEP Bare Earth DEM',
     kind: 'elevation',
     enabled: true,
-    browserLoaded: false,
+    browserLoaded: true,
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
     attribution: 'USGS National Map 3D Elevation Program (3DEP)',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Build-time only. Visitor browsers do not call the elevation service.'
+    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback.'
   }
 ] as const;
 
