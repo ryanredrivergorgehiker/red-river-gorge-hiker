@@ -396,5 +396,26 @@ const conditionCards = [
     </section>
   </div>
 
+  <script is:inline>
+    (() => {
+      const alignCurrentConditions = () => {
+        if (window.location.hash !== '#current-conditions') return;
+        const target = document.getElementById('current-conditions');
+        if (target) target.scrollIntoView({ block: 'start', behavior: 'auto' });
+      };
+      const settleCurrentConditions = () => {
+        requestAnimationFrame(() => requestAnimationFrame(alignCurrentConditions));
+        window.setTimeout(alignCurrentConditions, 250);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', settleCurrentConditions, { once: true });
+      } else {
+        settleCurrentConditions();
+      }
+      window.addEventListener('load', alignCurrentConditions, { once: true });
+      window.addEventListener('hashchange', settleCurrentConditions);
+      if (document.fonts?.ready) document.fonts.ready.then(alignCurrentConditions);
+    })();
+  </script>
   <script is:inline type="application/ld+json" set:html={JSON.stringify(webPageSchema)} />
 </Base>
