@@ -1935,7 +1935,11 @@ const enabledSources = enabledBrowserMapSources;
         selectedRouteId = sharedRouteId;
         const entry = routeExploreEntries.get(sharedRouteId);
         window.setTimeout(() => {
+          const popup = entry?.layers[0]?.getPopup?.();
+          const priorAutoPan = popup?.options?.autoPan;
+          if (popup?.options) popup.options.autoPan = false;
           entry?.layers[0]?.openPopup?.();
+          if (popup?.options) popup.options.autoPan = priorAutoPan;
           if (sharedCenter && sharedZoom !== null) map.setView(sharedCenter, sharedZoom, { animate: false });
         }, 80);
       }
