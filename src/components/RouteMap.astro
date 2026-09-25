@@ -312,7 +312,7 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-context-strip">
     <p><strong>Map data:</strong> Kentucky GIS · USGS · USDA Forest Service · OpenStreetMap.</p>
     <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
-    <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#hiking-safety'}>Before you go: check closures, road access &amp; conditions →</a></p>
+    <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#current-conditions'}>Before you go: check closures, road access &amp; conditions →</a></p>
     <p><a href={import.meta.env.BASE_URL + 'copyright-and-terms/#outdoor-safety-location-disclaimer'}>Outdoor safety and location disclaimer →</a></p>
   </div>
 
@@ -322,10 +322,10 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
-      <p><strong>Official trails:</strong> bright cyan lines from USDA Forest Service data.</p>
+      <p><strong>Official trails:</strong> bright cyan dashed lines from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
-      <p><strong>Roads:</strong> bright yellow Forest Service road geometry useful for access context.</p>
+      <p><strong>Roads:</strong> bright yellow dashed Forest Service road geometry useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
@@ -1109,6 +1109,7 @@ const enabledSources = enabledBrowserMapSources;
           color: '#00c8ff',
           weight: 2.6,
           opacity: opacity('usfs-trails'),
+          dashArray: '8 5',
           lineCap: 'round',
           lineJoin: 'round'
         },
@@ -1182,6 +1183,7 @@ const enabledSources = enabledBrowserMapSources;
           color: '#ffcf33',
           weight: 3,
           opacity: opacity('usfs-roads'),
+          dashArray: '12 6',
           lineCap: 'round',
           lineJoin: 'round'
         },
