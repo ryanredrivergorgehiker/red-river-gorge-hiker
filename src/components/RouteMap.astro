@@ -207,7 +207,7 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="usfs-wilderness" checked />
             <span class="route-layer-swatch swatch-wilderness" aria-hidden="true"></span>
-            <span>Wilderness boundaries</span>
+            <span>National Forest Wilderness</span>
           </label>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="usfs-special-management" checked />
@@ -257,7 +257,7 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
         <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
       </div>
-      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near an official trail, community/informal trail, or Forest Service road to snap to the connected network; click clearly away from the mapped network for a dashed straight segment. Use the arrow pad under the map scale to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near an official trail, community/informal trail, or mapped road to snap to the connected network; click clearly away from the mapped network for a dashed straight segment. Use the arrow pad under the map scale to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
         <div class="route-plan-live-stats-head">
           <strong data-plan-stats-title>Planning totals</strong>
@@ -300,7 +300,10 @@ const enabledSources = enabledBrowserMapSources;
         <span data-coordinate-dd></span>
         <span data-coordinate-utm></span>
       </div>
-      <button type="button" data-coordinate-copy>Copy coordinates</button>
+      <div class="route-coordinate-actions">
+        <button type="button" data-coordinate-copy>Copy coordinates</button>
+        <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
+      </div>
     </div>
 
     <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
@@ -321,12 +324,12 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan lines from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
-      <p><strong>Community / informal trails:</strong> high-contrast magenta dashed lines for OpenStreetMap-derived candidate paths.</p>
+      <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
       <p><strong>Roads:</strong> bright yellow Forest Service road geometry useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
-      <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. Click an empty point on the map for decimal-degree and UTM coordinates.</p>
+      <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>
@@ -486,6 +489,7 @@ const enabledSources = enabledBrowserMapSources;
     const coordinateDd = shell.querySelector<HTMLElement>('[data-coordinate-dd]');
     const coordinateUtm = shell.querySelector<HTMLElement>('[data-coordinate-utm]');
     const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
+    const coordinateClose = shell.querySelector<HTMLButtonElement>('[data-coordinate-close]');
     const planLiveStats = shell.querySelector<HTMLElement>('[data-plan-live-stats]');
     const planStatsTitle = shell.querySelector<HTMLElement>('[data-plan-stats-title]');
     const planStatsNote = shell.querySelector<HTMLElement>('[data-plan-stats-note]');
@@ -634,6 +638,7 @@ const enabledSources = enabledBrowserMapSources;
     const roadPaths: any[] = [];
     const countyPaths: any[] = [];
     const informalPaths: any[] = [];
+    const informalCasingPaths: any[] = [];
     const wildernessPaths: any[] = [];
     const specialManagementPaths: any[] = [];
     const landUnitPaths: any[] = [];
@@ -1065,6 +1070,33 @@ const enabledSources = enabledBrowserMapSources;
       return data;
     };
 
+    const fetchPagedGeoJson = async (id: string, pageSize = 1000, maxPages = 8) => {
+      const source = sourceById(id);
+      if (!source?.url) throw new Error('Missing map source URL for ' + id);
+      const features: any[] = [];
+
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+        const url = new URL(source.url);
+        url.searchParams.set('resultOffset', String(pageIndex * pageSize));
+        url.searchParams.set('resultRecordCount', String(pageSize));
+        url.searchParams.set('orderByFields', 'OBJECTID');
+
+        const response = await fetch(url.toString(), {
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin'
+        });
+        if (!response.ok) throw new Error(source.label + ' request failed with ' + response.status);
+        const data = await response.json();
+        if (data?.error) throw new Error(source.label + ' returned an ArcGIS error');
+        const pageFeatures = Array.isArray(data?.features) ? data.features : [];
+        features.push(...pageFeatures);
+        if (pageFeatures.length < pageSize) break;
+      }
+
+      return { type: 'FeatureCollection', features };
+    };
+
     const vectorFailures: string[] = [];
 
     try {
@@ -1190,6 +1222,32 @@ const enabledSources = enabledBrowserMapSources;
     } catch (error) {
       console.error(error);
       vectorFailures.push('Forest Service roads');
+    }
+
+    try {
+      const kentuckyRoads = await fetchPagedGeoJson('ky-road-centerlines');
+      let planningRoadFeatures = 0;
+      const excludedRoadClass = /interstate|freeway|expressway|limited\s*access|ramp|parkway/i;
+
+      for (const feature of kentuckyRoads.features ?? []) {
+        const roadClass = featureValue(feature.properties, ['RoadClass', 'ROADCLASS']);
+        const roadName = featureValue(feature.properties, ['LSt_Name', 'St_Name', 'LST_NAME', 'ST_NAME']);
+        if (excludedRoadClass.test(roadClass) || /parkway/i.test(roadName)) continue;
+
+        let indexed = false;
+        for (const line of geometryLines(feature.geometry)) {
+          if (line.length < 2) continue;
+          addSnapLine(line);
+          indexed = true;
+        }
+        if (indexed) planningRoadFeatures += 1;
+      }
+
+      container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
+    } catch (error) {
+      console.error(error);
+      container.dataset.planningRoadFeatureCount = '0';
+      vectorFailures.push('Kentucky road-planning network');
     }
 
     try {
@@ -1378,7 +1436,7 @@ const enabledSources = enabledBrowserMapSources;
             'wilderness',
             normalContextStyles['usfs-wilderness']!,
             ['wildernessname', 'WILDERNESSNAME'],
-            'National Wilderness boundary',
+            'National Forest Wilderness boundary',
             wildernessPaths
           );
         } else if (id === 'usfs-special-management') {
@@ -1492,16 +1550,32 @@ const enabledSources = enabledBrowserMapSources;
           featureCollection = await fetchLiveFallback();
         }
 
+        const casingLayer = L.geoJSON(featureCollection as any, {
+          pane: 'informalTrails',
+          interactive: false,
+          style: {
+            color: '#22313a',
+            weight: 5.2,
+            opacity: opacity('osm-informal-trails'),
+            dashArray: '6 5',
+            lineCap: 'round',
+            lineJoin: 'round'
+          },
+          onEachFeature: (_feature: any, featureLayer: any) => {
+            informalCasingPaths.push(featureLayer);
+          }
+        });
+
         const layer = L.geoJSON(featureCollection as any, {
           pane: 'informalTrails',
           style: (feature: any) => {
             const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
             const restricted = access === 'no' || access === 'private';
             return {
-              color: restricted ? '#f2f2f2' : '#f04f9a',
-              weight: restricted ? 3 : 2.6,
+              color: restricted ? '#b9b9b9' : '#f7f2e7',
+              weight: restricted ? 2.2 : 2.4,
               opacity: opacity('osm-informal-trails'),
-              dashArray: '5 5',
+              dashArray: '6 5',
               lineCap: 'round',
               lineJoin: 'round'
             };
@@ -1559,8 +1633,12 @@ const enabledSources = enabledBrowserMapSources;
           }
         });
 
-        mapLayers.set('osm-informal-trails', layer);
-        opacitySetters.set('osm-informal-trails', (value) => informalPaths.forEach((path) => path.setStyle({ opacity: value })));
+        const informalComposite = L.layerGroup([casingLayer, layer]);
+        mapLayers.set('osm-informal-trails', informalComposite);
+        opacitySetters.set('osm-informal-trails', (value) => {
+          informalCasingPaths.forEach((path) => path.setStyle({ opacity: value }));
+          informalPaths.forEach((path) => path.setStyle({ opacity: value }));
+        });
         map.attributionControl.addAttribution('<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>');
         container.dataset.informalTrailCount = String(informalPaths.length);
         syncVisibility('osm-informal-trails');
@@ -1571,12 +1649,12 @@ const enabledSources = enabledBrowserMapSources;
 
         setStatus(
           informalPaths.length
-            ? 'Community / Informal trails loaded.'
+            ? 'Trail and road planning network loaded.'
             : 'OpenStreetMap trail data loaded. Explore and Plan are ready.'
         );
         window.setTimeout(() => {
           if (informalTrailsReady && activeTool === null) {
-            setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+            setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
           }
         }, 1600);
       } catch (error) {
@@ -2163,6 +2241,11 @@ const enabledSources = enabledBrowserMapSources;
       if (coordinateCard) coordinateCard.hidden = false;
     };
 
+    coordinateClose?.addEventListener('click', () => {
+      if (coordinateCard) coordinateCard.hidden = true;
+      coordinatePoint = null;
+    });
+
     coordinateCopy?.addEventListener('click', async () => {
       if (!coordinatePoint) return;
       const textValue = coordinatePoint.lat.toFixed(6) + ', ' + coordinatePoint.lng.toFixed(6) + ' · UTM ' + coordinatePoint.utm;
@@ -2175,7 +2258,56 @@ const enabledSources = enabledBrowserMapSources;
     });
 
     let lastTapAt = 0;
+    let longPressTimer = 0;
+    let longPressStart: { x: number; y: number } | null = null;
+    let longPressTriggered = false;
+
+    const clearLongPress = () => {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressStart = null;
+    };
+
+    container.addEventListener('touchstart', (event) => {
+      if (activeTool !== null || event.touches.length !== 1) {
+        clearLongPress();
+        return;
+      }
+      const touch = event.touches[0]!;
+      longPressStart = { x: touch.clientX, y: touch.clientY };
+      longPressTriggered = false;
+      window.clearTimeout(longPressTimer);
+      longPressTimer = window.setTimeout(() => {
+        if (!longPressStart || activeTool !== null) return;
+        const rect = container.getBoundingClientRect();
+        const point = L.point(longPressStart.x - rect.left, longPressStart.y - rect.top);
+        showCoordinate(map.containerPointToLatLng(point));
+        setStatus('Map coordinates shown. Close the coordinate card when finished.');
+        longPressTriggered = true;
+        lastTapAt = 0;
+      }, 600);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (event) => {
+      if (!longPressStart || event.touches.length !== 1) return;
+      const touch = event.touches[0]!;
+      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 12) clearLongPress();
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', clearLongPress, { passive: true });
+
     container.addEventListener('touchend', (event) => {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressStart = null;
+
+      if (longPressTriggered) {
+        longPressTriggered = false;
+        lastTapAt = 0;
+        event.preventDefault();
+        return;
+      }
+
       if (activeTool !== null || event.changedTouches.length !== 1 || event.touches.length !== 0) return;
       const now = Date.now();
       if (now - lastTapAt < 320) {
@@ -2487,10 +2619,10 @@ const enabledSources = enabledBrowserMapSources;
       } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
         redrawPlan(false);
-        setStatus('Build route: click near an official trail, community/informal trail, or Forest Service road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
+        setStatus('Build route: click near an official trail, community/informal trail, or mapped road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
       } else if (!vectorFailures.length && informalTrailsReady) {
         if (planLiveStats) planLiveStats.hidden = true;
-        setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
       }
     };
 
@@ -2941,7 +3073,7 @@ const enabledSources = enabledBrowserMapSources;
 
       for (const button of saveButtons) button.disabled = points.length < 2;
       if (!planStops.length) {
-        setStatus('Build route: place a first point near an official trail, community/informal trail, or Forest Service road, or clearly away from the network to start off trail.');
+        setStatus('Build route: place a first point near an official trail, community/informal trail, or mapped road, or clearly away from the network to start off trail.');
       } else if (planStops.length === 1) {
         setStatus('First point set. Click near the mapped trail/road network for an automatic snapped segment, or clearly away from it for a dashed straight segment.');
       } else {
@@ -2952,13 +3084,17 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
+    map.on('contextmenu', (event: any) => {
+      if (activeTool !== null) return;
+      event.originalEvent?.preventDefault?.();
+      showCoordinate(event.latlng);
+      setStatus('Map coordinates shown. Close the coordinate card when finished.');
+    });
+
     map.on('click', (event: any) => {
       if (Date.now() < suppressPlanClickUntil) return;
 
-      if (activeTool === null) {
-        showCoordinate(event.latlng);
-        return;
-      }
+      if (activeTool === null) return;
       if (activeTool === 'measure') {
         measurePoints.push(event.latlng);
         redrawMeasure();
