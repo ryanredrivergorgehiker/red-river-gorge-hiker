@@ -104,7 +104,6 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" class="route-pan-right" data-plan-pan-direction="right" aria-label="Pan map right">→</button>
         <button type="button" class="route-pan-down" data-plan-pan-direction="down" aria-label="Pan map down">↓</button>
       </div>
-      <button type="button" class="route-staging-view-copy" data-staging-copy-map-view hidden>Copy current map view</button>
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
@@ -446,7 +445,6 @@ const enabledSources = enabledBrowserMapSources;
     const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
     const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
     const planPanPad = shell.querySelector<HTMLElement>('[data-plan-pan-pad]');
-    const stagingCopyMapView = shell.querySelector<HTMLButtonElement>('[data-staging-copy-map-view]');
     const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
     const searchResults = shell.querySelector<HTMLElement>('[data-map-search-results]');
     const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
@@ -513,17 +511,14 @@ const enabledSources = enabledBrowserMapSources;
       }
     }
 
-    const homeNorthWest = L.latLng(37.878846, -83.744659);
+    const homeCenter = L.latLng(37.8196836, -83.6396027);
     const homeZoom = 13;
-    const homeCenterForViewport = () => {
-      const size = map.getSize();
-      const northWestPoint = map.project(homeNorthWest, homeZoom);
-      return map.unproject(northWestPoint.add(L.point(size.x / 2, size.y / 2)), homeZoom);
-    };
-    const setHomeView = () => map.setView(homeCenterForViewport(), homeZoom, { animate: false });
+    const setHomeView = () => map.setView(homeCenter, homeZoom, { animate: false });
     const syncViewportDiagnostics = () => {
+      const center = map.getCenter();
       const northWest = map.getBounds().getNorthWest();
-      container.dataset.mapNorthWest = northWest.lat.toFixed(6) + ',' + northWest.lng.toFixed(6);
+      container.dataset.mapCenter = center.lat.toFixed(7) + ',' + center.lng.toFixed(7);
+      container.dataset.mapNorthWest = northWest.lat.toFixed(7) + ',' + northWest.lng.toFixed(7);
     };
 
     if (mode === 'full') {
@@ -1882,36 +1877,6 @@ const enabledSources = enabledBrowserMapSources;
     for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-pan-direction]')) {
       button.addEventListener('click', () => {
         panMapByDirection(button.dataset.planPanDirection ?? '');
-      });
-    }
-
-    const isStagingPreview =
-      window.location.pathname.includes('/red-river-gorge-hiker-staging/')
-      || window.location.hostname === '127.0.0.1'
-      || window.location.hostname === 'localhost';
-    if (stagingCopyMapView && isStagingPreview) {
-      stagingCopyMapView.hidden = false;
-      stagingCopyMapView.addEventListener('click', async () => {
-        const center = map.getCenter();
-        const bounds = map.getBounds();
-        const northWest = bounds.getNorthWest();
-        const southEast = bounds.getSouthEast();
-        const size = map.getSize();
-        const viewText = [
-          'center=' + center.lat.toFixed(7) + ',' + center.lng.toFixed(7),
-          'zoom=' + map.getZoom(),
-          'northWest=' + northWest.lat.toFixed(7) + ',' + northWest.lng.toFixed(7),
-          'southEast=' + southEast.lat.toFixed(7) + ',' + southEast.lng.toFixed(7),
-          'viewport=' + Math.round(size.x) + 'x' + Math.round(size.y)
-        ].join(' | ');
-
-        try {
-          await navigator.clipboard.writeText(viewText);
-          setStatus('Current map view copied. Paste it into ChatGPT.');
-        } catch {
-          window.prompt('Copy current map view and paste it into ChatGPT:', viewText);
-          setStatus('Current map view prepared for copying.');
-        }
       });
     }
 
