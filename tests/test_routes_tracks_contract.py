@@ -28,6 +28,10 @@ OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
 SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-potential.mjs').read_text(encoding='utf-8')
+SUN_META_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.meta.json'
+SUN_OVERLAY_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.svg'
+SUN_META = json.loads(SUN_META_PATH.read_text(encoding='utf-8'))
+SUN_OVERLAY = SUN_OVERLAY_PATH.read_text(encoding='utf-8')
 
 
 def sha256(path):
@@ -453,6 +457,29 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("north: 38.15", SUN_GENERATOR)
         self.assertIn("method: 'POST'", SUN_GENERATOR)
         self.assertIn('RSP_BilinearInterpolation', SUN_GENERATOR)
+
+        self.assertEqual(SUN_META['source']['id'], 'usgs-3dep-bare-earth-dem')
+        self.assertEqual(SUN_META['bounds'], {
+            'west': -84.02,
+            'south': 37.52,
+            'east': -83.18,
+            'north': 38.15,
+        })
+        self.assertEqual(SUN_META['grid']['cols'], 181)
+        self.assertEqual(SUN_META['grid']['rows'], 141)
+        self.assertGreater(SUN_META['grid']['returnedSamples'], 24000)
+        self.assertEqual(SUN_META['seasonalAzimuths']['sunrise'], [58, 90, 121])
+        self.assertEqual(SUN_META['seasonalAzimuths']['sunset'], [239, 270, 302])
+        self.assertEqual(SUN_META['display']['sunriseColor'], '#ff6f61')
+        self.assertEqual(SUN_META['display']['sunsetColor'], '#4055d8')
+        self.assertTrue(SUN_META['display']['lowPotentialTransparent'])
+        self.assertTrue(any('Bare-earth terrain model' in item for item in SUN_META['limitations']))
+        self.assertTrue(any('not a guarantee' in item for item in SUN_META['limitations']))
+        self.assertIn('viewBox="0 0 180 140"', SUN_OVERLAY)
+        self.assertIn('<metadata>', SUN_OVERLAY)
+        self.assertIn('#ff6f61', SUN_OVERLAY)
+        self.assertIn('#4055d8', SUN_OVERLAY)
+        self.assertGreaterEqual(SUN_OVERLAY.count('<path '), 12)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
