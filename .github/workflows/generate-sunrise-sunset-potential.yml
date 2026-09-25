@@ -1,0 +1,44 @@
+name: Generate sunrise sunset potential
+
+on:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - scripts/generate-sunrise-sunset-potential.mjs
+      - .github/workflows/generate-sunrise-sunset-potential.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out staging source
+        uses: actions/checkout@v4
+        with:
+          ref: staging/routes-tracks-interactive-map
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate terrain-derived sunrise sunset overlay
+        run: node scripts/generate-sunrise-sunset-potential.mjs
+
+      - name: Commit refreshed derived overlay
+        run: |
+          if git diff --quiet -- public/data/map/sunrise-sunset-potential.svg public/data/map/sunrise-sunset-potential.meta.json; then
+            echo "Derived overlay is already current."
+            exit 0
+          fi
+          git config user.name "ryanredrivergorgehiker"
+          git config user.email "ryan@redrivergorgehiker.com"
+          git add public/data/map/sunrise-sunset-potential.svg public/data/map/sunrise-sunset-potential.meta.json
+          git commit -m "Generate sunrise sunset terrain potential"
+          git push origin HEAD:staging/routes-tracks-interactive-map
