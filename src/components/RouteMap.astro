@@ -322,10 +322,10 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
-      <p><strong>Official trails:</strong> bright cyan dashed lines from USDA Forest Service data.</p>
+      <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
-      <p><strong>Roads:</strong> bright yellow dashed Forest Service road geometry useful for access context.</p>
+      <p><strong>Roads:</strong> bright yellow pill-dashed Forest Service road geometry with a dark casing, useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
@@ -635,7 +635,9 @@ const enabledSources = enabledBrowserMapSources;
     const routeStartRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
     const landmarkRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
     const trailPaths: any[] = [];
+    const trailCasingPaths: any[] = [];
     const roadPaths: any[] = [];
+    const roadCasingPaths: any[] = [];
     const countyPaths: any[] = [];
     const informalPaths: any[] = [];
     const informalCasingPaths: any[] = [];
@@ -1103,6 +1105,19 @@ const enabledSources = enabledBrowserMapSources;
       const trails = await fetchGeoJson('usfs-trails');
       indexGeometry(trails);
       const seenLabels = new Set<string>();
+      const trailCasingLayer = L.geoJSON(trails, {
+        pane: 'trails',
+        interactive: false,
+        style: {
+          color: '#22313a',
+          weight: 5.4,
+          opacity: opacity('usfs-trails'),
+          dashArray: '8 5',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (_feature: any, layer: any) => trailCasingPaths.push(layer)
+      });
       const trailLayer = L.geoJSON(trails, {
         pane: 'trails',
         style: {
@@ -1164,8 +1179,9 @@ const enabledSources = enabledBrowserMapSources;
         }
       });
       container.dataset.trailFeatureCount = String(trailPaths.length);
-      mapLayers.set('usfs-trails', trailLayer);
+      mapLayers.set('usfs-trails', L.layerGroup([trailCasingLayer, trailLayer]));
       opacitySetters.set('usfs-trails', (value) => {
+        trailCasingPaths.forEach((layer) => layer.setStyle({ opacity: value }));
         trailPaths.forEach((layer) => layer.setStyle({ opacity: value }));
         trailLabelMarkers.forEach((marker) => marker.setOpacity(value));
       });
@@ -1177,6 +1193,19 @@ const enabledSources = enabledBrowserMapSources;
 
     try {
       const roads = await fetchGeoJson('usfs-roads');
+      const roadCasingLayer = L.geoJSON(roads, {
+        pane: 'roads',
+        interactive: false,
+        style: {
+          color: '#22313a',
+          weight: 6,
+          opacity: opacity('usfs-roads'),
+          dashArray: '12 6',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (_feature: any, layer: any) => roadCasingPaths.push(layer)
+      });
       const roadLayer = L.geoJSON(roads, {
         pane: 'roads',
         style: {
@@ -1218,8 +1247,11 @@ const enabledSources = enabledBrowserMapSources;
         }
       });
       container.dataset.roadFeatureCount = String(roadPaths.length);
-      mapLayers.set('usfs-roads', roadLayer);
-      opacitySetters.set('usfs-roads', (value) => roadPaths.forEach((layer) => layer.setStyle({ opacity: value })));
+      mapLayers.set('usfs-roads', L.layerGroup([roadCasingLayer, roadLayer]));
+      opacitySetters.set('usfs-roads', (value) => {
+        roadCasingPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        roadPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+      });
       syncVisibility('usfs-roads');
     } catch (error) {
       console.error(error);
