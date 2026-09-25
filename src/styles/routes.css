@@ -1333,6 +1333,8 @@
 
 @media(max-width:700px){
   .route-coordinate-card{
+    z-index:1010;
+    bottom:4.55rem;
     align-items:flex-start;
     gap:.55rem;
   }
