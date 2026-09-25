@@ -1885,7 +1885,10 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
-    const isStagingPreview = window.location.pathname.includes('/red-river-gorge-hiker-staging/');
+    const isStagingPreview =
+      window.location.pathname.includes('/red-river-gorge-hiker-staging/')
+      || window.location.hostname === '127.0.0.1'
+      || window.location.hostname === 'localhost';
     if (stagingCopyMapView && isStagingPreview) {
       stagingCopyMapView.hidden = false;
       stagingCopyMapView.addEventListener('click', async () => {
