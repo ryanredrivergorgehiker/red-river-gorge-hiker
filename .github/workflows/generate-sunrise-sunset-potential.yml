@@ -37,7 +37,7 @@ jobs:
 
       - name: Commit refreshed derived overlay
         run: |
-          if git diff --quiet -- public/data/map/sunrise-sunset-potential.svg public/data/map/sunrise-sunset-potential.meta.json; then
+          if [ -z "$(git status --porcelain -- public/data/map/sunrise-sunset-potential.svg public/data/map/sunrise-sunset-potential.meta.json)" ]; then
             echo "Derived overlay is already current."
             exit 0
           fi
