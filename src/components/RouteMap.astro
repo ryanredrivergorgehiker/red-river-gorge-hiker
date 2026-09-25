@@ -50,7 +50,7 @@ const enabledSources = enabledBrowserMapSources;
         <legend>Map view</legend>
         <div class="route-map-preset-buttons">
           <button type="button" data-map-preset="hiking" aria-pressed="true">
-            <strong>Hiking</strong><span>Kentucky + USGS topo · light terrain relief</span>
+            <strong>Hiking</strong><span>USGS topo · hiking context</span>
           </button>
           <button type="button" data-map-preset="terrain" aria-pressed="false">
             <strong>Terrain</strong><span>Kentucky + USGS topo · stronger terrain relief</span>
@@ -181,7 +181,7 @@ const enabledSources = enabledBrowserMapSources;
         <div class="route-layer-group" aria-label="Base and terrain layers">
           <p class="route-layer-group-title">Base &amp; terrain</p>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="kytopo" checked />
+            <input type="checkbox" data-map-layer="kytopo" />
             <span class="route-layer-swatch swatch-topo" aria-hidden="true"></span>
             <span>Kentucky Topo</span>
           </label>
@@ -191,7 +191,7 @@ const enabledSources = enabledBrowserMapSources;
             <span>USGS Topo</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="ky-hillshade" checked />
+            <input type="checkbox" data-map-layer="ky-hillshade" />
             <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
             <span>Terrain relief (LiDAR)</span>
           </label>
@@ -229,7 +229,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" /></label>
             <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" /></label>
             <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
-            <label><span>USGS Topo</span><input type="range" min="0" max="100" value="72" data-opacity="usgs-topo" /></label>
+            <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
@@ -257,7 +257,19 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
         <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
       </div>
-      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near a mapped trail or road to snap to it; click clearly off trail for a dashed straight segment. Use the arrow pad under Search to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near an official trail, community/informal trail, or Forest Service road to snap to the connected network; click clearly away from the mapped network for a dashed straight segment. Use the arrow pad under the map scale to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
+      <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
+        <div class="route-plan-live-stats-head">
+          <strong data-plan-stats-title>Planning totals</strong>
+          <span data-plan-stats-note>Elevation updates after two points.</span>
+        </div>
+        <div class="route-plan-live-stats-grid">
+          <span><small>Distance</small><strong data-plan-stats-distance>—</strong></span>
+          <span><small>Gain</small><strong data-plan-stats-gain>—</strong></span>
+          <span><small>Loss</small><strong data-plan-stats-loss>—</strong></span>
+          <span><small>Elevation</small><strong data-plan-stats-range>—</strong></span>
+        </div>
+      </div>
       <div class="route-plan-actions">
         <button type="button" data-plan-action="undo" disabled>Undo</button>
         <button type="button" data-plan-action="redo" disabled>Redo</button>
@@ -309,7 +321,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan lines from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
-      <p><strong>Community / informal trails:</strong> bright lime dashed lines for OpenStreetMap-derived candidate paths.</p>
+      <p><strong>Community / informal trails:</strong> high-contrast magenta dashed lines for OpenStreetMap-derived candidate paths.</p>
       <p><strong>Roads:</strong> bright yellow Forest Service road geometry useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
@@ -474,6 +486,13 @@ const enabledSources = enabledBrowserMapSources;
     const coordinateDd = shell.querySelector<HTMLElement>('[data-coordinate-dd]');
     const coordinateUtm = shell.querySelector<HTMLElement>('[data-coordinate-utm]');
     const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
+    const planLiveStats = shell.querySelector<HTMLElement>('[data-plan-live-stats]');
+    const planStatsTitle = shell.querySelector<HTMLElement>('[data-plan-stats-title]');
+    const planStatsNote = shell.querySelector<HTMLElement>('[data-plan-stats-note]');
+    const planStatsDistance = shell.querySelector<HTMLElement>('[data-plan-stats-distance]');
+    const planStatsGain = shell.querySelector<HTMLElement>('[data-plan-stats-gain]');
+    const planStatsLoss = shell.querySelector<HTMLElement>('[data-plan-stats-loss]');
+    const planStatsRange = shell.querySelector<HTMLElement>('[data-plan-stats-range]');
 
     if (layerPanel) layerPanel.open = false;
 
@@ -506,7 +525,7 @@ const enabledSources = enabledBrowserMapSources;
       maxBoundsViscosity: 0.88,
       preferCanvas: true
     });
-    L.control.scale({ position: 'bottomleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
+    L.control.scale({ position: 'topleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
 
     const panes: Record<string, number> = {
       hillshade: 180,
@@ -670,8 +689,6 @@ const enabledSources = enabledBrowserMapSources;
 
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
-    const endpointKeys: string[] = [];
-
     const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
 
     const ensureNode = (lat: number, lng: number) => {
@@ -707,7 +724,7 @@ const enabledSources = enabledBrowserMapSources;
         const b = valid[i]!;
         const from = L.latLng(a.lat, a.lng);
         const to = L.latLng(b.lat, b.lng);
-        const steps = Math.max(1, Math.ceil(from.distanceTo(to) / 30));
+        const steps = Math.max(1, Math.ceil(from.distanceTo(to) / 15));
         for (let step = 1; step <= steps; step += 1) {
           const ratio = step / steps;
           const lat = a.lat + (b.lat - a.lat) * ratio;
@@ -717,7 +734,6 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1]!, keys[i]!);
-      endpointKeys.push(keys[0]!, keys[keys.length - 1]!);
     };
 
     const indexGeometry = (geojson: any) => {
@@ -726,11 +742,11 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
-    const bridgeNearbyEndpoints = () => {
-      const unique = Array.from(new Set(endpointKeys));
+    const bridgeNearbyNetworkNodes = () => {
+      const keys = Array.from(nodeCoords.keys());
       const buckets = new Map<string, string[]>();
       const bucketSize = 0.00012;
-      for (const key of unique) {
+      for (const key of keys) {
         const point = nodeCoords.get(key);
         if (!point) continue;
         const bx = Math.floor(point.lng / bucketSize);
@@ -740,7 +756,7 @@ const enabledSources = enabledBrowserMapSources;
         list.push(key);
         buckets.set(bucket, list);
       }
-      for (const key of unique) {
+      for (const key of keys) {
         const point = nodeCoords.get(key);
         if (!point) continue;
         const bx = Math.floor(point.lng / bucketSize);
@@ -748,7 +764,7 @@ const enabledSources = enabledBrowserMapSources;
         for (let x = bx - 1; x <= bx + 1; x += 1) {
           for (let y = by - 1; y <= by + 1; y += 1) {
             for (const candidate of buckets.get(x + ':' + y) ?? []) {
-              if (candidate === key) continue;
+              if (candidate <= key) continue;
               const other = nodeCoords.get(candidate);
               if (other && point.distanceTo(other) <= 12) connect(key, candidate);
             }
@@ -1482,7 +1498,7 @@ const enabledSources = enabledBrowserMapSources;
             const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
             const restricted = access === 'no' || access === 'private';
             return {
-              color: restricted ? '#f2f2f2' : '#b8f34a',
+              color: restricted ? '#f2f2f2' : '#f04f9a',
               weight: restricted ? 3 : 2.6,
               opacity: opacity('osm-informal-trails'),
               dashArray: '5 5',
@@ -1549,7 +1565,7 @@ const enabledSources = enabledBrowserMapSources;
         container.dataset.informalTrailCount = String(informalPaths.length);
         syncVisibility('osm-informal-trails');
 
-        bridgeNearbyEndpoints();
+        bridgeNearbyNetworkNodes();
         container.dataset.plannerNodeCount = String(graph.size);
         setExplorePlanReady(true);
 
@@ -1573,7 +1589,7 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
-    bridgeNearbyEndpoints();
+    bridgeNearbyNetworkNodes();
     container.dataset.plannerNodeCount = String(graph.size);
 
     const tripTypeEnabled = (tripType: string) =>
@@ -1693,9 +1709,9 @@ const enabledSources = enabledBrowserMapSources;
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
 
       if (name === 'hiking') {
-        setLayerControl('kytopo', true, 88);
-        setLayerControl('usgs-topo', true, 72);
-        setLayerControl('ky-hillshade', true, 18);
+        setLayerControl('kytopo', false, 88);
+        setLayerControl('usgs-topo', true, 100);
+        setLayerControl('ky-hillshade', false, 18);
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('usfs-wilderness', true);
       } else if (name === 'terrain') {
@@ -2192,6 +2208,179 @@ const enabledSources = enabledBrowserMapSources;
     let suppressPlanClickUntil = 0;
     let segmentDragActive = false;
 
+    type ElevationSummary = {
+      elevationsFt: number[];
+      gainFt: number;
+      lossFt: number;
+      minFt: number;
+      maxFt: number;
+      startFt: number;
+      endFt: number;
+    };
+
+    let measureElevationsFt: number[] | null = null;
+    let planElevationSummary: ElevationSummary | null = null;
+    let measureElevationTimer = 0;
+    let planElevationTimer = 0;
+    let measureElevationController: AbortController | null = null;
+    let planElevationController: AbortController | null = null;
+    let measureElevationRevision = 0;
+    let planElevationRevision = 0;
+
+    const formatFeet = (value: number) => Math.round(value).toLocaleString() + ' ft';
+    const formatElevationDelta = (value: number) => {
+      const rounded = Math.round(value);
+      if (rounded === 0) return '0 ft';
+      return (rounded > 0 ? '+' : '−') + Math.abs(rounded).toLocaleString() + ' ft';
+    };
+
+    const pathDistanceMeters = (points: any[]) => {
+      let total = 0;
+      for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
+      return total;
+    };
+
+    const pathMidpoint = (points: any[]) => {
+      if (!points.length) return null;
+      if (points.length === 1) return points[0];
+      const total = pathDistanceMeters(points);
+      if (!total) return points[0];
+      const target = total / 2;
+      let walked = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        const from = points[i - 1];
+        const to = points[i];
+        const segment = from.distanceTo(to);
+        if (walked + segment >= target) {
+          const ratio = segment ? (target - walked) / segment : 0;
+          return L.latLng(
+            from.lat + (to.lat - from.lat) * ratio,
+            from.lng + (to.lng - from.lng) * ratio
+          );
+        }
+        walked += segment;
+      }
+      return points[points.length - 1];
+    };
+
+    const resampleElevationPath = (points: any[], maxSamples = 64) => {
+      if (points.length <= 2) return points.slice();
+      const cumulative = [0];
+      for (let i = 1; i < points.length; i += 1) {
+        cumulative.push(cumulative[i - 1]! + points[i - 1].distanceTo(points[i]));
+      }
+      const total = cumulative[cumulative.length - 1] ?? 0;
+      if (!total) return [points[0], points[points.length - 1]];
+      const desired = Math.max(2, Math.min(maxSamples, Math.ceil(total / 60) + 1));
+      const sampled: any[] = [];
+      for (let sampleIndex = 0; sampleIndex < desired; sampleIndex += 1) {
+        const target = total * sampleIndex / (desired - 1);
+        let segmentIndex = 1;
+        while (segmentIndex < cumulative.length && cumulative[segmentIndex]! < target) segmentIndex += 1;
+        if (segmentIndex >= cumulative.length) {
+          sampled.push(points[points.length - 1]);
+          continue;
+        }
+        const startDistance = cumulative[segmentIndex - 1]!;
+        const endDistance = cumulative[segmentIndex]!;
+        const ratio = endDistance === startDistance ? 0 : (target - startDistance) / (endDistance - startDistance);
+        const from = points[segmentIndex - 1];
+        const to = points[segmentIndex];
+        sampled.push(L.latLng(
+          from.lat + (to.lat - from.lat) * ratio,
+          from.lng + (to.lng - from.lng) * ratio
+        ));
+      }
+      return sampled;
+    };
+
+    const summarizeElevations = (elevationsFt: number[]): ElevationSummary => {
+      let gainFt = 0;
+      let lossFt = 0;
+      for (let i = 1; i < elevationsFt.length; i += 1) {
+        const delta = elevationsFt[i]! - elevationsFt[i - 1]!;
+        if (delta > 0) gainFt += delta;
+        else lossFt += Math.abs(delta);
+      }
+      return {
+        elevationsFt,
+        gainFt,
+        lossFt,
+        minFt: Math.min(...elevationsFt),
+        maxFt: Math.max(...elevationsFt),
+        startFt: elevationsFt[0]!,
+        endFt: elevationsFt[elevationsFt.length - 1]!
+      };
+    };
+
+    const fetchElevations = async (points: any[], signal: AbortSignal) => {
+      const source = sourceById('usgs-3dep-bare-earth-dem');
+      if (!source?.serviceUrl) throw new Error('USGS 3DEP elevation source is unavailable.');
+      const elevationsFt: number[] = [];
+      for (let offset = 0; offset < points.length; offset += 20) {
+        const chunk = points.slice(offset, offset + 20);
+        const geometry = JSON.stringify({
+          points: chunk.map((point: any) => [point.lng, point.lat]),
+          spatialReference: { wkid: 4326 }
+        });
+        const params = new URLSearchParams({
+          f: 'json',
+          geometry,
+          geometryType: 'esriGeometryMultipoint',
+          returnFirstValueOnly: 'true',
+          interpolation: 'RSP_BilinearInterpolation',
+          outSR: '4326'
+        });
+        const response = await fetch(source.serviceUrl + '/getSamples?' + params.toString(), {
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          signal
+        });
+        if (!response.ok) throw new Error('USGS 3DEP elevation request failed with ' + response.status);
+        const payload = await response.json();
+        if (payload?.error || !Array.isArray(payload?.samples) || payload.samples.length !== chunk.length) {
+          throw new Error('USGS 3DEP returned incomplete elevation samples.');
+        }
+        for (const sample of payload.samples) {
+          const raw = Array.isArray(sample.value) ? sample.value[0] : String(sample.value).trim().split(/\s+/)[0];
+          const meters = Number(raw);
+          if (!Number.isFinite(meters)) throw new Error('USGS 3DEP returned an invalid elevation value.');
+          elevationsFt.push(meters * 3.280839895013123);
+        }
+      }
+      return elevationsFt;
+    };
+
+    const updateLiveStats = (
+      title: string,
+      totalMeters: number,
+      summary: ElevationSummary | null,
+      note: string
+    ) => {
+      if (planLiveStats) planLiveStats.hidden = false;
+      if (planStatsTitle) planStatsTitle.textContent = title;
+      if (planStatsDistance) planStatsDistance.textContent = formatDistance(totalMeters);
+      if (planStatsGain) planStatsGain.textContent = summary ? '+' + formatFeet(summary.gainFt) : '—';
+      if (planStatsLoss) planStatsLoss.textContent = summary ? '−' + formatFeet(summary.lossFt) : '—';
+      if (planStatsRange) planStatsRange.textContent = summary ? formatFeet(summary.minFt) + '–' + formatFeet(summary.maxFt) : '—';
+      if (planStatsNote) planStatsNote.textContent = note;
+    };
+
+    const addPlanningLabel = (latlng: any, text: string, className: string, targetLayer: any) => {
+      if (!latlng || !text) return;
+      L.marker(latlng, {
+        pane: 'planning',
+        interactive: false,
+        icon: L.divIcon({
+          className: 'rrgh-planning-distance-label ' + className,
+          html: '<span>' + text + '</span>',
+          iconSize: [1, 1],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(targetLayer);
+    };
+
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
 
     const clonePlan = (): PlanSnapshot => ({
@@ -2292,11 +2481,15 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       if (tool === 'measure') {
-        setStatus('Measure distance: click points anywhere on the map. This is straight point-to-point distance and does not follow trails.');
+        if (planPanel) planPanel.hidden = false;
+        redrawMeasure(false);
+        setStatus('Measure distance: click points anywhere on the map. Segment distances appear on the map; elevation updates from USGS 3DEP after two points.');
       } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
-        setStatus('Build route: click near a mapped trail or road to snap automatically; click clearly off trail for a dashed straight segment. Use the arrow pad under Search to pan without interrupting the route. Drag a segment to adjust it; right-click a segment to delete it.');
+        redrawPlan(false);
+        setStatus('Build route: click near an official trail, community/informal trail, or Forest Service road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
       } else if (!vectorFailures.length && informalTrailsReady) {
+        if (planLiveStats) planLiveStats.hidden = true;
         setStatus('Drag to pan, use +/− or pinch to zoom, and click an empty point for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
       }
     };
@@ -2307,13 +2500,30 @@ const enabledSources = enabledBrowserMapSources;
       measurePoints = [];
       planStops = [];
       planSegments = [];
+      measureElevationsFt = null;
+      planElevationSummary = null;
+      measureElevationRevision += 1;
+      planElevationRevision += 1;
+      window.clearTimeout(measureElevationTimer);
+      window.clearTimeout(planElevationTimer);
+      measureElevationController?.abort();
+      planElevationController?.abort();
+      measureElevationController = null;
+      planElevationController = null;
       planHistory = [{ stops: [], segments: [] }];
       planHistoryIndex = 0;
       for (const button of saveButtons) button.disabled = true;
       updateHistoryButtons();
-      if (activeTool === 'measure') setStatus('Measure distance: click points anywhere on the map.');
-      else if (activeTool === 'plan') setStatus('Build route: place a first point near a trail to snap, or clearly off trail to start off trail.');
-      else setStatus('Map cleared.');
+      if (planLiveStats) planLiveStats.hidden = activeTool === null;
+      if (activeTool === 'measure') {
+        updateLiveStats('Measured line', 0, null, 'Add two points for elevation.');
+        setStatus('Measure distance: click points anywhere on the map.');
+      } else if (activeTool === 'plan') {
+        updateLiveStats('Planned route', 0, null, 'Add two points for elevation.');
+        setStatus('Build route: place a first point near the mapped trail/road network, or clearly away from it to start off trail.');
+      } else {
+        setStatus('Map cleared.');
+      }
     };
 
     const xmlEscape = (value: string) =>
@@ -2383,24 +2593,86 @@ const enabledSources = enabledBrowserMapSources;
       if (planHistoryIndex < planHistory.length - 1) restorePlanHistory(planHistoryIndex + 1);
     });
 
-    const redrawMeasure = () => {
-      measureLayer.clearLayers();
-      if (measurePoints.length) {
-        for (const point of measurePoints) {
-          L.circleMarker(point, {
-            pane: 'planning',
-            renderer: planningRenderer,
-            radius: 5,
-            color: '#fff',
-            weight: 2,
-            fillColor: '#d9892b',
-            fillOpacity: 1,
-            interactive: false
-          }).addTo(measureLayer);
+    const scheduleMeasureElevation = () => {
+      const revision = ++measureElevationRevision;
+      window.clearTimeout(measureElevationTimer);
+      measureElevationController?.abort();
+      measureElevationController = null;
+      measureElevationsFt = null;
+      if (measurePoints.length < 2) return;
+
+      measureElevationTimer = window.setTimeout(async () => {
+        const controller = new AbortController();
+        measureElevationController = controller;
+        try {
+          const elevations = await fetchElevations(measurePoints, controller.signal);
+          if (revision !== measureElevationRevision) return;
+          measureElevationsFt = elevations;
+          redrawMeasure(false);
+        } catch (error) {
+          if (controller.signal.aborted || revision !== measureElevationRevision) return;
+          console.error(error);
+          measureElevationsFt = null;
+          const total = pathDistanceMeters(measurePoints);
+          updateLiveStats('Measured line', total, null, 'Distance is available; USGS elevation is temporarily unavailable.');
         }
+      }, 220);
+    };
+
+    const schedulePlanElevation = (points: any[]) => {
+      const revision = ++planElevationRevision;
+      window.clearTimeout(planElevationTimer);
+      planElevationController?.abort();
+      planElevationController = null;
+      planElevationSummary = null;
+      if (points.length < 2) return;
+
+      const samples = resampleElevationPath(points, 64);
+      planElevationTimer = window.setTimeout(async () => {
+        const controller = new AbortController();
+        planElevationController = controller;
+        try {
+          const elevations = await fetchElevations(samples, controller.signal);
+          if (revision !== planElevationRevision) return;
+          planElevationSummary = summarizeElevations(elevations);
+          redrawPlan(false);
+        } catch (error) {
+          if (controller.signal.aborted || revision !== planElevationRevision) return;
+          console.error(error);
+          planElevationSummary = null;
+          const total = pathDistanceMeters(points);
+          updateLiveStats('Planned route', total, null, 'Distance is available; USGS elevation is temporarily unavailable.');
+        }
+      }, 260);
+    };
+
+    const redrawMeasure = (refreshElevation = true) => {
+      measureLayer.clearLayers();
+      if (refreshElevation) {
+        measureElevationsFt = null;
+        scheduleMeasureElevation();
       }
-      if (measurePoints.length > 1) {
-        L.polyline(measurePoints, {
+
+      for (const point of measurePoints) {
+        L.circleMarker(point, {
+          pane: 'planning',
+          renderer: planningRenderer,
+          radius: 5,
+          color: '#fff',
+          weight: 2,
+          fillColor: '#d9892b',
+          fillOpacity: 1,
+          interactive: false
+        }).addTo(measureLayer);
+      }
+
+      let total = 0;
+      for (let i = 1; i < measurePoints.length; i += 1) {
+        const from = measurePoints[i - 1];
+        const to = measurePoints[i];
+        const segmentDistance = from.distanceTo(to);
+        total += segmentDistance;
+        L.polyline([from, to], {
           pane: 'planning',
           renderer: planningRenderer,
           color: '#d9892b',
@@ -2409,10 +2681,35 @@ const enabledSources = enabledBrowserMapSources;
           dashArray: '8 5',
           interactive: false
         }).addTo(measureLayer);
+
+        const delta = measureElevationsFt?.[i] !== undefined && measureElevationsFt?.[i - 1] !== undefined
+          ? measureElevationsFt[i]! - measureElevationsFt[i - 1]!
+          : null;
+        const label = formatDistance(segmentDistance) + (delta === null ? '' : ' · ' + formatElevationDelta(delta));
+        addPlanningLabel(pathMidpoint([from, to]), label, 'is-measure-segment', measureLayer);
       }
-      let total = 0;
-      for (let i = 1; i < measurePoints.length; i += 1) total += measurePoints[i - 1].distanceTo(measurePoints[i]);
-      setStatus(measurePoints.length > 1 ? 'Measured distance: ' + formatDistance(total) + ' · straight point-to-point segments.' : 'Measure distance: first point set · click another point.');
+
+      const measureSummary = measureElevationsFt?.length === measurePoints.length
+        ? summarizeElevations(measureElevationsFt)
+        : null;
+      const note = measurePoints.length < 2
+        ? 'Add two points for elevation.'
+        : measureSummary
+          ? 'USGS 3DEP elevation at each measurement point.'
+          : 'Calculating USGS 3DEP elevation…';
+      updateLiveStats('Measured line', total, measureSummary, note);
+
+      if (measurePoints.length > 1) {
+        const finalLabel = 'Total ' + formatDistance(total)
+          + (measureSummary ? ' · ' + formatElevationDelta(measureSummary.endFt - measureSummary.startFt) : '');
+        addPlanningLabel(measurePoints[measurePoints.length - 1], finalLabel, 'is-total', measureLayer);
+      }
+
+      setStatus(measurePoints.length > 1
+        ? 'Measured distance: ' + formatDistance(total) + ' · segment labels show point-to-point distance' + (measureSummary ? ' and elevation change.' : '; elevation is updating.')
+        : measurePoints.length === 1
+          ? 'Measure distance: first point set · click another point.'
+          : 'Measure distance: click a first point.');
     };
 
     const deletePlanSegment = (segmentIndex: number) => {
@@ -2567,8 +2864,10 @@ const enabledSources = enabledBrowserMapSources;
       });
     };
 
-    const redrawPlan = () => {
+    const redrawPlan = (refreshElevation = true) => {
       planLayer.clearLayers();
+
+      if (refreshElevation) planElevationSummary = null;
 
       planSegments.forEach((segment, segmentIndex) => {
         const points = segment.points.map((point) => L.latLng(point.lat, point.lng));
@@ -2601,6 +2900,9 @@ const enabledSources = enabledBrowserMapSources;
         const hitElement = hitLine.getElement?.() as SVGPathElement | null;
         if (hitElement) hitElement.dataset.planSegmentIndex = String(segmentIndex);
         attachPlanSegmentInteraction(hitLine, visibleLine, segmentIndex);
+
+        const segmentDistance = pathDistanceMeters(points);
+        addPlanningLabel(pathMidpoint(points), formatDistance(segmentDistance), 'is-plan-segment', planLayer);
       });
 
       for (const stop of planStops) {
@@ -2617,16 +2919,36 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       const points = planTrackPoints().map((point) => L.latLng(point.lat, point.lng));
-      let total = 0;
-      for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
+      const total = pathDistanceMeters(points);
+
+      if (refreshElevation && points.length >= 2) schedulePlanElevation(points);
+
+      const statsNote = points.length < 2
+        ? 'Add two points for elevation.'
+        : planElevationSummary
+          ? 'USGS 3DEP sampled along the planned route.'
+          : 'Calculating USGS 3DEP elevation…';
+      updateLiveStats('Planned route', total, planElevationSummary, statsNote);
+
+      if (planStops.length > 1) {
+        const finalStop = planStops[planStops.length - 1]!;
+        const totalLabel = 'Total ' + formatDistance(total)
+          + (planElevationSummary
+            ? ' · +' + formatFeet(planElevationSummary.gainFt) + ' / −' + formatFeet(planElevationSummary.lossFt)
+            : '');
+        addPlanningLabel(L.latLng(finalStop.lat, finalStop.lng), totalLabel, 'is-total', planLayer);
+      }
 
       for (const button of saveButtons) button.disabled = points.length < 2;
       if (!planStops.length) {
-        setStatus('Build route: place a first point near a trail to snap, or clearly off trail to start off trail.');
+        setStatus('Build route: place a first point near an official trail, community/informal trail, or Forest Service road, or clearly away from the network to start off trail.');
       } else if (planStops.length === 1) {
-        setStatus('First point set. Click near a trail or road for an automatic snapped segment, or clearly off trail for a dashed straight segment.');
+        setStatus('First point set. Click near the mapped trail/road network for an automatic snapped segment, or clearly away from it for a dashed straight segment.');
       } else {
-        setStatus('Planned route: ' + formatDistance(total) + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), ' + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s). Drag a segment to adjust it; right-click to delete.');
+        setStatus('Planned route: ' + formatDistance(total)
+          + (planElevationSummary ? ' · +' + formatFeet(planElevationSummary.gainFt) + ' gain · −' + formatFeet(planElevationSummary.lossFt) + ' loss' : ' · elevation updating')
+          + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), '
+          + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s). Drag a segment to adjust it; right-click to delete.');
       }
     };
 
