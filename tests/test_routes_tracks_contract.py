@@ -27,6 +27,7 @@ TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
+SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-potential.mjs').read_text(encoding='utf-8')
 
 
 def sha256(path):
@@ -114,6 +115,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'usfs-special-management'", LAYERS)
         self.assertIn("id: 'usfs-land-units'", LAYERS)
         self.assertIn("id: 'osm-informal-trails'", LAYERS)
+        self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
+        sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
+        self.assertIn("kind: 'derived'", sun_source)
+        self.assertIn('RRGH-hosted derived overlay', sun_source)
+        self.assertIn('sends no coordinates or map requests to USGS', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
         self.assertIn('enabled: false', parcel)
@@ -425,6 +431,28 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('kytopo', false)", MAP)
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
+
+    def test_sunrise_sunset_potential_is_optional_local_and_terrain_derived(self):
+        self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
+        self.assertIn('value="68" data-opacity="sunrise-sunset-potential"', MAP)
+        self.assertIn('swatch-sun-potential', MAP)
+        self.assertIn('coral shows terrain with stronger sunrise potential', MAP)
+        self.assertIn('indigo shows stronger sunset potential', MAP)
+        self.assertIn('not a guarantee of a visible sunrise or sunset', MAP)
+        self.assertIn('sunPotential: 250', MAP)
+        self.assertIn("data/map/sunrise-sunset-potential.svg", MAP)
+        self.assertIn("mapLayers.set('sunrise-sunset-potential', sunPotentialLayer)", MAP)
+        self.assertIn("opacitySetters.set('sunrise-sunset-potential'", MAP)
+        self.assertIn("const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3'])", MAP)
+        self.assertIn("shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')", MAP)
+        self.assertIn("SUNRISE_AZIMUTHS = [58, 90, 121]", SUN_GENERATOR)
+        self.assertIn("SUNSET_AZIMUTHS = [239, 270, 302]", SUN_GENERATOR)
+        self.assertIn('directionalOpenness', SUN_GENERATOR)
+        self.assertIn('localProminence', SUN_GENERATOR)
+        self.assertIn("west: -84.02", SUN_GENERATOR)
+        self.assertIn("north: 38.15", SUN_GENERATOR)
+        self.assertIn("method: 'POST'", SUN_GENERATOR)
+        self.assertIn('RSP_BilinearInterpolation', SUN_GENERATOR)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
