@@ -1114,18 +1114,3 @@
 }
 .route-pan-right{grid-column:3;grid-row:2}
 .route-pan-down{grid-column:2;grid-row:3}
-.route-staging-view-copy{
-  min-height:38px;
-  padding:.45rem .7rem;
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:10px;
-  background:#17372d;
-  color:#fff;
-  font:inherit;
-  font-size:.72rem;
-  font-weight:800;
-  box-shadow:0 .14rem .5rem rgba(20,29,24,.22);
-  cursor:pointer;
-  pointer-events:auto;
-}
-.route-staging-view-copy[hidden]{display:none}
