@@ -92,6 +92,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_TrailNFSPublishWithDataStatus_01',
             'EDW_RoadBasic_01',
             'Ky_CountyLines_WGS84WM',
+            'Ky_911_Road_Centerlines_WGS84WM',
             'EDW_RecInfraRecreationSites_02',
             'EDW_Wilderness_01',
             'EDW_SpecialInterestManagementArea_01',
@@ -101,6 +102,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'usfs-trails'", LAYERS)
         self.assertIn("id: 'usfs-roads'", LAYERS)
         self.assertIn("id: 'ky-counties'", LAYERS)
+        self.assertIn("id: 'ky-road-centerlines'", LAYERS)
+        road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
+        self.assertIn('Kentucky 911 Services Board & Kentucky PSAPs', road_planning)
+        self.assertIn('fixed Red River Gorge-area road-centerline query', road_planning)
         self.assertIn("id: 'usfs-recreation-sites'", LAYERS)
         self.assertIn("id: 'usfs-wilderness'", LAYERS)
         self.assertIn("id: 'usfs-special-management'", LAYERS)
@@ -201,7 +206,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("color: routeColor", MAP)
         self.assertIn("color: '#00c8ff'", MAP)
         self.assertIn("color: '#ffcf33'", MAP)
-        self.assertIn("color: restricted ? '#f2f2f2' : '#f04f9a'", MAP)
+        self.assertIn("color: '#22313a'", MAP)
+        self.assertIn("color: restricted ? '#b9b9b9' : '#f7f2e7'", MAP)
+        self.assertIn('informalCasingPaths', MAP)
         self.assertIn("color: '#665d4f'", MAP)
         self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("weight: 7.5", MAP)
@@ -222,6 +229,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("L.control.scale({ position: 'topleft'", MAP)
         self.assertIn('data-coordinate-card', MAP)
         self.assertIn('Copy coordinates', MAP)
+        self.assertIn('data-coordinate-close', MAP)
+        self.assertIn("map.on('contextmenu'", MAP)
+        self.assertIn("container.addEventListener('touchstart'", MAP)
+        self.assertIn("longPressTimer = window.setTimeout", MAP)
+        self.assertIn("Math.hypot(touch.clientX - longPressStart.x", MAP)
+        self.assertIn("if (activeTool === null) return;", MAP)
         self.assertIn('navigator.geolocation.getCurrentPosition', MAP)
         self.assertIn('route-map-mobile-bar', MAP)
         self.assertIn("container.addEventListener('touchend'", MAP)
@@ -340,6 +353,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("bridgeNearbyNetworkNodes();", MAP)
         self.assertIn("Math.ceil(from.distanceTo(to) / 15)", MAP)
         self.assertIn("point.distanceTo(other) <= 12", MAP)
+        self.assertIn("fetchPagedGeoJson('ky-road-centerlines')", MAP)
+        self.assertIn("container.dataset.planningRoadFeatureCount", MAP)
+        self.assertIn("excludedRoadClass = /interstate|freeway|expressway|limited\\s*access|ramp|parkway/i", MAP)
+        self.assertIn("addSnapLine(line)", MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
@@ -414,6 +431,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap data', PRIVACY)
         self.assertIn('planner may snap to displayed community/informal paths', TERMS)
         self.assertIn('do not substantially match the authoritative USDA Forest Service trail geometry', TERMS)
+        self.assertIn('snap to mapped road-centerline geometry from USDA Forest Service and Kentucky public road datasets', TERMS)
+        self.assertIn('does not determine whether a road has a lawful or safe pedestrian route', TERMS)
+        self.assertIn('fixed Red River Gorge-area set of Kentucky 911 road-centerline geometry', PRIVACY)
+        self.assertIn('not generated from the visitor’s device location', PRIVACY)
 
     def test_cached_osm_candidates_are_nonempty_and_geographically_bounded(self):
         self.assertEqual(OSM_CACHE.get('type'), 'FeatureCollection')
@@ -434,6 +455,8 @@ class RoutesTracksContractTests(unittest.TestCase):
                 self.assertLessEqual(lon, east)
 
     def test_land_management_defaults_on_and_counties_are_fixed_context(self):
+        self.assertIn('<span>National Forest Wilderness</span>', MAP)
+        self.assertIn("label: 'National Forest Wilderness'", LAYERS)
         for layer in ('usfs-wilderness', 'usfs-special-management', 'usfs-land-units'):
             self.assertIn('data-map-layer="' + layer + '" checked', MAP)
         self.assertIn("loadLandContext('usfs-wilderness')", MAP)
