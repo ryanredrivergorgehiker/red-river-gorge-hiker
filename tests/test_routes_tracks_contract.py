@@ -230,7 +230,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Explore RRGH routes', MAP)
 
     def test_map_share_builds_and_restores_stateful_permalinks(self):
-        self.assertEqual(MAP.count('data-map-action="share"'), 2)
+        self.assertEqual(MAP.count('<button type="button" data-map-action="share">Share</button>'), 2)
         self.assertIn('data-map-sheet="share"', MAP)
         self.assertIn('data-share-url', MAP)
         self.assertIn('data-share-copy', MAP)
