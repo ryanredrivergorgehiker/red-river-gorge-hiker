@@ -16,7 +16,7 @@ const BOUNDS = {
 
 const COLS = 181;
 const ROWS = 141;
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 1000;
 const HORIZON_STEPS = 12;
 const PROMINENCE_RADIUS = 7;
 const SUNRISE_AZIMUTHS = [58, 90, 121];
@@ -90,7 +90,6 @@ for (let offset = 0; offset < points.length; offset += BATCH_SIZE) {
   const samples = await fetchSamples(batch);
   elevations.push(...samples.map(sampleMeters));
   console.log(`USGS 3DEP sunrise/sunset grid: ${Math.min(offset + batch.length, points.length)}/${points.length}`);
-  if (offset + BATCH_SIZE < points.length) await sleep(140);
 }
 
 const at = (row, col) => {
