@@ -484,8 +484,26 @@
   transform:translateY(-50%);
 }
 .swatch-route::before{height:6px;border-radius:999px;background:#0d6654}
-.swatch-usfs-trail::before{height:0;border-top:3px dashed #00c8ff}
-.swatch-usfs-road::before{height:0;border-top:3px dashed #ffcf33}
+.swatch-usfs-trail::before,
+.swatch-usfs-road::before{
+  height:0;
+  border-top:6px dashed #22313a;
+  border-radius:999px;
+}
+.swatch-usfs-trail::after,
+.swatch-usfs-road::after{
+  content:'';
+  position:absolute;
+  left:.05rem;
+  right:.05rem;
+  top:50%;
+  z-index:1;
+  transform:translateY(-50%);
+  height:0;
+  border-radius:999px;
+}
+.swatch-usfs-trail::after{border-top:3px dashed #00c8ff}
+.swatch-usfs-road::after{border-top:3px dashed #ffcf33}
 .swatch-county::before{border-top:2px dashed #776f64}
 .swatch-informal::before{border-top:3px dashed #b8f34a}
 .swatch-landmark::before{
