@@ -109,12 +109,14 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
       <button type="button" data-sheet-open="explore" disabled>Explore</button>
       <button type="button" data-sheet-open="plan" disabled>Plan</button>
+      <button type="button" data-map-action="share">Share</button>
     </div>
 
     <div class="route-map-mobile-bar" aria-label="Mobile map controls">
       <button type="button" data-sheet-open="search">Search</button>
       <button type="button" data-sheet-open="layers">Layers</button>
       <button type="button" data-sheet-open="plan" disabled>Plan</button>
+      <button type="button" data-map-action="share">Share</button>
     </div>
 
     <div class="route-search-panel route-map-sheet" data-map-sheet="search" hidden>
@@ -264,6 +266,22 @@ const enabledSources = enabledBrowserMapSources;
       </div>
     </div>
 
+    <div class="route-share-panel route-map-sheet" data-map-sheet="share" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Share this map</strong>
+        <button type="button" data-sheet-close aria-label="Close sharing controls">×</button>
+      </div>
+      <div class="route-share-body">
+        <p data-share-description>Copy this link to share the current map view and settings.</p>
+        <label>
+          <span class="sr-only">Shareable map link</span>
+          <input type="url" data-share-url readonly />
+        </label>
+        <button type="button" data-share-copy>Copy link</button>
+        <p class="route-share-status" data-share-status aria-live="polite"></p>
+      </div>
+    </div>
+
     <div class="route-coordinate-card" data-coordinate-card hidden>
       <div>
         <strong>Map point</strong>
@@ -295,7 +313,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Roads:</strong> bright yellow Forest Service road geometry useful for access context.</p>
     </div>
     <details class="route-map-nerd-details">
-      <summary>Map nerd details</summary>
+      <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. Click an empty point on the map for decimal-degree and UTM coordinates.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
@@ -442,6 +460,11 @@ const enabledSources = enabledBrowserMapSources;
     const explorePanel = shell.querySelector<HTMLElement>('[data-map-sheet="explore"]');
     const exploreList = shell.querySelector<HTMLElement>('[data-explore-route-list]');
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
+    const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
+    const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
+    const shareDescription = shell.querySelector<HTMLElement>('[data-share-description]');
+    const shareCopy = shell.querySelector<HTMLButtonElement>('[data-share-copy]');
+    const shareStatus = shell.querySelector<HTMLElement>('[data-share-status]');
     const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
     const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
     const planPanPad = shell.querySelector<HTMLElement>('[data-plan-pan-pad]');
@@ -532,6 +555,7 @@ const enabledSources = enabledBrowserMapSources;
     let homeBounds: any = null;
     let locationLayer: any = null;
     let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
+    let sharedViewApplied = false;
     const searchItems: Array<{ label: string; detail: string; bounds?: any; latlng?: any; open?: () => void }> = [];
     const sourceById = (id: string) => mapSources.find((source) => source.id === id);
 
@@ -792,6 +816,7 @@ const enabledSources = enabledBrowserMapSources;
       return routePalette[hash % routePalette.length]!;
     };
     const routeExploreEntries = new Map<string, { route: any; color: string; layers: any[]; bounds: any }>();
+    let selectedRouteId: string | null = null;
 
     const routePopup = (route: any) => {
       const popup = document.createElement('div');
@@ -844,6 +869,7 @@ const enabledSources = enabledBrowserMapSources;
             });
             line.bindTooltip(route.title, { sticky: true, className: 'rrgh-map-tooltip rrgh-route-tooltip' });
             line.bindPopup(routePopup(route), { maxWidth: 330 });
+            line.on('click', () => { selectedRouteId = route.routeId; });
             line.addTo(routeGroup);
             routePaths.push(line);
             routeRecords.push({ layer: line, tripType: route.tripType, trailStatus: route.trailStatus });
@@ -864,7 +890,10 @@ const enabledSources = enabledBrowserMapSources;
                 label: route.title,
                 detail: route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · RRGH route',
                 bounds: lineBounds,
-                open: () => line.openPopup()
+                open: () => {
+                  selectedRouteId = route.routeId;
+                  line.openPopup();
+                }
               });
             }
 
@@ -901,6 +930,7 @@ const enabledSources = enabledBrowserMapSources;
                 routeLink.textContent = 'View route guide';
                 startPopup.append(routeLink);
                 marker.bindPopup(startPopup, { maxWidth: 330 });
+                marker.on('click', () => { selectedRouteId = route.routeId; });
                 marker.addTo(routeStartGroup);
                 routeStartMarkers.push(marker);
                 routeStartRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
@@ -1628,6 +1658,7 @@ const enabledSources = enabledBrowserMapSources;
         });
         button.addEventListener('pointerleave', () => resetRouteHighlight(entry));
         button.addEventListener('click', () => {
+          selectedRouteId = entry.route.routeId;
           if (entry.bounds?.isValid?.()) map.fitBounds(entry.bounds.pad(0.35), { maxZoom: 15 });
           entry.layers[0]?.openPopup?.();
         });
@@ -1744,6 +1775,176 @@ const enabledSources = enabledBrowserMapSources;
     }
     syncRouteFilters();
 
+    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghTrips', 'rrghStatus', 'rrghRoute'];
+    const buildShareUrl = () => {
+      const url = new URL(window.location.href);
+      for (const key of Array.from(url.searchParams.keys())) {
+        if (key.startsWith('utm_') || key === 'gclid' || key === 'fbclid' || shareParamNames.includes(key)) {
+          url.searchParams.delete(key);
+        }
+      }
+
+      const center = map.getCenter();
+      url.searchParams.set('rrghMap', [center.lat.toFixed(7), center.lng.toFixed(7), String(map.getZoom())].join(','));
+
+      const activePreset = shell.querySelector<HTMLButtonElement>('[data-map-preset][aria-pressed="true"]')?.dataset.mapPreset;
+      url.searchParams.set('rrghPreset', activePreset ?? 'custom');
+
+      const layerState = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-map-layer]'))
+        .map((input) => {
+          const id = input.dataset.mapLayer;
+          if (!id) return null;
+          const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+          return [id, input.checked ? '1' : '0', slider?.value ?? ''].join(':');
+        })
+        .filter(Boolean)
+        .join(',');
+      url.searchParams.set('rrghLayers', layerState);
+
+      const trips = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]'))
+        .filter((input) => input.checked)
+        .map((input) => input.dataset.routeTripFilter)
+        .filter(Boolean)
+        .join(',');
+      const statuses = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]'))
+        .filter((input) => input.checked)
+        .map((input) => input.dataset.routeStatusFilter)
+        .filter(Boolean)
+        .join(',');
+      url.searchParams.set('rrghTrips', trips);
+      url.searchParams.set('rrghStatus', statuses);
+
+      if (selectedRouteId) url.searchParams.set('rrghRoute', selectedRouteId);
+      url.hash = '';
+      return url.toString();
+    };
+
+    const showShareFallback = (url: string) => {
+      for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"], [data-map-sheet="share"]')) {
+        item.hidden = item !== sharePanel;
+      }
+      if (layerPanel) {
+        layerPanel.open = false;
+        delete layerPanel.dataset.mobileOpen;
+      }
+      if (shareUrlInput) shareUrlInput.value = url;
+      if (shareStatus) shareStatus.textContent = '';
+      if (sharePanel) sharePanel.hidden = false;
+    };
+
+    const copyShareUrl = async () => {
+      const url = shareUrlInput?.value || buildShareUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        if (shareStatus) shareStatus.textContent = 'Link copied.';
+      } catch {
+        if (shareUrlInput) {
+          shareUrlInput.focus();
+          shareUrlInput.select();
+          const copied = document.execCommand('copy');
+          if (shareStatus) shareStatus.textContent = copied ? 'Link copied.' : 'Select and copy the link above.';
+        }
+      }
+    };
+
+    const shareCurrentMap = async () => {
+      const url = buildShareUrl();
+      const selectedEntry = selectedRouteId ? routeExploreEntries.get(selectedRouteId) : null;
+      const title = selectedEntry ? selectedEntry.route.title + ' — Red River Gorge Hiker' : 'Red River Gorge Hiker Interactive Map';
+      const text = selectedEntry
+        ? selectedEntry.route.title + ' · ' + selectedEntry.route.distanceMi.toFixed(2) + ' mi · ' + selectedEntry.route.physicalDifficulty + ' · ' + selectedEntry.route.trailStatusDisplay
+        : 'Shared map view from Red River Gorge Hiker';
+
+      if (shareDescription) {
+        shareDescription.textContent = selectedEntry
+          ? 'Share this map view with ' + selectedEntry.route.title + ' selected.'
+          : 'Copy this link to share the current map view and settings.';
+      }
+
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title, text, url });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+      showShareFallback(url);
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-action="share"]')) {
+      button.addEventListener('click', () => { void shareCurrentMap(); });
+    }
+    shareCopy?.addEventListener('click', () => { void copyShareUrl(); });
+
+    const applySharedMapState = () => {
+      const params = new URL(window.location.href).searchParams;
+      const sharedMap = params.get('rrghMap');
+      const sharedPreset = params.get('rrghPreset');
+
+      if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial'].includes(sharedPreset)) {
+        applyPreset(sharedPreset);
+      }
+
+      const layerState = params.get('rrghLayers');
+      if (layerState !== null) {
+        for (const record of layerState.split(',')) {
+          const [id, enabledValue, opacityValue] = record.split(':');
+          if (!id) continue;
+          const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+          if (!checkbox) continue;
+          const parsedOpacity = opacityValue === '' || opacityValue === undefined ? undefined : Number(opacityValue);
+          setLayerControl(id, enabledValue === '1', Number.isFinite(parsedOpacity) ? parsedOpacity : undefined);
+        }
+      }
+
+      const tripParam = params.get('rrghTrips');
+      if (tripParam !== null) {
+        const selectedTrips = new Set(tripParam.split(',').filter(Boolean));
+        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]')) {
+          input.checked = Boolean(input.dataset.routeTripFilter && selectedTrips.has(input.dataset.routeTripFilter));
+        }
+      }
+      const statusParam = params.get('rrghStatus');
+      if (statusParam !== null) {
+        const selectedStatuses = new Set(statusParam.split(',').filter(Boolean));
+        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]')) {
+          input.checked = Boolean(input.dataset.routeStatusFilter && selectedStatuses.has(input.dataset.routeStatusFilter));
+        }
+      }
+      syncRouteFilters();
+
+      let sharedCenter: any = null;
+      let sharedZoom: number | null = null;
+      if (sharedMap) {
+        const [latValue, lngValue, zoomValue] = sharedMap.split(',');
+        const lat = Number(latValue);
+        const lng = Number(lngValue);
+        const zoom = Number(zoomValue);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(zoom) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && zoom >= 8 && zoom <= 20) {
+          sharedCenter = L.latLng(lat, lng);
+          sharedZoom = zoom;
+          sharedViewApplied = true;
+          map.setView(sharedCenter, sharedZoom, { animate: false });
+        }
+      }
+
+      const sharedRouteId = params.get('rrghRoute');
+      if (sharedRouteId && routeExploreEntries.has(sharedRouteId)) {
+        selectedRouteId = sharedRouteId;
+        const entry = routeExploreEntries.get(sharedRouteId);
+        window.setTimeout(() => {
+          entry?.layers[0]?.openPopup?.();
+          if (sharedCenter && sharedZoom !== null) map.setView(sharedCenter, sharedZoom, { animate: false });
+        }, 80);
+      }
+
+      syncAerialControlState();
+      syncContextLabels();
+      syncViewportDiagnostics();
+    };
+    applySharedMapState();
+
     const syncSheetButtons = () => {
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open]')) {
         const target = button.dataset.sheetOpen;
@@ -1766,7 +1967,7 @@ const enabledSources = enabledBrowserMapSources;
       const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + name + '"]');
       const shouldClose = Boolean(panel && !panel.hidden);
 
-      for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"]')) {
+      for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"], [data-map-sheet="share"]')) {
         item.hidden = true;
       }
 
@@ -2473,7 +2674,7 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.currentZoom = String(map.getZoom());
     setTimeout(() => {
       map.invalidateSize();
-      if (mode === 'full') setHomeView();
+      if (mode === 'full' && !sharedViewApplied) setHomeView();
       syncViewportDiagnostics();
     }, 50);
 
