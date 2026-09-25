@@ -1,4 +1,4 @@
-export type MapSourceKind = 'tile' | 'vector' | 'reference' | 'elevation';
+export type MapSourceKind = 'tile' | 'vector' | 'reference' | 'elevation' | 'derived';
 
 export interface MapSource {
   id: string;
@@ -223,6 +223,18 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://www.openstreetmap.org/copyright',
     privacyNote: 'Community / Informal trails normally load from an RRGH-hosted OpenStreetMap-derived cache. Public Overpass API instances are used only as a browser fallback if the cache is unavailable. The cache includes paths explicitly tagged informal plus community-mapped path/footway candidates that do not substantially match RRGH\'s authoritative USDA Forest Service trail geometry. Appearance on this layer is not proof of legal access, maintenance, or official status.',
     opacity: 1
+  },
+  {
+    id: 'sunrise-sunset-potential',
+    label: 'Sunrise / Sunset potential',
+    kind: 'derived',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
+    attribution: 'Red River Gorge Hiker terrain model derived from USGS 3DEP bare-earth elevation',
+    termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
+    privacyNote: 'This RRGH-hosted derived overlay is generated from a fixed Red River Gorge terrain grid. Viewing it sends no coordinates or map requests to USGS. It indicates seasonal terrain potential for sunrise and sunset photography, not guaranteed visibility.',
+    opacity: 0.68
   },
   {
     id: 'parcel-private-property',
