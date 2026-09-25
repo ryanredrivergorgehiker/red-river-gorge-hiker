@@ -112,12 +112,20 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('Gaia', LAYERS)
         self.assertNotIn('CalTopo', LAYERS)
 
-    def test_elevation_is_build_time_usgs_3dep_only(self):
+    def test_elevation_uses_usgs_3dep_for_published_profiles_and_live_planning(self):
         self.assertIn('3DEPElevation/ImageServer/getSamples', GENERATOR)
         self.assertEqual(ROUTE['elevation']['sampleCount'], 100)
         self.assertIn('RSP_BilinearInterpolation', GENERATOR)
-        self.assertIn('Build-time only', LAYERS)
-        self.assertNotIn('elevation.nationalmap.gov', MAP)
+        elevation = LAYERS.split("id: 'usgs-3dep-bare-earth-dem'", 1)[1].split("}", 1)[0]
+        self.assertIn('browserLoaded: true', elevation)
+        self.assertIn('Measure distance or Build trail route', elevation)
+        self.assertIn("source.serviceUrl + '/getSamples?'", MAP)
+        self.assertIn("interpolation: 'RSP_BilinearInterpolation'", MAP)
+        self.assertIn('fetchElevations', MAP)
+        self.assertIn('scheduleMeasureElevation', MAP)
+        self.assertIn('schedulePlanElevation', MAP)
+        self.assertIn('sample coordinates to the USGS 3D Elevation Program (3DEP)', PRIVACY)
+        self.assertIn('does not automatically send your device’s precise “My location” coordinates', PRIVACY)
 
     def test_route_pages_and_legal_controls_are_present(self):
         self.assertIn("getCollection('routes')", INDEX)
@@ -139,6 +147,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Outdoor safety and location disclaimer', MAP)
         self.assertIn('copyright-and-terms/#outdoor-safety-location-disclaimer', MAP)
         self.assertIn('Interactive Maps and Map-Data Services', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertIn('default map layers begin loading immediately', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
@@ -192,7 +201,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("color: routeColor", MAP)
         self.assertIn("color: '#00c8ff'", MAP)
         self.assertIn("color: '#ffcf33'", MAP)
-        self.assertIn("color: restricted ? '#f2f2f2' : '#b8f34a'", MAP)
+        self.assertIn("color: restricted ? '#f2f2f2' : '#f04f9a'", MAP)
         self.assertIn("color: '#665d4f'", MAP)
         self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("weight: 7.5", MAP)
@@ -210,7 +219,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("container.dataset.mapCenter", MAP)
         self.assertIn("container.dataset.mapNorthWest", MAP)
         self.assertIn("map.on('moveend', syncViewportDiagnostics)", MAP)
-        self.assertIn("L.control.scale", MAP)
+        self.assertIn("L.control.scale({ position: 'topleft'", MAP)
         self.assertIn('data-coordinate-card', MAP)
         self.assertIn('Copy coordinates', MAP)
         self.assertIn('navigator.geolocation.getCurrentPosition', MAP)
@@ -309,12 +318,28 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("application/gpx+xml", MAP)
         self.assertIn("RRGH-planned-route-", MAP)
 
+    def test_planning_and_measurement_show_live_distance_and_elevation_feedback(self):
+        self.assertIn('data-plan-live-stats', MAP)
+        for marker in ('data-plan-stats-distance', 'data-plan-stats-gain', 'data-plan-stats-loss', 'data-plan-stats-range'):
+            self.assertIn(marker, MAP)
+        self.assertIn('rrgh-planning-distance-label', MAP)
+        self.assertIn("formatDistance(segmentDistance)", MAP)
+        self.assertIn("formatElevationDelta(delta)", MAP)
+        self.assertIn("updateLiveStats('Measured line'", MAP)
+        self.assertIn("updateLiveStats('Planned route'", MAP)
+        self.assertIn("USGS 3DEP sampled along the planned route.", MAP)
+        self.assertIn("USGS 3DEP elevation at each measurement point.", MAP)
+        self.assertIn("redrawMeasure(false)", MAP)
+        self.assertIn("redrawPlan(false)", MAP)
+
     def test_planner_uses_official_roads_and_loaded_informal_paths(self):
         self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
         self.assertIn("Not used for route snapping", MAP)
         self.assertIn("Available for route snapping", MAP)
         self.assertIn("accessLower === 'no' || accessLower === 'private'", MAP)
-        self.assertIn("bridgeNearbyEndpoints();", MAP)
+        self.assertIn("bridgeNearbyNetworkNodes();", MAP)
+        self.assertIn("Math.ceil(from.distanceTo(to) / 15)", MAP)
+        self.assertIn("point.distanceTo(other) <= 12", MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
@@ -339,10 +364,18 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("container.dataset.currentZoom", MAP)
         self.assertIn("name === 'hiking'", MAP)
         self.assertIn("name === 'terrain'", MAP)
-        self.assertIn("setLayerControl('kytopo', true, 72)", MAP)
-        self.assertGreaterEqual(MAP.count("setLayerControl('usgs-topo', true, 72)"), 2)
-        self.assertIn('data-map-layer="usgs-topo" checked', MAP)
-        self.assertIn("setLayerControl('ky-hillshade', true, 72)", MAP)
+        hiking_block = MAP.split("if (name === 'hiking')", 1)[1].split("} else if (name === 'terrain')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', false, 88)", hiking_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 100)", hiking_block)
+        self.assertIn("setLayerControl('ky-hillshade', false, 18)", hiking_block)
+        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        self.assertIn('data-map-layer="kytopo" />', base_markup)
+        self.assertIn('data-map-layer="usgs-topo" checked', base_markup)
+        self.assertIn('data-map-layer="ky-hillshade" />', base_markup)
+        terrain_block = MAP.split("} else if (name === 'terrain')", 1)[1].split("} else if (name === 'aerial')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', true, 72)", terrain_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 72)", terrain_block)
+        self.assertIn("setLayerControl('ky-hillshade', true, 72)", terrain_block)
         self.assertIn("setLayerControl('usfs-wilderness', true)", MAP)
         self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
         self.assertNotIn('Wilderness full opacity (100%)', MAP)
