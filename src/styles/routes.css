@@ -1287,3 +1287,56 @@
   .route-plan-live-stats-head span{text-align:left}
   .rrgh-planning-distance-label span{font-size:.62rem}
 }
+
+
+/* Road snapping / deliberate coordinate refinement */
+.swatch-informal::before{
+  height:0;
+  border-top:5px dashed #22313a;
+}
+.swatch-informal::after{
+  content:'';
+  position:absolute;
+  left:.05rem;
+  right:.05rem;
+  top:50%;
+  z-index:1;
+  transform:translateY(-50%);
+  border-top:2px dashed #f7f2e7;
+}
+
+.route-coordinate-actions{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+}
+.route-coordinate-card .route-coordinate-close{
+  width:2rem;
+  height:2rem;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border-color:#8f948f;
+  border-radius:50%;
+  color:#17372d;
+  font-size:1.15rem;
+  font-weight:900;
+  line-height:1;
+}
+.route-coordinate-card .route-coordinate-close:hover,
+.route-coordinate-card .route-coordinate-close:focus-visible{
+  background:#edf1ec;
+  outline:2px solid #17372d;
+  outline-offset:1px;
+}
+
+@media(max-width:700px){
+  .route-coordinate-card{
+    align-items:flex-start;
+    gap:.55rem;
+  }
+  .route-coordinate-actions{
+    margin-left:auto;
+    flex-shrink:0;
+  }
+}
