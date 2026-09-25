@@ -291,6 +291,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn("✥ Resume route", MAP)
         self.assertIn('data-staging-copy-map-view', MAP)
         self.assertIn("window.location.pathname.includes('/red-river-gorge-hiker-staging/')", MAP)
+        self.assertIn("window.location.hostname === '127.0.0.1'", MAP)
+        self.assertIn("window.location.hostname === 'localhost'", MAP)
         self.assertIn("'center=' + center.lat.toFixed(7)", MAP)
         self.assertIn("'northWest=' + northWest.lat.toFixed(7)", MAP)
         self.assertIn("'southEast=' + southEast.lat.toFixed(7)", MAP)
