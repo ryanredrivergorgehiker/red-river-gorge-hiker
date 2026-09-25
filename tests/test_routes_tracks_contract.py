@@ -229,6 +229,22 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('data-map-tool="explore"', MAP)
         self.assertIn('Explore RRGH routes', MAP)
 
+    def test_map_share_builds_and_restores_stateful_permalinks(self):
+        self.assertEqual(MAP.count('data-map-action="share"'), 2)
+        self.assertIn('data-map-sheet="share"', MAP)
+        self.assertIn('data-share-url', MAP)
+        self.assertIn('data-share-copy', MAP)
+        self.assertIn("typeof navigator.share === 'function'", MAP)
+        self.assertIn("navigator.share({ title, text, url })", MAP)
+        self.assertIn("navigator.clipboard.writeText(url)", MAP)
+        for param in ('rrghMap', 'rrghPreset', 'rrghLayers', 'rrghTrips', 'rrghStatus', 'rrghRoute'):
+            self.assertIn(param, MAP)
+        self.assertIn('const buildShareUrl = () =>', MAP)
+        self.assertIn('const applySharedMapState = () =>', MAP)
+        self.assertIn("line.on('click', () => { selectedRouteId = route.routeId; })", MAP)
+        self.assertIn("if (mode === 'full' && !sharedViewApplied) setHomeView();", MAP)
+        self.assertNotIn('locationLayer', MAP.split('const buildShareUrl = () =>', 1)[1].split('const showShareFallback', 1)[0])
+
     def test_map_routes_are_clickable_hiking_products(self):
         self.assertIn('routePopup', MAP)
         self.assertIn("route.distanceMi.toFixed(2)", MAP)
@@ -397,7 +413,8 @@ class RoutesTracksContractTests(unittest.TestCase):
     def test_map_reading_help_and_legal_access_context_are_present(self):
         self.assertIn('How to read this map — 30-second guide', MAP)
         self.assertIn('Closer lines mean steeper terrain', MAP)
-        self.assertIn('Map nerd details', MAP)
+        self.assertIn('Advanced Map Details', MAP)
+        self.assertNotIn('Map nerd details', MAP)
         self.assertIn('Terrain relief (LiDAR)', MAP)
         self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
         self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
