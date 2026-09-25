@@ -1894,7 +1894,8 @@ const enabledSources = enabledBrowserMapSources;
           const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
           if (!checkbox) continue;
           const parsedOpacity = opacityValue === '' || opacityValue === undefined ? undefined : Number(opacityValue);
-          setLayerControl(id, enabledValue === '1', Number.isFinite(parsedOpacity) ? parsedOpacity : undefined);
+          const safeOpacity = parsedOpacity !== undefined && Number.isFinite(parsedOpacity) ? parsedOpacity : undefined;
+          setLayerControl(id, enabledValue === '1', safeOpacity);
         }
       }
 
