@@ -1114,3 +1114,61 @@
 }
 .route-pan-right{grid-column:3;grid-row:2}
 .route-pan-down{grid-column:2;grid-row:3}
+
+
+/* Stateful map sharing — permalink fallback plus four-action mobile bar. */
+.route-share-panel{
+  position:absolute;
+  z-index:1005;
+  left:.75rem;
+  bottom:4.4rem;
+  width:min(30rem,calc(100% - 1.5rem));
+  overflow:hidden;
+}
+.route-share-body{
+  display:grid;
+  gap:.6rem;
+  padding:.75rem;
+}
+.route-share-body p{margin:0;color:#4e5d55;font-size:.8rem;line-height:1.4}
+.route-share-body label{display:block}
+.route-share-body input{
+  width:100%;
+  min-height:42px;
+  padding:.55rem .65rem;
+  border:1px solid #bcb6aa;
+  border-radius:8px;
+  background:#fff;
+  color:#26372f;
+  font:inherit;
+  font-size:.78rem;
+}
+.route-share-body>[data-share-copy]{
+  justify-self:start;
+  min-height:40px;
+  padding:.48rem .78rem;
+  border:1px solid #17372d;
+  border-radius:9px;
+  background:#17372d;
+  color:#fff;
+  font:inherit;
+  font-size:.82rem;
+  font-weight:780;
+  cursor:pointer;
+}
+.route-share-body>[data-share-copy]:hover{background:#2e4a3c}
+.route-share-status{min-height:1.1em}
+
+@media(max-width:700px){
+  .route-map-mobile-bar{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .route-share-panel{
+    top:auto;
+    left:.5rem;
+    right:.5rem;
+    bottom:3.65rem;
+    width:auto;
+    max-height:72%;
+    overflow:auto;
+    border-radius:15px 15px 10px 10px;
+  }
+}
