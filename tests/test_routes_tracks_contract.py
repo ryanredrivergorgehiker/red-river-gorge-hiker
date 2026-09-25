@@ -481,6 +481,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('#4055d8', SUN_OVERLAY)
         self.assertGreaterEqual(SUN_OVERLAY.count('<path '), 12)
 
+        self.assertIn('Sunrise / Sunset potential', PRIVACY)
+        self.assertIn('loads the finished overlay from the RRGH website', PRIVACY)
+        self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS', PRIVACY)
+        self.assertIn('generalized, bare-earth terrain model intended as a photography-planning aid', TERMS)
+        self.assertIn('they do not guarantee that the sun will be visible', TERMS)
+
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
         self.assertIn('data-sheet-open="explore" disabled', MAP)
