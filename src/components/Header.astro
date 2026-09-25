@@ -191,7 +191,7 @@ const exploreHref = (href: string) =>
             <div class="nav-panel nav-panel-explore">
               <div class="nav-explore-grid">
                 {exploreSections.map((section) => (
-                  <section class="nav-explore-section">
+                  <section class:list={['nav-explore-section', 'nav-explore-section-' + section.slug]}>
                     <p class="nav-section-title">{section.title}</p>
                     <ul class="nav-submenu nav-explore-links">
                       {section.links.map((link) => (
@@ -207,10 +207,12 @@ const exploreHref = (href: string) =>
                         </li>
                       ))}
                     </ul>
+                    {section.slug === 'trails-and-guides' && (
+                      <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
+                    )}
                   </section>
                 ))}
               </div>
-              <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
             </div>
           </details>
         </li>
@@ -303,7 +305,7 @@ const exploreHref = (href: string) =>
             <div class="nav-panel nav-panel-explore">
               <div class="nav-explore-grid">
                 {exploreSections.map((section) => (
-                  <section class="nav-explore-section">
+                  <section class:list={['nav-explore-section', 'nav-explore-section-' + section.slug]}>
                     <p class="nav-section-title">{section.title}</p>
                     <ul class="nav-submenu nav-explore-links">
                       {section.links.map((link) => (
@@ -319,10 +321,12 @@ const exploreHref = (href: string) =>
                         </li>
                       ))}
                     </ul>
+                    {section.slug === 'trails-and-guides' && (
+                      <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
+                    )}
                   </section>
                 ))}
               </div>
-              <a class="nav-view-all nav-view-all-explore" href={`${base}explore/`}>EXPLORE ALL</a>
             </div>
           </details>
         </li>
@@ -525,10 +529,38 @@ const exploreHref = (href: string) =>
   }
 
   @media (min-width: 851px) {
+    .site-header .desktop-nav .nav-explore-section-trails-and-guides {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .site-header .desktop-nav .nav-explore-section-camping {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .site-header .desktop-nav .nav-explore-section-current-conditions {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .site-header .desktop-nav .nav-explore-section-landforms {
+      grid-column: 3;
+      grid-row: 1;
+    }
+    .site-header .desktop-nav .nav-explore-section-stories {
+      grid-column: 3;
+      grid-row: 2;
+    }
+    .site-header .desktop-nav .nav-explore-section-search-and-rescue {
+      grid-column: 4;
+      grid-row: 1;
+    }
+    .site-header .desktop-nav .nav-explore-section-hiking-safety {
+      grid-column: 4;
+      grid-row: 2;
+    }
     .site-header .desktop-nav .nav-view-all-explore {
       display: flex;
       width: fit-content;
-      margin-top: -1.75rem;
+      margin-top: 1rem;
     }
   }
 
