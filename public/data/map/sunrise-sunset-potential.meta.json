@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "generatedAtUtc": "2026-09-25T21:52:54.037Z",
+  "source": {
+    "id": "usgs-3dep-bare-earth-dem",
+    "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+    "interpolation": "RSP_BilinearInterpolation"
+  },
+  "bounds": {
+    "west": -84.02,
+    "south": 37.52,
+    "east": -83.18,
+    "north": 38.15
+  },
+  "grid": {
+    "cols": 181,
+    "rows": 141,
+    "approximateCellMeters": [
+      410,
+      501
+    ],
+    "samplingTiles": [
+      5,
+      5
+    ],
+    "requestedSamplesPerTile": 1000,
+    "returnedSamples": 24975
+  },
+  "method": "Terrain-derived photographic potential using local prominence and directional terrain-horizon clearance.",
+  "seasonalAzimuths": {
+    "sunrise": [
+      58,
+      90,
+      121
+    ],
+    "sunset": [
+      239,
+      270,
+      302
+    ],
+    "note": "Representative summer/equinox/winter directions for the Red River Gorge latitude; not a date-specific solar ephemeris."
+  },
+  "display": {
+    "sunriseColor": "#ff6f61",
+    "sunsetColor": "#4055d8",
+    "maximumOpacity": 0.78,
+    "lowPotentialTransparent": true
+  },
+  "limitations": [
+    "Bare-earth terrain model only.",
+    "Does not account for current weather, haze, vegetation, buildings, seasonal foliage, or local obstructions not represented by the DEM.",
+    "Potential is year-round/seasonal and is not a guarantee of visible sunrise or sunset."
+  ]
+}
