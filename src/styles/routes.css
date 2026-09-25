@@ -551,6 +551,7 @@
 }
 .route-plan-panel>p{margin:.55rem .75rem 0;font-size:.78rem;line-height:1.4;color:#5e6962}
 
+.route-coordinate-card[hidden]{display:none!important}
 .route-coordinate-card{
   position:absolute;
   z-index:910;
