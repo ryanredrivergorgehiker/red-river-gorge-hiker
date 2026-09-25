@@ -1172,3 +1172,118 @@
     border-radius:15px 15px 10px 10px;
   }
 }
+
+
+/* Planning refinement — adaptive scale, high-contrast informal trails, live distance/elevation feedback. */
+.swatch-informal::before{border-top-color:#f04f9a}
+
+.route-map .leaflet-top.leaflet-left .leaflet-control-scale{
+  margin-top:3.7rem!important;
+  margin-left:.78rem!important;
+  margin-bottom:0!important;
+}
+.route-map .leaflet-control-scale-line{
+  min-width:72px;
+  border-width:0 0 2px 2px!important;
+  background:rgba(251,250,246,.94)!important;
+  box-shadow:0 .1rem .35rem rgba(20,29,24,.15);
+  font-size:10px;
+  font-weight:800;
+}
+.route-map-left-stack{top:6.45rem}
+
+.route-plan-live-stats{
+  margin:.65rem .75rem .05rem;
+  padding:.62rem .68rem;
+  border:1px solid rgba(23,55,45,.14);
+  border-radius:10px;
+  background:#f3f5f0;
+}
+.route-plan-live-stats[hidden]{display:none}
+.route-plan-live-stats-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:.7rem;
+  margin-bottom:.48rem;
+}
+.route-plan-live-stats-head strong{
+  color:#17372d;
+  font-size:.78rem;
+}
+.route-plan-live-stats-head span{
+  color:#667169;
+  font-size:.68rem;
+  text-align:right;
+}
+.route-plan-live-stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:.4rem;
+}
+.route-plan-live-stats-grid>span{
+  display:grid;
+  gap:.08rem;
+  min-width:0;
+  padding:.38rem .42rem;
+  border-radius:8px;
+  background:#fff;
+}
+.route-plan-live-stats-grid small{
+  color:#737c75;
+  font-size:.62rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.route-plan-live-stats-grid strong{
+  color:#26372f;
+  font-size:.76rem;
+  line-height:1.2;
+}
+
+.rrgh-planning-distance-label{
+  background:transparent!important;
+  border:0!important;
+  overflow:visible!important;
+}
+.rrgh-planning-distance-label span{
+  display:inline-block;
+  transform:translate(-50%,-50%);
+  white-space:nowrap;
+  padding:.22rem .38rem;
+  border:1px solid rgba(23,55,45,.2);
+  border-radius:999px;
+  background:rgba(251,250,246,.94);
+  color:#26372f;
+  box-shadow:0 .1rem .35rem rgba(20,29,24,.2);
+  font-size:.66rem;
+  font-weight:850;
+  line-height:1.15;
+  pointer-events:none;
+}
+.rrgh-planning-distance-label.is-measure-segment span{
+  border-color:rgba(217,137,43,.55);
+}
+.rrgh-planning-distance-label.is-plan-segment span{
+  border-color:rgba(225,122,53,.55);
+}
+.rrgh-planning-distance-label.is-total span{
+  padding:.3rem .48rem;
+  border-color:#17372d;
+  background:rgba(23,55,45,.96);
+  color:#fff;
+  font-size:.7rem;
+}
+
+@media(max-width:700px){
+  .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
+    margin-top:3.45rem!important;
+    margin-left:.55rem!important;
+  }
+  .route-map-left-stack{top:6.1rem;left:.55rem}
+  .route-plan-live-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .route-plan-live-stats-head{display:grid;gap:.15rem}
+  .route-plan-live-stats-head span{text-align:left}
+  .rrgh-planning-distance-label span{font-size:.62rem}
+}
