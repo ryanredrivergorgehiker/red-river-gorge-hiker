@@ -16,7 +16,9 @@ const BOUNDS = {
 
 const COLS = 181;
 const ROWS = 141;
-const BATCH_SIZE = 1000;
+const SAMPLE_TILES_X = 5;
+const SAMPLE_TILES_Y = 5;
+const SAMPLES_PER_TILE = 1000;
 const HORIZON_STEPS = 12;
 const PROMINENCE_RADIUS = 7;
 const SUNRISE_AZIMUTHS = [58, 90, 121];
@@ -29,24 +31,19 @@ const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const radians = (degrees) => degrees * Math.PI / 180;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const points = [];
-for (let row = 0; row < ROWS; row += 1) {
-  const lat = BOUNDS.north - (row / (ROWS - 1)) * (BOUNDS.north - BOUNDS.south);
-  for (let col = 0; col < COLS; col += 1) {
-    const lon = BOUNDS.west + (col / (COLS - 1)) * (BOUNDS.east - BOUNDS.west);
-    points.push([Number(lon.toFixed(7)), Number(lat.toFixed(7))]);
-  }
-}
-
-async function fetchSamples(batch) {
+async function fetchEnvelopeSamples(bounds) {
   const geometry = JSON.stringify({
-    points: batch,
+    xmin: bounds.west,
+    ymin: bounds.south,
+    xmax: bounds.east,
+    ymax: bounds.north,
     spatialReference: { wkid: 4326 }
   });
   const body = new URLSearchParams({
     f: 'json',
     geometry,
-    geometryType: 'esriGeometryMultipoint',
+    geometryType: 'esriGeometryEnvelope',
+    sampleCount: String(SAMPLES_PER_TILE),
     returnFirstValueOnly: 'true',
     interpolation: 'RSP_BilinearInterpolation',
     outSR: '4326'
@@ -64,8 +61,8 @@ async function fetchSamples(batch) {
       if (!response.ok) throw new Error(`USGS 3DEP HTTP ${response.status}`);
       const payload = await response.json();
       if (payload.error) throw new Error(`USGS 3DEP error: ${JSON.stringify(payload.error)}`);
-      if (!Array.isArray(payload.samples) || payload.samples.length !== batch.length) {
-        throw new Error(`Expected ${batch.length} samples; received ${payload.samples?.length ?? 0}`);
+      if (!Array.isArray(payload.samples) || payload.samples.length === 0) {
+        throw new Error('USGS 3DEP returned no area samples.');
       }
       return payload.samples;
     } catch (error) {
@@ -84,18 +81,69 @@ function sampleMeters(sample) {
   return Number.isFinite(value) ? value : null;
 }
 
-const elevations = [];
-for (let offset = 0; offset < points.length; offset += BATCH_SIZE) {
-  const batch = points.slice(offset, offset + BATCH_SIZE);
-  const samples = await fetchSamples(batch);
-  elevations.push(...samples.map(sampleMeters));
-  console.log(`USGS 3DEP sunrise/sunset grid: ${Math.min(offset + batch.length, points.length)}/${points.length}`);
+const sums = new Array(COLS * ROWS).fill(0);
+const counts = new Array(COLS * ROWS).fill(0);
+let returnedSampleCount = 0;
+
+for (let tileY = 0; tileY < SAMPLE_TILES_Y; tileY += 1) {
+  for (let tileX = 0; tileX < SAMPLE_TILES_X; tileX += 1) {
+    const west = BOUNDS.west + (tileX / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west);
+    const east = BOUNDS.west + ((tileX + 1) / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west);
+    const north = BOUNDS.north - (tileY / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south);
+    const south = BOUNDS.north - ((tileY + 1) / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south);
+    const samples = await fetchEnvelopeSamples({ west, south, east, north });
+    returnedSampleCount += samples.length;
+
+    for (const sample of samples) {
+      const elevation = sampleMeters(sample);
+      const lon = Number(sample.location?.x);
+      const lat = Number(sample.location?.y);
+      if (elevation === null || !Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      const col = Math.max(0, Math.min(COLS - 1, Math.round((lon - BOUNDS.west) / (BOUNDS.east - BOUNDS.west) * (COLS - 1))));
+      const row = Math.max(0, Math.min(ROWS - 1, Math.round((BOUNDS.north - lat) / (BOUNDS.north - BOUNDS.south) * (ROWS - 1))));
+      const index = row * COLS + col;
+      sums[index] += elevation;
+      counts[index] += 1;
+    }
+
+    const completed = tileY * SAMPLE_TILES_X + tileX + 1;
+    console.log(`USGS 3DEP sunrise/sunset area sampling: ${completed}/${SAMPLE_TILES_X * SAMPLE_TILES_Y} tiles; ${returnedSampleCount} samples returned`);
+  }
 }
 
-const at = (row, col) => {
+const elevations = sums.map((sum, index) => counts[index] ? sum / counts[index] : null);
+const at = (row, col, grid = elevations) => {
   if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return null;
-  return elevations[row * COLS + col] ?? null;
+  return grid[row * COLS + col] ?? null;
 };
+
+// Area sampling is dense but does not promise one returned point per output cell.
+// Fill sparse cells from nearby sampled terrain without inventing values beyond the sampled extent.
+for (let pass = 0; pass < 10 && elevations.some((value) => value === null); pass += 1) {
+  const prior = elevations.slice();
+  for (let row = 0; row < ROWS; row += 1) {
+    for (let col = 0; col < COLS; col += 1) {
+      const index = row * COLS + col;
+      if (prior[index] !== null) continue;
+      let weighted = 0;
+      let weightTotal = 0;
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (!dx && !dy) continue;
+          const value = at(row + dy, col + dx, prior);
+          if (value === null) continue;
+          const weight = dx === 0 || dy === 0 ? 1 : Math.SQRT1_2;
+          weighted += value * weight;
+          weightTotal += weight;
+        }
+      }
+      if (weightTotal) elevations[index] = weighted / weightTotal;
+    }
+  }
+}
+
+const missingCount = elevations.filter((value) => value === null).length;
+if (missingCount) throw new Error(`Terrain grid still has ${missingCount} unsampled cells after neighbor filling.`);
 
 const midLat = (BOUNDS.south + BOUNDS.north) / 2;
 const xMeters = 111320 * Math.cos(radians(midLat)) * (BOUNDS.east - BOUNDS.west) / (COLS - 1);
@@ -137,7 +185,6 @@ function directionalOpenness(row, col, elevation, azimuth) {
 
   if (maxHorizon === -Math.PI / 2) return 0.5;
   const horizonDegrees = maxHorizon * 180 / Math.PI;
-  // A horizon at or below roughly -4° is strongly open; +8° or more is strongly blocked.
   return clamp01((8 - horizonDegrees) / 12);
 }
 
@@ -204,7 +251,14 @@ const metadata = {
     interpolation: 'RSP_BilinearInterpolation'
   },
   bounds: BOUNDS,
-  grid: { cols: COLS, rows: ROWS, approximateCellMeters: [Math.round(xMeters), Math.round(yMeters)] },
+  grid: {
+    cols: COLS,
+    rows: ROWS,
+    approximateCellMeters: [Math.round(xMeters), Math.round(yMeters)],
+    samplingTiles: [SAMPLE_TILES_X, SAMPLE_TILES_Y],
+    requestedSamplesPerTile: SAMPLES_PER_TILE,
+    returnedSamples: returnedSampleCount
+  },
   method: 'Terrain-derived photographic potential using local prominence and directional terrain-horizon clearance.',
   seasonalAzimuths: {
     sunrise: SUNRISE_AZIMUTHS,
@@ -248,4 +302,4 @@ await fs.mkdir(OUTPUT_DIR, { recursive: true });
 await fs.writeFile(SVG_PATH, svg);
 await fs.writeFile(META_PATH, JSON.stringify(metadata, null, 2) + '\n');
 
-console.log(`Generated ${path.relative(process.cwd(), SVG_PATH)} and metadata from ${points.length} terrain samples.`);
+console.log(`Generated ${path.relative(process.cwd(), SVG_PATH)} and metadata from ${returnedSampleCount} USGS terrain samples.`);
