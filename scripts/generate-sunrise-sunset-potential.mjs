@@ -19,6 +19,7 @@ const ROWS = 141;
 const SAMPLE_TILES_X = 5;
 const SAMPLE_TILES_Y = 5;
 const SAMPLES_PER_TILE = 1000;
+const SAMPLE_CONCURRENCY = 5;
 const HORIZON_STEPS = 12;
 const PROMINENCE_RADIUS = 7;
 const SUNRISE_AZIMUTHS = [58, 90, 121];
@@ -85,15 +86,24 @@ const sums = new Array(COLS * ROWS).fill(0);
 const counts = new Array(COLS * ROWS).fill(0);
 let returnedSampleCount = 0;
 
+const sampleTiles = [];
 for (let tileY = 0; tileY < SAMPLE_TILES_Y; tileY += 1) {
   for (let tileX = 0; tileX < SAMPLE_TILES_X; tileX += 1) {
-    const west = BOUNDS.west + (tileX / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west);
-    const east = BOUNDS.west + ((tileX + 1) / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west);
-    const north = BOUNDS.north - (tileY / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south);
-    const south = BOUNDS.north - ((tileY + 1) / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south);
-    const samples = await fetchEnvelopeSamples({ west, south, east, north });
-    returnedSampleCount += samples.length;
+    sampleTiles.push({
+      west: BOUNDS.west + (tileX / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west),
+      east: BOUNDS.west + ((tileX + 1) / SAMPLE_TILES_X) * (BOUNDS.east - BOUNDS.west),
+      north: BOUNDS.north - (tileY / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south),
+      south: BOUNDS.north - ((tileY + 1) / SAMPLE_TILES_Y) * (BOUNDS.north - BOUNDS.south)
+    });
+  }
+}
 
+for (let offset = 0; offset < sampleTiles.length; offset += SAMPLE_CONCURRENCY) {
+  const batch = sampleTiles.slice(offset, offset + SAMPLE_CONCURRENCY);
+  const responses = await Promise.all(batch.map((bounds) => fetchEnvelopeSamples(bounds)));
+
+  for (const samples of responses) {
+    returnedSampleCount += samples.length;
     for (const sample of samples) {
       const elevation = sampleMeters(sample);
       const lon = Number(sample.location?.x);
@@ -105,10 +115,10 @@ for (let tileY = 0; tileY < SAMPLE_TILES_Y; tileY += 1) {
       sums[index] += elevation;
       counts[index] += 1;
     }
-
-    const completed = tileY * SAMPLE_TILES_X + tileX + 1;
-    console.log(`USGS 3DEP sunrise/sunset area sampling: ${completed}/${SAMPLE_TILES_X * SAMPLE_TILES_Y} tiles; ${returnedSampleCount} samples returned`);
   }
+
+  const completed = Math.min(offset + batch.length, sampleTiles.length);
+  console.log(`USGS 3DEP sunrise/sunset area sampling: ${completed}/${sampleTiles.length} tiles; ${returnedSampleCount} samples returned`);
 }
 
 const elevations = sums.map((sum, index) => counts[index] ? sum / counts[index] : null);
