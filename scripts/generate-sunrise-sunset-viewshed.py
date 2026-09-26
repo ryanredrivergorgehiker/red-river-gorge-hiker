@@ -548,6 +548,27 @@ sunset_view = clamp01(
     + 0.09 * sunset_aspect
 )
 
+trail_elements, trail_overpass_endpoint = fetch_trail_elements()
+trail_lines = []
+for element in trail_elements:
+    xy = coords(element.get("geometry"))
+    if len(xy) >= 2:
+        try:
+            trail_lines.append(LineString(xy))
+        except Exception:
+            pass
+
+trail_mask = rasterize(
+    [(mapping(shape), 1) for shape in trail_lines],
+    out_shape=(ROWS, COLS),
+    transform=TRANSFORM,
+    fill=0,
+    all_touched=True,
+    dtype="uint8",
+).astype(bool)
+trail_distance_m = distance_transform_edt(~trail_mask, sampling=(Y_METERS, X_METERS))
+trail_support = 1.0 - smoothstep(trail_distance_m, 10.0, 55.0)
+
 # Crest/nose support is intentionally narrower than the v5 ridge corridor.
 # Strong positive TPI plus convexity/prominence favors projecting ridge noses
 # and cliff rims, not broad wooded plateau interiors.
@@ -683,27 +704,6 @@ sunset_candidate = (
 )
 sunrise_score[~sunrise_candidate] = 0.0
 sunset_score[~sunset_candidate] = 0.0
-
-trail_elements, trail_overpass_endpoint = fetch_trail_elements()
-trail_lines = []
-for element in trail_elements:
-    xy = coords(element.get("geometry"))
-    if len(xy) >= 2:
-        try:
-            trail_lines.append(LineString(xy))
-        except Exception:
-            pass
-
-trail_mask = rasterize(
-    [(mapping(shape), 1) for shape in trail_lines],
-    out_shape=(ROWS, COLS),
-    transform=TRANSFORM,
-    fill=0,
-    all_touched=True,
-    dtype="uint8",
-).astype(bool)
-trail_distance_m = distance_transform_edt(~trail_mask, sampling=(Y_METERS, X_METERS))
-trail_support = 1.0 - smoothstep(trail_distance_m, 10.0, 55.0)
 
 water_elements, overpass_used = fetch_water_elements()
 water_polygons, water_lines = water_shapes(water_elements)
