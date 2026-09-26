@@ -46,6 +46,6 @@ jobs:
           fi
           git config user.name "ryanredrivergorgehiker"
           git config user.email "ryan@redrivergorgehiker.com"
-          git add -A public/data/map/sunrise-sunset-potential.png public/data/map/sunrise-sunset-potential.svg public/data/map/sunrise-sunset-potential.meta.json
+          git add -A -- public/data/map/
           git commit -m "Generate sunrise sunset photographic viewshed"
           git push origin HEAD:staging/routes-tracks-interactive-map
