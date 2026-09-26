@@ -29,10 +29,13 @@ SUNRISE_AZIMUTHS = [58.0, 90.0, 121.0]
 SUNSET_AZIMUTHS = [239.0, 270.0, 302.0]
 SUNRISE_RGB = np.array([255.0, 111.0, 97.0], dtype=np.float32)
 SUNSET_RGB = np.array([64.0, 85.0, 216.0], dtype=np.float32)
-DISPLAY_QUANTILE = 0.84
-STRONG_QUANTILE = 0.95
-PEAK_QUANTILE = 0.99
-VERSION = 4
+DISPLAY_CANDIDATE_QUANTILE = 0.45
+STRONG_CANDIDATE_QUANTILE = 0.82
+PEAK_CANDIDATE_QUANTILE = 0.97
+RIDGE_CORRIDOR_MIN = 0.34
+DIRECTIONAL_VIEW_MIN = 0.40
+DUAL_VIEW_MIN = 0.68
+VERSION = 5
 
 OUT_DIR = Path("public/data/map")
 PNG_PATH = OUT_DIR / "sunrise-sunset-potential.png"
@@ -297,7 +300,7 @@ def water_shapes(elements):
                         pass
     return polygon_shapes, line_shapes
 
-print(f"V4 photographic viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
+print(f"V5 ridge-constrained photographic viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
 dem_bands = export_image(ELEVATION_SERVICE, pixel_type="F32")
 dem = dem_bands[0].astype(np.float32)
 bad_dem = ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
@@ -374,9 +377,35 @@ ridge_core = clamp01(
     + 0.12 * relief_score
     + 0.07 * regional_elevation
 )
+
+# Explicit ridge/spur support. Positive topographic position at both a short and
+# broader scale distinguishes crest/shoulder terrain from nearby hollows.
+fine_sigma = max(1.5, 70.0 / ((X_METERS + Y_METERS) / 2.0))
+broad_sigma = max(4.0, 280.0 / ((X_METERS + Y_METERS) / 2.0))
+fine_tpi = dem - gaussian_filter(dem, sigma=fine_sigma)
+broad_tpi = dem - gaussian_filter(dem, sigma=broad_sigma)
+fine_ridge = smoothstep(fine_tpi, -1.5, 10.0)
+broad_ridge = smoothstep(broad_tpi, -4.0, 28.0)
+height_gate = smoothstep(relative_height, 0.18, 0.62)
+prominence_gate = smoothstep(prominence, 0.14, 0.58)
+
+ridge_corridor = clamp01(
+    0.30 * ridge_core
+    + 0.24 * broad_ridge
+    + 0.17 * fine_ridge
+    + 0.17 * height_gate
+    + 0.12 * prominence_gate
+)
+# The support surface itself fades down a shoulder, but collapses before the
+# valley floor. This is what keeps the displayed gradient on connected high ground.
+ridge_corridor *= smoothstep(relative_height, 0.12, 0.48)
+ridge_corridor *= smoothstep(prominence, 0.08, 0.44)
+
+valley_zone = (relative_height < 0.16) | ((prominence < 0.16) & (broad_tpi < -3.0))
 valley_penalty = (
-    0.16 * clamp01((0.36 - relative_height) / 0.36)
-    + 0.12 * clamp01((0.34 - prominence) / 0.34)
+    0.22 * clamp01((0.34 - relative_height) / 0.34)
+    + 0.16 * clamp01((0.30 - prominence) / 0.30)
+    + 0.10 * clamp01((-broad_tpi - 1.0) / 18.0)
 )
 
 sunrise_direction, sunrise_horizon, sunrise_drop, sunrise_aerial = directional_metrics(dem, vegetation, SUNRISE_AZIMUTHS)
@@ -385,31 +414,110 @@ sunrise_aspect = aspect_score(aspect, slope_degrees, SUNRISE_AZIMUTHS)
 sunset_aspect = aspect_score(aspect, slope_degrees, SUNSET_AZIMUTHS)
 
 # Dense canopy matters most when the terrain does not sharply fall away in the
-# viewing direction. This avoids rejecting an overlook simply because trees are
-# behind or beside the viewer, while reducing forested false positives.
-sunrise_canopy_penalty = local_canopy * (1.0 - 0.68 * sunrise_drop)
-sunset_canopy_penalty = local_canopy * (1.0 - 0.68 * sunset_drop)
+# viewing direction. A true cliff/nose can still see over lower trees, while a
+# forested shoulder without a sharp drop is strongly downgraded.
+sunrise_canopy_penalty = local_canopy * (1.0 - 0.72 * sunrise_drop)
+sunset_canopy_penalty = local_canopy * (1.0 - 0.72 * sunset_drop)
 
-sunrise_score = clamp01(
-    0.34 * ridge_core
-    + 0.23 * sunrise_drop
-    + 0.18 * sunrise_horizon
-    + 0.12 * sunrise_aerial
-    + 0.07 * sunrise_aspect
-    + 0.06 * regional_elevation
-    - valley_penalty
-    - 0.14 * sunrise_canopy_penalty
+sunrise_view = clamp01(
+    0.40 * sunrise_drop
+    + 0.28 * sunrise_horizon
+    + 0.20 * sunrise_aerial
+    + 0.12 * sunrise_aspect
 )
-sunset_score = clamp01(
-    0.34 * ridge_core
-    + 0.23 * sunset_drop
-    + 0.18 * sunset_horizon
-    + 0.12 * sunset_aerial
-    + 0.07 * sunset_aspect
-    + 0.06 * regional_elevation
-    - valley_penalty
-    - 0.14 * sunset_canopy_penalty
+sunset_view = clamp01(
+    0.40 * sunset_drop
+    + 0.28 * sunset_horizon
+    + 0.20 * sunset_aerial
+    + 0.12 * sunset_aspect
 )
+
+# A point may legitimately see both directions only when both viewsheds are
+# genuinely strong on ridge terrain. Otherwise, favor the better direction and
+# suppress the weaker color instead of painting purple/alternating noise.
+dual_open = (
+    (sunrise_view >= DUAL_VIEW_MIN)
+    & (sunset_view >= DUAL_VIEW_MIN)
+    & (ridge_corridor >= 0.56)
+)
+view_difference = sunrise_view - sunset_view
+sunrise_direction_gate = np.where(
+    dual_open,
+    1.0,
+    smoothstep(view_difference, -0.015, 0.12),
+).astype(np.float32)
+sunset_direction_gate = np.where(
+    dual_open,
+    1.0,
+    smoothstep(-view_difference, -0.015, 0.12),
+).astype(np.float32)
+
+sunrise_opening_gate = 0.20 + 0.80 * smoothstep(sunrise_aerial, 0.18, 0.68)
+sunset_opening_gate = 0.20 + 0.80 * smoothstep(sunset_aerial, 0.18, 0.68)
+ridge_seed_gate = smoothstep(ridge_corridor, 0.44, 0.76)
+
+sunrise_seed = clamp01(
+    (
+        0.42 * ridge_corridor
+        + 0.40 * sunrise_view
+        + 0.10 * regional_elevation
+        + 0.08 * relief_score
+        - valley_penalty
+        - 0.17 * sunrise_canopy_penalty
+    )
+    * ridge_seed_gate
+    * sunrise_opening_gate
+    * sunrise_direction_gate
+)
+sunset_seed = clamp01(
+    (
+        0.42 * ridge_corridor
+        + 0.40 * sunset_view
+        + 0.10 * regional_elevation
+        + 0.08 * relief_score
+        - valley_penalty
+        - 0.17 * sunset_canopy_penalty
+    )
+    * ridge_seed_gate
+    * sunset_opening_gate
+    * sunset_direction_gate
+)
+
+# Allow the gradient to travel along supported ridge/shoulder terrain but not
+# radially downhill. Multiplying every smoothing scale by ridge support prevents
+# strong seeds from bleeding across adjacent hollows.
+def ridge_constrained_gradient(seed):
+    support = smoothstep(ridge_corridor, 0.22, 0.72)
+    core = seed
+    near = gaussian_filter(seed, sigma=1.15) * support
+    shoulder = gaussian_filter(seed, sigma=2.6) * np.power(support, 1.15)
+    extended = gaussian_filter(seed, sigma=4.8) * np.power(support, 1.45)
+    result = np.maximum.reduce([
+        core,
+        0.92 * near,
+        0.72 * shoulder,
+        0.46 * extended,
+    ])
+    result[valley_zone] = 0.0
+    return clamp01(result)
+
+sunrise_score = ridge_constrained_gradient(sunrise_seed)
+sunset_score = ridge_constrained_gradient(sunset_seed)
+
+# Do not force a sunrise/sunset classification where neither directional
+# viewshed is credible. These masks set the eligible ridge corridors.
+sunrise_candidate = (
+    (ridge_corridor >= RIDGE_CORRIDOR_MIN)
+    & (sunrise_view >= DIRECTIONAL_VIEW_MIN)
+    & (~valley_zone)
+)
+sunset_candidate = (
+    (ridge_corridor >= RIDGE_CORRIDOR_MIN)
+    & (sunset_view >= DIRECTIONAL_VIEW_MIN)
+    & (~valley_zone)
+)
+sunrise_score[~sunrise_candidate] = 0.0
+sunset_score[~sunset_candidate] = 0.0
 
 water_elements, overpass_used = fetch_water_elements()
 water_polygons, water_lines = water_shapes(water_elements)
@@ -433,24 +541,23 @@ water_mask = poly_mask | line_mask
 sunrise_score[water_mask] = 0.0
 sunset_score[water_mask] = 0.0
 
-# Smooth only the finished suitability score, preserving the hard water mask.
-# This turns the old rectangular-cell look into a ridge/shoulder gradient.
-sunrise_score = gaussian_filter(sunrise_score, sigma=1.15)
-sunset_score = gaussian_filter(sunset_score, sigma=1.15)
+# Preserve the hard water mask after ridge-constrained propagation.
 sunrise_score[water_mask] = 0.0
 sunset_score[water_mask] = 0.0
 
 valid = ~water_mask
-def breaks(score):
-    values = score[valid]
+def breaks(score, candidate_mask):
+    values = score[valid & candidate_mask & (score > 0.0)]
+    if values.size < 1000:
+        raise RuntimeError("Too few ridge/viewshed candidates for stable display calibration.")
     return {
-        "display": float(np.quantile(values, DISPLAY_QUANTILE)),
-        "strong": float(np.quantile(values, STRONG_QUANTILE)),
-        "peak": float(np.quantile(values, PEAK_QUANTILE)),
+        "display": float(np.quantile(values, DISPLAY_CANDIDATE_QUANTILE)),
+        "strong": float(np.quantile(values, STRONG_CANDIDATE_QUANTILE)),
+        "peak": float(np.quantile(values, PEAK_CANDIDATE_QUANTILE)),
     }
 
-sunrise_breaks = breaks(sunrise_score)
-sunset_breaks = breaks(sunset_score)
+sunrise_breaks = breaks(sunrise_score, sunrise_candidate)
+sunset_breaks = breaks(sunset_score, sunset_candidate)
 
 def display_strength(score, b):
     strength = clamp01((score - b["display"]) / max(0.001, b["peak"] - b["display"]))
@@ -484,7 +591,7 @@ metadata = {
     "version": VERSION,
     "generatedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "source": {
-        "id": "rrgh-photographic-viewshed-v4",
+        "id": "rrgh-ridge-constrained-viewshed-v5",
         "elevation": {
             "id": "usgs-3dep-bare-earth-dem",
             "service": ELEVATION_SERVICE,
@@ -514,16 +621,20 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Photographic viewshed proxy using high-resolution bare-earth terrain plus NAIP vegetation/open-ground confidence. "
-        "Scores favor ridge/upper-shoulder relative height, convexity, local relief, directional terrain drop, low terrain horizon, "
-        "directional aerial openness, and sun-facing aspect. Valley position and dense canopy in the viewing sector reduce the score; "
-        "actual mapped water is excluded."
+        "Ridge-constrained directional photographic viewshed proxy. High-resolution bare-earth terrain first defines ridge/spur/cliff-nose "
+        "support using relative height, prominence, convexity, and positive topographic position at multiple scales. Sunrise and sunset "
+        "seeds then require directional terrain drop, low horizon, aspect, and NAIP aerial openness. Gradient propagation is multiplied by "
+        "ridge support so color can fade along connected high ground without bleeding into adjacent valleys. The weaker sunrise/sunset "
+        "direction is suppressed unless both viewing sectors are genuinely strong; actual mapped water is excluded."
     ),
     "seasonalAzimuths": {"sunrise": SUNRISE_AZIMUTHS, "sunset": SUNSET_AZIMUTHS},
     "thresholds": {
-        "displayQuantile": DISPLAY_QUANTILE,
-        "strongQuantile": STRONG_QUANTILE,
-        "peakQuantile": PEAK_QUANTILE,
+        "displayCandidateQuantile": DISPLAY_CANDIDATE_QUANTILE,
+        "strongCandidateQuantile": STRONG_CANDIDATE_QUANTILE,
+        "peakCandidateQuantile": PEAK_CANDIDATE_QUANTILE,
+        "ridgeCorridorMin": RIDGE_CORRIDOR_MIN,
+        "directionalViewMin": DIRECTIONAL_VIEW_MIN,
+        "dualViewMin": DUAL_VIEW_MIN,
         "sunriseDisplayScore": round(sunrise_breaks["display"], 4),
         "sunriseStrongScore": round(sunrise_breaks["strong"], 4),
         "sunsetDisplayScore": round(sunset_breaks["display"], 4),
@@ -537,17 +648,24 @@ metadata = {
         "sunsetStrongPercent": percent(sunset_score >= sunset_breaks["strong"]),
         "denseCanopyPercent": percent(local_canopy >= 0.72),
         "highRidgeCorePercent": percent(ridge_core >= 0.62),
+        "ridgeCorridorPercent": percent(ridge_corridor >= RIDGE_CORRIDOR_MIN),
+        "valleyZonePercent": percent(valley_zone),
+        "sunriseValleyLeakPercent": percent((sunrise_strength > 0) & valley_zone),
+        "sunsetValleyLeakPercent": percent((sunset_strength > 0) & valley_zone),
+        "dualDisplayPercent": percent((sunrise_strength > 0) & (sunset_strength > 0)),
     },
     "display": {
         "sunriseColor": "#ff6f61",
         "sunsetColor": "#4055d8",
         "maximumOpacity": 0.86,
-        "designIntent": "Strong ridge/cliff-nose cores with a smooth fade down usable shoulders; valley-floor and forest-blocked false positives reduced.",
+        "designIntent": "Sunrise/sunset color follows supported ridge, spur, and cliff-nose terrain; strongest at exposed directional cores, fading along connected high ground and stopping before valley floors.",
     },
     "calibrationIntent": [
+        "Keep gradients on ridge/spur support rather than allowing radial bleed into adjacent valleys.",
         "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
         "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
         "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon.",
+        "Suppress the weaker sunrise/sunset color unless both viewing sectors are independently strong.",
     ],
     "limitations": [
         "NAIP vegetation/open-ground classification is a proxy, not a direct tree-by-tree canopy-height model.",
