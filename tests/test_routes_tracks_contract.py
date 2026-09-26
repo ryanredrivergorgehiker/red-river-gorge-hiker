@@ -122,7 +122,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
-        self.assertIn('This staging calibration overlay is generated in advance for the Pinch-Em-Tight pilot area', sun_source)
+        self.assertIn('This staging crest-first calibration overlay is generated in advance for the Pinch-Em-Tight pilot area', sun_source)
         self.assertIn('send no coordinates or map requests to USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
