@@ -123,7 +123,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
         self.assertIn('RRGH-hosted derived overlay', sun_source)
-        self.assertIn('sends no coordinates or map requests to USGS', sun_source)
+        self.assertIn('send no coordinates or map requests to USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
         self.assertIn('enabled: false', parcel)
@@ -463,7 +463,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'sunrise_canopy_penalty',
             'sunset_canopy_penalty',
             'band_ids=[0, 1, 2, 3]',
-            'vegetation_method = "NAIP NIR/red NDVI"',
+            'vegetation_method = "NAIP NIR/red NDVI calibrated to local 30th–78th percentiles"',
             'actual mapped water is the only hard geographic exclusion',
         ):
             self.assertIn(contract, SUN_GENERATOR)
