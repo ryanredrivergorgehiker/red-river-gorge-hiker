@@ -14,7 +14,8 @@ from rasterio.io import MemoryFile
 from rasterio.transform import from_bounds
 from scipy.ndimage import distance_transform_edt, gaussian_filter, label as ndi_label, maximum_filter, minimum_filter, uniform_filter
 from shapely.geometry import LineString, Polygon, mapping
-from skimage.morphology import h_minima, remove_small_objects, skeletonize
+from skimage.feature import peak_local_max
+from skimage.morphology import remove_small_objects, skeletonize
 from skimage.segmentation import watershed
 
 ELEVATION_SERVICE = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"
@@ -191,22 +192,33 @@ def topological_ridge_skeleton(dem, relative_height, prominence, broad_tpi, bila
     hydro_sigma = max(1.0, 6.0 / mean_cell)
     hydro_dem = gaussian_filter(dem, sigma=hydro_sigma)
 
-    # Suppress tiny LiDAR pits so watershed basins represent real hollows.
-    minima_depth_m = 2.5
-    minima = h_minima(hydro_dem, minima_depth_m)
-    markers, basin_count = ndi_label(minima)
+    # Hydro-flattened DEMs may not contain deep pixel-scale minima. Seed
+    # watershed basins from spatially separated local low points instead.
+    minima_separation_m = 70.0
+    min_distance_px = max(8, int(round(minima_separation_m / mean_cell)))
+    minima_coords = peak_local_max(
+        -hydro_dem,
+        min_distance=min_distance_px,
+        exclude_border=False,
+        num_peaks=220,
+    )
+    if minima_coords.shape[0] < 8:
+        minima_separation_m = 40.0
+        min_distance_px = max(6, int(round(minima_separation_m / mean_cell)))
+        minima_coords = peak_local_max(
+            -hydro_dem,
+            min_distance=min_distance_px,
+            exclude_border=False,
+            num_peaks=320,
+        )
 
-    if basin_count < 8:
-        minima_depth_m = 1.25
-        minima = h_minima(hydro_dem, minima_depth_m)
-        markers, basin_count = ndi_label(minima)
-    elif basin_count > 320:
-        minima_depth_m = 4.0
-        minima = h_minima(hydro_dem, minima_depth_m)
-        markers, basin_count = ndi_label(minima)
-
+    basin_count = int(minima_coords.shape[0])
     if basin_count < 2:
-        raise RuntimeError(f"Too few hydrologic basins for ridge extraction: {basin_count}")
+        raise RuntimeError(f"Too few hydrologic basin markers for ridge extraction: {basin_count}")
+
+    markers = np.zeros(dem.shape, dtype=np.int32)
+    for marker_id, (row, col) in enumerate(minima_coords, start=1):
+        markers[int(row), int(col)] = marker_id
 
     basin_labels = watershed(
         hydro_dem,
@@ -231,7 +243,8 @@ def topological_ridge_skeleton(dem, relative_height, prominence, broad_tpi, bila
     skeleton = remove_small_objects(skeleton, min_size=min_segment_pixels, connectivity=2)
     skeleton = skeletonize(skeleton)
 
-    return skeleton, raw_skeleton, basin_count, minima_depth_m
+    return skeleton, raw_skeleton, basin_count, minima_separation_m
+
 
 def fetch_trail_elements():
     bbox = f'{BOUNDS["south"]},{BOUNDS["west"]},{BOUNDS["north"]},{BOUNDS["east"]}'
@@ -566,7 +579,7 @@ prominence_gate = smoothstep(prominence, 0.14, 0.58)
 # V10 topological geometry: derive the actual drainage-divide skeleton first.
 # Sunrise, sunset, aerial, and trail inputs are not allowed to create or move it.
 bilateral_relief_m, bilateral_ridge = bilateral_ridge_relief(dem)
-ridge_skeleton, raw_ridge_skeleton, watershed_basin_count, watershed_minima_depth_m = topological_ridge_skeleton(
+ridge_skeleton, raw_ridge_skeleton, watershed_basin_count, watershed_minima_separation_m = topological_ridge_skeleton(
     dem,
     relative_height,
     prominence,
@@ -958,7 +971,7 @@ metadata = {
     "ridgeTopology": {
         "method": "watershed drainage divides from smoothed bare-earth LiDAR",
         "watershedBasinCount": watershed_basin_count,
-        "minimaDepthMeters": watershed_minima_depth_m,
+        "minimaSeparationMeters": watershed_minima_separation_m,
         "crestCorridorMeters": CREST_CORRIDOR_METERS,
         "trailOrAerialAffectsSkeleton": False
     },

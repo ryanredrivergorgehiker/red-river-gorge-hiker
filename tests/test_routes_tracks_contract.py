@@ -449,7 +449,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'VERSION = 10',
             'topological_ridge_skeleton',
             'KENTUCKY_PHASE3_DEM_SERVICE',
-            'h_minima',
+            'peak_local_max',
             'watershed(',
             'watershed_line=True',
             'skeletonize',
@@ -477,6 +477,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(SUN_META['ridgeTopology']['crestCorridorMeters'], 12.0)
         self.assertFalse(SUN_META['ridgeTopology']['trailOrAerialAffectsSkeleton'])
         self.assertGreater(SUN_META['ridgeTopology']['watershedBasinCount'], 1)
+        self.assertGreaterEqual(SUN_META['ridgeTopology']['minimaSeparationMeters'], 40.0)
         self.assertGreater(SUN_META['coverage']['ridgeSkeletonPercent'], 0)
         self.assertGreater(SUN_META['coverage']['crestMaskPercent'], SUN_META['coverage']['ridgeSkeletonPercent'])
         self.assertLess(SUN_META['coverage']['crestMaskPercent'], 25)
