@@ -17,6 +17,54 @@ export interface ExploreSection {
 
 export const exploreSections: ExploreSection[] = [
   {
+    slug: 'trails-and-guides',
+    title: 'Trails and Guides',
+    description: 'RRGH routes, interactive maps, authoritative trail resources, visitor information, and land-manager guides for planning time in the Gorge.',
+    links: [
+      { label: 'RRGH Hikes & Routes', href: '/routes/' },
+      { label: 'RRGH Interactive Map', href: '/routes/map/' },
+      { label: 'Kentucky LiDAR Guide', href: '/guides/kentucky-lidar/' },
+      { label: 'Sheltowee Trace Association', href: 'https://sheltoweetrace.org/', external: true },
+      { label: 'Daniel Boone National Forest Maps & Guides', href: 'https://www.fs.usda.gov/r08/danielboone/maps-guides', external: true },
+      { label: 'Clifty Wilderness', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/clifty-wilderness', external: true },
+      { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true },
+      { label: 'Natural Bridge State Resort Park', href: 'https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796', external: true }
+    ]
+  },
+  {
+    slug: 'camping',
+    title: 'Camping',
+    description: 'RRGH’s camping guide plus current Forest Service visitor information, rules, and trip-planning resources.',
+    links: [
+      { label: '2026 DBNF Dispersed Camping Guide Download', href: '/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', download: true },
+      { label: 'Current Forest Service camping restrictions & alerts', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
+      { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true }
+    ]
+  },
+  {
+    slug: 'current-conditions',
+    title: 'Current Conditions',
+    description: 'Go to the governing source for closures, weather, roads, and park notices.',
+    links: [
+      { label: 'Daniel Boone National Forest alerts & closures', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
+      { label: 'National Weather Service - Slade area', href: 'https://forecast.weather.gov/MapClick.php?lat=37.783&lon=-83.683', external: true },
+      { label: 'GoKY road conditions', href: 'https://goky.ky.gov/', external: true },
+      { label: 'Natural Bridge / Kentucky State Parks notices', href: 'https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796', external: true }
+    ]
+  },
+  {
+    slug: 'landforms',
+    title: 'Landforms',
+    description: 'Independent reference sites for arches, waterfalls, overlooks, and other Kentucky landforms.',
+    links: [
+      { label: 'Arches of the Red River Gorge - William H. Patrick', href: 'https://redrivergorgearches.com/', external: true },
+      { label: 'Kentucky Arches', href: 'https://kyarches.com/', external: true },
+      { label: 'Kentucky Waterfalls', href: 'https://kywaterfalls.com/', external: true },
+      { label: 'Kentucky Overlooks', href: 'https://kyoverlooks.com/', external: true },
+      { label: 'Kentucky Landforms', href: 'https://kylandforms.com/', external: true }
+    ]
+  },
+  {
     slug: 'stories',
     title: 'Stories',
     description: 'First-hand RRGH stories from the Gorge, Clifty Wilderness, and the Sheltowee Trace.',
@@ -34,60 +82,6 @@ export const exploreSections: ExploreSection[] = [
       { label: 'Powell County Search & Rescue', href: 'https://www.pocosar.org/', external: true },
       { label: 'Hiking preparedness & safety', href: '/search-and-rescue/#hiking-safety' },
       { label: 'Donate directly to Wolfe County SAR', href: 'https://wcsart.com/donate/', external: true }
-    ]
-  },
-  {
-    slug: 'camping',
-    title: 'Camping',
-    description: 'RRGH’s camping guide plus current Forest Service visitor information, rules, and trip-planning resources.',
-    links: [
-      { label: '2026 DBNF Dispersed Camping Guide Download', href: '/downloads/red-river-gorge-hiker-2026-dbnf-dispersed-camping-guide.pdf', download: true },
-      { label: 'Current Forest Service camping restrictions & alerts', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
-      { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true }
-    ]
-  },
-  {
-    slug: 'landforms',
-    title: 'Landforms',
-    description: 'Independent reference sites for arches, waterfalls, overlooks, and other Kentucky landforms.',
-    links: [
-      { label: 'Arches of the Red River Gorge - William H. Patrick', href: 'https://redrivergorgearches.com/', external: true },
-      { label: 'Kentucky Arches', href: 'https://kyarches.com/', external: true },
-      { label: 'Kentucky Waterfalls', href: 'https://kywaterfalls.com/', external: true },
-      { label: 'Kentucky Overlooks', href: 'https://kyoverlooks.com/', external: true },
-      { label: 'Kentucky Landforms', href: 'https://kylandforms.com/', external: true }
-    ]
-  },
-  {
-    slug: 'trails',
-    title: 'Trails',
-    description: 'Authoritative and established trail-planning resources for the Gorge and surrounding country.',
-    links: [
-      { label: 'Sheltowee Trace Association', href: 'https://sheltoweetrace.org/', external: true },
-      { label: 'Daniel Boone National Forest Maps & Guides', href: 'https://www.fs.usda.gov/r08/danielboone/maps-guides', external: true },
-      { label: 'Clifty Wilderness', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/clifty-wilderness', external: true }
-    ]
-  },
-  {
-    slug: 'maps-and-guides',
-    title: 'Maps & Guides',
-    description: 'Land-manager maps, visitor information, and park resources.',
-    links: [
-      { label: 'Daniel Boone National Forest Maps & Guides', href: 'https://www.fs.usda.gov/r08/danielboone/maps-guides', external: true },
-      { label: 'Clifty Wilderness', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/clifty-wilderness', external: true },
-      { label: 'Gladie Visitor Center', href: 'https://www.fs.usda.gov/r08/danielboone/recreation/gladie-visitor-center', external: true },
-      { label: 'Natural Bridge State Resort Park', href: 'https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796', external: true }
-    ]
-  },
-  {
-    slug: 'current-conditions',
-    title: 'Current Conditions',
-    description: 'Go to the governing source for closures, weather, roads, and park notices.',
-    links: [
-      { label: 'Daniel Boone National Forest alerts & closures', href: 'https://www.fs.usda.gov/alerts/dbnf/alerts-notices/?aid=77606', external: true },
-      { label: 'National Weather Service - Slade area', href: 'https://forecast.weather.gov/MapClick.php?lat=37.783&lon=-83.683', external: true },
-      { label: 'GoKY road conditions', href: 'https://goky.ky.gov/', external: true },
-      { label: 'Natural Bridge / Kentucky State Parks notices', href: 'https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796', external: true }
     ]
   },
   {

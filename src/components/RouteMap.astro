@@ -1,0 +1,3279 @@
+---
+import 'leaflet/dist/leaflet.css';
+import '../styles/routes.css';
+import { enabledBrowserMapSources } from '../data/map/layers';
+
+interface PublicRouteMapItem {
+  routeId: string;
+  slug: string;
+  title: string;
+  tripType: 'day-hike' | 'backpacking' | 'multi-day';
+  trailStatus: 'official' | 'mixed' | 'off-trail';
+  trailStatusDisplay: string;
+  publicationClass: 'A' | 'B' | 'C';
+  distanceMi: number;
+  physicalDifficulty: string;
+  accessParking: string;
+  geometryUrl: string;
+  guideUrl: string;
+  gpxUrl: string;
+}
+
+interface Props {
+  routes: PublicRouteMapItem[];
+  mode?: 'embedded' | 'full';
+}
+
+const { routes, mode = 'embedded' } = Astro.props;
+const mapId = 'route-map-' + Math.random().toString(36).slice(2, 9);
+const enabledSources = enabledBrowserMapSources;
+---
+<section
+  class:list={['route-map-shell', { 'route-map-shell-full': mode === 'full' }]}
+  aria-labelledby={mode === 'embedded' ? mapId + '-heading' : undefined}
+  aria-label={mode === 'full' ? 'Interactive Red River Gorge map controls and map' : undefined}
+  data-route-map-shell
+>
+  {mode === 'embedded' ? (
+    <div class="route-map-heading">
+      <div>
+        <p class="eyebrow">Interactive map</p>
+        <h2 id={mapId + '-heading'}>Map &amp; route</h2>
+      </div>
+      <p class="route-map-intro">
+        Explore the route, read landmarks and trail context, measure distance, or build a trail-following plan.
+      </p>
+    </div>
+  ) : (
+    <div class="route-map-commandbar" aria-label="Map setup">
+      <fieldset class="route-map-preset-group">
+        <legend>Map view</legend>
+        <div class="route-map-preset-buttons">
+          <button type="button" data-map-preset="hiking" aria-pressed="true">
+            <strong>Hiking</strong><span>USGS topo · hiking context</span>
+          </button>
+          <button type="button" data-map-preset="terrain" aria-pressed="false">
+            <strong>Terrain</strong><span>Kentucky + USGS topo · stronger terrain relief</span>
+          </button>
+          <button type="button" data-map-preset="aerial" aria-pressed="false">
+            <strong>Aerial</strong><span>Imagery + hiking context</span>
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset class="route-map-trip-group">
+        <legend>Show RRGH routes</legend>
+        <div class="route-map-trip-options">
+          <label><input type="checkbox" data-route-trip-filter="day-hike" checked /> Day hikes</label>
+          <label><input type="checkbox" data-route-trip-filter="backpacking" checked /> Backpacking</label>
+          <label><input type="checkbox" data-route-trip-filter="multi-day" checked /> Multi-day</label>
+        </div>
+        <div class="route-map-status-options" aria-label="Route navigation style">
+          <label><input type="checkbox" data-route-status-filter="official" checked /> Official</label>
+          <label><input type="checkbox" data-route-status-filter="mixed" checked /> Mixed</label>
+          <label><input type="checkbox" data-route-status-filter="off-trail" checked /> Off-trail</label>
+        </div>
+      </fieldset>
+    </div>
+  )}
+
+  <div class="route-map-stage">
+    <div
+      id={mapId}
+      class:list={['route-map', { 'route-map-full': mode === 'full' }]}
+      data-rrgh-route-map
+      data-routes={JSON.stringify(routes)}
+      data-mode={mode}
+      tabindex="0"
+      aria-label={mode === 'full' ? 'Interactive Red River Gorge planning map' : 'Interactive route map'}
+    ></div>
+
+    <div class="route-map-utility-tools" role="toolbar" aria-label="Map utilities">
+      <button type="button" data-sheet-open="search" aria-label="Search map">Search</button>
+      <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
+      <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-out" aria-label="Zoom out">−</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-in" aria-label="Zoom in">+</button>
+    </div>
+
+    <div class="route-map-left-stack">
+      <div class="route-plan-pan-pad" data-plan-pan-pad hidden role="group" aria-label="Pan map while building route">
+        <button type="button" class="route-pan-up" data-plan-pan-direction="up" aria-label="Pan map up">↑</button>
+        <button type="button" class="route-pan-left" data-plan-pan-direction="left" aria-label="Pan map left">←</button>
+        <span class="route-pan-center" aria-hidden="true">✥</span>
+        <button type="button" class="route-pan-right" data-plan-pan-direction="right" aria-label="Pan map right">→</button>
+        <button type="button" class="route-pan-down" data-plan-pan-direction="down" aria-label="Pan map down">↓</button>
+      </div>
+    </div>
+
+    <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
+      <button type="button" data-sheet-open="explore" disabled>Explore</button>
+      <button type="button" data-sheet-open="plan" disabled>Plan</button>
+      <button type="button" data-map-action="share">Share</button>
+    </div>
+
+    <div class="route-map-mobile-bar" aria-label="Mobile map controls">
+      <button type="button" data-sheet-open="search">Search</button>
+      <button type="button" data-sheet-open="layers">Layers</button>
+      <button type="button" data-sheet-open="plan" disabled>Plan</button>
+      <button type="button" data-map-action="share">Share</button>
+    </div>
+
+    <div class="route-search-panel route-map-sheet" data-map-sheet="search" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Search this map</strong>
+        <button type="button" data-sheet-close aria-label="Close search">×</button>
+      </div>
+      <label class="route-search-label">
+        <span class="sr-only">Search routes, landmarks, trails, roads, and places</span>
+        <input type="search" data-map-search placeholder="Search Sky Bridge, Trail 214, landmarks…" autocomplete="off" />
+      </label>
+      <p class="route-map-sheet-help">Searches RRGH routes and landmarks plus loaded Forest Service trails, roads, and recreation sites. Informal trails are searchable after that layer is loaded.</p>
+      <div class="route-search-results" data-map-search-results aria-live="polite"></div>
+    </div>
+
+    <details class="route-layer-panel route-map-sheet" data-map-sheet="layers">
+      <summary>Layers</summary>
+      <div class="route-layer-panel-body">
+        <p class="route-layer-help">Symbols in this panel match the map. Turn layers on or off first; open <strong>Fine tune layers</strong> only when you want opacity controls.</p>
+
+        <div class="route-layer-group" aria-label="Primary hiking layers">
+          <p class="route-layer-group-title">Hiking</p>
+          <div class="route-static-legend-grid" aria-label="Always-visible map symbols">
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-route" aria-hidden="true"></span>
+              <span>RRGH routes</span>
+            </div>
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-start" aria-hidden="true"></span>
+              <span>Route starts</span>
+            </div>
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-trailhead" aria-hidden="true"></span>
+              <span>Trailheads &amp; facilities</span>
+            </div>
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-landmark" aria-hidden="true"></span>
+              <span>Landmarks &amp; viewpoints</span>
+            </div>
+            <div class="route-layer-static-row">
+              <span class="route-layer-swatch swatch-county" aria-hidden="true"></span>
+              <span>County boundaries</span>
+            </div>
+          </div>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-trails" checked />
+            <span class="route-layer-swatch swatch-usfs-trail" aria-hidden="true"></span>
+            <span>Forest Service trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="osm-informal-trails" checked />
+            <span class="route-layer-swatch swatch-informal" aria-hidden="true"></span>
+            <span>Community / Informal trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-roads" checked />
+            <span class="route-layer-swatch swatch-usfs-road" aria-hidden="true"></span>
+            <span>Forest Service roads</span>
+          </label>
+        </div>
+
+        <div class="route-layer-group" aria-label="Base and terrain layers">
+          <p class="route-layer-group-title">Base &amp; terrain</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kytopo" />
+            <span class="route-layer-swatch swatch-topo" aria-hidden="true"></span>
+            <span>Kentucky Topo</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usgs-topo" checked />
+            <span class="route-layer-swatch swatch-topo-usgs" aria-hidden="true"></span>
+            <span>USGS Topo</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="ky-hillshade" />
+            <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
+            <span>Terrain relief (LiDAR)</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="sunrise-sunset-potential" />
+            <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
+            <span>7 · Sunrise / Sunset composite</span>
+          </label>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Coral: sunrise · <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Indigo: sunset · calibration only</p>
+          <details class="route-layer-fine-tune">
+            <summary>Calibration diagnostics</summary>
+            <p class="route-layer-note">Start with <strong>1 · LiDAR ridge skeleton</strong> over Terrain, then Aerial. Compare the thin line with the actual ridge tops before judging the colors. These layers cover only Pinch-Em-Tight and Auxier Ridge; visual approval is pending.</p>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-ridge-skeleton" />
+              <span class="route-layer-swatch" style="background:#ffff50" aria-hidden="true"></span>
+              <span>1 · LiDAR ridge skeleton</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-crest" />
+              <span class="route-layer-swatch" style="background:#ffb020" aria-hidden="true"></span>
+              <span>2 · Crest corridor (~12 m)</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-overlook" />
+              <span class="route-layer-swatch" style="background:#fa3cb6" aria-hidden="true"></span>
+              <span>3 · Overlook / outcrop candidates</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-open-ground" />
+              <span class="route-layer-swatch" style="background:linear-gradient(90deg,#f5d48c,#6ddbb0,#bab24a,#175d35)" aria-hidden="true"></span>
+              <span>4 · Aerial / canopy classification</span>
+            </label>
+            <p class="route-layer-note">Tan: low cover / exposed-surface evidence · mint: green clearing · yellow: partial cover · dark green: tall or dense cover · gray: unknown. Low cover does not prove bare rock or safe footing.</p>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-sunrise-pass" />
+              <span class="route-layer-swatch" style="background:#ff6f61" aria-hidden="true"></span>
+              <span>5 · Sunrise directional pass</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-sunset-pass" />
+              <span class="route-layer-swatch" style="background:#4055d8" aria-hidden="true"></span>
+              <span>6 · Sunset directional pass</span>
+            </label>
+          </details>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kyaerial-phase3" />
+            <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
+            <span>Aerial imagery</span>
+          </label>
+        </div>
+
+        <div class="route-layer-group" aria-label="Land management and context">
+          <p class="route-layer-group-title">Land management &amp; context</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-wilderness" checked />
+            <span class="route-layer-swatch swatch-wilderness" aria-hidden="true"></span>
+            <span>National Forest Wilderness</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-special-management" checked />
+            <span class="route-layer-swatch swatch-management" aria-hidden="true"></span>
+            <span>Special management areas</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="usfs-land-units" checked />
+            <span class="route-layer-swatch swatch-land-unit" aria-hidden="true"></span>
+            <span>National Forest land units</span>
+          </label>
+        </div>
+
+        <details class="route-layer-fine-tune">
+          <summary>Fine tune layers</summary>
+          <p>Opacity changes appearance only. Hiking, Terrain, and Aerial presets reset the base-map and terrain values without changing your hiking/context layers.</p>
+          <div class="route-layer-opacity-grid">
+            <label><span>Forest Service trails</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" /></label>
+            <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" /></label>
+            <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" /></label>
+            <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
+            <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
+            <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
+            <label><span>Sunrise / Sunset pilot</span><input type="range" min="0" max="100" value="68" data-opacity="sunrise-sunset-potential" /></label>
+            <label><span>LiDAR ridge skeleton</span><input type="range" min="0" max="100" value="96" data-opacity="sun-cal-ridge-skeleton" /></label>
+            <label><span>Crest corridor</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-crest" /></label>
+            <label><span>Overlook candidates</span><input type="range" min="0" max="100" value="86" data-opacity="sun-cal-overlook" /></label>
+            <label><span>Aerial / canopy classification</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-open-ground" /></label>
+            <label><span>Sunrise directional pass</span><input type="range" min="0" max="100" value="90" data-opacity="sun-cal-sunrise-pass" /></label>
+            <label><span>Sunset directional pass</span><input type="range" min="0" max="100" value="90" data-opacity="sun-cal-sunset-pass" /></label>
+            <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
+            <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
+            <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
+          </div>
+        </details>
+      </div>
+    </details>
+
+    <div class="route-explore-panel route-map-sheet" data-map-sheet="explore" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Explore RRGH routes</strong>
+        <button type="button" data-sheet-close aria-label="Close route explorer">×</button>
+      </div>
+      <p class="route-map-sheet-help">Hover a route to highlight it on the map. Select one to center it and open its route card.</p>
+      <div class="route-explore-list" data-explore-route-list></div>
+    </div>
+
+    <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Plan</strong>
+        <button type="button" data-sheet-close aria-label="Close planning controls">×</button>
+      </div>
+      <div class="route-plan-mode-buttons">
+        <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
+        <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+      </div>
+      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near an official trail, community/informal trail, or mapped road to snap to the connected network; click clearly away from the mapped network for a dashed straight segment. Use the arrow pad under the map scale to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
+      <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
+        <div class="route-plan-live-stats-head">
+          <strong data-plan-stats-title>Planning totals</strong>
+          <span data-plan-stats-note>Elevation updates after two points.</span>
+        </div>
+        <div class="route-plan-live-stats-grid">
+          <span><small>Distance</small><strong data-plan-stats-distance>—</strong></span>
+          <span><small>Gain</small><strong data-plan-stats-gain>—</strong></span>
+          <span><small>Loss</small><strong data-plan-stats-loss>—</strong></span>
+          <span><small>Elevation</small><strong data-plan-stats-range>—</strong></span>
+        </div>
+      </div>
+      <div class="route-plan-actions">
+        <button type="button" data-plan-action="undo" disabled>Undo</button>
+        <button type="button" data-plan-action="redo" disabled>Redo</button>
+        <button type="button" data-map-tool="save" disabled>Export GPX</button>
+        <button type="button" data-map-tool="clear">Clear</button>
+      </div>
+    </div>
+
+    <div class="route-share-panel route-map-sheet" data-map-sheet="share" hidden>
+      <div class="route-map-sheet-header">
+        <strong>Share this map</strong>
+        <button type="button" data-sheet-close aria-label="Close sharing controls">×</button>
+      </div>
+      <div class="route-share-body">
+        <p data-share-description>Copy this link to share the current map view and settings.</p>
+        <label>
+          <span class="sr-only">Shareable map link</span>
+          <input type="url" data-share-url readonly />
+        </label>
+        <button type="button" data-share-copy>Copy link</button>
+        <p class="route-share-status" data-share-status aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="route-coordinate-card" data-coordinate-card hidden>
+      <div>
+        <strong>Map point</strong>
+        <span data-coordinate-dd></span>
+        <span data-coordinate-utm></span>
+      </div>
+      <div class="route-coordinate-actions">
+        <button type="button" data-coordinate-copy>Copy coordinates</button>
+        <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
+      </div>
+    </div>
+
+    <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
+  </div>
+
+  <div class="route-map-context-strip">
+    <p><strong>Map data:</strong> Kentucky GIS · USGS · USDA Forest Service · OpenStreetMap.</p>
+    <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
+    <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#current-conditions'}>Before you go: check closures, road access &amp; conditions →</a></p>
+    <p><a href={import.meta.env.BASE_URL + 'copyright-and-terms/#outdoor-safety-location-disclaimer'}>Outdoor safety and location disclaimer →</a></p>
+  </div>
+
+  <details class="route-map-read-guide">
+    <summary>How to read this map — 30-second guide</summary>
+    <div class="route-map-read-grid">
+      <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
+      <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
+      <p><strong>Sunrise / Sunset calibration:</strong> coral marks modeled sunrise potential and indigo marks sunset potential. Only Pinch-Em-Tight and Auxier Ridge are covered. Start with <strong>Calibration diagnostics → 1 · LiDAR ridge skeleton</strong> and compare it with Terrain and Aerial. The colors are experimental; small outcrops may be missed and apparent openings may still be obstructed.</p>
+      <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
+      <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
+      <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
+      <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
+      <p><strong>Roads:</strong> bright yellow pill-dashed Forest Service road geometry with a dark casing, useful for access context.</p>
+    </div>
+    <details class="route-map-nerd-details">
+      <summary>Advanced Map Details</summary>
+      <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
+      <p>The staging calibration uses Kentucky KyFromAbove Phase 2 bare-earth LiDAR elevation and point-cloud canopy heights, with Phase 3 four-band aerial imagery. Thin transverse elevation maxima define the ridge skeleton on an approximately 2 m grid. The standing corridor extends at most 6 m to either side, excludes steep ground and cells more than 1.8 m below the nearest crest, and cannot be moved by imagery or trails. Cliff-break candidates are then qualified by measured canopy and aerial cover. Sunrise and sunset use separate seasonal viewing fans with a sampled 1 km terrain-and-canopy horizon; unknown coverage fails. Color fades along connected standing-corridor cells for at most 70 m, shortening through canopy. Trails are visual context only. Low cover does not establish exposed rock or legal, safe access. Leaf-off canopy gaps, flat-topped cliffs, narrow ledges, vegetation changes and obstructions beyond the sampled horizon remain limitations; this is not an exact-date sun-visibility forecast.</p>
+      <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
+    </details>
+  </details>
+
+  <details class="route-map-sources">
+    <summary>Map data, attribution &amp; privacy</summary>
+    <p>
+      Search, location, Home, Layers, zoom and pan are available while map context loads. Explore and Plan unlock after Community / Informal trail data loads successfully.
+      External map and GIS requests are separate from RRGH Analytics.
+    </p>
+    <ul>
+      {enabledSources.map((source) => (
+        <li>
+          <strong>{source.label}:</strong>
+          <a href={source.termsUrl || source.serviceUrl} target="_blank" rel="noopener noreferrer">{source.attribution}</a>.
+          {source.privacyNote}
+        </li>
+      ))}
+    </ul>
+    <p class="route-small">Parcel/private-property boundaries are not displayed.</p>
+  </details>
+</section>
+
+<script>
+  import L from 'leaflet';
+  import { mapSources } from '../data/map/layers';
+
+  const formatDistance = (meters: number) => {
+    const miles = meters / 1609.344;
+    if (miles >= 0.1) return miles.toFixed(miles < 10 ? 2 : 1) + ' mi';
+    return Math.round(meters * 3.28084).toLocaleString() + ' ft';
+  };
+
+  const toUtm = (lat: number, lon: number) => {
+    const a = 6378137;
+    const eccSquared = 0.00669438;
+    const k0 = 0.9996;
+    const zoneNumber = Math.floor((lon + 180) / 6) + 1;
+    const longOrigin = (zoneNumber - 1) * 6 - 180 + 3;
+    const latRad = lat * Math.PI / 180;
+    const lonRad = lon * Math.PI / 180;
+    const longOriginRad = longOrigin * Math.PI / 180;
+    const eccPrimeSquared = eccSquared / (1 - eccSquared);
+    const N = a / Math.sqrt(1 - eccSquared * Math.sin(latRad) * Math.sin(latRad));
+    const T = Math.tan(latRad) * Math.tan(latRad);
+    const C = eccPrimeSquared * Math.cos(latRad) * Math.cos(latRad);
+    const A = Math.cos(latRad) * (lonRad - longOriginRad);
+    const M = a * (
+      (1 - eccSquared / 4 - 3 * eccSquared * eccSquared / 64 - 5 * eccSquared ** 3 / 256) * latRad
+      - (3 * eccSquared / 8 + 3 * eccSquared * eccSquared / 32 + 45 * eccSquared ** 3 / 1024) * Math.sin(2 * latRad)
+      + (15 * eccSquared * eccSquared / 256 + 45 * eccSquared ** 3 / 1024) * Math.sin(4 * latRad)
+      - (35 * eccSquared ** 3 / 3072) * Math.sin(6 * latRad)
+    );
+    const easting = k0 * N * (
+      A + (1 - T + C) * A ** 3 / 6
+      + (5 - 18 * T + T * T + 72 * C - 58 * eccPrimeSquared) * A ** 5 / 120
+    ) + 500000;
+    let northing = k0 * (
+      M + N * Math.tan(latRad) * (
+        A * A / 2
+        + (5 - T + 9 * C + 4 * C * C) * A ** 4 / 24
+        + (61 - 58 * T + T * T + 600 * C - 330 * eccPrimeSquared) * A ** 6 / 720
+      )
+    );
+    if (lat < 0) northing += 10000000;
+    const bandLetters = 'CDEFGHJKLMNPQRSTUVWXX';
+    const bandIndex = Math.max(0, Math.min(bandLetters.length - 1, Math.floor((lat + 80) / 8)));
+    const band = bandLetters[bandIndex] ?? 'N';
+    return zoneNumber + band + ' ' + Math.round(easting).toLocaleString() + ' m E · ' + Math.round(northing).toLocaleString() + ' m N';
+  };
+
+  const featureValue = (properties: Record<string, unknown> | undefined, names: string[]) => {
+    if (!properties) return '';
+    for (const name of names) {
+      const value = properties[name];
+      if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+      const found = Object.keys(properties).find((key) => key.toLowerCase() === name.toLowerCase());
+      if (found && properties[found] !== undefined && properties[found] !== null && String(properties[found]).trim()) {
+        return String(properties[found]).trim();
+      }
+    }
+    return '';
+  };
+
+  const geometryLines = (geometry: any): number[][][] => {
+    if (!geometry) return [];
+    if (geometry.type === 'LineString') return [geometry.coordinates ?? []];
+    if (geometry.type === 'MultiLineString') return geometry.coordinates ?? [];
+    return [];
+  };
+
+  class MinHeap {
+    items: Array<{ key: string; distance: number }> = [];
+
+    push(item: { key: string; distance: number }) {
+      this.items.push(item);
+      let index = this.items.length - 1;
+      while (index > 0) {
+        const parent = Math.floor((index - 1) / 2);
+        if (this.items[parent]!.distance <= this.items[index]!.distance) break;
+        [this.items[parent], this.items[index]] = [this.items[index]!, this.items[parent]!];
+        index = parent;
+      }
+    }
+
+    pop() {
+      if (!this.items.length) return undefined;
+      const root = this.items[0];
+      const last = this.items.pop();
+      if (this.items.length && last) {
+        this.items[0] = last;
+        let index = 0;
+        while (true) {
+          const left = index * 2 + 1;
+          const right = left + 1;
+          let smallest = index;
+          if (left < this.items.length && this.items[left]!.distance < this.items[smallest]!.distance) smallest = left;
+          if (right < this.items.length && this.items[right]!.distance < this.items[smallest]!.distance) smallest = right;
+          if (smallest === index) break;
+          [this.items[index], this.items[smallest]] = [this.items[smallest]!, this.items[index]!];
+          index = smallest;
+        }
+      }
+      return root;
+    }
+  }
+
+  const initializeMap = async (shell: HTMLElement) => {
+    const container = shell.querySelector<HTMLElement>('[data-rrgh-route-map]');
+    if (!container || container.dataset.loaded === 'true') return;
+    container.dataset.loaded = 'true';
+
+    const mode = container.dataset.mode ?? 'embedded';
+    const routeConfigs = JSON.parse(container.dataset.routes ?? '[]');
+    const status = shell.querySelector<HTMLElement>('[data-map-status]');
+    const stage = shell.querySelector<HTMLElement>('.route-map-stage');
+    const planButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="plan"]'));
+    const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
+    const explorePlanOpenButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open="explore"], [data-sheet-open="plan"]'));
+    let informalTrailsReady = false;
+    const layerPanel = shell.querySelector<HTMLDetailsElement>('.route-layer-panel');
+    const searchPanel = shell.querySelector<HTMLElement>('[data-map-sheet="search"]');
+    const explorePanel = shell.querySelector<HTMLElement>('[data-map-sheet="explore"]');
+    const exploreList = shell.querySelector<HTMLElement>('[data-explore-route-list]');
+    const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
+    const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
+    const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
+    const shareDescription = shell.querySelector<HTMLElement>('[data-share-description]');
+    const shareCopy = shell.querySelector<HTMLButtonElement>('[data-share-copy]');
+    const shareStatus = shell.querySelector<HTMLElement>('[data-share-status]');
+    const undoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="undo"]');
+    const redoButton = shell.querySelector<HTMLButtonElement>('[data-plan-action="redo"]');
+    const planPanPad = shell.querySelector<HTMLElement>('[data-plan-pan-pad]');
+    const searchInput = shell.querySelector<HTMLInputElement>('[data-map-search]');
+    const searchResults = shell.querySelector<HTMLElement>('[data-map-search-results]');
+    const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
+    const coordinateDd = shell.querySelector<HTMLElement>('[data-coordinate-dd]');
+    const coordinateUtm = shell.querySelector<HTMLElement>('[data-coordinate-utm]');
+    const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
+    const coordinateClose = shell.querySelector<HTMLButtonElement>('[data-coordinate-close]');
+    const planLiveStats = shell.querySelector<HTMLElement>('[data-plan-live-stats]');
+    const planStatsTitle = shell.querySelector<HTMLElement>('[data-plan-stats-title]');
+    const planStatsNote = shell.querySelector<HTMLElement>('[data-plan-stats-note]');
+    const planStatsDistance = shell.querySelector<HTMLElement>('[data-plan-stats-distance]');
+    const planStatsGain = shell.querySelector<HTMLElement>('[data-plan-stats-gain]');
+    const planStatsLoss = shell.querySelector<HTMLElement>('[data-plan-stats-loss]');
+    const planStatsRange = shell.querySelector<HTMLElement>('[data-plan-stats-range]');
+
+    if (layerPanel) layerPanel.open = false;
+
+    const setExplorePlanReady = (ready: boolean) => {
+      informalTrailsReady = ready;
+      for (const button of explorePlanOpenButtons) button.disabled = !ready;
+      for (const button of planButtons) button.disabled = !ready || graph.size <= 1;
+      container.dataset.trailPlanningReady = String(ready);
+    };
+
+    container.dataset.trailPlanningReady = 'false';
+
+    const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
+      if (!status) return;
+      status.textContent = message;
+      status.dataset.kind = kind;
+    };
+
+    const map = L.map(container, {
+      zoomControl: false,
+      attributionControl: true,
+      scrollWheelZoom: false,
+      doubleClickZoom: true,
+      touchZoom: true,
+      dragging: true,
+      boxZoom: true,
+      keyboard: true,
+      minZoom: 8,
+      maxZoom: 20,
+      maxBoundsViscosity: 0.88,
+      preferCanvas: true
+    });
+    L.control.scale({ position: 'topleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
+
+    const panes: Record<string, number> = {
+      hillshade: 180,
+      baseTopo: 200,
+      baseUsTopo: 210,
+      baseAerial: 220,
+      sunPotential: 250,
+      landUnits: 270,
+      specialManagement: 285,
+      wilderness: 300,
+      roads: 350,
+      informalTrails: 370,
+      trails: 390,
+      counties: 415,
+      routes: 440,
+      recreation: 450,
+      routeStarts: 460,
+      landmarks: 470,
+      planning: 490
+    };
+    for (const [name, zIndex] of Object.entries(panes)) {
+      const pane = map.createPane(name);
+      pane.style.zIndex = String(zIndex);
+      if (name === 'baseTopo' || name === 'baseUsTopo') {
+        pane.style.mixBlendMode = 'multiply';
+      }
+    }
+
+    const homeCenter = L.latLng(37.8196836, -83.6396027);
+    const homeZoom = 13;
+    const setHomeView = () => map.setView(homeCenter, homeZoom, { animate: false });
+    const syncViewportDiagnostics = () => {
+      const center = map.getCenter();
+      const northWest = map.getBounds().getNorthWest();
+      container.dataset.mapCenter = center.lat.toFixed(7) + ',' + center.lng.toFixed(7);
+      container.dataset.mapNorthWest = northWest.lat.toFixed(7) + ',' + northWest.lng.toFixed(7);
+    };
+
+    if (mode === 'full') {
+      setHomeView();
+    } else {
+      map.setView([37.8185, -83.5795], 14);
+    }
+
+    const mapLayers = new Map<string, any>();
+    const opacitySetters = new Map<string, (value: number) => void>();
+    let homeBounds: any = null;
+    let locationLayer: any = null;
+    let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
+    let sharedViewApplied = false;
+    const searchItems: Array<{ label: string; detail: string; bounds?: any; latlng?: any; open?: () => void }> = [];
+    const sourceById = (id: string) => mapSources.find((source) => source.id === id);
+
+    const checked = (id: string) => shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]')?.checked ?? false;
+    const opacity = (id: string) => {
+      const input = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+      return Math.max(0, Math.min(1, Number(input?.value ?? 100) / 100));
+    };
+
+    const syncVisibility = (id: string) => {
+      const layer = mapLayers.get(id);
+      if (!layer) return;
+      if (checked(id) && !map.hasLayer(layer)) layer.addTo(map);
+      if (!checked(id) && map.hasLayer(layer)) map.removeLayer(layer);
+    };
+
+    const syncOpacity = (id: string) => {
+      opacitySetters.get(id)?.(opacity(id));
+    };
+
+    const tilePane: Record<string, string> = {
+      kytopo: 'baseTopo',
+      'kyaerial-phase3': 'baseAerial',
+      'usgs-topo': 'baseUsTopo',
+      'ky-hillshade': 'hillshade'
+    };
+
+    for (const source of mapSources.filter((item) => item.kind === 'tile' && item.enabled && item.browserLoaded && item.url)) {
+      const layer = L.tileLayer(source.url, {
+        attribution: source.attribution,
+        minZoom: source.minZoom,
+        maxZoom: source.maxZoom,
+        maxNativeZoom: source.maxNativeZoom,
+        opacity: opacity(source.id),
+        pane: tilePane[source.id] ?? 'tilePane',
+        keepBuffer: 3
+      });
+      mapLayers.set(source.id, layer);
+      opacitySetters.set(source.id, (value) => layer.setOpacity(value));
+      syncVisibility(source.id);
+    }
+
+    // The same rules generate two isolated areas. No Gorge-wide overlay exists.
+    const sunCalibrationAreas = [
+      { prefix: 'sunrise-sunset', bounds: L.latLngBounds([[37.8060, -83.6505], [37.8345, -83.6170]]) },
+      { prefix: 'sunrise-sunset-area-b', bounds: L.latLngBounds([[37.825, -83.691], [37.850, -83.665]]) }
+    ];
+    const sunCalibrationImages = [
+      ['sunrise-sunset-potential', 'potential'],
+      ['sun-cal-ridge-skeleton', 'calibration-ridge-skeleton'],
+      ['sun-cal-crest', 'calibration-crest'],
+      ['sun-cal-overlook', 'calibration-overlook'],
+      ['sun-cal-open-ground', 'calibration-open-ground'],
+      ['sun-cal-sunrise-pass', 'calibration-sunrise-pass'],
+      ['sun-cal-sunset-pass', 'calibration-sunset-pass']
+    ] as const;
+    for (const [id, suffix] of sunCalibrationImages) {
+      const images = sunCalibrationAreas.map((area) => L.imageOverlay(
+        import.meta.env.BASE_URL + 'data/map/' + area.prefix + '-' + suffix + '.png',
+        area.bounds,
+        {
+          opacity: opacity(id),
+          pane: 'sunPotential',
+          interactive: false,
+          className: id === 'sunrise-sunset-potential' ? 'rrgh-sun-potential-overlay' : 'rrgh-sun-calibration-overlay'
+        }
+      ));
+      mapLayers.set(id, L.layerGroup(images));
+      opacitySetters.set(id, (value) => images.forEach((image) => image.setOpacity(value)));
+      syncVisibility(id);
+    }
+
+    const routeGroup = L.layerGroup();
+    const routeStartGroup = L.layerGroup();
+    const landmarkGroup = L.layerGroup();
+    const recreationGroup = L.layerGroup();
+    const trailLabelGroup = L.layerGroup();
+    const countyLabelGroup = L.layerGroup();
+    const routePaths: any[] = [];
+    const routeStartMarkers: any[] = [];
+    const landmarkMarkers: any[] = [];
+    const recreationMarkers: any[] = [];
+    const routeRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const routeStartRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const landmarkRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const trailPaths: any[] = [];
+    const trailCasingPaths: any[] = [];
+    const roadPaths: any[] = [];
+    const roadCasingPaths: any[] = [];
+    const countyPaths: any[] = [];
+    const informalPaths: any[] = [];
+    const informalCasingPaths: any[] = [];
+    const wildernessPaths: any[] = [];
+    const specialManagementPaths: any[] = [];
+    const landUnitPaths: any[] = [];
+    const trailLabelMarkers: any[] = [];
+    const countyLabelMarkers: any[] = [];
+
+    const normalContextStyles: Record<string, Record<string, unknown>> = {
+      'usfs-wilderness': { color: '#356b4a', weight: 2.2, fillColor: '#75a86d', fillOpacity: 0.06, dashArray: '5 4' },
+      'usfs-special-management': { color: '#a57c34', weight: 2, fillColor: '#d8b86c', fillOpacity: 0.05, dashArray: '8 4 2 4' },
+      'usfs-land-units': { color: '#55715b', weight: 1.5, fillColor: '#94ad8d', fillOpacity: 0.04 }
+    };
+    const aerialContextStyles: Record<string, Record<string, unknown>> = {
+      'usfs-wilderness': { color: '#ff4fd8', weight: 3.2, fillColor: '#ff4fd8', fillOpacity: 0.08, dashArray: '7 4' },
+      'usfs-special-management': { color: '#ffe14a', weight: 3, fillColor: '#ffe14a', fillOpacity: 0.07, dashArray: '10 4 2 4' },
+      'usfs-land-units': { color: '#62ff9d', weight: 2.8, fillColor: '#62ff9d', fillOpacity: 0.06 }
+    };
+
+    const syncLandContextStyles = () => {
+      const aerialActive = checked('kyaerial-phase3');
+      shell.dataset.aerialActive = String(aerialActive);
+      const styles = aerialActive ? aerialContextStyles : normalContextStyles;
+      const apply = (id: string, paths: any[]) => {
+        const style = styles[id];
+        if (!style) return;
+        const displayOpacity = id === 'usfs-wilderness' ? 1 : opacity(id);
+        for (const path of paths) path.setStyle({ ...style, opacity: displayOpacity });
+      };
+      apply('usfs-wilderness', wildernessPaths);
+      apply('usfs-special-management', specialManagementPaths);
+      apply('usfs-land-units', landUnitPaths);
+    };
+
+    const syncAerialControlState = () => {
+      const aerialActive = checked('kyaerial-phase3');
+      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade']) {
+        const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+        if (slider) {
+          slider.disabled = aerialActive;
+          slider.title = aerialActive ? 'Unavailable while aerial imagery is active.' : '';
+        }
+      }
+      syncLandContextStyles();
+    };
+
+    mapLayers.set('routes', routeGroup);
+    mapLayers.set('route-starts', routeStartGroup);
+    mapLayers.set('landmarks', landmarkGroup);
+    mapLayers.set('usfs-recreation-sites', recreationGroup);
+    routeGroup.addTo(map);
+    routeStartGroup.addTo(map);
+    landmarkGroup.addTo(map);
+    recreationGroup.addTo(map);
+
+    const graph = new Map<string, Map<string, number>>();
+    const nodeCoords = new Map<string, any>();
+    const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
+
+    const ensureNode = (lat: number, lng: number) => {
+      const key = nodeKey(lat, lng);
+      if (!graph.has(key)) graph.set(key, new Map());
+      if (!nodeCoords.has(key)) nodeCoords.set(key, L.latLng(lat, lng));
+      return key;
+    };
+
+    const connect = (a: string, b: string) => {
+      if (a === b) return;
+      const pointA = nodeCoords.get(a);
+      const pointB = nodeCoords.get(b);
+      if (!pointA || !pointB) return;
+      const distance = pointA.distanceTo(pointB);
+      const fromA = graph.get(a);
+      const fromB = graph.get(b);
+      if (!fromA || !fromB) return;
+      if (!fromA.has(b) || distance < (fromA.get(b) ?? Infinity)) fromA.set(b, distance);
+      if (!fromB.has(a) || distance < (fromB.get(a) ?? Infinity)) fromB.set(a, distance);
+    };
+
+    const addSnapLine = (coordinates: number[][]) => {
+      if (coordinates.length < 2) return;
+      const valid = coordinates
+        .map((pair) => ({ lng: Number(pair[0]), lat: Number(pair[1]) }))
+        .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+      if (valid.length < 2) return;
+
+      const keys: string[] = [ensureNode(valid[0]!.lat, valid[0]!.lng)];
+      for (let i = 1; i < valid.length; i += 1) {
+        const a = valid[i - 1]!;
+        const b = valid[i]!;
+        const from = L.latLng(a.lat, a.lng);
+        const to = L.latLng(b.lat, b.lng);
+        const steps = Math.max(1, Math.ceil(from.distanceTo(to) / 15));
+        for (let step = 1; step <= steps; step += 1) {
+          const ratio = step / steps;
+          const lat = a.lat + (b.lat - a.lat) * ratio;
+          const lng = a.lng + (b.lng - a.lng) * ratio;
+          keys.push(ensureNode(lat, lng));
+        }
+      }
+
+      for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1]!, keys[i]!);
+    };
+
+    const indexGeometry = (geojson: any) => {
+      for (const feature of geojson?.features ?? []) {
+        for (const line of geometryLines(feature.geometry)) addSnapLine(line);
+      }
+    };
+
+    const bridgeNearbyNetworkNodes = () => {
+      const keys = Array.from(nodeCoords.keys());
+      const buckets = new Map<string, string[]>();
+      const bucketSize = 0.00012;
+      for (const key of keys) {
+        const point = nodeCoords.get(key);
+        if (!point) continue;
+        const bx = Math.floor(point.lng / bucketSize);
+        const by = Math.floor(point.lat / bucketSize);
+        const bucket = bx + ':' + by;
+        const list = buckets.get(bucket) ?? [];
+        list.push(key);
+        buckets.set(bucket, list);
+      }
+      for (const key of keys) {
+        const point = nodeCoords.get(key);
+        if (!point) continue;
+        const bx = Math.floor(point.lng / bucketSize);
+        const by = Math.floor(point.lat / bucketSize);
+        for (let x = bx - 1; x <= bx + 1; x += 1) {
+          for (let y = by - 1; y <= by + 1; y += 1) {
+            for (const candidate of buckets.get(x + ':' + y) ?? []) {
+              if (candidate <= key) continue;
+              const other = nodeCoords.get(candidate);
+              if (other && point.distanceTo(other) <= 12) connect(key, candidate);
+            }
+          }
+        }
+      }
+    };
+
+    const planSnapToleranceMeters = 90;
+
+    const nearestNode = (latlng: any) => {
+      let bestKey = '';
+      let bestDistance = Infinity;
+      for (const [key, point] of nodeCoords.entries()) {
+        const distance = latlng.distanceTo(point);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestKey = key;
+        }
+      }
+      return bestKey && bestDistance <= planSnapToleranceMeters ? { key: bestKey, distance: bestDistance } : null;
+    };
+
+    const shortestTrailPath = (start: string, end: string) => {
+      if (start === end) return [start];
+      const distances = new Map<string, number>();
+      const previous = new Map<string, string>();
+      const heap = new MinHeap();
+      distances.set(start, 0);
+      heap.push({ key: start, distance: 0 });
+
+      while (heap.items.length) {
+        const current = heap.pop();
+        if (!current) break;
+        if (current.distance !== distances.get(current.key)) continue;
+        if (current.key === end) break;
+
+        for (const [neighbor, weight] of graph.get(current.key) ?? []) {
+          const nextDistance = current.distance + weight;
+          if (nextDistance < (distances.get(neighbor) ?? Infinity)) {
+            distances.set(neighbor, nextDistance);
+            previous.set(neighbor, current.key);
+            heap.push({ key: neighbor, distance: nextDistance });
+          }
+        }
+      }
+
+      if (!distances.has(end)) return null;
+      const path = [end];
+      let cursor = end;
+      while (cursor !== start) {
+        const prior = previous.get(cursor);
+        if (!prior) return null;
+        path.push(prior);
+        cursor = prior;
+      }
+      return path.reverse();
+    };
+
+    const routeBounds = L.latLngBounds([]);
+    const routePalette = ['#0d6654', '#d66a3a', '#5962a8', '#a54a72', '#3479a4', '#9a7829', '#744e98', '#c24e32'];
+    const routeColorFor = (routeId: string) => {
+      let hash = 0;
+      for (const char of routeId) hash = ((hash * 31) + char.charCodeAt(0)) >>> 0;
+      return routePalette[hash % routePalette.length]!;
+    };
+    const routeExploreEntries = new Map<string, { route: any; color: string; layers: any[]; bounds: any }>();
+    let selectedRouteId: string | null = null;
+
+    const routePopup = (route: any) => {
+      const popup = document.createElement('div');
+      popup.className = 'route-map-route-card';
+
+      const heading = document.createElement('strong');
+      heading.className = 'route-map-route-card-title';
+      heading.textContent = route.title;
+      popup.append(heading);
+
+      const meta = document.createElement('p');
+      meta.className = 'route-map-route-card-meta';
+      meta.textContent = route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · ' + route.trailStatusDisplay;
+      popup.append(meta);
+
+      const actions = document.createElement('div');
+      actions.className = 'route-map-route-card-actions';
+      const guide = document.createElement('a');
+      guide.href = route.guideUrl;
+      guide.textContent = 'View route guide';
+      const gpx = document.createElement('a');
+      gpx.href = route.gpxUrl;
+      gpx.textContent = 'Download GPX';
+      gpx.setAttribute('download', '');
+      actions.append(guide, gpx);
+      popup.append(actions);
+      return popup;
+    };
+
+    for (const route of routeConfigs) {
+      try {
+        const response = await fetch(route.geometryUrl, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Route geometry request failed');
+        const geojson = await response.json();
+        indexGeometry(geojson);
+        let routeStartAdded = false;
+
+        for (const feature of geojson.features ?? []) {
+          if (feature.geometry?.type === 'LineString' || feature.geometry?.type === 'MultiLineString') {
+            const routeColor = routeColorFor(route.routeId);
+            const line = L.geoJSON(feature, {
+              pane: 'routes',
+              style: {
+                color: routeColor,
+                weight: 7.5,
+                opacity: 1,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }
+            });
+            line.bindTooltip(route.title, { sticky: true, className: 'rrgh-map-tooltip rrgh-route-tooltip' });
+            line.bindPopup(routePopup(route), { maxWidth: 330 });
+            line.on('click', () => { selectedRouteId = route.routeId; });
+            line.addTo(routeGroup);
+            routePaths.push(line);
+            routeRecords.push({ layer: line, tripType: route.tripType, trailStatus: route.trailStatus });
+            const exploreEntry = routeExploreEntries.get(route.routeId) ?? {
+              route,
+              color: routeColor,
+              layers: [],
+              bounds: L.latLngBounds([])
+            };
+            exploreEntry.layers.push(line);
+            routeExploreEntries.set(route.routeId, exploreEntry);
+
+            const lineBounds = line.getBounds();
+            if (lineBounds.isValid()) {
+              routeBounds.extend(lineBounds);
+              exploreEntry.bounds.extend(lineBounds);
+              searchItems.push({
+                label: route.title,
+                detail: route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · RRGH route',
+                bounds: lineBounds,
+                open: () => {
+                  selectedRouteId = route.routeId;
+                  line.openPopup();
+                }
+              });
+            }
+
+            if (!routeStartAdded) {
+              const firstLine = geometryLines(feature.geometry)[0] ?? [];
+              const first = firstLine[0];
+              if (first) {
+                const [lng, lat] = first;
+                const icon = L.divIcon({
+                  className: 'route-start-icon',
+                  html: '<span aria-hidden="true"></span>',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12]
+                });
+                const marker = L.marker([lat, lng], {
+                  title: route.title + ' route start',
+                  alt: route.title + ' route start',
+                  keyboard: true,
+                  icon,
+                  pane: 'routeStarts',
+                  opacity: 1
+                });
+                const startPopup = document.createElement('div');
+                const startHeading = document.createElement('strong');
+                startHeading.textContent = 'Route start · ' + route.title;
+                startPopup.append(startHeading);
+                if (route.accessParking) {
+                  const parking = document.createElement('p');
+                  parking.textContent = route.accessParking;
+                  startPopup.append(parking);
+                }
+                const routeLink = document.createElement('a');
+                routeLink.href = route.guideUrl;
+                routeLink.textContent = 'View route guide';
+                startPopup.append(routeLink);
+                marker.bindPopup(startPopup, { maxWidth: 330 });
+                marker.on('click', () => { selectedRouteId = route.routeId; });
+                marker.addTo(routeStartGroup);
+                routeStartMarkers.push(marker);
+                routeStartRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
+                searchItems.push({
+                  label: route.title + ' route start',
+                  detail: 'RRGH route start',
+                  latlng: L.latLng(lat, lng),
+                  open: () => marker.openPopup()
+                });
+
+                if (route.accessParking) {
+                  const parkingIcon = L.divIcon({
+                    className: 'route-parking-icon',
+                    html: '<span aria-hidden="true">P</span>',
+                    iconSize: [24, 24],
+                    iconAnchor: [30, 12]
+                  });
+                  const parkingMarker = L.marker([lat, lng], {
+                    title: route.title + ' parking / trailhead',
+                    alt: route.title + ' parking / trailhead',
+                    keyboard: true,
+                    icon: parkingIcon,
+                    pane: 'recreation',
+                    opacity: 1
+                  });
+                  const parkingPopup = document.createElement('div');
+                  const parkingHeading = document.createElement('strong');
+                  parkingHeading.textContent = 'Parking / trailhead · ' + route.title;
+                  parkingPopup.append(parkingHeading);
+                  const parkingBody = document.createElement('p');
+                  parkingBody.textContent = route.accessParking;
+                  parkingPopup.append(parkingBody);
+                  parkingMarker.bindPopup(parkingPopup, { maxWidth: 330 });
+                  parkingMarker.addTo(recreationGroup);
+                  recreationMarkers.push(parkingMarker);
+                  searchItems.push({
+                    label: route.title + ' parking / trailhead',
+                    detail: 'RRGH access note',
+                    latlng: L.latLng(lat, lng),
+                    open: () => parkingMarker.openPopup()
+                  });
+                }
+
+                routeStartAdded = true;
+              }
+            }
+          } else if (feature.geometry?.type === 'Point') {
+            const [lng, lat] = feature.geometry.coordinates;
+            const name = featureValue(feature.properties, ['name']);
+            const type = featureValue(feature.properties, ['type']);
+            const description = featureValue(feature.properties, ['description']);
+            const kindClass = /view/i.test(type) ? 'is-viewpoint' : /arch|landmark/i.test(type) ? 'is-landmark' : 'is-landmark';
+            const icon = L.divIcon({
+              className: 'route-waypoint-icon ' + kindClass,
+              html: '<span aria-hidden="true"></span>',
+              iconSize: [22, 22],
+              iconAnchor: [11, 11]
+            });
+            const marker = L.marker([lat, lng], {
+              title: name,
+              alt: name,
+              keyboard: true,
+              icon,
+              pane: 'landmarks',
+              opacity: 1
+            });
+            const popup = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = name;
+            popup.append(heading);
+            if (type) {
+              const meta = document.createElement('p');
+              meta.className = 'route-map-popup-meta';
+              meta.textContent = type;
+              popup.append(meta);
+            }
+            if (description) {
+              const body = document.createElement('p');
+              body.textContent = description;
+              popup.append(body);
+            }
+            marker.bindPopup(popup);
+            marker.addTo(landmarkGroup);
+            landmarkMarkers.push(marker);
+            landmarkRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
+            routeBounds.extend([lat, lng]);
+            searchItems.push({
+              label: name,
+              detail: (type || 'Landmark') + ' · ' + route.title,
+              latlng: L.latLng(lat, lng),
+              open: () => marker.openPopup()
+            });
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus('The route line could not be loaded. Other map layers are still available.', 'warning');
+      }
+    }
+
+    if (mode !== 'full' && routeBounds.isValid()) {
+      map.fitBounds(routeBounds.pad(0.28), { maxZoom: 16 });
+    }
+
+    const fetchGeoJson = async (id: string) => {
+      const source = sourceById(id);
+      if (!source?.url) throw new Error('Missing map source URL for ' + id);
+      const response = await fetch(source.url, {
+        credentials: 'omit',
+        mode: 'cors',
+        referrerPolicy: 'strict-origin-when-cross-origin'
+      });
+      if (!response.ok) throw new Error(source.label + ' request failed with ' + response.status);
+      const data = await response.json();
+      if (data?.error) throw new Error(source.label + ' returned an ArcGIS error');
+      return data;
+    };
+
+    const fetchPagedGeoJson = async (id: string, pageSize = 1000, maxPages = 8) => {
+      const source = sourceById(id);
+      if (!source?.url) throw new Error('Missing map source URL for ' + id);
+      const features: any[] = [];
+
+      for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+        const url = new URL(source.url);
+        url.searchParams.set('resultOffset', String(pageIndex * pageSize));
+        url.searchParams.set('resultRecordCount', String(pageSize));
+        url.searchParams.set('orderByFields', 'OBJECTID');
+
+        const response = await fetch(url.toString(), {
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin'
+        });
+        if (!response.ok) throw new Error(source.label + ' request failed with ' + response.status);
+        const data = await response.json();
+        if (data?.error) throw new Error(source.label + ' returned an ArcGIS error');
+        const pageFeatures = Array.isArray(data?.features) ? data.features : [];
+        features.push(...pageFeatures);
+        if (pageFeatures.length < pageSize) break;
+      }
+
+      return { type: 'FeatureCollection', features };
+    };
+
+    const vectorFailures: string[] = [];
+
+    try {
+      const trails = await fetchGeoJson('usfs-trails');
+      indexGeometry(trails);
+      const seenLabels = new Set<string>();
+      const trailCasingLayer = L.geoJSON(trails, {
+        pane: 'trails',
+        interactive: false,
+        style: {
+          color: '#22313a',
+          weight: 5.4,
+          opacity: opacity('usfs-trails'),
+          dashArray: '8 5',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (_feature: any, layer: any) => trailCasingPaths.push(layer)
+      });
+      const trailLayer = L.geoJSON(trails, {
+        pane: 'trails',
+        style: {
+          color: '#00c8ff',
+          weight: 2.6,
+          opacity: opacity('usfs-trails'),
+          dashArray: '8 5',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature: any, layer: any) => {
+          const name = featureValue(feature.properties, ['trail_name', 'TRAIL_NAME']);
+          const number = featureValue(feature.properties, ['trail_no', 'TRAIL_NO']);
+          const trailClass = featureValue(feature.properties, ['trail_class', 'TRAIL_CLASS']);
+          const status = featureValue(feature.properties, ['attributesubset', 'ATTRIBUTE_SUBSET']);
+          const label = name || (number ? 'Trail ' + number : 'Forest Service trail');
+          const detail = name && number ? name + ' · Trail ' + number : label;
+          layer.bindTooltip(detail, { sticky: true, className: 'rrgh-map-tooltip' });
+
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = detail;
+          popup.append(heading);
+          const meta = document.createElement('p');
+          meta.className = 'route-map-popup-meta';
+          meta.textContent = ['USDA Forest Service trail', trailClass, status].filter(Boolean).join(' · ');
+          popup.append(meta);
+          const source = document.createElement('p');
+          source.textContent = 'Source: USDA Forest Service Enterprise Data Warehouse';
+          popup.append(source);
+          layer.bindPopup(popup, { maxWidth: 320 });
+          trailPaths.push(layer);
+
+          if (layer.getBounds) {
+            searchItems.push({
+              label: detail,
+              detail: 'Forest Service trail',
+              bounds: layer.getBounds(),
+              open: () => layer.openPopup()
+            });
+          }
+
+          if (name && !seenLabels.has(name) && seenLabels.size < 80 && layer.getBounds) {
+            seenLabels.add(name);
+            const center = layer.getBounds().getCenter();
+            const marker = L.marker(center, {
+              interactive: false,
+              pane: 'trails',
+              icon: L.divIcon({
+                className: 'rrgh-trail-label',
+                html: '<span>' + name.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string)) + '</span>',
+                iconSize: [160, 24],
+                iconAnchor: [80, 12]
+              })
+            });
+            trailLabelMarkers.push(marker);
+            trailLabelGroup.addLayer(marker);
+          }
+        }
+      });
+      container.dataset.trailFeatureCount = String(trailPaths.length);
+      mapLayers.set('usfs-trails', L.layerGroup([trailCasingLayer, trailLayer]));
+      opacitySetters.set('usfs-trails', (value) => {
+        trailCasingPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        trailPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        trailLabelMarkers.forEach((marker) => marker.setOpacity(value));
+      });
+      syncVisibility('usfs-trails');
+    } catch (error) {
+      console.error(error);
+      vectorFailures.push('Forest Service trails');
+    }
+
+    try {
+      const roads = await fetchGeoJson('usfs-roads');
+      const roadCasingLayer = L.geoJSON(roads, {
+        pane: 'roads',
+        interactive: false,
+        style: {
+          color: '#22313a',
+          weight: 6,
+          opacity: opacity('usfs-roads'),
+          dashArray: '12 6',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (_feature: any, layer: any) => roadCasingPaths.push(layer)
+      });
+      const roadLayer = L.geoJSON(roads, {
+        pane: 'roads',
+        style: {
+          color: '#ffcf33',
+          weight: 3,
+          opacity: opacity('usfs-roads'),
+          dashArray: '12 6',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature: any, layer: any) => {
+          const name = featureValue(feature.properties, ['name', 'NAME']);
+          const id = featureValue(feature.properties, ['id', 'ID']);
+          const routeStatus = featureValue(feature.properties, ['route_status', 'ROUTE_STATUS']);
+          const maintenance = featureValue(feature.properties, ['oper_maint_level', 'OPER_MAINT_LEVEL']);
+          const label = name || (id ? 'Forest Road ' + id : 'Forest Service road');
+          layer.bindTooltip(label, { sticky: true, className: 'rrgh-map-tooltip' });
+
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = label;
+          popup.append(heading);
+          const meta = document.createElement('p');
+          meta.className = 'route-map-popup-meta';
+          meta.textContent = ['USDA Forest Service road', routeStatus && ('Status: ' + routeStatus), maintenance && ('Maintenance level: ' + maintenance)].filter(Boolean).join(' · ');
+          popup.append(meta);
+          layer.bindPopup(popup, { maxWidth: 320 });
+          roadPaths.push(layer);
+          for (const line of geometryLines(feature.geometry)) addSnapLine(line);
+
+          if (layer.getBounds) {
+            searchItems.push({
+              label,
+              detail: 'Forest Service road',
+              bounds: layer.getBounds(),
+              open: () => layer.openPopup()
+            });
+          }
+        }
+      });
+      container.dataset.roadFeatureCount = String(roadPaths.length);
+      mapLayers.set('usfs-roads', L.layerGroup([roadCasingLayer, roadLayer]));
+      opacitySetters.set('usfs-roads', (value) => {
+        roadCasingPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        roadPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+      });
+      syncVisibility('usfs-roads');
+    } catch (error) {
+      console.error(error);
+      vectorFailures.push('Forest Service roads');
+    }
+
+    try {
+      const kentuckyRoads = await fetchPagedGeoJson('ky-road-centerlines');
+      let planningRoadFeatures = 0;
+      const excludedRoadClass = /interstate|freeway|expressway|limited\s*access|ramp|parkway/i;
+
+      for (const feature of kentuckyRoads.features ?? []) {
+        const roadClass = featureValue(feature.properties, ['RoadClass', 'ROADCLASS']);
+        const roadName = featureValue(feature.properties, ['LSt_Name', 'St_Name', 'LST_NAME', 'ST_NAME']);
+        if (excludedRoadClass.test(roadClass) || /parkway/i.test(roadName)) continue;
+
+        let indexed = false;
+        for (const line of geometryLines(feature.geometry)) {
+          if (line.length < 2) continue;
+          addSnapLine(line);
+          indexed = true;
+        }
+        if (indexed) planningRoadFeatures += 1;
+      }
+
+      container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
+    } catch (error) {
+      console.error(error);
+      container.dataset.planningRoadFeatureCount = '0';
+      vectorFailures.push('Kentucky road-planning network');
+    }
+
+    try {
+      const sites = await fetchGeoJson('usfs-recreation-sites');
+      const allowedSiteTypes = new Set([
+        'TRAILHEAD',
+        'DAY USE AREA',
+        'PICNIC SITE',
+        'INFO SITE/FEE STATION',
+        'INTERPRETIVE VISITOR CENTER (MAJOR)',
+        'INTERPRETIVE VISITOR CENTER (MINOR)',
+        'OBSERVATION SITE'
+      ]);
+      const recreationFeatures = (sites.features ?? []).filter((feature: any) => {
+        const type = featureValue(feature.properties, ['site_type', 'SITE_TYPE']).toUpperCase();
+        return allowedSiteTypes.has(type);
+      });
+
+      for (const feature of recreationFeatures) {
+        if (feature.geometry?.type !== 'Point') continue;
+        const [lng, lat] = feature.geometry.coordinates;
+        const name = featureValue(feature.properties, ['public_site_name', 'site_name', 'SITE_NAME']) || 'Forest Service recreation site';
+        const type = featureValue(feature.properties, ['site_type', 'SITE_TYPE']);
+        const seasonalStatus = featureValue(feature.properties, ['seasonal_operational_status', 'SEASONAL_OPERATIONAL_STATUS']);
+        const portalUrl = featureValue(feature.properties, ['usda_portal_url', 'USDA_PORTAL_URL']);
+        const isTrailhead = /TRAILHEAD/i.test(type);
+        const icon = L.divIcon({
+          className: isTrailhead ? 'route-trailhead-icon' : 'route-facility-icon',
+          html: isTrailhead ? '<span aria-hidden="true">▲</span>' : '<span aria-hidden="true">i</span>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        const marker = L.marker([lat, lng], {
+          title: name,
+          alt: name,
+          keyboard: true,
+          icon,
+          pane: 'recreation',
+          opacity: 1
+        });
+        const popup = document.createElement('div');
+        const heading = document.createElement('strong');
+        heading.textContent = name;
+        popup.append(heading);
+        const meta = document.createElement('p');
+        meta.className = 'route-map-popup-meta';
+        meta.textContent = [type, seasonalStatus && ('Status: ' + seasonalStatus)].filter(Boolean).join(' · ');
+        popup.append(meta);
+        const source = document.createElement('p');
+        source.textContent = 'Source: USDA Forest Service recreation-site data';
+        popup.append(source);
+        if (portalUrl) {
+          const link = document.createElement('a');
+          link.href = portalUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Open Forest Service site information';
+          popup.append(link);
+        }
+        marker.bindPopup(popup, { maxWidth: 320 });
+        marker.addTo(recreationGroup);
+        recreationMarkers.push(marker);
+        searchItems.push({
+          label: name,
+          detail: type || 'Forest Service recreation site',
+          latlng: L.latLng(lat, lng),
+          open: () => marker.openPopup()
+        });
+      }
+      container.dataset.recreationSiteCount = String(recreationMarkers.length);
+      if (!map.hasLayer(recreationGroup)) recreationGroup.addTo(map);
+    } catch (error) {
+      console.error(error);
+      vectorFailures.push('Trailheads & facilities');
+    }
+
+    try {
+      const counties = await fetchGeoJson('ky-counties');
+      const gorgeCountyNames = new Set(['Wolfe', 'Powell', 'Menifee', 'Lee']);
+      const gorgeCounties = {
+        ...counties,
+        features: (counties.features ?? []).filter((feature: any) => {
+          const name = featureValue(feature.properties, ['NAME', 'name']);
+          return gorgeCountyNames.has(name);
+        })
+      };
+      const seenCounties = new Set<string>();
+      const countyLayer = L.geoJSON(gorgeCounties, {
+        pane: 'counties',
+        style: {
+          color: '#665d4f',
+          weight: 2.2,
+          opacity: 0.86,
+          fillOpacity: 0,
+          dashArray: '8 5'
+        },
+        onEachFeature: (feature: any, layer: any) => {
+          const name = featureValue(feature.properties, ['NAME', 'name']);
+          if (name) layer.bindTooltip(name + ' County', { sticky: true, className: 'rrgh-map-tooltip' });
+          countyPaths.push(layer);
+          if (name && !seenCounties.has(name) && layer.getBounds) {
+            seenCounties.add(name);
+            const center = layer.getBounds().getCenter();
+            const marker = L.marker(center, {
+              interactive: false,
+              pane: 'counties',
+              icon: L.divIcon({
+                className: 'rrgh-county-label',
+                html: '<span>' + name.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string)) + ' County</span>',
+                iconSize: [150, 24],
+                iconAnchor: [75, 12]
+              })
+            });
+            countyLabelMarkers.push(marker);
+            countyLabelGroup.addLayer(marker);
+          }
+        }
+      });
+      container.dataset.gorgeCountyCount = String(gorgeCounties.features.length);
+      mapLayers.set('ky-counties', countyLayer);
+      countyLayer.addTo(map);
+
+      if (mode === 'full') {
+        const gorgeBounds = countyLayer.getBounds();
+        if (gorgeBounds.isValid()) {
+          const paddedBounds = gorgeBounds.pad(0.035);
+          homeBounds = paddedBounds;
+          map.setMaxBounds(paddedBounds);
+          setHomeView();
+          container.dataset.gorgeOverviewZoom = String(map.getZoom());
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      vectorFailures.push('County boundaries');
+    }
+
+    const loadPolygonLayer = async (
+      id: string,
+      pane: string,
+      style: Record<string, unknown>,
+      nameFields: string[],
+      detailLabel: string,
+      pathStore: any[]
+    ) => {
+      if (mapLayers.has(id)) {
+        syncVisibility(id);
+        return;
+      }
+      const data = await fetchGeoJson(id);
+      const layer = L.geoJSON(data, {
+        pane,
+        style: { ...style, opacity: opacity(id) },
+        onEachFeature: (feature: any, featureLayer: any) => {
+          const name = featureValue(feature.properties, nameFields) || detailLabel;
+          featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = name;
+          popup.append(heading);
+          const body = document.createElement('p');
+          body.textContent = detailLabel + ' · USDA Forest Service';
+          popup.append(body);
+          featureLayer.bindPopup(popup);
+          pathStore.push(featureLayer);
+          if (featureLayer.getBounds) {
+            searchItems.push({
+              label: name,
+              detail: detailLabel,
+              bounds: featureLayer.getBounds(),
+              open: () => featureLayer.openPopup()
+            });
+          }
+        }
+      });
+      mapLayers.set(id, layer);
+      opacitySetters.set(id, (value) => pathStore.forEach((path) => path.setStyle({ opacity: value })));
+      syncVisibility(id);
+    };
+
+    const loadLandContext = async (id: string) => {
+      try {
+        if (id === 'usfs-wilderness') {
+          await loadPolygonLayer(
+            id,
+            'wilderness',
+            normalContextStyles['usfs-wilderness']!,
+            ['wildernessname', 'WILDERNESSNAME'],
+            'National Forest Wilderness boundary',
+            wildernessPaths
+          );
+        } else if (id === 'usfs-special-management') {
+          await loadPolygonLayer(
+            id,
+            'specialManagement',
+            normalContextStyles['usfs-special-management']!,
+            ['areaname', 'casename', 'AREANAME', 'CASENAME'],
+            'Forest Service special management area',
+            specialManagementPaths
+          );
+        } else if (id === 'usfs-land-units') {
+          await loadPolygonLayer(
+            id,
+            'landUnits',
+            normalContextStyles['usfs-land-units']!,
+            ['nfslandunitname', 'NFSLANDUNITNAME'],
+            'National Forest land unit',
+            landUnitPaths
+          );
+        }
+        syncLandContextStyles();
+      } catch (error) {
+        console.error(error);
+        setStatus('That land-management layer is unavailable right now.', 'warning');
+        const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+        if (checkbox) checkbox.checked = false;
+      }
+    };
+
+    const loadInformalTrails = async () => {
+      if (mapLayers.has('osm-informal-trails')) {
+        syncVisibility('osm-informal-trails');
+        setExplorePlanReady(true);
+        return;
+      }
+
+      const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="osm-informal-trails"]');
+      if (checkbox) checkbox.disabled = true;
+      setExplorePlanReady(false);
+      setStatus('Loading Community / Informal trails… Explore and Plan will unlock when trail data is ready.');
+
+      const cachedUrl = import.meta.env.BASE_URL + 'data/map/osm-informal-trails.geojson';
+      const query = '[out:json][timeout:45];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom qt;';
+      const overpassEndpoints = [
+        'https://overpass.maprva.org/api/interpreter',
+        'https://overpass.private.coffee/api/interpreter',
+        'https://overpass-api.de/api/interpreter',
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+      ];
+
+      const fetchLiveFallback = async () => {
+        const controllers = overpassEndpoints.map(() => new AbortController());
+        const timeoutIds = controllers.map((controller) => window.setTimeout(() => controller.abort(), 15000));
+
+        const requestEndpoint = async (base: string, index: number) => {
+          const response = await fetch(base, {
+            method: 'POST',
+            credentials: 'omit',
+            mode: 'cors',
+            referrerPolicy: 'strict-origin-when-cross-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body: 'data=' + encodeURIComponent(query),
+            signal: controllers[index]!.signal
+          });
+          if (!response.ok) throw new Error(base + ': HTTP ' + response.status);
+          const json = await response.json();
+          if (!json || !Array.isArray(json.elements)) throw new Error(base + ': invalid Overpass JSON');
+          return { base, json };
+        };
+
+        try {
+          const winner = await Promise.any(
+            overpassEndpoints.map((base, index) => requestEndpoint(base, index))
+          );
+          for (const controller of controllers) controller.abort();
+
+          const features = (winner.json.elements ?? [])
+            .filter((element: any) => Array.isArray(element.geometry) && element.geometry.length > 1)
+            .map((element: any) => ({
+              type: 'Feature',
+              properties: { ...(element.tags ?? {}), osm_id: element.id },
+              geometry: {
+                type: 'LineString',
+                coordinates: element.geometry.map((point: any) => [point.lon, point.lat])
+              }
+            }));
+
+          container.dataset.informalTrailSource = new URL(winner.base).hostname;
+          return { type: 'FeatureCollection', features };
+        } finally {
+          for (const controller of controllers) controller.abort();
+          for (const timeoutId of timeoutIds) window.clearTimeout(timeoutId);
+        }
+      };
+
+      try {
+        let featureCollection: any = null;
+
+        try {
+          const cacheResponse = await fetch(cachedUrl, { credentials: 'same-origin', cache: 'no-cache' });
+          if (!cacheResponse.ok) throw new Error('Cached OSM GeoJSON HTTP ' + cacheResponse.status);
+          const cached = await cacheResponse.json();
+          if (cached?.type !== 'FeatureCollection' || !Array.isArray(cached.features)) {
+            throw new Error('Cached OSM GeoJSON is invalid');
+          }
+          featureCollection = cached;
+          container.dataset.informalTrailSource = 'rrgh-cache';
+        } catch (cacheError) {
+          console.warn('RRGH OSM cache unavailable; trying live public Overpass services.', cacheError);
+          featureCollection = await fetchLiveFallback();
+        }
+
+        const casingLayer = L.geoJSON(featureCollection as any, {
+          pane: 'informalTrails',
+          interactive: false,
+          style: {
+            color: '#22313a',
+            weight: 5.2,
+            opacity: opacity('osm-informal-trails'),
+            dashArray: '6 5',
+            lineCap: 'round',
+            lineJoin: 'round'
+          },
+          onEachFeature: (_feature: any, featureLayer: any) => {
+            informalCasingPaths.push(featureLayer);
+          }
+        });
+
+        const layer = L.geoJSON(featureCollection as any, {
+          pane: 'informalTrails',
+          style: (feature: any) => {
+            const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
+            const restricted = access === 'no' || access === 'private';
+            return {
+              color: restricted ? '#b9b9b9' : '#f7f2e7',
+              weight: restricted ? 2.2 : 2.4,
+              opacity: opacity('osm-informal-trails'),
+              dashArray: '6 5',
+              lineCap: 'round',
+              lineJoin: 'round'
+            };
+          },
+          onEachFeature: (feature: any, featureLayer: any) => {
+            const props = feature.properties ?? {};
+            const classification = String(props.rrgh_classification ?? (props.informal === 'yes' ? 'informal' : 'community-candidate'));
+            const label = classification === 'informal' ? 'Informal trail' : 'Community trail candidate';
+            const name = String(props.name ?? label);
+            const access = String(props.access ?? props.foot ?? 'not specified');
+            const visibility = String(props.trail_visibility ?? 'not specified');
+            const accessLower = access.toLowerCase();
+            const restricted = accessLower === 'no' || accessLower === 'private';
+
+            const popup = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = name;
+            popup.append(heading);
+
+            const warning = document.createElement('p');
+            warning.className = 'route-map-popup-warning';
+            warning.textContent = classification === 'informal'
+              ? 'Mapped by OpenStreetMap as an informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.'
+              : 'OpenStreetMap trail-like path that does not substantially match the authoritative Forest Service trail geometry. Treat it as a community/unofficial candidate, not proof of legal access or current conditions.';
+            popup.append(warning);
+
+            const meta = document.createElement('p');
+            meta.className = 'route-map-popup-meta';
+            meta.textContent = 'Access: ' + access + ' · Trail visibility: ' + visibility + (restricted ? ' · Not used for route snapping' : ' · Available for route snapping');
+            popup.append(meta);
+
+            const source = document.createElement('a');
+            source.href = 'https://www.openstreetmap.org/copyright';
+            source.target = '_blank';
+            source.rel = 'noopener noreferrer';
+            source.textContent = 'Map data © OpenStreetMap contributors';
+            popup.append(source);
+
+            featureLayer.bindPopup(popup, { maxWidth: 330 });
+            featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+            informalPaths.push(featureLayer);
+
+            if (!restricted) {
+              for (const line of geometryLines(feature.geometry)) addSnapLine(line);
+            }
+
+            if (featureLayer.getBounds) {
+              searchItems.push({
+                label: name,
+                detail: label + ' · OpenStreetMap',
+                bounds: featureLayer.getBounds(),
+                open: () => featureLayer.openPopup()
+              });
+            }
+          }
+        });
+
+        const informalComposite = L.layerGroup([casingLayer, layer]);
+        mapLayers.set('osm-informal-trails', informalComposite);
+        opacitySetters.set('osm-informal-trails', (value) => {
+          informalCasingPaths.forEach((path) => path.setStyle({ opacity: value }));
+          informalPaths.forEach((path) => path.setStyle({ opacity: value }));
+        });
+        map.attributionControl.addAttribution('<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>');
+        container.dataset.informalTrailCount = String(informalPaths.length);
+        syncVisibility('osm-informal-trails');
+
+        bridgeNearbyNetworkNodes();
+        container.dataset.plannerNodeCount = String(graph.size);
+        setExplorePlanReady(true);
+
+        setStatus(
+          informalPaths.length
+            ? 'Trail and road planning network loaded.'
+            : 'OpenStreetMap trail data loaded. Explore and Plan are ready.'
+        );
+        window.setTimeout(() => {
+          if (informalTrailsReady && activeTool === null) {
+            setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+          }
+        }, 1600);
+      } catch (error) {
+        console.error(error);
+        if (checkbox) checkbox.checked = false;
+        setExplorePlanReady(false);
+        setStatus('Community / Informal trails are temporarily unavailable. Explore and Plan remain disabled until trail data loads successfully.', 'warning');
+      } finally {
+        if (checkbox) checkbox.disabled = false;
+      }
+    };
+
+    bridgeNearbyNetworkNodes();
+    container.dataset.plannerNodeCount = String(graph.size);
+
+    const tripTypeEnabled = (tripType: string) =>
+      shell.querySelector<HTMLInputElement>('[data-route-trip-filter="' + tripType + '"]')?.checked ?? true;
+    const trailStatusEnabled = (trailStatus: string) =>
+      shell.querySelector<HTMLInputElement>('[data-route-status-filter="' + trailStatus + '"]')?.checked ?? true;
+
+    const routeRecordEnabled = (record: { tripType: string; trailStatus: string }) =>
+      tripTypeEnabled(record.tripType) && trailStatusEnabled(record.trailStatus);
+
+    const syncRouteFilters = () => {
+      let visibleRoutes = 0;
+      let visibleLandmarks = 0;
+      let visibleStarts = 0;
+
+      for (const record of routeRecords) {
+        if (routeRecordEnabled(record)) {
+          routeGroup.addLayer(record.layer);
+          visibleRoutes += 1;
+        } else {
+          routeGroup.removeLayer(record.layer);
+        }
+      }
+      for (const record of routeStartRecords) {
+        if (routeRecordEnabled(record)) {
+          routeStartGroup.addLayer(record.layer);
+          visibleStarts += 1;
+        } else {
+          routeStartGroup.removeLayer(record.layer);
+        }
+      }
+      for (const record of landmarkRecords) {
+        if (routeRecordEnabled(record)) {
+          landmarkGroup.addLayer(record.layer);
+          visibleLandmarks += 1;
+        } else {
+          landmarkGroup.removeLayer(record.layer);
+        }
+      }
+
+      container.dataset.visibleRouteCount = String(visibleRoutes);
+      container.dataset.visibleRouteStartCount = String(visibleStarts);
+      container.dataset.visibleLandmarkCount = String(visibleLandmarks);
+      renderExploreRoutes();
+    };
+
+    const resetRouteHighlight = (entry: any) => {
+      const weight = map.getZoom() < 11 ? 4.5 : 7.5;
+      for (const layer of entry.layers) layer.setStyle({ color: entry.color, weight, opacity: 1 });
+    };
+
+    const renderExploreRoutes = () => {
+      if (!exploreList) return;
+      exploreList.replaceChildren();
+      const entries = Array.from(routeExploreEntries.values())
+        .filter((entry) => tripTypeEnabled(entry.route.tripType) && trailStatusEnabled(entry.route.trailStatus))
+        .sort((a, b) => a.route.title.localeCompare(b.route.title));
+
+      for (const entry of entries) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'route-explore-card';
+
+        const swatch = document.createElement('span');
+        swatch.className = 'route-explore-color';
+        swatch.style.background = entry.color;
+        swatch.setAttribute('aria-hidden', 'true');
+
+        const copy = document.createElement('span');
+        const title = document.createElement('strong');
+        title.textContent = entry.route.title;
+        const meta = document.createElement('small');
+        meta.textContent = entry.route.distanceMi.toFixed(2) + ' mi · ' + entry.route.physicalDifficulty + ' · ' + entry.route.trailStatusDisplay;
+        copy.append(title, meta);
+        button.append(swatch, copy);
+
+        button.addEventListener('pointerenter', () => {
+          for (const layer of entry.layers) {
+            layer.setStyle({ color: entry.color, weight: 11, opacity: 1 });
+            layer.bringToFront?.();
+          }
+        });
+        button.addEventListener('pointerleave', () => resetRouteHighlight(entry));
+        button.addEventListener('click', () => {
+          selectedRouteId = entry.route.routeId;
+          if (entry.bounds?.isValid?.()) map.fitBounds(entry.bounds.pad(0.35), { maxZoom: 15 });
+          entry.layers[0]?.openPopup?.();
+        });
+        exploreList.append(button);
+      }
+
+      if (!entries.length) {
+        const empty = document.createElement('p');
+        empty.className = 'route-search-empty';
+        empty.textContent = 'No RRGH routes match the current route filters.';
+        exploreList.append(empty);
+      }
+    };
+
+    const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {
+      const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+      const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+      if (checkbox) checkbox.checked = enabled;
+      if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
+      syncVisibility(id);
+      if (opacityValue !== undefined) syncOpacity(id);
+    };
+
+    const clearPresetState = () => {
+      for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
+        button.setAttribute('aria-pressed', 'false');
+      }
+    };
+
+    const applyPreset = (name: string) => {
+      clearPresetState();
+      shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
+
+      if (name === 'hiking') {
+        setLayerControl('kytopo', false, 88);
+        setLayerControl('usgs-topo', true, 100);
+        setLayerControl('ky-hillshade', false, 18);
+        setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('usfs-wilderness', true);
+      } else if (name === 'terrain') {
+        setLayerControl('kytopo', true, 72);
+        setLayerControl('usgs-topo', true, 72);
+        setLayerControl('ky-hillshade', true, 72);
+        setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('usfs-wilderness', true);
+      } else if (name === 'aerial') {
+        setLayerControl('kytopo', false, 70);
+        setLayerControl('usgs-topo', false, 70);
+        setLayerControl('ky-hillshade', false, 0);
+        setLayerControl('kyaerial-phase3', true, 100);
+      }
+      syncAerialControlState();
+      syncContextLabels();
+    };
+
+    const syncContextLabels = () => {
+      const trailsVisible = checked('usfs-trails') && map.getZoom() >= 13;
+      if (trailsVisible && !map.hasLayer(trailLabelGroup)) trailLabelGroup.addTo(map);
+      if (!trailsVisible && map.hasLayer(trailLabelGroup)) map.removeLayer(trailLabelGroup);
+
+      const countiesVisible = map.getZoom() <= 13;
+      if (countiesVisible && !map.hasLayer(countyLabelGroup)) countyLabelGroup.addTo(map);
+      if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
+    };
+
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3']);
+    const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
+
+    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
+      checkbox.addEventListener('change', async () => {
+        const id = checkbox.dataset.mapLayer;
+        if (!id) return;
+        if (presetLayerIds.has(id)) clearPresetState();
+
+        if (id === 'kyaerial-phase3' && checkbox.checked) {
+          setLayerControl('kytopo', false);
+          setLayerControl('usgs-topo', false);
+          setLayerControl('ky-hillshade', false);
+        } else if ((id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked) {
+          setLayerControl('kyaerial-phase3', false);
+        }
+
+        if (checkbox.checked && id === 'osm-informal-trails') {
+          await loadInformalTrails();
+        } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
+          await loadLandContext(id);
+        } else {
+          syncVisibility(id);
+        }
+        syncAerialControlState();
+        syncContextLabels();
+      });
+    }
+
+    for (const slider of shell.querySelectorAll<HTMLInputElement>('[data-opacity]')) {
+      slider.addEventListener('input', () => {
+        const id = slider.dataset.opacity;
+        if (!id || slider.disabled) return;
+        if (presetLayerIds.has(id)) clearPresetState();
+        syncOpacity(id);
+        if (optionalLandLayerIds.has(id)) syncLandContextStyles();
+      });
+    }
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
+      button.addEventListener('click', () => {
+        const name = button.dataset.mapPreset;
+        if (name) applyPreset(name);
+      });
+    }
+
+    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter], [data-route-status-filter]')) {
+      checkbox.addEventListener('change', syncRouteFilters);
+    }
+    syncRouteFilters();
+
+    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghTrips', 'rrghStatus', 'rrghRoute'];
+    const buildShareUrl = () => {
+      const url = new URL(window.location.href);
+      for (const key of Array.from(url.searchParams.keys())) {
+        if (key.startsWith('utm_') || key === 'gclid' || key === 'fbclid' || shareParamNames.includes(key)) {
+          url.searchParams.delete(key);
+        }
+      }
+
+      const center = map.getCenter();
+      url.searchParams.set('rrghMap', [center.lat.toFixed(7), center.lng.toFixed(7), String(map.getZoom())].join(','));
+
+      const activePreset = shell.querySelector<HTMLButtonElement>('[data-map-preset][aria-pressed="true"]')?.dataset.mapPreset;
+      url.searchParams.set('rrghPreset', activePreset ?? 'custom');
+
+      const layerState = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-map-layer]'))
+        .map((input) => {
+          const id = input.dataset.mapLayer;
+          if (!id) return null;
+          const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+          return [id, input.checked ? '1' : '0', slider?.value ?? ''].join(':');
+        })
+        .filter(Boolean)
+        .join(',');
+      url.searchParams.set('rrghLayers', layerState);
+
+      const trips = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]'))
+        .filter((input) => input.checked)
+        .map((input) => input.dataset.routeTripFilter)
+        .filter(Boolean)
+        .join(',');
+      const statuses = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]'))
+        .filter((input) => input.checked)
+        .map((input) => input.dataset.routeStatusFilter)
+        .filter(Boolean)
+        .join(',');
+      url.searchParams.set('rrghTrips', trips);
+      url.searchParams.set('rrghStatus', statuses);
+
+      if (selectedRouteId) url.searchParams.set('rrghRoute', selectedRouteId);
+      url.hash = '';
+      return url.toString();
+    };
+
+    const showShareFallback = (url: string) => {
+      for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"], [data-map-sheet="share"]')) {
+        item.hidden = item !== sharePanel;
+      }
+      if (layerPanel) {
+        layerPanel.open = false;
+        delete layerPanel.dataset.mobileOpen;
+      }
+      if (shareUrlInput) shareUrlInput.value = url;
+      if (shareStatus) shareStatus.textContent = '';
+      if (sharePanel) sharePanel.hidden = false;
+    };
+
+    const copyShareUrl = async () => {
+      const url = shareUrlInput?.value || buildShareUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        if (shareStatus) shareStatus.textContent = 'Link copied.';
+      } catch {
+        if (shareUrlInput) {
+          shareUrlInput.focus();
+          shareUrlInput.select();
+          const copied = document.execCommand('copy');
+          if (shareStatus) shareStatus.textContent = copied ? 'Link copied.' : 'Select and copy the link above.';
+        }
+      }
+    };
+
+    const shareCurrentMap = async () => {
+      const url = buildShareUrl();
+      const selectedEntry = selectedRouteId ? routeExploreEntries.get(selectedRouteId) : null;
+      const title = selectedEntry ? selectedEntry.route.title + ' — Red River Gorge Hiker' : 'Red River Gorge Hiker Interactive Map';
+      const text = selectedEntry
+        ? selectedEntry.route.title + ' · ' + selectedEntry.route.distanceMi.toFixed(2) + ' mi · ' + selectedEntry.route.physicalDifficulty + ' · ' + selectedEntry.route.trailStatusDisplay
+        : 'Shared map view from Red River Gorge Hiker';
+
+      if (shareDescription) {
+        shareDescription.textContent = selectedEntry
+          ? 'Share this map view with ' + selectedEntry.route.title + ' selected.'
+          : 'Copy this link to share the current map view and settings.';
+      }
+
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title, text, url });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+      showShareFallback(url);
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-action="share"]')) {
+      button.addEventListener('click', () => { void shareCurrentMap(); });
+    }
+    shareCopy?.addEventListener('click', () => { void copyShareUrl(); });
+
+    const applySharedMapState = () => {
+      const params = new URL(window.location.href).searchParams;
+      const sharedMap = params.get('rrghMap');
+      const sharedPreset = params.get('rrghPreset');
+
+      if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial'].includes(sharedPreset)) {
+        applyPreset(sharedPreset);
+      }
+
+      const layerState = params.get('rrghLayers');
+      if (layerState !== null) {
+        for (const record of layerState.split(',')) {
+          const [id, enabledValue, opacityValue] = record.split(':');
+          if (!id) continue;
+          const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+          if (!checkbox) continue;
+          const parsedOpacity = opacityValue === '' || opacityValue === undefined ? undefined : Number(opacityValue);
+          const safeOpacity = parsedOpacity !== undefined && Number.isFinite(parsedOpacity) ? parsedOpacity : undefined;
+          setLayerControl(id, enabledValue === '1', safeOpacity);
+        }
+      }
+
+      const tripParam = params.get('rrghTrips');
+      if (tripParam !== null) {
+        const selectedTrips = new Set(tripParam.split(',').filter(Boolean));
+        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]')) {
+          input.checked = Boolean(input.dataset.routeTripFilter && selectedTrips.has(input.dataset.routeTripFilter));
+        }
+      }
+      const statusParam = params.get('rrghStatus');
+      if (statusParam !== null) {
+        const selectedStatuses = new Set(statusParam.split(',').filter(Boolean));
+        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]')) {
+          input.checked = Boolean(input.dataset.routeStatusFilter && selectedStatuses.has(input.dataset.routeStatusFilter));
+        }
+      }
+      syncRouteFilters();
+
+      let sharedCenter: any = null;
+      let sharedZoom: number | null = null;
+      if (sharedMap) {
+        const [latValue, lngValue, zoomValue] = sharedMap.split(',');
+        const lat = Number(latValue);
+        const lng = Number(lngValue);
+        const zoom = Number(zoomValue);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(zoom) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && zoom >= 8 && zoom <= 20) {
+          sharedCenter = L.latLng(lat, lng);
+          sharedZoom = zoom;
+          sharedViewApplied = true;
+          map.setView(sharedCenter, sharedZoom, { animate: false });
+        }
+      }
+
+      const sharedRouteId = params.get('rrghRoute');
+      if (sharedRouteId && routeExploreEntries.has(sharedRouteId)) {
+        selectedRouteId = sharedRouteId;
+        const entry = routeExploreEntries.get(sharedRouteId);
+        window.setTimeout(() => {
+          const popup = entry?.layers[0]?.getPopup?.();
+          const priorAutoPan = popup?.options?.autoPan;
+          if (popup?.options) popup.options.autoPan = false;
+          entry?.layers[0]?.openPopup?.();
+          if (popup?.options) popup.options.autoPan = priorAutoPan;
+          if (sharedCenter && sharedZoom !== null) map.setView(sharedCenter, sharedZoom, { animate: false });
+        }, 80);
+      }
+
+      syncAerialControlState();
+      syncContextLabels();
+      syncViewportDiagnostics();
+    };
+    applySharedMapState();
+
+    const syncSheetButtons = () => {
+      for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open]')) {
+        const target = button.dataset.sheetOpen;
+        if (!target || target === 'layers') continue;
+        const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + target + '"]');
+        button.setAttribute('aria-pressed', String(Boolean(panel && !panel.hidden)));
+      }
+    };
+
+    const openSheet = (name: string) => {
+      if (name === 'layers') {
+        if (layerPanel) {
+          layerPanel.open = !layerPanel.open;
+          if (layerPanel.open) layerPanel.dataset.mobileOpen = 'true';
+          else delete layerPanel.dataset.mobileOpen;
+        }
+        return;
+      }
+
+      const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + name + '"]');
+      const shouldClose = Boolean(panel && !panel.hidden);
+
+      for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"], [data-map-sheet="share"]')) {
+        item.hidden = true;
+      }
+
+      if (shouldClose) {
+        if (name === 'explore' || name === 'plan') setTool(null);
+        syncSheetButtons();
+        return;
+      }
+
+      if (panel) panel.hidden = false;
+      if (name === 'explore') {
+        setTool(null);
+        renderExploreRoutes();
+      }
+      if (name === 'search') window.setTimeout(() => searchInput?.focus(), 0);
+      syncSheetButtons();
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open]')) {
+      button.addEventListener('click', () => {
+        const target = button.dataset.sheetOpen;
+        if (target) openSheet(target);
+      });
+    }
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-close]')) {
+      button.addEventListener('click', () => {
+        const panel = button.closest<HTMLElement>('[data-map-sheet]');
+        if (panel) panel.hidden = true;
+        syncSheetButtons();
+      });
+    }
+
+    layerPanel?.addEventListener('toggle', () => {
+      if (!layerPanel.open) delete layerPanel.dataset.mobileOpen;
+    });
+
+    const goHome = () => {
+      setHomeView();
+      setStatus('Core Red River Gorge hiking view restored.');
+    };
+
+    const showMyLocation = () => {
+      if (!('geolocation' in navigator)) {
+        setStatus('This browser does not provide device location.', 'warning');
+        return;
+      }
+      setStatus('Requesting your device location…');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+          if (homeBounds?.isValid?.() && !homeBounds.contains(latlng)) {
+            setStatus('Your reported device location is outside this Wolfe / Powell / Menifee / Lee planning map. The map will remain in the Gorge.', 'warning');
+            return;
+          }
+          if (locationLayer) map.removeLayer(locationLayer);
+          const accuracy = Math.max(1, position.coords.accuracy || 1);
+          const group = L.layerGroup();
+          L.circle(latlng, {
+            radius: accuracy,
+            color: '#2f6e99',
+            weight: 1.5,
+            opacity: 0.8,
+            fillColor: '#2f6e99',
+            fillOpacity: 0.12,
+            pane: 'landmarks'
+          }).addTo(group);
+          L.circleMarker(latlng, {
+            radius: 7,
+            color: '#ffffff',
+            weight: 3,
+            fillColor: '#2f6e99',
+            fillOpacity: 1,
+            pane: 'landmarks'
+          }).bindPopup('Your device location · accuracy about ' + Math.round(accuracy) + ' m. Device GPS can be inaccurate and is not a substitute for dedicated backcountry navigation.').addTo(group);
+          group.addTo(map);
+          locationLayer = group;
+          map.setView(latlng, Math.max(map.getZoom(), 15));
+          setStatus('Device location shown with its reported accuracy. GPS accuracy can vary.');
+        },
+        (error) => {
+          const message = error.code === 1
+            ? 'Location permission was not granted.'
+            : 'Your device location could not be determined.';
+          setStatus(message, 'warning');
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      );
+    };
+
+    const panMapByDirection = (direction: string) => {
+      const size = map.getSize();
+      const step = Math.max(100, Math.min(220, Math.round(Math.min(size.x, size.y) * 0.22)));
+      const offsets: Record<string, [number, number]> = {
+        up: [0, -step],
+        down: [0, step],
+        left: [-step, 0],
+        right: [step, 0]
+      };
+      const offset = offsets[direction];
+      if (!offset) return;
+      map.panBy(L.point(offset[0], offset[1]), { animate: true, duration: 0.22 });
+      if (activeTool === 'plan') {
+        setStatus('Map panned. Route building remains active; click the next point when ready.');
+      }
+    };
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-plan-pan-direction]')) {
+      button.addEventListener('click', () => {
+        panMapByDirection(button.dataset.planPanDirection ?? '');
+      });
+    }
+
+    for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-action]')) {
+      button.addEventListener('click', () => {
+        const action = button.dataset.mapAction;
+        if (action === 'home') goHome();
+        else if (action === 'locate') showMyLocation();
+        else if (action === 'zoom-in') {
+          map.setView(map.getCenter(), Math.min(map.getMaxZoom(), map.getZoom() + 1), { animate: false });
+        } else if (action === 'zoom-out') {
+          map.setView(map.getCenter(), Math.max(map.getMinZoom(), map.getZoom() - 1), { animate: false });
+        }
+      });
+    }
+
+    const renderSearchResults = () => {
+      if (!searchResults || !searchInput) return;
+      const query = searchInput.value.trim().toLowerCase();
+      searchResults.replaceChildren();
+      if (!query) return;
+
+      const matches = searchItems
+        .filter((item) => (item.label + ' ' + item.detail).toLowerCase().includes(query))
+        .slice(0, 10);
+
+      if (!matches.length) {
+        const empty = document.createElement('p');
+        empty.className = 'route-search-empty';
+        empty.textContent = 'No loaded map feature matches that search.';
+        searchResults.append(empty);
+        return;
+      }
+
+      for (const item of matches) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'route-search-result';
+        const label = document.createElement('strong');
+        label.textContent = item.label;
+        const detail = document.createElement('span');
+        detail.textContent = item.detail;
+        button.append(label, detail);
+        button.addEventListener('click', () => {
+          if (item.bounds?.isValid?.()) map.fitBounds(item.bounds.pad ? item.bounds.pad(0.35) : item.bounds, { maxZoom: 16 });
+          else if (item.latlng) map.setView(item.latlng, 16);
+          item.open?.();
+          if (searchPanel) searchPanel.hidden = true;
+        });
+        searchResults.append(button);
+      }
+    };
+    searchInput?.addEventListener('input', renderSearchResults);
+
+    const showCoordinate = (latlng: any) => {
+      const lat = Number(latlng.lat);
+      const lng = Number(latlng.lng);
+      const utm = toUtm(lat, lng);
+      coordinatePoint = { lat, lng, utm };
+      if (coordinateDd) coordinateDd.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      if (coordinateUtm) coordinateUtm.textContent = 'UTM ' + utm;
+      if (coordinateCard) coordinateCard.hidden = false;
+    };
+
+    coordinateClose?.addEventListener('click', () => {
+      if (coordinateCard) coordinateCard.hidden = true;
+      coordinatePoint = null;
+    });
+
+    coordinateCopy?.addEventListener('click', async () => {
+      if (!coordinatePoint) return;
+      const textValue = coordinatePoint.lat.toFixed(6) + ', ' + coordinatePoint.lng.toFixed(6) + ' · UTM ' + coordinatePoint.utm;
+      try {
+        await navigator.clipboard.writeText(textValue);
+        setStatus('Coordinates copied.');
+      } catch {
+        setStatus('Copy was blocked by the browser. Select the displayed coordinates instead.', 'warning');
+      }
+    });
+
+    let lastTapAt = 0;
+    let longPressTimer = 0;
+    let longPressStart: { x: number; y: number } | null = null;
+    let longPressTriggered = false;
+
+    const clearLongPress = () => {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressStart = null;
+    };
+
+    container.addEventListener('touchstart', (event) => {
+      if (activeTool !== null || event.touches.length !== 1) {
+        clearLongPress();
+        return;
+      }
+      const touch = event.touches[0]!;
+      longPressStart = { x: touch.clientX, y: touch.clientY };
+      longPressTriggered = false;
+      window.clearTimeout(longPressTimer);
+      longPressTimer = window.setTimeout(() => {
+        if (!longPressStart || activeTool !== null) return;
+        const rect = container.getBoundingClientRect();
+        const point = L.point(longPressStart.x - rect.left, longPressStart.y - rect.top);
+        showCoordinate(map.containerPointToLatLng(point));
+        setStatus('Map coordinates shown. Close the coordinate card when finished.');
+        longPressTriggered = true;
+        lastTapAt = 0;
+      }, 600);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (event) => {
+      if (!longPressStart || event.touches.length !== 1) return;
+      const touch = event.touches[0]!;
+      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 12) clearLongPress();
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', clearLongPress, { passive: true });
+
+    container.addEventListener('touchend', (event) => {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressStart = null;
+
+      if (longPressTriggered) {
+        longPressTriggered = false;
+        lastTapAt = 0;
+        event.preventDefault();
+        return;
+      }
+
+      if (activeTool !== null || event.changedTouches.length !== 1 || event.touches.length !== 0) return;
+      const now = Date.now();
+      if (now - lastTapAt < 320) {
+        const touch = event.changedTouches[0]!;
+        const rect = container.getBoundingClientRect();
+        const point = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+        const latlng = map.containerPointToLatLng(point);
+        map.setView(latlng, Math.min(map.getZoom() + 1, map.getMaxZoom()), { animate: true });
+        lastTapAt = 0;
+        event.preventDefault();
+      } else {
+        lastTapAt = now;
+      }
+    }, { passive: false });
+
+    const planningRenderer = L.svg({ pane: 'planning' });
+    const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
+    const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
+    let activeTool: 'measure' | 'plan' | null = null;
+    let measurePoints: any[] = [];
+
+    type PlanPoint = { lat: number; lng: number; nodeKey?: string };
+    type PlanSegment = { mode: 'snap' | 'straight'; points: PlanPoint[] };
+    type PlanSnapshot = { stops: PlanPoint[]; segments: PlanSegment[] };
+
+    let planStops: PlanPoint[] = [];
+    let planSegments: PlanSegment[] = [];
+    let planHistory: PlanSnapshot[] = [{ stops: [], segments: [] }];
+    let planHistoryIndex = 0;
+    let suppressPlanClickUntil = 0;
+    let segmentDragActive = false;
+
+    type ElevationSummary = {
+      elevationsFt: number[];
+      gainFt: number;
+      lossFt: number;
+      minFt: number;
+      maxFt: number;
+      startFt: number;
+      endFt: number;
+    };
+
+    let measureElevationsFt: number[] | null = null;
+    let planElevationSummary: ElevationSummary | null = null;
+    let measureElevationTimer = 0;
+    let planElevationTimer = 0;
+    let measureElevationController: AbortController | null = null;
+    let planElevationController: AbortController | null = null;
+    let measureElevationRevision = 0;
+    let planElevationRevision = 0;
+
+    const formatFeet = (value: number) => Math.round(value).toLocaleString() + ' ft';
+    const formatElevationDelta = (value: number) => {
+      const rounded = Math.round(value);
+      if (rounded === 0) return '0 ft';
+      return (rounded > 0 ? '+' : '−') + Math.abs(rounded).toLocaleString() + ' ft';
+    };
+
+    const pathDistanceMeters = (points: any[]) => {
+      let total = 0;
+      for (let i = 1; i < points.length; i += 1) total += points[i - 1].distanceTo(points[i]);
+      return total;
+    };
+
+    const pathMidpoint = (points: any[]) => {
+      if (!points.length) return null;
+      if (points.length === 1) return points[0];
+      const total = pathDistanceMeters(points);
+      if (!total) return points[0];
+      const target = total / 2;
+      let walked = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        const from = points[i - 1];
+        const to = points[i];
+        const segment = from.distanceTo(to);
+        if (walked + segment >= target) {
+          const ratio = segment ? (target - walked) / segment : 0;
+          return L.latLng(
+            from.lat + (to.lat - from.lat) * ratio,
+            from.lng + (to.lng - from.lng) * ratio
+          );
+        }
+        walked += segment;
+      }
+      return points[points.length - 1];
+    };
+
+    const resampleElevationPath = (points: any[], maxSamples = 64) => {
+      if (points.length <= 2) return points.slice();
+      const cumulative = [0];
+      for (let i = 1; i < points.length; i += 1) {
+        cumulative.push(cumulative[i - 1]! + points[i - 1].distanceTo(points[i]));
+      }
+      const total = cumulative[cumulative.length - 1] ?? 0;
+      if (!total) return [points[0], points[points.length - 1]];
+      const desired = Math.max(2, Math.min(maxSamples, Math.ceil(total / 60) + 1));
+      const sampled: any[] = [];
+      for (let sampleIndex = 0; sampleIndex < desired; sampleIndex += 1) {
+        const target = total * sampleIndex / (desired - 1);
+        let segmentIndex = 1;
+        while (segmentIndex < cumulative.length && cumulative[segmentIndex]! < target) segmentIndex += 1;
+        if (segmentIndex >= cumulative.length) {
+          sampled.push(points[points.length - 1]);
+          continue;
+        }
+        const startDistance = cumulative[segmentIndex - 1]!;
+        const endDistance = cumulative[segmentIndex]!;
+        const ratio = endDistance === startDistance ? 0 : (target - startDistance) / (endDistance - startDistance);
+        const from = points[segmentIndex - 1];
+        const to = points[segmentIndex];
+        sampled.push(L.latLng(
+          from.lat + (to.lat - from.lat) * ratio,
+          from.lng + (to.lng - from.lng) * ratio
+        ));
+      }
+      return sampled;
+    };
+
+    const summarizeElevations = (elevationsFt: number[]): ElevationSummary => {
+      let gainFt = 0;
+      let lossFt = 0;
+      for (let i = 1; i < elevationsFt.length; i += 1) {
+        const delta = elevationsFt[i]! - elevationsFt[i - 1]!;
+        if (delta > 0) gainFt += delta;
+        else lossFt += Math.abs(delta);
+      }
+      return {
+        elevationsFt,
+        gainFt,
+        lossFt,
+        minFt: Math.min(...elevationsFt),
+        maxFt: Math.max(...elevationsFt),
+        startFt: elevationsFt[0]!,
+        endFt: elevationsFt[elevationsFt.length - 1]!
+      };
+    };
+
+    const fetchElevations = async (points: any[], signal: AbortSignal) => {
+      const source = sourceById('usgs-3dep-bare-earth-dem');
+      if (!source?.serviceUrl) throw new Error('USGS 3DEP elevation source is unavailable.');
+      const elevationsFt: number[] = [];
+      for (let offset = 0; offset < points.length; offset += 20) {
+        const chunk = points.slice(offset, offset + 20);
+        const geometry = JSON.stringify({
+          points: chunk.map((point: any) => [point.lng, point.lat]),
+          spatialReference: { wkid: 4326 }
+        });
+        const params = new URLSearchParams({
+          f: 'json',
+          geometry,
+          geometryType: 'esriGeometryMultipoint',
+          returnFirstValueOnly: 'true',
+          interpolation: 'RSP_BilinearInterpolation',
+          outSR: '4326'
+        });
+        const response = await fetch(source.serviceUrl + '/getSamples?' + params.toString(), {
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          signal
+        });
+        if (!response.ok) throw new Error('USGS 3DEP elevation request failed with ' + response.status);
+        const payload = await response.json();
+        if (payload?.error || !Array.isArray(payload?.samples) || payload.samples.length !== chunk.length) {
+          throw new Error('USGS 3DEP returned incomplete elevation samples.');
+        }
+        for (const sample of payload.samples) {
+          const raw = Array.isArray(sample.value) ? sample.value[0] : String(sample.value).trim().split(/\s+/)[0];
+          const meters = Number(raw);
+          if (!Number.isFinite(meters)) throw new Error('USGS 3DEP returned an invalid elevation value.');
+          elevationsFt.push(meters * 3.280839895013123);
+        }
+      }
+      return elevationsFt;
+    };
+
+    const updateLiveStats = (
+      title: string,
+      totalMeters: number,
+      summary: ElevationSummary | null,
+      note: string
+    ) => {
+      if (planLiveStats) planLiveStats.hidden = false;
+      if (planStatsTitle) planStatsTitle.textContent = title;
+      if (planStatsDistance) planStatsDistance.textContent = formatDistance(totalMeters);
+      if (planStatsGain) planStatsGain.textContent = summary ? '+' + formatFeet(summary.gainFt) : '—';
+      if (planStatsLoss) planStatsLoss.textContent = summary ? '−' + formatFeet(summary.lossFt) : '—';
+      if (planStatsRange) planStatsRange.textContent = summary ? formatFeet(summary.minFt) + '–' + formatFeet(summary.maxFt) : '—';
+      if (planStatsNote) planStatsNote.textContent = note;
+    };
+
+    const addPlanningLabel = (latlng: any, text: string, className: string, targetLayer: any) => {
+      if (!latlng || !text) return;
+      L.marker(latlng, {
+        pane: 'planning',
+        interactive: false,
+        icon: L.divIcon({
+          className: 'rrgh-planning-distance-label ' + className,
+          html: '<span>' + text + '</span>',
+          iconSize: [1, 1],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(targetLayer);
+    };
+
+    const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
+
+    const clonePlan = (): PlanSnapshot => ({
+      stops: planStops.map((point) => ({ ...point })),
+      segments: planSegments.map((segment) => ({
+        mode: segment.mode,
+        points: segment.points.map((point) => ({ ...point }))
+      }))
+    });
+
+    const updateHistoryButtons = () => {
+      if (undoButton) undoButton.disabled = planHistoryIndex <= 0;
+      if (redoButton) redoButton.disabled = planHistoryIndex >= planHistory.length - 1;
+    };
+
+    const commitPlanHistory = () => {
+      planHistory = planHistory.slice(0, planHistoryIndex + 1);
+      planHistory.push(clonePlan());
+      planHistoryIndex = planHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restorePlanHistory = (index: number) => {
+      const snapshot = planHistory[index];
+      if (!snapshot) return;
+      planStops = snapshot.stops.map((point) => ({ ...point }));
+      planSegments = snapshot.segments.map((segment) => ({
+        mode: segment.mode,
+        points: segment.points.map((point) => ({ ...point }))
+      }));
+      planHistoryIndex = index;
+      redrawPlan();
+      updateHistoryButtons();
+    };
+
+    const snappedPlanPoint = (latlng: any): PlanPoint => {
+      const snapped = graph.size ? nearestNode(latlng) : null;
+      if (!snapped) return { lat: latlng.lat, lng: latlng.lng };
+      const point = nodeCoords.get(snapped.key);
+      if (!point) return { lat: latlng.lat, lng: latlng.lng };
+      return { lat: point.lat, lng: point.lng, nodeKey: snapped.key };
+    };
+
+    const buildAutoPlanSegment = (previous: PlanPoint, targetLatLng: any): { segment: PlanSegment; target: PlanPoint } | null => {
+      const snappedTarget = snappedPlanPoint(targetLatLng);
+      if (previous.lat === snappedTarget.lat && previous.lng === snappedTarget.lng) return null;
+
+      if (previous.nodeKey && snappedTarget.nodeKey) {
+        const path = shortestTrailPath(previous.nodeKey, snappedTarget.nodeKey);
+        if (path && path.length > 1) {
+          const points: PlanPoint[] = [];
+          for (const key of path) {
+            const point = nodeCoords.get(key);
+            if (point) points.push({ lat: point.lat, lng: point.lng, nodeKey: key });
+          }
+          if (points.length > 1) return { segment: { mode: 'snap', points }, target: snappedTarget };
+        }
+      }
+
+      return {
+        segment: { mode: 'straight', points: [{ ...previous }, { ...snappedTarget }] },
+        target: snappedTarget
+      };
+    };
+
+    const rebuildPlanFromStops = () => {
+      if (planStops.length < 2) {
+        planSegments = [];
+        return;
+      }
+      const intendedStops = planStops.map((point) => ({ ...point }));
+      const rebuiltStops: PlanPoint[] = [{ ...intendedStops[0]! }];
+      const rebuiltSegments: PlanSegment[] = [];
+
+      for (let index = 1; index < intendedStops.length; index += 1) {
+        const previous = rebuiltStops[rebuiltStops.length - 1]!;
+        const intended = intendedStops[index]!;
+        const built = buildAutoPlanSegment(previous, L.latLng(intended.lat, intended.lng));
+        if (!built) continue;
+        rebuiltSegments.push(built.segment);
+        rebuiltStops.push(built.target);
+      }
+
+      planStops = rebuiltStops;
+      planSegments = rebuiltSegments;
+    };
+
+    const setTool = (tool: 'measure' | 'plan' | null) => {
+      activeTool = tool;
+      stage?.setAttribute('data-active-tool', tool ?? 'explore');
+      if (planPanPad) planPanPad.hidden = tool !== 'plan';
+
+      for (const button of toolButtons) {
+        const buttonTool = button.dataset.mapTool;
+        if (buttonTool === 'measure' || buttonTool === 'plan') {
+          button.setAttribute('aria-pressed', String(buttonTool === tool));
+        }
+      }
+
+      if (tool === 'measure') {
+        if (planPanel) planPanel.hidden = false;
+        redrawMeasure(false);
+        setStatus('Measure distance: click points anywhere on the map. Segment distances appear on the map; elevation updates from USGS 3DEP after two points.');
+      } else if (tool === 'plan') {
+        if (planPanel) planPanel.hidden = false;
+        redrawPlan(false);
+        setStatus('Build route: click near an official trail, community/informal trail, or mapped road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
+      } else if (!vectorFailures.length && informalTrailsReady) {
+        if (planLiveStats) planLiveStats.hidden = true;
+        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+      }
+    };
+
+    const clearTools = () => {
+      measureLayer.clearLayers();
+      planLayer.clearLayers();
+      measurePoints = [];
+      planStops = [];
+      planSegments = [];
+      measureElevationsFt = null;
+      planElevationSummary = null;
+      measureElevationRevision += 1;
+      planElevationRevision += 1;
+      window.clearTimeout(measureElevationTimer);
+      window.clearTimeout(planElevationTimer);
+      measureElevationController?.abort();
+      planElevationController?.abort();
+      measureElevationController = null;
+      planElevationController = null;
+      planHistory = [{ stops: [], segments: [] }];
+      planHistoryIndex = 0;
+      for (const button of saveButtons) button.disabled = true;
+      updateHistoryButtons();
+      if (planLiveStats) planLiveStats.hidden = activeTool === null;
+      if (activeTool === 'measure') {
+        updateLiveStats('Measured line', 0, null, 'Add two points for elevation.');
+        setStatus('Measure distance: click points anywhere on the map.');
+      } else if (activeTool === 'plan') {
+        updateLiveStats('Planned route', 0, null, 'Add two points for elevation.');
+        setStatus('Build route: place a first point near the mapped trail/road network, or clearly away from it to start off trail.');
+      } else {
+        setStatus('Map cleared.');
+      }
+    };
+
+    const xmlEscape = (value: string) =>
+      value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+
+    const planTrackPoints = () => {
+      const points: PlanPoint[] = [];
+      for (const segment of planSegments) {
+        for (const point of segment.points) {
+          const prior = points[points.length - 1];
+          if (!prior || prior.lat !== point.lat || prior.lng !== point.lng) points.push(point);
+        }
+      }
+      if (!points.length && planStops.length) points.push(...planStops);
+      return points;
+    };
+
+    const savePlanGpx = () => {
+      const points = planTrackPoints();
+      if (points.length < 2) {
+        setStatus('Build a route before exporting it.', 'warning');
+        return;
+      }
+
+      const trackPoints = points
+        .map((point) => '      <trkpt lat="' + point.lat.toFixed(6) + '" lon="' + point.lng.toFixed(6) + '"></trkpt>')
+        .join('\n');
+      const gpx = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        + '<gpx version="1.1" creator="Red River Gorge Hiker" xmlns="http://www.topografix.com/GPX/1/1">\n'
+        + '  <metadata><name>' + xmlEscape('RRGH planned route') + '</name></metadata>\n'
+        + '  <trk><name>' + xmlEscape('RRGH planned route') + '</name><trkseg>\n'
+        + trackPoints + '\n'
+        + '  </trkseg></trk>\n'
+        + '</gpx>\n';
+
+      const blob = new Blob([gpx], { type: 'application/gpx+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'RRGH-planned-route-' + new Date().toISOString().slice(0, 10) + '.gpx';
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      setStatus('Planned route exported as a GPX file.');
+    };
+
+    for (const button of toolButtons) {
+      button.addEventListener('click', () => {
+        const tool = button.dataset.mapTool;
+        if (tool === 'clear') {
+          clearTools();
+          return;
+        }
+        if (tool === 'save') {
+          savePlanGpx();
+          return;
+        }
+        if (tool === 'measure' || tool === 'plan') setTool(activeTool === tool ? null : tool);
+      });
+    }
+
+    undoButton?.addEventListener('click', () => {
+      if (planHistoryIndex > 0) restorePlanHistory(planHistoryIndex - 1);
+    });
+    redoButton?.addEventListener('click', () => {
+      if (planHistoryIndex < planHistory.length - 1) restorePlanHistory(planHistoryIndex + 1);
+    });
+
+    const scheduleMeasureElevation = () => {
+      const revision = ++measureElevationRevision;
+      window.clearTimeout(measureElevationTimer);
+      measureElevationController?.abort();
+      measureElevationController = null;
+      measureElevationsFt = null;
+      if (measurePoints.length < 2) return;
+
+      measureElevationTimer = window.setTimeout(async () => {
+        const controller = new AbortController();
+        measureElevationController = controller;
+        try {
+          const elevations = await fetchElevations(measurePoints, controller.signal);
+          if (revision !== measureElevationRevision) return;
+          measureElevationsFt = elevations;
+          redrawMeasure(false);
+        } catch (error) {
+          if (controller.signal.aborted || revision !== measureElevationRevision) return;
+          console.error(error);
+          measureElevationsFt = null;
+          const total = pathDistanceMeters(measurePoints);
+          updateLiveStats('Measured line', total, null, 'Distance is available; USGS elevation is temporarily unavailable.');
+        }
+      }, 220);
+    };
+
+    const schedulePlanElevation = (points: any[]) => {
+      const revision = ++planElevationRevision;
+      window.clearTimeout(planElevationTimer);
+      planElevationController?.abort();
+      planElevationController = null;
+      planElevationSummary = null;
+      if (points.length < 2) return;
+
+      const samples = resampleElevationPath(points, 64);
+      planElevationTimer = window.setTimeout(async () => {
+        const controller = new AbortController();
+        planElevationController = controller;
+        try {
+          const elevations = await fetchElevations(samples, controller.signal);
+          if (revision !== planElevationRevision) return;
+          planElevationSummary = summarizeElevations(elevations);
+          redrawPlan(false);
+        } catch (error) {
+          if (controller.signal.aborted || revision !== planElevationRevision) return;
+          console.error(error);
+          planElevationSummary = null;
+          const total = pathDistanceMeters(points);
+          updateLiveStats('Planned route', total, null, 'Distance is available; USGS elevation is temporarily unavailable.');
+        }
+      }, 260);
+    };
+
+    const redrawMeasure = (refreshElevation = true) => {
+      measureLayer.clearLayers();
+      if (refreshElevation) {
+        measureElevationsFt = null;
+        scheduleMeasureElevation();
+      }
+
+      for (const point of measurePoints) {
+        L.circleMarker(point, {
+          pane: 'planning',
+          renderer: planningRenderer,
+          radius: 5,
+          color: '#fff',
+          weight: 2,
+          fillColor: '#d9892b',
+          fillOpacity: 1,
+          interactive: false
+        }).addTo(measureLayer);
+      }
+
+      let total = 0;
+      for (let i = 1; i < measurePoints.length; i += 1) {
+        const from = measurePoints[i - 1];
+        const to = measurePoints[i];
+        const segmentDistance = from.distanceTo(to);
+        total += segmentDistance;
+        L.polyline([from, to], {
+          pane: 'planning',
+          renderer: planningRenderer,
+          color: '#d9892b',
+          weight: 4,
+          opacity: 1,
+          dashArray: '8 5',
+          interactive: false
+        }).addTo(measureLayer);
+
+        const delta = measureElevationsFt?.[i] !== undefined && measureElevationsFt?.[i - 1] !== undefined
+          ? measureElevationsFt[i]! - measureElevationsFt[i - 1]!
+          : null;
+        const label = formatDistance(segmentDistance) + (delta === null ? '' : ' · ' + formatElevationDelta(delta));
+        addPlanningLabel(pathMidpoint([from, to]), label, 'is-measure-segment', measureLayer);
+      }
+
+      const measureSummary = measureElevationsFt?.length === measurePoints.length
+        ? summarizeElevations(measureElevationsFt)
+        : null;
+      const note = measurePoints.length < 2
+        ? 'Add two points for elevation.'
+        : measureSummary
+          ? 'USGS 3DEP elevation at each measurement point.'
+          : 'Calculating USGS 3DEP elevation…';
+      updateLiveStats('Measured line', total, measureSummary, note);
+
+      if (measurePoints.length > 1) {
+        const finalLabel = 'Total ' + formatDistance(total)
+          + (measureSummary ? ' · ' + formatElevationDelta(measureSummary.endFt - measureSummary.startFt) : '');
+        addPlanningLabel(measurePoints[measurePoints.length - 1], finalLabel, 'is-total', measureLayer);
+      }
+
+      setStatus(measurePoints.length > 1
+        ? 'Measured distance: ' + formatDistance(total) + ' · segment labels show point-to-point distance' + (measureSummary ? ' and elevation change.' : '; elevation is updating.')
+        : measurePoints.length === 1
+          ? 'Measure distance: first point set · click another point.'
+          : 'Measure distance: click a first point.');
+    };
+
+    const deletePlanSegment = (segmentIndex: number) => {
+      if (segmentIndex < 0 || segmentIndex >= planSegments.length) return;
+      planStops.splice(segmentIndex + 1, 1);
+      rebuildPlanFromStops();
+      commitPlanHistory();
+      redrawPlan();
+      setStatus('Planned segment deleted. Continue clicking to extend the route, drag another segment to adjust it, or right-click another segment to delete it.');
+    };
+
+    const movePlanSegmentTarget = (segmentIndex: number, latlng: any) => {
+      if (segmentIndex < 0 || segmentIndex >= planSegments.length || !planStops[segmentIndex + 1]) return;
+      planStops[segmentIndex + 1] = { lat: latlng.lat, lng: latlng.lng };
+      rebuildPlanFromStops();
+      commitPlanHistory();
+      redrawPlan();
+    };
+
+    const attachPlanSegmentInteraction = (hitLine: any, visibleLine: any, segmentIndex: number) => {
+      hitLine.on('contextmenu', (event: any) => {
+        if (activeTool !== 'plan') return;
+        const original = event.originalEvent;
+        original?.preventDefault?.();
+        original?.stopPropagation?.();
+        suppressPlanClickUntil = Date.now() + 300;
+        deletePlanSegment(segmentIndex);
+      });
+
+      const hitElement = hitLine.getElement?.() as SVGPathElement | null;
+      if (!hitElement) return;
+      hitElement.style.cursor = 'grab';
+      hitElement.style.touchAction = 'none';
+
+      const toMapLatLng = (clientX: number, clientY: number) => {
+        const rect = container.getBoundingClientRect();
+        return map.containerPointToLatLng(L.point(clientX - rect.left, clientY - rect.top));
+      };
+
+      const beginSegmentDrag = (clientX: number, clientY: number) => {
+        if (segmentDragActive || activeTool !== 'plan') return;
+
+        const startStop = planStops[segmentIndex];
+        if (!startStop) return;
+
+        segmentDragActive = true;
+        suppressPlanClickUntil = Date.now() + 500;
+        map.dragging.disable();
+        hitElement.style.cursor = 'grabbing';
+        container.dataset.planDragSegment = String(segmentIndex);
+        container.dataset.planDragMoved = 'false';
+        delete container.dataset.planDragPreviewMode;
+
+        let moved = false;
+        let lastClientX = clientX;
+        let lastClientY = clientY;
+        let lastResolvedTarget: PlanPoint | null = null;
+
+        const previewTarget = (target: any) => {
+          const built = buildAutoPlanSegment(startStop, target);
+          const previewPoints = built?.segment.points?.length
+            ? built.segment.points.map((point) => L.latLng(point.lat, point.lng))
+            : [L.latLng(startStop.lat, startStop.lng), target];
+          const snapped = built?.segment.mode === 'snap';
+          lastResolvedTarget = built?.target ? { ...built.target } : { lat: target.lat, lng: target.lng };
+          container.dataset.planDragPreviewMode = snapped ? 'snap' : 'straight';
+
+          visibleLine.setLatLngs(previewPoints);
+          visibleLine.setStyle({
+            color: snapped ? '#e17a35' : '#8b4e9e',
+            dashArray: snapped ? undefined : '9 6'
+          });
+        };
+
+        const cleanup = () => {
+          window.removeEventListener('mousemove', onMove, true);
+          window.removeEventListener('pointermove', onMove, true);
+          window.removeEventListener('mouseup', onEnd, true);
+          window.removeEventListener('pointerup', onEnd, true);
+          window.removeEventListener('pointercancel', onCancel, true);
+          window.removeEventListener('blur', onCancel, true);
+          hitElement.style.cursor = 'grab';
+          map.dragging.enable();
+          segmentDragActive = false;
+          delete container.dataset.planDragSegment;
+        };
+
+        const onMove = (moveEvent: MouseEvent | PointerEvent) => {
+          if (!segmentDragActive) return;
+          moved = true;
+          container.dataset.planDragMoved = 'true';
+          lastClientX = moveEvent.clientX;
+          lastClientY = moveEvent.clientY;
+          previewTarget(toMapLatLng(lastClientX, lastClientY));
+        };
+
+        const onEnd = (endEvent: MouseEvent | PointerEvent) => {
+          if (!segmentDragActive) return;
+          lastClientX = endEvent.clientX ?? lastClientX;
+          lastClientY = endEvent.clientY ?? lastClientY;
+          const rawDrop = toMapLatLng(lastClientX, lastClientY);
+          const resolvedDrop = lastResolvedTarget
+            ? L.latLng(lastResolvedTarget.lat, lastResolvedTarget.lng)
+            : rawDrop;
+          cleanup();
+          suppressPlanClickUntil = Date.now() + 350;
+          if (!moved) {
+            redrawPlan();
+            return;
+          }
+          movePlanSegmentTarget(segmentIndex, resolvedDrop);
+        };
+
+        const onCancel = () => {
+          if (!segmentDragActive) return;
+          cleanup();
+          redrawPlan();
+        };
+
+        window.addEventListener('mousemove', onMove, true);
+        window.addEventListener('pointermove', onMove, true);
+        window.addEventListener('mouseup', onEnd, true);
+        window.addEventListener('pointerup', onEnd, true);
+        window.addEventListener('pointercancel', onCancel, true);
+        window.addEventListener('blur', onCancel, true);
+      };
+
+      hitLine.on('mousedown', (event: any) => {
+        if (activeTool !== 'plan') return;
+        const original = event.originalEvent as MouseEvent | undefined;
+        if (!original || original.button !== 0) return;
+        original.preventDefault();
+        original.stopPropagation();
+        beginSegmentDrag(original.clientX, original.clientY);
+      });
+
+      hitElement.addEventListener('mousedown', (event: MouseEvent) => {
+        if (activeTool !== 'plan' || event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        beginSegmentDrag(event.clientX, event.clientY);
+      });
+
+      hitElement.addEventListener('pointerdown', (event: PointerEvent) => {
+        if (activeTool !== 'plan' || event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          hitElement.setPointerCapture(event.pointerId);
+        } catch {}
+        beginSegmentDrag(event.clientX, event.clientY);
+      });
+    };
+
+    const redrawPlan = (refreshElevation = true) => {
+      planLayer.clearLayers();
+
+      if (refreshElevation) planElevationSummary = null;
+
+      planSegments.forEach((segment, segmentIndex) => {
+        const points = segment.points.map((point) => L.latLng(point.lat, point.lng));
+        if (points.length < 2) return;
+
+        const visibleLine = L.polyline(points, {
+          pane: 'planning',
+          renderer: planningRenderer,
+          color: segment.mode === 'snap' ? '#e17a35' : '#8b4e9e',
+          weight: segment.mode === 'snap' ? 6 : 5,
+          opacity: 0.96,
+          dashArray: segment.mode === 'snap' ? undefined : '9 6',
+          lineCap: 'round',
+          lineJoin: 'round',
+          interactive: false
+        }).addTo(planLayer);
+
+        const hitLine = L.polyline(points, {
+          pane: 'planning',
+          renderer: planningRenderer,
+          color: '#000',
+          weight: 18,
+          opacity: 0.001,
+          lineCap: 'round',
+          lineJoin: 'round',
+          className: 'rrgh-plan-segment-hit',
+          interactive: true,
+          bubblingMouseEvents: false
+        }).addTo(planLayer);
+        const hitElement = hitLine.getElement?.() as SVGPathElement | null;
+        if (hitElement) hitElement.dataset.planSegmentIndex = String(segmentIndex);
+        attachPlanSegmentInteraction(hitLine, visibleLine, segmentIndex);
+
+        const segmentDistance = pathDistanceMeters(points);
+        addPlanningLabel(pathMidpoint(points), formatDistance(segmentDistance), 'is-plan-segment', planLayer);
+      });
+
+      for (const stop of planStops) {
+        L.circleMarker([stop.lat, stop.lng], {
+          pane: 'planning',
+          renderer: planningRenderer,
+          radius: 6,
+          color: '#fff',
+          weight: 2,
+          fillColor: stop.nodeKey ? '#e17a35' : '#8b4e9e',
+          fillOpacity: 1,
+          interactive: false
+        }).addTo(planLayer);
+      }
+
+      const points = planTrackPoints().map((point) => L.latLng(point.lat, point.lng));
+      const total = pathDistanceMeters(points);
+
+      if (refreshElevation && points.length >= 2) schedulePlanElevation(points);
+
+      const statsNote = points.length < 2
+        ? 'Add two points for elevation.'
+        : planElevationSummary
+          ? 'USGS 3DEP sampled along the planned route.'
+          : 'Calculating USGS 3DEP elevation…';
+      updateLiveStats('Planned route', total, planElevationSummary, statsNote);
+
+      if (planStops.length > 1) {
+        const finalStop = planStops[planStops.length - 1]!;
+        const totalLabel = 'Total ' + formatDistance(total)
+          + (planElevationSummary
+            ? ' · +' + formatFeet(planElevationSummary.gainFt) + ' / −' + formatFeet(planElevationSummary.lossFt)
+            : '');
+        addPlanningLabel(L.latLng(finalStop.lat, finalStop.lng), totalLabel, 'is-total', planLayer);
+      }
+
+      for (const button of saveButtons) button.disabled = points.length < 2;
+      if (!planStops.length) {
+        setStatus('Build route: place a first point near an official trail, community/informal trail, or mapped road, or clearly away from the network to start off trail.');
+      } else if (planStops.length === 1) {
+        setStatus('First point set. Click near the mapped trail/road network for an automatic snapped segment, or clearly away from it for a dashed straight segment.');
+      } else {
+        setStatus('Planned route: ' + formatDistance(total)
+          + (planElevationSummary ? ' · +' + formatFeet(planElevationSummary.gainFt) + ' gain · −' + formatFeet(planElevationSummary.lossFt) + ' loss' : ' · elevation updating')
+          + ' · ' + planSegments.filter((segment) => segment.mode === 'snap').length + ' snapped segment(s), '
+          + planSegments.filter((segment) => segment.mode === 'straight').length + ' off-trail segment(s). Drag a segment to adjust it; right-click to delete.');
+      }
+    };
+
+    map.on('contextmenu', (event: any) => {
+      if (activeTool !== null) return;
+      event.originalEvent?.preventDefault?.();
+      showCoordinate(event.latlng);
+      setStatus('Map coordinates shown. Close the coordinate card when finished.');
+    });
+
+    map.on('click', (event: any) => {
+      if (Date.now() < suppressPlanClickUntil) return;
+
+      if (activeTool === null) return;
+      if (activeTool === 'measure') {
+        measurePoints.push(event.latlng);
+        redrawMeasure();
+        return;
+      }
+      if (activeTool !== 'plan') return;
+      if (!planStops.length) {
+        planStops = [snappedPlanPoint(event.latlng)];
+        commitPlanHistory();
+        redrawPlan();
+        return;
+      }
+
+      const previous = planStops[planStops.length - 1]!;
+      const built = buildAutoPlanSegment(previous, event.latlng);
+      if (!built) {
+        setStatus('That point is effectively the same as the current route endpoint. Choose another point.', 'warning');
+        return;
+      }
+
+      planSegments.push(built.segment);
+      planStops.push(built.target);
+      commitPlanHistory();
+      redrawPlan();
+    });
+
+    map.on('moveend', syncViewportDiagnostics);
+    map.on('zoomend', syncContextLabels);
+    map.on('zoomend', () => {
+      const zoom = map.getZoom();
+      container.dataset.currentZoom = String(zoom);
+      routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4.5 : 7.5, opacity: 1 }));
+      trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2 : zoom >= 15 ? 3 : 2.5, opacity: opacity('usfs-trails') }));
+      roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.6 : 2.8, opacity: opacity('usfs-roads') }));
+      informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
+    });
+
+    syncAerialControlState();
+    syncContextLabels();
+    container.dataset.currentZoom = String(map.getZoom());
+    setTimeout(() => {
+      map.invalidateSize();
+      if (mode === 'full' && !sharedViewApplied) setHomeView();
+      syncViewportDiagnostics();
+    }, 50);
+
+    if (vectorFailures.length) {
+      setStatus('Map ready. Unavailable right now: ' + vectorFailures.join(', ') + '.', 'warning');
+    } else {
+      setTool(null);
+    }
+
+    // Optional land context can load in the background. Community / Informal trail data is the
+    // planning-readiness gate: Search, location, Home, Layers, zoom and pan remain available while
+    // trail data loads, but Explore and Plan stay disabled until the trail graph is ready.
+    window.setTimeout(() => {
+      void loadLandContext('usfs-wilderness');
+      void loadLandContext('usfs-special-management');
+      void loadLandContext('usfs-land-units');
+      void loadInformalTrails();
+    }, 0);
+  };
+
+  for (const shell of document.querySelectorAll<HTMLElement>('[data-route-map-shell]')) {
+    void initializeMap(shell);
+  }
+</script>

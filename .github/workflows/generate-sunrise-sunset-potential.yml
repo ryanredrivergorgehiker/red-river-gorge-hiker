@@ -1,0 +1,57 @@
+name: Verify sunrise sunset calibration
+
+on:
+  push:
+    branches: [staging/routes-tracks-interactive-map]
+    paths:
+      - scripts/sun_calibration.py
+      - scripts/build-sun-calibration.py
+      - scripts/calibration-requirements.txt
+      - scripts/data/sun-calibration-inputs.json
+      - public/data/map/sunrise-sunset*
+      - tests/test_sun_calibration_model.py
+      - .github/workflows/generate-sunrise-sunset-potential.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sun-calibration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scientific dependencies
+        run: python -m pip install -r scripts/calibration-requirements.txt
+      - name: Test geometry, canopy, independent horizons and connected fade
+        run: |
+          python -c "import numpy, scipy, skimage, rasterio, laspy, pyproj"
+          python -m unittest discover -s tests -p test_sun_calibration_model.py -v
+      - name: Reproduce both areas from fingerprinted source data
+        run: |
+          python scripts/build-sun-calibration.py --cache .calibration-cache
+          git diff --exit-code -- public/data/map scripts/data/sun-calibration-inputs.json
+      - name: Preserve exact input arrays and generated review assets
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sun-calibration-${{ github.sha }}
+          retention-days: 90
+          include-hidden-files: true
+          path: |
+            .calibration-cache/*/dem-phase2.tif
+            .calibration-cache/*/ortho-phase3.tif
+            .calibration-cache/*/canopy.npz
+            .calibration-cache/*/identity.json
+            scripts/data/sun-calibration-inputs.json
+            public/data/map/sunrise-sunset*

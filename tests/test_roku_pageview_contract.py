@@ -135,7 +135,7 @@ rkp("init","PaccInUJusF8"),rkp('event','PAGE_VIEW');;""")
 
     def test_privacy_disclosure_is_current_and_proportional(self):
         required = (
-            'Last updated: September 17, 2026',
+            'Last updated: September 25, 2026',
             'Roku advertising page-view measurement',
             'Roku advertising measurement',
             'The current RRGH implementation sends Roku the Page View event only',

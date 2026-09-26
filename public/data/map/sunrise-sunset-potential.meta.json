@@ -1,0 +1,470 @@
+{
+  "areas": {
+    "a": {
+      "bounds": [
+        -83.6505,
+        37.806,
+        -83.617,
+        37.8345
+      ],
+      "grid": [
+        1473,
+        1587
+      ],
+      "name": "Pinch-Em-Tight / Chimney Top Creek",
+      "outputs": {
+        "sunrise-sunset-calibration-crest.png": "c3a6c1235bdbec97fd81c6157c89eaab3856fd1d77b411cfb90958c2b8bc37f2",
+        "sunrise-sunset-calibration-open-ground.png": "4dda52c89251be570331832e44e07177846f8d2c58a98adf8800f743bd748920",
+        "sunrise-sunset-calibration-overlook.png": "9a0d01b09315754a7dc1614477da26a26b8aeeeec09cc60f0ed436e8731fb030",
+        "sunrise-sunset-calibration-ridge-skeleton.png": "7f0560f851466e1ffc59960d5679b253b6dd4dd4ab628a5160f281f5d0e317c8",
+        "sunrise-sunset-calibration-sunrise-pass.png": "c17e69e430d1c2980d540740c3d5e5745cdc91f0997952491ab2ebf0e7ce9395",
+        "sunrise-sunset-calibration-sunset-pass.png": "a11bd2d5529523e82237f5b88ddf60f05088489b1f571715a20a75b397a8c4f9",
+        "sunrise-sunset-potential.png": "22436383010545511dc39b4c4ac271fdae08a837156833e6ed2eca72e401aeff"
+      },
+      "seeds": {
+        "sunrise": [
+          {
+            "lat": 37.8152758,
+            "lon": -83.62861,
+            "strength": 0.8716
+          },
+          {
+            "lat": 37.816623,
+            "lon": -83.6265859,
+            "strength": 0.8122
+          },
+          {
+            "lat": 37.8199999,
+            "lon": -83.62206,
+            "strength": 0.6483
+          },
+          {
+            "lat": 37.8163536,
+            "lon": -83.6270407,
+            "strength": 0.6
+          },
+          {
+            "lat": 37.8164434,
+            "lon": -83.6374571,
+            "strength": 0.5478
+          },
+          {
+            "lat": 37.8179882,
+            "lon": -83.64146,
+            "strength": 0.523
+          },
+          {
+            "lat": 37.8234485,
+            "lon": -83.6326128,
+            "strength": 0.3559
+          },
+          {
+            "lat": 37.8184911,
+            "lon": -83.6405502,
+            "strength": 0.2445
+          }
+        ],
+        "sunset": [
+          {
+            "lat": 37.8217781,
+            "lon": -83.6198311,
+            "strength": 0.9753
+          },
+          {
+            "lat": 37.8163356,
+            "lon": -83.6272,
+            "strength": 0.9106
+          },
+          {
+            "lat": 37.8230354,
+            "lon": -83.6326356,
+            "strength": 0.8899
+          },
+          {
+            "lat": 37.8158327,
+            "lon": -83.617716,
+            "strength": 0.8519
+          },
+          {
+            "lat": 37.8234844,
+            "lon": -83.6326583,
+            "strength": 0.8313
+          },
+          {
+            "lat": 37.8163177,
+            "lon": -83.6374344,
+            "strength": 0.7676
+          },
+          {
+            "lat": 37.8227839,
+            "lon": -83.6406185,
+            "strength": 0.7496
+          },
+          {
+            "lat": 37.8198921,
+            "lon": -83.6222874,
+            "strength": 0.657
+          },
+          {
+            "lat": 37.816623,
+            "lon": -83.6266086,
+            "strength": 0.6357
+          },
+          {
+            "lat": 37.8171439,
+            "lon": -83.6498749,
+            "strength": 0.5281
+          },
+          {
+            "lat": 37.8083957,
+            "lon": -83.6197629,
+            "strength": 0.5272
+          },
+          {
+            "lat": 37.8298782,
+            "lon": -83.6360698,
+            "strength": 0.3311
+          },
+          {
+            "lat": 37.8192635,
+            "lon": -83.6495338,
+            "strength": 0.318
+          },
+          {
+            "lat": 37.8221014,
+            "lon": -83.6342958,
+            "strength": 0.2846
+          },
+          {
+            "lat": 37.8152579,
+            "lon": -83.6384578,
+            "strength": 0.2795
+          },
+          {
+            "lat": 37.816156,
+            "lon": -83.6500569,
+            "strength": 0.2284
+          },
+          {
+            "lat": 37.8186168,
+            "lon": -83.6327493,
+            "strength": 0.221
+          },
+          {
+            "lat": 37.8190659,
+            "lon": -83.648806,
+            "strength": 0.1978
+          }
+        ]
+      }
+    },
+    "b": {
+      "bounds": [
+        -83.691,
+        37.825,
+        -83.665,
+        37.85
+      ],
+      "grid": [
+        1143,
+        1392
+      ],
+      "name": "Auxier Ridge / Courthouse Rock",
+      "outputs": {
+        "sunrise-sunset-area-b-calibration-crest.png": "1eaa66284b1b343128929c5c15d76713d7573330c053c3923500d1dfb2b58639",
+        "sunrise-sunset-area-b-calibration-open-ground.png": "cb12920a419633be5be40b91fcfdb6ee4e20d473bf4891fd9483a2f42acef692",
+        "sunrise-sunset-area-b-calibration-overlook.png": "e43e1e4aef57ba63837da5ba78ad1d3b7ecffa60bda477202cb175dfaf92def6",
+        "sunrise-sunset-area-b-calibration-ridge-skeleton.png": "8942d818724455bb26388af3b9f7058f337aa6ff5492cb39f8ac90b28613dfd0",
+        "sunrise-sunset-area-b-calibration-sunrise-pass.png": "bd9a17ca42680742254216c5a94997f41dc6cf62210a8122c510cac9b0e4e29f",
+        "sunrise-sunset-area-b-calibration-sunset-pass.png": "c8d09db8fd78638407a17e1eea5bb1e57d238cbed461032d0b0302f56d83f3f3",
+        "sunrise-sunset-area-b-potential.png": "20b164b005c714d31a3f19393260d4c3386475d51ceda51cfd441d059a794e63"
+      },
+      "seeds": {
+        "sunrise": [
+          {
+            "lat": 37.84227,
+            "lon": -83.6785005,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8375639,
+            "lon": -83.6770218,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8282587,
+            "lon": -83.674838,
+            "strength": 0.8667
+          },
+          {
+            "lat": 37.8264083,
+            "lon": -83.675384,
+            "strength": 0.855
+          },
+          {
+            "lat": 37.837995,
+            "lon": -83.684051,
+            "strength": 0.7836
+          },
+          {
+            "lat": 37.8359652,
+            "lon": -83.6845515,
+            "strength": 0.729
+          },
+          {
+            "lat": 37.833145,
+            "lon": -83.6751565,
+            "strength": 0.5801
+          },
+          {
+            "lat": 37.8339893,
+            "lon": -83.6857571,
+            "strength": 0.5706
+          },
+          {
+            "lat": 37.8379771,
+            "lon": -83.6770446,
+            "strength": 0.5099
+          },
+          {
+            "lat": 37.8412282,
+            "lon": -83.6774085,
+            "strength": 0.483
+          },
+          {
+            "lat": 37.8371508,
+            "lon": -83.6769081,
+            "strength": 0.4649
+          },
+          {
+            "lat": 37.8398811,
+            "lon": -83.6766579,
+            "strength": 0.4286
+          },
+          {
+            "lat": 37.8255819,
+            "lon": -83.6783867,
+            "strength": 0.4228
+          },
+          {
+            "lat": 37.826049,
+            "lon": -83.6819127,
+            "strength": 0.4027
+          },
+          {
+            "lat": 37.8313845,
+            "lon": -83.6853704,
+            "strength": 0.375
+          },
+          {
+            "lat": 37.8261029,
+            "lon": -83.6758844,
+            "strength": 0.2575
+          },
+          {
+            "lat": 37.8327857,
+            "lon": -83.6717897,
+            "strength": 0.2515
+          },
+          {
+            "lat": 37.8319234,
+            "lon": -83.6869628,
+            "strength": 0.2502
+          }
+        ],
+        "sunset": [
+          {
+            "lat": 37.84227,
+            "lon": -83.6785232,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8405277,
+            "lon": -83.6770901,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8400068,
+            "lon": -83.6767716,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8380489,
+            "lon": -83.6771811,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8376178,
+            "lon": -83.6770218,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8371867,
+            "lon": -83.6769991,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8366119,
+            "lon": -83.6771583,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8363784,
+            "lon": -83.6776133,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.837995,
+            "lon": -83.684051,
+            "strength": 0.9857
+          },
+          {
+            "lat": 37.8363604,
+            "lon": -83.6671719,
+            "strength": 0.8957
+          },
+          {
+            "lat": 37.841318,
+            "lon": -83.6774313,
+            "strength": 0.8413
+          },
+          {
+            "lat": 37.8305761,
+            "lon": -83.6806615,
+            "strength": 0.8099
+          },
+          {
+            "lat": 37.833127,
+            "lon": -83.6883277,
+            "strength": 0.8057
+          },
+          {
+            "lat": 37.8356239,
+            "lon": -83.6664212,
+            "strength": 0.6915
+          },
+          {
+            "lat": 37.8337737,
+            "lon": -83.6777725,
+            "strength": 0.577
+          },
+          {
+            "lat": 37.8359832,
+            "lon": -83.6845515,
+            "strength": 0.5698
+          },
+          {
+            "lat": 37.82551,
+            "lon": -83.6788189,
+            "strength": 0.5687
+          },
+          {
+            "lat": 37.8339893,
+            "lon": -83.6857571,
+            "strength": 0.5608
+          },
+          {
+            "lat": 37.8377615,
+            "lon": -83.665079,
+            "strength": 0.5102
+          },
+          {
+            "lat": 37.8305222,
+            "lon": -83.6879865,
+            "strength": 0.4493
+          },
+          {
+            "lat": 37.8348336,
+            "lon": -83.6848017,
+            "strength": 0.3925
+          },
+          {
+            "lat": 37.8315462,
+            "lon": -83.687122,
+            "strength": 0.3614
+          },
+          {
+            "lat": 37.83848,
+            "lon": -83.6774313,
+            "strength": 0.3232
+          },
+          {
+            "lat": 37.8310612,
+            "lon": -83.6684003,
+            "strength": 0.3054
+          },
+          {
+            "lat": 37.8311151,
+            "lon": -83.6856889,
+            "strength": 0.3045
+          },
+          {
+            "lat": 37.829642,
+            "lon": -83.66815,
+            "strength": 0.2728
+          },
+          {
+            "lat": 37.8363604,
+            "lon": -83.68487,
+            "strength": 0.2539
+          },
+          {
+            "lat": 37.8385698,
+            "lon": -83.6779773,
+            "strength": 0.2508
+          },
+          {
+            "lat": 37.8319953,
+            "lon": -83.6766579,
+            "strength": 0.2426
+          },
+          {
+            "lat": 37.8261388,
+            "lon": -83.6820264,
+            "strength": 0.2311
+          },
+          {
+            "lat": 37.8332707,
+            "lon": -83.6759072,
+            "strength": 0.2213
+          },
+          {
+            "lat": 37.8395937,
+            "lon": -83.6766579,
+            "strength": 0.219
+          }
+        ]
+      }
+    }
+  },
+  "cellGroundMetersApproximate": 2.0,
+  "inputManifestSha256": "75917666d559d8cb8f3d8a5b8d536631586d13ca0cda175647db7d1f5eb74682",
+  "limits": [
+    "Low cover is not proof of exposed rock or safe footing.",
+    "Leaf-off point-cloud canopy gaps and narrow or broad flat outcrops can be misclassified or missed.",
+    "The sampled 1 km horizon and representative seasonal azimuths do not predict an exact date or unobstructed astronomical sunrise.",
+    "Cliff access, current vegetation, weather and legal access are not established."
+  ],
+  "modelSha256": "b0c8ca1daf0553605102183ae4bfc6c0dd963a7562f6a6d7e9c83e0abae27707",
+  "reviewFirst": "1 \u00b7 LiDAR ridge skeleton",
+  "rules": {
+    "corridor_max_below_crest_m": 1.8,
+    "corridor_radius_m": 6.0,
+    "horizon_distance_m": 1000.0,
+    "horizon_limit_deg": 5.0,
+    "max_standing_slope_deg": 25.0,
+    "maximum_fade_m": 70.0,
+    "minimum_segment_m": 24.0,
+    "observer_height_m": 1.6,
+    "ridge_scale_m": 6.0
+  },
+  "source": {
+    "aerial": "KyFromAbove Phase 3 four-band RGB/NIR orthophotography",
+    "canopy": "KyFromAbove Phase 2 COPC point cloud; US survey feet converted to meters",
+    "elevation": "KyFromAbove Phase 2 2-foot Z-meters DEM"
+  },
+  "status": "staging calibration; Ryan visual approval pending",
+  "trailAffectsScores": false,
+  "trailOrAerialAffectsGeometry": false,
+  "version": 11
+}
