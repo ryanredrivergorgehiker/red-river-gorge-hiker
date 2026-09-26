@@ -464,7 +464,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'sunset_canopy_penalty',
             'band_ids=[0, 1, 2, 3]',
             'vegetation_method = "NAIP NIR/red NDVI calibrated to local 30th–78th percentiles"',
-            'actual mapped water is the only hard geographic exclusion',
+            'actual mapped water is excluded',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
