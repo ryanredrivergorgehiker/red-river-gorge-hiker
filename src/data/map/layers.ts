@@ -1,4 +1,4 @@
-export type MapSourceKind = 'tile' | 'vector' | 'reference' | 'elevation' | 'derived';
+export type MapSourceKind = 'tile' | 'vector' | 'reference' | 'elevation';
 
 export interface MapSource {
   id: string;
@@ -37,7 +37,6 @@ const arcgisGeoJsonQuery = (serviceUrl: string, outFields: string) => {
 const trailService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublishWithDataStatus_01/MapServer/0';
 const roadService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RoadBasic_01/MapServer/0';
 const countyService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0';
-const kentuckyRoadCenterlineService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_911_Road_Centerlines_WGS84WM/MapServer/0';
 const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RecInfraRecreationSites_02/MapServer/0';
 const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
@@ -148,19 +147,6 @@ export const mapSources: readonly MapSource[] = [
     opacity: 0.6
   },
   {
-    id: 'ky-road-centerlines',
-    label: 'Kentucky road centerlines (route planning)',
-    kind: 'vector',
-    enabled: true,
-    browserLoaded: true,
-    url: arcgisGeoJsonQuery(kentuckyRoadCenterlineService, 'LSt_Name,St_Name,RoadClass,SpeedLimit,OneWay'),
-    serviceUrl: kentuckyRoadCenterlineService,
-    attribution: 'Kentucky 911 Services Board & Kentucky PSAPs',
-    termsUrl: 'https://kygeoportal.ky.gov/',
-    privacyNote: 'A fixed Red River Gorge-area road-centerline query is requested from Kentucky GIS for route-planning geometry. It is not based on the visitor’s location and does not establish pedestrian access, safety, or current road status.',
-    opacity: 0
-  },
-  {
     id: 'usfs-recreation-sites',
     label: 'Trailheads & facilities',
     kind: 'vector',
@@ -175,7 +161,7 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'usfs-wilderness',
-    label: 'National Forest Wilderness',
+    label: 'Wilderness boundaries',
     kind: 'vector',
     enabled: true,
     browserLoaded: true,
@@ -225,18 +211,6 @@ export const mapSources: readonly MapSource[] = [
     opacity: 1
   },
   {
-    id: 'sunrise-sunset-potential',
-    label: 'Sunrise / Sunset potential',
-    kind: 'derived',
-    enabled: true,
-    browserLoaded: true,
-    serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer',
-    attribution: 'Red River Gorge Hiker calibration derived from KyFromAbove Phase 2 elevation and point clouds; Phase 3 orthophotography',
-    termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'The v14 Pinch-Em-Tight calibration uses KyFromAbove Phase 2 upper-ground and absolute point-cloud elevations plus Phase 3 leaf-off RGB/NIR aerial imagery at build time. Ridge geometry is determined before canopy and separate directional evaluation; trails do not affect geometry or scores. Visitors load only finished RRGH-hosted images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
-    opacity: 0.68
-  },
-  {
     id: 'parcel-private-property',
     label: 'Parcel / Private Property',
     kind: 'reference',
@@ -252,11 +226,11 @@ export const mapSources: readonly MapSource[] = [
     label: 'USGS 3DEP Bare Earth DEM',
     kind: 'elevation',
     enabled: true,
-    browserLoaded: true,
+    browserLoaded: false,
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
     attribution: 'USGS National Map 3D Elevation Program (3DEP)',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback.'
+    privacyNote: 'Build-time only. Visitor browsers do not call the elevation service.'
   }
 ] as const;
 

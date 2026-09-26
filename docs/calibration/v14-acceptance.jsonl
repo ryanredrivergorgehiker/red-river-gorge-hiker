@@ -1,9 +1,0 @@
-{"invariants": "passed", "sunriseImageCells": 175, "sunsetImageCells": 231, "sameCellPurple": 3}
-{"point": "1", "name": "Chimney Top Rock", "expected": "sunset", "compositeMax": {"sunrise": 0.0, "sunset": 0.9965791702270508}, "passingCells": {"sunrise": 0, "sunset": 21}, "status": "passed"}
-{"point": "2", "name": "Southern exposed outcrop", "expected": "sunset", "compositeMax": {"sunrise": 0.0, "sunset": 1.0}, "passingCells": {"sunrise": 0, "sunset": 20}, "status": "passed"}
-{"point": "3", "name": "Half Moon Arch outcrop", "expected": "sunset", "compositeMax": {"sunrise": 0.0, "sunset": 0.8780163526535034}, "passingCells": {"sunrise": 0, "sunset": 50}, "status": "passed"}
-{"point": "4", "name": "Eastern trail-end overlook", "expected": "sunrise", "compositeMax": {"sunrise": 1.0, "sunset": 0.0}, "passingCells": {"sunrise": 16, "sunset": 0}, "status": "passed"}
-{"point": "5", "name": "Lower marked rim", "expected": "unverified", "compositeMax": {"sunrise": 1.0, "sunset": 0.0}, "passingCells": {"sunrise": 12, "sunset": 0}, "status": "unverified"}
-{"point": "6", "name": "Northern exposed ridge: same-cell dual view review", "expected": "both", "compositeMax": {"sunrise": 0.9940338134765625, "sunset": 0.8963303565979004}, "passingCells": {"sunrise": 11, "sunset": 22}, "status": "passed"}
-{"point": "7", "name": "Large circled ridge: eastern rock rim", "expected": "sunrise", "compositeMax": {"sunrise": 1.0, "sunset": 0.0}, "passingCells": {"sunrise": 6, "sunset": 0}, "status": "passed"}
-{"point": "8", "name": "Large circled ridge: western rock rim", "expected": "sunset", "compositeMax": {"sunrise": 0.0, "sunset": 0.8991661071777344}, "passingCells": {"sunrise": 0, "sunset": 15}, "status": "passed"}
