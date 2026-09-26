@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "generatedAtUtc": "2026-09-26T00:28:57.360Z",
+  "version": 3,
+  "generatedAtUtc": "2026-09-26T00:56:40.696Z",
   "source": {
     "id": "rrgh-high-ground-sun-potential",
     "elevation": {
@@ -13,12 +13,12 @@
       "attribution": "© OpenStreetMap contributors",
       "via": "Overpass API",
       "endpointsUsed": [
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.maprva.org/api/interpreter"
+        "https://overpass.maprva.org/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter"
       ],
-      "polygonFeatures": 636,
-      "flowlineFeatures": 2065
+      "polygonFeatures": 620,
+      "flowlineFeatures": 1869
     }
   },
   "bounds": {
@@ -41,17 +41,20 @@
     "requestedSamplesPerTile": 1000,
     "returnedSamples": 48951
   },
-  "method": "Conservative high-ground photographic potential: hard water exclusion, regional elevation floor, local relief, ridge/upper-shoulder prominence, terrain convexity, directional terrain-horizon clearance, and slope/aspect alignment.",
+  "method": "Weighted photographic terrain suitability: actual mapped water is the only hard geographic exclusion; relative height above local lows, ridge/upper-shoulder position, terrain convexity, local relief, directional horizon openness, slope/aspect alignment, and regional elevation contribute continuously; valley position is a penalty rather than a veto.",
   "thresholds": {
-    "elevationQ55Meters": 306.4,
+    "elevationQ25Meters": 265.2,
     "elevationQ90Meters": 359.9,
-    "minLocalReliefMeters": 42,
-    "minProminence": 0.64,
-    "minConvexity": 0.34,
-    "minDirectionalOpenness": 0.58,
-    "waterFlowlineExclusionBufferMeters": 300,
-    "sunriseDisplayScore": 0.8059,
-    "sunsetDisplayScore": 0.8158
+    "reliefReferenceMeters": 100,
+    "heightAboveLowReferenceMeters": 110,
+    "flowlineWaterMaskMeters": 45,
+    "displayQuantile": 0.9,
+    "strongQuantile": 0.97,
+    "peakQuantile": 0.995,
+    "sunriseDisplayScore": 0.7531,
+    "sunriseStrongScore": 0.7936,
+    "sunsetDisplayScore": 0.7513,
+    "sunsetStrongScore": 0.7937
   },
   "seasonalAzimuths": {
     "sunrise": [
@@ -67,24 +70,24 @@
     "note": "Representative summer/equinox/winter directions for the Red River Gorge latitude; not a date-specific solar ephemeris."
   },
   "coverage": {
-    "waterMaskCells": 16638,
-    "waterMaskPercent": 29.1,
-    "ridgeCandidateCells": 10018,
-    "ridgeCandidatePercent": 17.52,
-    "sunriseDisplayCells": 370,
-    "sunriseDisplayPercent": 0.65,
-    "sunsetDisplayCells": 506,
-    "sunsetDisplayPercent": 0.89
+    "waterMaskCells": 2539,
+    "waterMaskPercent": 4.44,
+    "weightedHighGroundCells": 28283,
+    "weightedHighGroundPercent": 49.46,
+    "sunriseDisplayCells": 5450,
+    "sunriseDisplayPercent": 9.61,
+    "sunsetDisplayCells": 5431,
+    "sunsetDisplayPercent": 9.58
   },
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
-    "maximumOpacity": 0.88,
+    "maximumOpacity": 0.82,
     "lowPotentialTransparent": true,
-    "designIntent": "Sparse ridge and upper-shoulder bands; low valleys and mapped water suppressed."
+    "designIntent": "Strong ridge and upper-shoulder cores with a fading shoulder gradient; actual mapped water excluded; valleys penalized rather than broadly erased."
   },
   "limitations": [
-    "Terrain and hydrography model only; mapped water is excluded and low/valley terrain is strongly suppressed.",
+    "Terrain and mapped-water model only; mapped water is excluded, while valley position is a weighted penalty rather than a broad exclusion zone.",
     "Does not account for current weather, haze, vegetation, buildings, seasonal foliage, access, or small local obstructions not represented by the source data.",
     "Potential is seasonal/generalized and is not a guarantee of visible sunrise, visible sunset, legal access, or a good photographic view."
   ]
