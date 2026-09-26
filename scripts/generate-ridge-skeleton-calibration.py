@@ -14,7 +14,7 @@ from skimage.morphology import remove_small_objects, skeletonize
 from skimage.segmentation import watershed
 
 BOUNDS = {"west": -83.6505, "south": 37.8060, "east": -83.6170, "north": 37.8345}
-PIXEL_METERS = 2.0
+PIXEL_METERS = 4.0
 CREST_CORRIDOR_METERS = 12.0
 VERSION = 10
 
@@ -158,7 +158,7 @@ for source in sources:
             "rawMin": minimum,
             "rawMax": maximum,
         }
-        print(f'Using DEM {source["id"]}: relief={relief:.2f}, std={std:.2f}')
+        print(f'Using DEM {source["id"]}: relief={relief:.2f}, std={std:.2f}', flush=True)
         break
     except Exception as exc:
         source_errors.append({"id": source["id"], "error": str(exc)})
@@ -173,6 +173,8 @@ dem[~valid_mask] = replacement
 
 # Hydrologic basin markers: spatially separated local low points on a lightly
 # smoothed DEM. Watershed boundaries are drainage divides, i.e. ridge topology.
+stage_started = time.monotonic()
+print(f'Ridge calibration grid: {COLS} x {ROWS} at ~{MEAN_CELL_METERS:.2f} m; beginning watershed topology', flush=True)
 hydro_dem = gaussian_filter(dem, sigma=max(1.0, 6.0 / MEAN_CELL_METERS))
 minima_separation_m = 70.0
 min_distance_px = max(8, int(round(minima_separation_m / MEAN_CELL_METERS)))
@@ -193,6 +195,7 @@ if minima_coords.shape[0] < 8:
     )
 
 basin_count = int(minima_coords.shape[0])
+print(f'Found {basin_count} drainage minima in {time.monotonic() - stage_started:.1f}s', flush=True)
 if basin_count < 2:
     raise RuntimeError(f"Too few drainage minima for watershed segmentation: {basin_count}")
 
@@ -207,6 +210,7 @@ basins = watershed(
     watershed_line=True,
 )
 raw_skeleton = skeletonize(basins == 0)
+print(f'Built raw watershed divide skeleton in {time.monotonic() - stage_started:.1f}s', flush=True)
 
 # Prune basin divides that run through low saddles or flanks. The pruning can
 # remove a line, but it cannot shift the surviving divide off its topological
@@ -218,7 +222,9 @@ local_high = maximum_filter(dem, size=size, mode="nearest")
 local_relief = np.maximum(local_high - local_low, 1.0)
 relative_height = np.clip((dem - local_low) / local_relief, 0.0, 1.0)
 
-broad_sigma = max(4.0, 160.0 / MEAN_CELL_METERS)
+# A 120 m broad TPI is sufficient for ridge-vs-flank pruning at the 4 m
+# topology grid and avoids an unnecessarily expensive very-wide convolution.
+broad_sigma = max(4.0, 120.0 / MEAN_CELL_METERS)
 broad_tpi = dem - gaussian_filter(dem, sigma=broad_sigma)
 
 near_radius_px = max(3, int(round(18.0 / MEAN_CELL_METERS)))
@@ -234,6 +240,7 @@ ridge_skeleton = raw_skeleton & ridge_keep
 min_segment_pixels = max(6, int(round(24.0 / MEAN_CELL_METERS)))
 ridge_skeleton = remove_small_objects(ridge_skeleton, min_size=min_segment_pixels, connectivity=2)
 ridge_skeleton = skeletonize(ridge_skeleton)
+print(f'Pruned ridge skeleton in {time.monotonic() - stage_started:.1f}s', flush=True)
 
 if np.count_nonzero(ridge_skeleton) < 50:
     raise RuntimeError("Topological ridge skeleton is too sparse after pruning.")
@@ -289,6 +296,7 @@ metadata = {
         "watershedBasinCount": basin_count,
         "minimaSeparationMeters": minima_separation_m,
         "crestCorridorMeters": CREST_CORRIDOR_METERS,
+        "calibrationGridMeters": PIXEL_METERS,
         "trailOrAerialAffectsSkeleton": False,
         "ridgeKeep": {
             "minimumRelativeHeight": 0.30,
@@ -307,9 +315,10 @@ metadata = {
             "1 · LiDAR ridge skeleton",
             "2 · Crest corridor (~12 m)",
         ],
-        "instruction": "Do not tune sunrise/sunset until the thin ridge skeleton visually follows known ridge tops.",
+        "instruction": "Do not tune sunrise/sunset until the thin ridge skeleton visually follows known ridge tops. This ridge-only calibration uses a ~4 m topology grid for fast iteration; final sun scoring may return to finer terrain sampling after geometry approval.",
         "finalCompositeStatus": "v9 composite retained but held; not recalculated in this ridge-only phase",
     },
 }
 META_PATH.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
-print(json.dumps(metadata, indent=2))
+print(json.dumps(metadata, indent=2), flush=True)
+print(f'Ridge calibration complete in {time.monotonic() - stage_started:.1f}s', flush=True)
