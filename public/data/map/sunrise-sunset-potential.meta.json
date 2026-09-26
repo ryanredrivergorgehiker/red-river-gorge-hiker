@@ -1,8 +1,8 @@
 {
-  "version": 4,
-  "generatedAtUtc": "2026-09-26T01:32:10Z",
+  "version": 5,
+  "generatedAtUtc": "2026-09-26T01:56:13Z",
   "source": {
-    "id": "rrgh-photographic-viewshed-v4",
+    "id": "rrgh-ridge-constrained-viewshed-v5",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
@@ -32,10 +32,11 @@
       "via": "Overpass API",
       "endpointsUsed": [
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-        "https://overpass-api.de/api/interpreter"
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter"
       ],
-      "polygonFeatures": 673,
-      "flowlineFeatures": 2283
+      "polygonFeatures": 667,
+      "flowlineFeatures": 2275
     }
   },
   "bounds": {
@@ -53,7 +54,7 @@
     ],
     "output": "PNG RGBA"
   },
-  "method": "Photographic viewshed proxy using high-resolution bare-earth terrain plus NAIP vegetation/open-ground confidence. Scores favor ridge/upper-shoulder relative height, convexity, local relief, directional terrain drop, low terrain horizon, directional aerial openness, and sun-facing aspect. Valley position and dense canopy in the viewing sector reduce the score; actual mapped water is excluded.",
+  "method": "Ridge-constrained directional photographic viewshed proxy. High-resolution bare-earth terrain first defines ridge/spur/cliff-nose support using relative height, prominence, convexity, and positive topographic position at multiple scales. Sunrise and sunset seeds then require directional terrain drop, low horizon, aspect, and NAIP aerial openness. Gradient propagation is multiplied by ridge support so color can fade along connected high ground without bleeding into adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both viewing sectors are genuinely strong; actual mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
       58.0,
@@ -67,33 +68,43 @@
     ]
   },
   "thresholds": {
-    "displayQuantile": 0.84,
-    "strongQuantile": 0.95,
-    "peakQuantile": 0.99,
-    "sunriseDisplayScore": 0.6279,
-    "sunriseStrongScore": 0.7217,
-    "sunsetDisplayScore": 0.6287,
-    "sunsetStrongScore": 0.7219
+    "displayCandidateQuantile": 0.45,
+    "strongCandidateQuantile": 0.82,
+    "peakCandidateQuantile": 0.97,
+    "ridgeCorridorMin": 0.34,
+    "directionalViewMin": 0.4,
+    "dualViewMin": 0.68,
+    "sunriseDisplayScore": 0.0614,
+    "sunriseStrongScore": 0.499,
+    "sunsetDisplayScore": 0.0566,
+    "sunsetStrongScore": 0.4684
   },
   "coverage": {
-    "waterMaskPercent": 2.09,
-    "sunriseDisplayPercent": 15.67,
-    "sunsetDisplayPercent": 15.67,
-    "sunriseStrongPercent": 4.9,
-    "sunsetStrongPercent": 4.9,
+    "waterMaskPercent": 2.08,
+    "sunriseDisplayPercent": 22.95,
+    "sunsetDisplayPercent": 23.06,
+    "sunriseStrongPercent": 7.51,
+    "sunsetStrongPercent": 7.55,
     "denseCanopyPercent": 31.81,
-    "highRidgeCorePercent": 24.13
+    "highRidgeCorePercent": 24.13,
+    "ridgeCorridorPercent": 45.6,
+    "valleyZonePercent": 20.37,
+    "sunriseValleyLeakPercent": 0.0,
+    "sunsetValleyLeakPercent": 0.0,
+    "dualDisplayPercent": 13.73
   },
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
     "maximumOpacity": 0.86,
-    "designIntent": "Strong ridge/cliff-nose cores with a smooth fade down usable shoulders; valley-floor and forest-blocked false positives reduced."
+    "designIntent": "Sunrise/sunset color follows supported ridge, spur, and cliff-nose terrain; strongest at exposed directional cores, fading along connected high ground and stopping before valley floors."
   },
   "calibrationIntent": [
+    "Keep gradients on ridge/spur support rather than allowing radial bleed into adjacent valleys.",
     "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
     "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
-    "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon."
+    "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon.",
+    "Suppress the weaker sunrise/sunset color unless both viewing sectors are independently strong."
   ],
   "limitations": [
     "NAIP vegetation/open-ground classification is a proxy, not a direct tree-by-tree canopy-height model.",
