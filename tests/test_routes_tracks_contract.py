@@ -448,6 +448,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         for contract in (
             'VERSION = 10',
             'topological_ridge_skeleton',
+            'KENTUCKY_PHASE3_DEM_SERVICE',
             'h_minima',
             'watershed(',
             'watershed_line=True',
@@ -468,6 +469,9 @@ class RoutesTracksContractTests(unittest.TestCase):
 
         self.assertEqual(SUN_META['version'], 10)
         self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-ridge-skeleton-v10')
+        self.assertEqual(SUN_META['source']['elevation']['preferredSource'], 'kyfromabove-phase3-2ft-dem')
+        self.assertEqual(SUN_META['source']['elevation']['fallbackSource'], 'usgs-3dep-bare-earth-dem')
+        self.assertIn(SUN_META['source']['elevation']['id'], {'kyfromabove-phase3-2ft-dem', 'usgs-3dep-bare-earth-dem'})
         self.assertEqual(SUN_META['calibrationArea']['status'], 'staging topological-ridge calibration only')
         self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR ridge skeleton')
         self.assertEqual(SUN_META['ridgeTopology']['crestCorridorMeters'], 12.0)
@@ -488,6 +492,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             self.assertEqual(diagnostic_path.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
 
         self.assertIn('topological ridge skeleton', PRIVACY)
+        self.assertIn('Kentucky KyFromAbove Phase 3 two-foot LiDAR-derived DEM', PRIVACY)
         self.assertIn('roughly 12 meters around that skeleton', PRIVACY)
         self.assertIn('cannot alter the skeleton or corridor geometry', TERMS)
 

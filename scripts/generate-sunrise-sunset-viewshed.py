@@ -18,6 +18,7 @@ from skimage.morphology import h_minima, remove_small_objects, skeletonize
 from skimage.segmentation import watershed
 
 ELEVATION_SERVICE = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"
+KENTUCKY_PHASE3_DEM_SERVICE = "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_WGS84WM/ImageServer"
 NAIP_SERVICE = "https://apps.geo.fpac.usda.gov/geo-imagery/rest/services/naip/conus_naip/ImageServer"
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -440,8 +441,40 @@ def water_shapes(elements):
     return polygon_shapes, line_shapes
 
 print(f"V7 Pinch-Em-Tight calibration viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
-dem_bands = export_image(ELEVATION_SERVICE, pixel_type="F32")
-dem = dem_bands[0].astype(np.float32)
+# For this Kentucky calibration pilot, prefer Kentucky's own Phase 3 two-foot
+# LiDAR-derived DEM so the ridge analysis is registered to the same statewide
+# elevation program as the Kentucky relief map. USGS 3DEP remains a fallback.
+elevation_sources = [
+    {
+        "id": "kyfromabove-phase3-2ft-dem",
+        "service": KENTUCKY_PHASE3_DEM_SERVICE,
+        "zToMeters": 0.3048,
+        "description": "KyFromAbove Phase 3 two-foot hydro-flattened DEM derived from ground-class LiDAR",
+    },
+    {
+        "id": "usgs-3dep-bare-earth-dem",
+        "service": ELEVATION_SERVICE,
+        "zToMeters": 1.0,
+        "description": "USGS 3DEP bare-earth DEM fallback",
+    },
+]
+dem_bands = None
+elevation_source_used = None
+elevation_source_errors = []
+for source in elevation_sources:
+    try:
+        dem_bands = export_image(source["service"], pixel_type="F32")
+        elevation_source_used = source
+        print(f'Using elevation source: {source["id"]}')
+        break
+    except Exception as exc:
+        elevation_source_errors.append({"id": source["id"], "error": str(exc)})
+        print(f'Elevation source failed ({source["id"]}): {exc}')
+
+if dem_bands is None or elevation_source_used is None:
+    raise RuntimeError(f"No elevation source succeeded: {elevation_source_errors}")
+
+dem = dem_bands[0].astype(np.float32) * float(elevation_source_used["zToMeters"])
 bad_dem = ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
 if np.any(bad_dem):
     replacement = float(np.nanmedian(np.where(bad_dem, np.nan, dem)))
@@ -874,9 +907,14 @@ metadata = {
     "source": {
         "id": "rrgh-pinch-em-tight-ridge-skeleton-v10",
         "elevation": {
-            "id": "usgs-3dep-bare-earth-dem",
-            "service": ELEVATION_SERVICE,
+            "id": elevation_source_used["id"],
+            "service": elevation_source_used["service"],
+            "description": elevation_source_used["description"],
             "pixelType": "F32",
+            "zConvertedToMeters": elevation_source_used["zToMeters"] != 1.0,
+            "preferredSource": "kyfromabove-phase3-2ft-dem",
+            "fallbackSource": "usgs-3dep-bare-earth-dem",
+            "attemptErrors": elevation_source_errors,
         },
         "aerial": {
             "id": "usda-naip-four-band",
@@ -910,7 +948,7 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Pinch-Em-Tight topological ridge-skeleton calibration pilot. Two-meter bare-earth LiDAR is smoothed only enough to suppress tiny pits, hydrologic basins are delineated by watershed segmentation, their drainage divides are thinned to a ridge skeleton, and only a narrow crest corridor around that skeleton is eligible before any aerial, trail, or sunrise/sunset evidence is considered. "
+        "Pinch-Em-Tight topological ridge-skeleton calibration pilot. Two-meter analysis prefers Kentucky's Phase 3 LiDAR-derived bare-earth DEM (with USGS 3DEP fallback) and is smoothed only enough to suppress tiny pits, hydrologic basins are delineated by watershed segmentation, their drainage divides are thinned to a ridge skeleton, and only a narrow crest corridor around that skeleton is eligible before any aerial, trail, or sunrise/sunset evidence is considered. "
         "then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP "
         "aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained "
         "to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The "
