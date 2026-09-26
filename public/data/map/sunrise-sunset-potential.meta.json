@@ -1,8 +1,8 @@
 {
-  "version": 5,
-  "generatedAtUtc": "2026-09-26T02:00:04Z",
+  "version": 6,
+  "generatedAtUtc": "2026-09-26T02:52:49Z",
   "source": {
-    "id": "rrgh-ridge-constrained-viewshed-v5",
+    "id": "rrgh-cliff-overlook-viewshed-v6",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
@@ -31,11 +31,11 @@
       "attribution": "\u00a9 OpenStreetMap contributors",
       "via": "Overpass API",
       "endpointsUsed": [
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-        "https://overpass-api.de/api/interpreter"
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.maprva.org/api/interpreter"
       ],
-      "polygonFeatures": 673,
-      "flowlineFeatures": 2283
+      "polygonFeatures": 592,
+      "flowlineFeatures": 2172
     }
   },
   "bounds": {
@@ -45,15 +45,15 @@
     "north": 38.15
   },
   "grid": {
-    "cols": 2954,
-    "rows": 2805,
+    "cols": 3693,
+    "rows": 3507,
     "approximateCellMeters": [
-      25.0,
-      25.0
+      20.0,
+      20.0
     ],
     "output": "PNG RGBA"
   },
-  "method": "Ridge-constrained directional photographic viewshed proxy. High-resolution bare-earth terrain first defines ridge/spur/cliff-nose support using relative height, prominence, convexity, and positive topographic position at multiple scales. Sunrise and sunset seeds then require directional terrain drop, low horizon, aspect, and NAIP aerial openness. Gradient propagation is multiplied by ridge support so color can fade along connected high ground without bleeding into adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both viewing sectors are genuinely strong; actual mapped water is excluded.",
+  "method": "Cliff/overlook directional photographic viewshed proxy. High-resolution bare-earth terrain identifies compact crest/nose support, then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
       58.0,
@@ -67,39 +67,45 @@
     ]
   },
   "thresholds": {
-    "displayCandidateQuantile": 0.65,
-    "strongCandidateQuantile": 0.88,
+    "displayCandidateQuantile": 0.58,
+    "strongCandidateQuantile": 0.86,
     "peakCandidateQuantile": 0.98,
-    "ridgeCorridorMin": 0.38,
-    "directionalViewMin": 0.46,
-    "dualViewMin": 0.78,
-    "sunriseDisplayScore": 0.11,
-    "sunriseStrongScore": 0.4537,
-    "sunsetDisplayScore": 0.1046,
-    "sunsetStrongScore": 0.4227
+    "overlookSupportMin": 0.42,
+    "nearDropMin": 0.42,
+    "directionalViewMin": 0.5,
+    "dualViewMin": 0.82,
+    "sunriseDisplayScore": 0.1386,
+    "sunriseStrongScore": 0.5385,
+    "sunsetDisplayScore": 0.138,
+    "sunsetStrongScore": 0.5311
   },
   "coverage": {
-    "waterMaskPercent": 2.09,
-    "sunriseDisplayPercent": 12.98,
-    "sunsetDisplayPercent": 13.07,
-    "sunriseStrongPercent": 4.45,
-    "sunsetStrongPercent": 4.48,
-    "denseCanopyPercent": 31.81,
-    "highRidgeCorePercent": 24.13,
-    "ridgeCorridorPercent": 43.13,
-    "valleyZonePercent": 20.37,
+    "waterMaskPercent": 1.64,
+    "sunriseDisplayPercent": 7.07,
+    "sunsetDisplayPercent": 7.02,
+    "sunriseStrongPercent": 2.36,
+    "sunsetStrongPercent": 2.34,
+    "denseCanopyPercent": 32.8,
+    "highRidgeCorePercent": 24.31,
+    "ridgeCorridorPercent": 43.41,
+    "overlookSupportPercent": 29.53,
+    "sunriseSeedPercent": 7.74,
+    "sunsetSeedPercent": 7.67,
+    "valleyZonePercent": 20.14,
     "sunriseValleyLeakPercent": 0.0,
     "sunsetValleyLeakPercent": 0.0,
-    "dualDisplayPercent": 2.11
+    "dualDisplayPercent": 0.34
   },
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
     "maximumOpacity": 0.86,
-    "designIntent": "Sunrise/sunset color follows supported ridge, spur, and cliff-nose terrain; strongest at exposed directional cores, fading along connected high ground and stopping before valley floors."
+    "designIntent": "Compact sunrise/sunset lobes at exposed cliff edges and projecting ridge noses; strongest at the directional breakline, with a short fade back onto the crest and no intentional valley fill."
   },
   "calibrationIntent": [
-    "Keep gradients on ridge/spur support rather than allowing radial bleed into adjacent valleys.",
+    "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
+    "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",
+    "Keep gradients short and on crest support rather than allowing radial bleed into adjacent valleys.",
     "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
     "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
     "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon.",
