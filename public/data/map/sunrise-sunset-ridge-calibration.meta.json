@@ -1,7 +1,7 @@
 {
   "activeMetadata": "sunrise-sunset-potential.meta.json",
-  "method": "transverse elevation maxima, adjacent gentle high ground and connected exposed-surface qualification",
-  "supersededVersion": 11,
+  "method": "connected upper-landform topology, elevation-routed crest, upper cliff-lip standing ground and connected rock qualification",
+  "supersededVersion": 12,
   "trailOrAerialAffectsGeometry": false,
-  "version": 12
+  "version": 13
 }

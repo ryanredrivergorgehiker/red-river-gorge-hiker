@@ -19,13 +19,18 @@ with np.load(args.cache / 'a/result.npz') as result:
     for point in checks['points']:
         col, row = (~affine) * transform.transform(point['lon'], point['lat'])
         row, col = int(row), int(col)
-        radius = round(checks['radiusMeters'] / 2)
+        radius = round(point.get('radiusMeters', checks['radiusMeters']) / 2)
         region = (slice(row - radius, row + radius), slice(col - radius, col + radius))
         scores = {direction: float(result[direction][region].max()) for direction in ['sunrise', 'sunset']}
         expected = point['expected']
-        if expected != 'unverified':
+        if expected == 'both':
+            same_ground = (result['sunrise_pass'][region] >= .6) & (result['sunset_pass'][region] >= .6)
+            assert int(same_ground.sum()) >= 4, (point['name'], 'no shared 16-square-meter dual footprint')
+            assert min(scores.values()) >= .6, (point['name'], scores)
+        elif expected != 'unverified':
             opposite = 'sunset' if expected == 'sunrise' else 'sunrise'
             assert scores[expected] >= .6, (point['name'], 'missing expected view', scores)
-            assert scores[opposite] == 0, (point['name'], 'unexpected opposite label', scores)
+            if point.get('exclusive', True):
+                assert scores[opposite] == 0, (point['name'], 'unexpected opposite label', scores)
         print(json.dumps({'point': point['id'], 'name': point['name'], 'expected': expected,
                           'compositeMax': scores, 'status': 'unverified' if expected == 'unverified' else 'passed'}))

@@ -1,3 +1,5 @@
+> Superseded for active Pinch-Em-Tight calibration by [v13](v13-review.md) after Ryan rejected the crest/standing-ground geometry. Auxier work is paused; this document remains historical.
+
 # Sunrise / Sunset v12 — marked-point correction
 
 Staging only. This supersedes v11 after Ryan identified missed and reversed views in his five-mark screenshot. It is a corrected review candidate, not Ryan's visual approval or authorization for production or Gorge-wide generation.

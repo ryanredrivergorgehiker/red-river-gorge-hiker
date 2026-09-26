@@ -126,7 +126,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
-        self.assertIn('The v12 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time', sun_source)
+        self.assertIn('The v13 Pinch-Em-Tight calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 leaf-off RGB/NIR aerial imagery at build time', sun_source)
         self.assertIn('send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
@@ -449,8 +449,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('1 · LiDAR ridge skeleton', MAP)
         self.assertIn('3 · Overlook / outcrop candidates', MAP)
         self.assertIn('7 · Sunrise / Sunset composite', MAP)
-        self.assertEqual(SUN_META['version'], 12)
-        self.assertEqual(set(SUN_META['areas']), {'a', 'b'})
+        self.assertEqual(SUN_META['version'], 13)
+        self.assertEqual(set(SUN_META['areas']), {'a'})
+        self.assertNotIn("prefix: 'sunrise-sunset-area-b'", MAP)
+        self.assertIn('Purple: both', MAP)
         self.assertFalse(SUN_META['trailOrAerialAffectsGeometry'])
         self.assertFalse(SUN_META['trailAffectsScores'])
         self.assertEqual(SUN_META['rules']['corridor_radius_m'], 6)
@@ -468,7 +470,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('contents: read', GENERATOR_WORKFLOW)
         self.assertNotIn('git push', GENERATOR_WORKFLOW)
         self.assertIn('Phase 2 LiDAR point clouds', PRIVACY)
-        self.assertIn('Both areas use the same rules', TERMS)
+        self.assertIn('Only Pinch-Em-Tight is generated in this pass', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)

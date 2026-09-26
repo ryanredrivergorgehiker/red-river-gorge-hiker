@@ -533,6 +533,7 @@
 .route-sun-key:first-child{margin-left:0}
 .route-sun-key-sunrise{background:#ff6f61}
 .route-sun-key-sunset{background:#4055d8}
+.route-sun-key-both{background:#9c4dcc}
 .rrgh-sun-potential-overlay{pointer-events:none}
 .swatch-wilderness::before{border:2px dashed #356b4a;background:rgba(117,168,109,.12)}
 .swatch-management::before{border:2px dashed #a57c34;background:rgba(216,184,108,.12)}

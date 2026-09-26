@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch, fingerprint and regenerate the two v12 calibration areas.
+"""Fetch, fingerprint and regenerate the Pinch-Em-Tight v13 calibration area.
 
 Normal operation verifies every input array against the checked-in manifest.
 Only an explicit --record-inputs operation accepts a new source snapshot.
@@ -30,7 +30,6 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'scripts/data/sun-calibration-inputs.json'
 AREAS = {
     'a': {'name': 'Pinch-Em-Tight / Chimney Top Creek', 'bounds': [-83.6505, 37.8060, -83.6170, 37.8345]},
-    'b': {'name': 'Auxier Ridge / Courthouse Rock', 'bounds': [-83.691, 37.825, -83.665, 37.850]},
 }
 SOURCES = {
     'dem-phase2': ('https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer', 'F32', None),
@@ -240,6 +239,8 @@ def render_area(key, area, inputs, destination, cache):
     composite = np.zeros((*dem.shape, 4), np.uint8)
     for band, (coral, indigo) in enumerate(zip([255, 111, 97], [64, 85, 216])):
         composite[:, :, band] = (coral * rise / total + indigo * setting / total).astype(np.uint8)
+    # Explicit overlap color: both directions independently passed.
+    composite[(rise > 0) & (setting > 0), :3] = [156, 77, 204]
     composite[:, :, 3] = (np.clip(np.maximum(rise, setting) * 1.6, 0, 1) * 255).astype(np.uint8)
     save('potential', composite)
     back = Transformer.from_crs(3857, 4326, always_xy=True)
@@ -272,9 +273,10 @@ def main():
         write_json(MANIFEST, identities)
     metadata = {'version': VERSION, 'status': 'staging calibration; Ryan visual approval pending',
                 'areas': areas, 'rules': asdict(DEFAULT_RULES), 'cellGroundMetersApproximate': CELL_M,
+                'pausedAreas': ['Auxier Ridge / Courthouse Rock; v12 assets retained as history, not displayed'],
                 'source': {'elevation': 'KyFromAbove Phase 2 2-foot Z-meters DEM',
                            'canopy': 'KyFromAbove Phase 2 COPC point cloud; US survey feet converted to meters',
-                           'aerial': 'KyFromAbove Phase 3 four-band RGB/NIR orthophotography'},
+                           'aerial': 'KyFromAbove Phase 3 leaf-off four-band RGB/NIR orthophotography'},
                 'inputManifestSha256': hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
                 'modelSha256': hashlib.sha256((ROOT / 'scripts/sun_calibration.py').read_bytes()).hexdigest(),
                 'trailOrAerialAffectsGeometry': False, 'trailAffectsScores': False,
@@ -285,10 +287,10 @@ def main():
                            'Cliff access, current vegetation, weather and legal access are not established.']}
     write_json(args.output / 'sunrise-sunset-potential.meta.json', metadata)
     write_json(args.output / 'sunrise-sunset-ridge-calibration.meta.json', {
-        'version': VERSION, 'supersededVersion': 11, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
-        'method': 'transverse elevation maxima, adjacent gentle high ground and connected exposed-surface qualification',
+        'version': VERSION, 'supersededVersion': 12, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
+        'method': 'connected upper-landform topology, elevation-routed crest, upper cliff-lip standing ground and connected rock qualification',
         'trailOrAerialAffectsGeometry': False})
-    print('Generated both areas with the same rules. Inputs verified:', not args.record_inputs, flush=True)
+    print('Generated Pinch-Em-Tight only. Inputs verified:', not args.record_inputs, flush=True)
 
 
 if __name__ == '__main__':

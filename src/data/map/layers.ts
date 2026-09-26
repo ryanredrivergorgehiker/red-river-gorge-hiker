@@ -233,7 +233,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer',
     attribution: 'Red River Gorge Hiker calibration derived from KyFromAbove Phase 2 elevation and point clouds; Phase 3 orthophotography',
     termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'The v12 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time. Ridge geometry is determined before canopy and separate directional evaluation; trails do not affect geometry or scores. Visitors load only finished RRGH-hosted images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
+    privacyNote: 'The v13 Pinch-Em-Tight calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 leaf-off RGB/NIR aerial imagery at build time. Ridge geometry is determined before canopy and separate directional evaluation; trails do not affect geometry or scores. Visitors load only finished RRGH-hosted images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
     opacity: 0.68
   },
   {

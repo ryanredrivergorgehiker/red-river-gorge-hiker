@@ -3,10 +3,51 @@
   "purpose": "Review-region regression checks only; these coordinates are never input to geometry, classification, scoring or rendering.",
   "radiusMeters": 50,
   "points": [
-    {"id": "1", "name": "Chimney Top Rock", "lat": 37.82270, "lon": -83.62290, "expected": "sunset"},
-    {"id": "2", "name": "Southern exposed outcrop", "lat": 37.8217781, "lon": -83.6198311, "expected": "sunset"},
-    {"id": "3", "name": "Half Moon Arch outcrop", "lat": 37.8199999, "lon": -83.62206, "expected": "sunset"},
-    {"id": "4", "name": "Eastern trail-end overlook", "lat": 37.81662, "lon": -83.62680, "expected": "sunrise"},
-    {"id": "5", "name": "Lower marked rim", "lat": 37.8152758, "lon": -83.62861, "expected": "unverified"}
+    {
+      "id": "1",
+      "name": "Chimney Top Rock",
+      "lat": 37.8227,
+      "lon": -83.6229,
+      "expected": "sunset"
+    },
+    {
+      "id": "2",
+      "name": "Southern exposed outcrop",
+      "lat": 37.8217781,
+      "lon": -83.6198311,
+      "expected": "sunset"
+    },
+    {
+      "id": "3",
+      "name": "Half Moon Arch outcrop",
+      "lat": 37.8199999,
+      "lon": -83.62206,
+      "expected": "sunset"
+    },
+    {
+      "id": "4",
+      "name": "Eastern trail-end overlook",
+      "lat": 37.81662,
+      "lon": -83.6268,
+      "expected": "sunrise",
+      "exclusive": false,
+      "note": "Ryan confirms sunrise. v13 separately verifies a seasonal northwest sector; the direction is not added from relative elevation or the sunrise label."
+    },
+    {
+      "id": "5",
+      "name": "Lower marked rim",
+      "lat": 37.8152758,
+      "lon": -83.62861,
+      "expected": "unverified"
+    },
+    {
+      "id": "6",
+      "name": "Northern exposed ridge: same-cell dual view review",
+      "lat": 37.8230174168,
+      "lon": -83.6325673521,
+      "expected": "both",
+      "radiusMeters": 20,
+      "evidence": "Post-generation leaf-off aerial and independent horizon review, not user-supplied field confirmation."
+    }
   ]
 }

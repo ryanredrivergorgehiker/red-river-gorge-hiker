@@ -200,10 +200,10 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
             <span>7 · Sunrise / Sunset composite</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Coral: sunrise · <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Indigo: sunset · calibration only</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Coral: sunrise · <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Indigo: sunset · <span class="route-sun-key route-sun-key-both" aria-hidden="true"></span> Purple: both · calibration only</p>
           <details class="route-layer-fine-tune">
             <summary>Calibration diagnostics</summary>
-            <p class="route-layer-note">Start with <strong>1 · LiDAR ridge skeleton</strong> over Terrain, then Aerial. Compare the thin line with the actual ridge tops before judging the colors. These layers cover only Pinch-Em-Tight and Auxier Ridge; visual approval is pending.</p>
+            <p class="route-layer-note">Start with <strong>1 · LiDAR ridge skeleton</strong> over Terrain, then Aerial. Compare the thin line with the actual ridge tops before judging the colors. This pass covers Pinch-Em-Tight only; visual approval is pending.</p>
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-ridge-skeleton" />
               <span class="route-layer-swatch" style="background:#ffff50" aria-hidden="true"></span>
@@ -369,7 +369,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset calibration:</strong> coral marks modeled sunrise potential and indigo marks sunset potential. Only Pinch-Em-Tight and Auxier Ridge are covered. Start with <strong>Calibration diagnostics → 1 · LiDAR ridge skeleton</strong> and compare it with Terrain and Aerial. The colors are experimental; small outcrops may be missed and apparent openings may still be obstructed.</p>
+      <p><strong>Sunrise / Sunset calibration:</strong> coral marks modeled sunrise potential, indigo marks sunset potential and purple marks both independently modeled directions. This pass covers Pinch-Em-Tight only. Start with <strong>Calibration diagnostics → 1 · LiDAR ridge skeleton</strong> and compare it with Terrain and Aerial. The colors are experimental; small outcrops may be missed and apparent openings may still be obstructed.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -379,7 +379,7 @@ const enabledSources = enabledBrowserMapSources;
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
-      <p>The staging calibration uses Kentucky KyFromAbove Phase 2 bare-earth LiDAR elevation and point-cloud canopy heights, with Phase 3 four-band aerial imagery. Thin transverse elevation maxima define the ridge skeleton on an approximately 2 m grid. Gentle, locally high rock-top ground can extend beyond the narrow crest corridor; its geometry comes from elevation. Candidates must also have a cliff break and connected, low-vegetation, rock-like aerial material with low measured cover. Sunrise and sunset independently require a broad viewing sector and a connected standing footprint against a sampled 1 km terrain-and-canopy horizon. Small LiDAR-return gaps use nearby measured surface elevations; larger gaps remain unknown and fail. Color follows connected exposed ground and the narrow crest for at most 70 m, shortening through canopy. Trails are visual context only. Aerial classification does not establish safe or legal access. Leaf-off canopy gaps, narrow ledges, vegetation changes and obstructions beyond the sampled horizon remain limitations; this is not an exact-date sun-visibility forecast.</p>
+      <p>The staging calibration uses Kentucky KyFromAbove Phase 2 bare-earth LiDAR elevation and point-cloud canopy heights, with Phase 3 leaf-off four-band aerial imagery. A connected upper-landform network is routed across higher crest elevations on an approximately 2 m grid. Standing-ground checks distinguish an upper cliff lip from the face below it. The orange layer shows the narrow crest plus rock-qualified tops, not the entire terrain-search area. Candidates must also have a cliff break and connected, low-vegetation, rock-like aerial material with low measured cover. Sunrise and sunset independently require a broad viewing sector and a connected standing footprint against a sampled 1 km terrain-and-canopy horizon. A passed direction remains visible even when the opposite direction is stronger; purple shows both. Small LiDAR-return gaps use nearby measured surface elevations; larger gaps remain unknown and fail. Color follows connected exposed ground and the narrow crest for at most 70 m, shortening through canopy. Trails are visual context only. Aerial classification does not establish safe or legal access. Leaf-off canopy gaps, narrow ledges, vegetation changes and obstructions beyond the sampled horizon remain limitations; this is not an exact-date sun-visibility forecast.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>
@@ -672,10 +672,9 @@ const enabledSources = enabledBrowserMapSources;
       syncVisibility(source.id);
     }
 
-    // The same rules generate two isolated areas. No Gorge-wide overlay exists.
+    // Pinch-Em-Tight only for this correction. Prior Auxier assets remain historical.
     const sunCalibrationAreas = [
-      { prefix: 'sunrise-sunset', bounds: L.latLngBounds([[37.8060, -83.6505], [37.8345, -83.6170]]) },
-      { prefix: 'sunrise-sunset-area-b', bounds: L.latLngBounds([[37.825, -83.691], [37.850, -83.665]]) }
+      { prefix: 'sunrise-sunset', bounds: L.latLngBounds([[37.8060, -83.6505], [37.8345, -83.6170]]) }
     ];
     const sunCalibrationImages = [
       ['sunrise-sunset-potential', 'potential'],

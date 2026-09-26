@@ -31,6 +31,42 @@ class SunCalibrationBehavior(unittest.TestCase):
         result = ridge_geometry(valley, 2)
         self.assertFalse(result['ridge'][np.abs(x) < 10].any())
 
+    def test_curving_ridge_stays_connected_and_centered(self):
+        from scipy.ndimage import label
+        y, x = np.mgrid[-300:302:2, -300:302:2]
+        center = 30 * np.sin(y / 120)
+        z = (220 + 45 * np.exp(-((x - center) / 35) ** 2)).astype('float32')
+        result = ridge_geometry(z, 2)
+        ridge = result['ridge'] & (np.abs(y) < 180)
+        rr, cc = np.nonzero(ridge)
+        self.assertGreater(len(rr), 150)
+        self.assertLess(np.percentile(np.abs(x[rr, cc] - center[rr, cc]), 95), 3)
+        groups, _ = label(ridge, structure=np.ones((3, 3)))
+        self.assertGreater(np.bincount(groups.ravel())[1:].max(), len(rr) * .95)
+
+    def test_flat_upper_cliff_lip_is_standing_ground_but_face_is_not(self):
+        y, x = np.mgrid[-200:202:2, -200:202:2]
+        z = np.where((np.abs(x) < 55) & (np.abs(y) < 90), 260., 220.).astype('float32')
+        geometry = ridge_geometry(z, 2)
+        self.assertTrue(geometry['corridor'][100, 126])  # x=52, upper lip
+        self.assertFalse(geometry['corridor'][100, 128])  # x=56, below cliff
+
+    def test_same_open_rock_top_keeps_both_directions(self):
+        z = np.full((401, 401), 60, dtype='float32')
+        z[:, 176:225] = 100
+        canopy = np.zeros_like(z)
+        known = np.ones_like(z, dtype=bool)
+        candidates = np.zeros_like(known); candidates[199:202, 199:202] = True
+        openness = np.ones_like(z)
+        rules = Rules(horizon_distance_m=300)
+        rise = directional_pass(z, canopy, known, candidates, openness, 2, (90,), rules)
+        setting = directional_pass(z, canopy, known, candidates, openness, 2, (270,), rules)
+        self.assertTrue((rise[candidates] >= .6).all())
+        self.assertTrue((setting[candidates] >= .6).all())
+        canopy[:, 185:190] = 20
+        blocked = directional_pass(z, canopy, known, candidates, openness, 2, (270,), rules)
+        self.assertFalse(blocked.any())
+
     def test_leaf_off_color_does_not_reclassify_tall_trees_as_open(self):
         ortho = np.full((4, 15, 15), 130, dtype='uint8')
         canopy = np.full((15, 15), 22, dtype='float32')

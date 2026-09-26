@@ -13,130 +13,102 @@
       ],
       "name": "Pinch-Em-Tight / Chimney Top Creek",
       "outputs": {
-        "sunrise-sunset-calibration-crest.png": "1e86b7fd7618672ac2bfb8be23aaff1a8c3d39e985b06f796c506cdc16291def",
+        "sunrise-sunset-calibration-crest.png": "a52d4d66f0ad25f45335b54376a5307bd520edb8877b266eaaf164f6d821a56b",
         "sunrise-sunset-calibration-open-ground.png": "050201b9760859c499eae0a2d0ba2f0a367239741fe9f4c69b172d98e944bba3",
-        "sunrise-sunset-calibration-overlook.png": "b331fa627dc58342174c535fd3f99eb20f2d7ec21d1bfda546861c2658356476",
-        "sunrise-sunset-calibration-ridge-skeleton.png": "7f0560f851466e1ffc59960d5679b253b6dd4dd4ab628a5160f281f5d0e317c8",
-        "sunrise-sunset-calibration-sunrise-pass.png": "0609b8553dfd79d329b47b50f244cf572d255d3c91f1ae83d098ef7a89ea29c5",
-        "sunrise-sunset-calibration-sunset-pass.png": "6e2b1afe590dd999b9fe6a827457a2d81cae1ca43999f19c682d1917f572a919",
-        "sunrise-sunset-potential.png": "b5fad19d334c3bf3bb490caad677e2f47798673f09275c99cb689553aa3bccbe"
+        "sunrise-sunset-calibration-overlook.png": "9cff227f6ebbfba6895d5dfc15cea006dde9f8fed33a24d40662a4cc51023cff",
+        "sunrise-sunset-calibration-ridge-skeleton.png": "8c18379d0164282d1868a55b1521b6cfaae2b7f3fdce2e4b6c671839a8404a9c",
+        "sunrise-sunset-calibration-sunrise-pass.png": "f45649c6506150c665945795f11da758f1068c87ed7428465b08c421fdd93dfd",
+        "sunrise-sunset-calibration-sunset-pass.png": "e2b6e15f86322a5b6798b0b76a539974874ba443d65ad4b238415a7575035727",
+        "sunrise-sunset-potential.png": "17d0b62c3c1c0e45cac7df7efa64210bd604b7daf16a5fd581188282c2b9cc76"
       },
       "seeds": {
         "sunrise": [
           {
-            "lat": 37.816659,
-            "lon": -83.6265631,
-            "strength": 0.9442
+            "lat": 37.8225684,
+            "lon": -83.6323399,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8164075,
+            "lon": -83.6269498,
+            "strength": 1.0
           },
           {
             "lat": 37.8153118,
             "lon": -83.6286328,
-            "strength": 0.9144
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8229635,
+            "lon": -83.6325446,
+            "strength": 0.969
           }
         ],
         "sunset": [
           {
-            "lat": 37.8225684,
+            "lat": 37.8343858,
+            "lon": -83.6417329,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8290521,
+            "lon": -83.6357287,
+            "strength": 1.0
+          },
+          {
+            "lat": 37.8225864,
             "lon": -83.6230379,
             "strength": 1.0
           },
           {
-            "lat": 37.8200179,
-            "lon": -83.6220372,
+            "lat": 37.8200358,
+            "lon": -83.6220145,
             "strength": 1.0
           },
           {
-            "lat": 37.829088,
-            "lon": -83.6357059,
-            "strength": 0.913
+            "lat": 37.8220655,
+            "lon": -83.6342958,
+            "strength": 0.9796
+          },
+          {
+            "lat": 37.8234844,
+            "lon": -83.6326811,
+            "strength": 0.9756
           },
           {
             "lat": 37.8217961,
             "lon": -83.6197857,
-            "strength": 0.8494
+            "strength": 0.9473
+          },
+          {
+            "lat": 37.8153836,
+            "lon": -83.6289057,
+            "strength": 0.8935
+          },
+          {
+            "lat": 37.8072101,
+            "lon": -83.6177388,
+            "strength": 0.8878
+          },
+          {
+            "lat": 37.8169104,
+            "lon": -83.6471003,
+            "strength": 0.8843
           },
           {
             "lat": 37.8230354,
             "lon": -83.6326356,
-            "strength": 0.6547
-          }
-        ]
-      }
-    },
-    "b": {
-      "bounds": [
-        -83.691,
-        37.825,
-        -83.665,
-        37.85
-      ],
-      "grid": [
-        1143,
-        1392
-      ],
-      "name": "Auxier Ridge / Courthouse Rock",
-      "outputs": {
-        "sunrise-sunset-area-b-calibration-crest.png": "a337ff4d6761ee0a7fc311857cb9e3bbe68d8460e6abc5c77b30167a2261675e",
-        "sunrise-sunset-area-b-calibration-open-ground.png": "c8b1fbe3fe34dcfbb4c8ba7acdb832d2746d16d3e2fcf87c09ba7b074e5f86e3",
-        "sunrise-sunset-area-b-calibration-overlook.png": "73cf078eb3a18523bf5aad0fcc2d6bfdc2377cec4c48fc7efa67a1b2244a61da",
-        "sunrise-sunset-area-b-calibration-ridge-skeleton.png": "8942d818724455bb26388af3b9f7058f337aa6ff5492cb39f8ac90b28613dfd0",
-        "sunrise-sunset-area-b-calibration-sunrise-pass.png": "ba073eaf3a77925583dd38136f75e062ba8cbdc47b5286a0975368fee84cd3f8",
-        "sunrise-sunset-area-b-calibration-sunset-pass.png": "7713e4d71cb4879e86631daaa03e92996288831571388142bc3a54d1873fc7e9",
-        "sunrise-sunset-area-b-potential.png": "2adb11f97a17243ed2298dc79fa1f3b9c08603b91400c4a3c576ffd51bff5d60"
-      },
-      "seeds": {
-        "sunrise": [
-          {
-            "lat": 37.84227,
-            "lon": -83.6785915,
-            "strength": 1.0
+            "strength": 0.8791
           },
           {
-            "lat": 37.838013,
-            "lon": -83.684051,
-            "strength": 0.8637
+            "lat": 37.8163356,
+            "lon": -83.6271772,
+            "strength": 0.8469
           },
           {
-            "lat": 37.8359652,
-            "lon": -83.6845515,
-            "strength": 0.7339
-          }
-        ],
-        "sunset": [
-          {
-            "lat": 37.8423598,
-            "lon": -83.6786597,
-            "strength": 1.0
-          },
-          {
-            "lat": 37.8393781,
-            "lon": -83.6767488,
-            "strength": 1.0
-          },
-          {
-            "lat": 37.8383722,
-            "lon": -83.6774085,
-            "strength": 1.0
-          },
-          {
-            "lat": 37.838013,
-            "lon": -83.6771583,
-            "strength": 1.0
-          },
-          {
-            "lat": 37.8366299,
-            "lon": -83.6772038,
-            "strength": 1.0
-          },
-          {
-            "lat": 37.8379052,
-            "lon": -83.684051,
-            "strength": 0.9261
-          },
-          {
-            "lat": 37.8340072,
-            "lon": -83.6857571,
-            "strength": 0.7803
+            "lat": 37.816623,
+            "lon": -83.6266086,
+            "strength": 0.83
           }
         ]
       }
@@ -150,7 +122,10 @@
     "The sampled 1 km horizon and representative seasonal azimuths do not predict an exact date or unobstructed astronomical sunrise.",
     "Cliff access, current vegetation, weather and legal access are not established."
   ],
-  "modelSha256": "d7378f3b3b5f610d6f3f162d9fe463c1c01eea3a74a0e292ec5aaedf4d04d4b0",
+  "modelSha256": "cf1cd6ff70b0fc57d22905a7c0bb4d6ba3ea563339b204d53dd11c90b081ba9f",
+  "pausedAreas": [
+    "Auxier Ridge / Courthouse Rock; v12 assets retained as history, not displayed"
+  ],
   "reviewFirst": "1 \u00b7 LiDAR ridge skeleton",
   "rules": {
     "canopy_gap_radius_m": 12.0,
@@ -162,20 +137,20 @@
     "maximum_fade_m": 70.0,
     "minimum_sector_degrees": 30.0,
     "minimum_seed_strength": 0.6,
-    "minimum_segment_m": 24.0,
+    "minimum_segment_m": 40.0,
     "minimum_view_area_m2": 16.0,
+    "near_view_distance_m": 80.0,
     "observer_height_m": 1.6,
-    "ridge_scale_m": 6.0,
-    "top_neighborhood_m": 24.0,
-    "top_relief_m": 4.0
+    "ridge_scale_m": 2.0,
+    "top_neighborhood_m": 24.0
   },
   "source": {
-    "aerial": "KyFromAbove Phase 3 four-band RGB/NIR orthophotography",
+    "aerial": "KyFromAbove Phase 3 leaf-off four-band RGB/NIR orthophotography",
     "canopy": "KyFromAbove Phase 2 COPC point cloud; US survey feet converted to meters",
     "elevation": "KyFromAbove Phase 2 2-foot Z-meters DEM"
   },
   "status": "staging calibration; Ryan visual approval pending",
   "trailAffectsScores": false,
   "trailOrAerialAffectsGeometry": false,
-  "version": 12
+  "version": 13
 }

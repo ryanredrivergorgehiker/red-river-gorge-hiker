@@ -39,7 +39,7 @@ jobs:
         run: |
           python -c "import numpy, scipy, skimage, rasterio, laspy, pyproj"
           python -m unittest discover -s tests -p test_sun_calibration_model.py -v
-      - name: Reproduce both areas from fingerprinted source data
+      - name: Reproduce Pinch-Em-Tight from fingerprinted source data
         run: |
           python scripts/build-sun-calibration.py --cache .calibration-cache
           python scripts/check-sun-calibration.py --cache .calibration-cache
