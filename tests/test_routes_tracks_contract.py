@@ -436,12 +436,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_optional_local_and_terrain_derived(self):
+    def test_sunrise_sunset_potential_is_optional_local_and_high_ground_filtered(self):
         self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
         self.assertIn('value="68" data-opacity="sunrise-sunset-potential"', MAP)
         self.assertIn('swatch-sun-potential', MAP)
-        self.assertIn('coral shows terrain with stronger sunrise potential', MAP)
-        self.assertIn('indigo shows stronger sunset potential', MAP)
+        self.assertIn('high-ridge or upper-shoulder sunrise potential', MAP)
+        self.assertIn('Mapped water and low valley terrain are suppressed', MAP)
         self.assertIn('not a guarantee of a visible sunrise or sunset', MAP)
         self.assertIn('sunPotential: 250', MAP)
         self.assertIn("data/map/sunrise-sunset-potential.svg", MAP)
@@ -449,43 +449,74 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("opacitySetters.set('sunrise-sunset-potential'", MAP)
         self.assertIn("const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3'])", MAP)
         self.assertIn("shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')", MAP)
-        self.assertIn("SUNRISE_AZIMUTHS = [58, 90, 121]", SUN_GENERATOR)
-        self.assertIn("SUNSET_AZIMUTHS = [239, 270, 302]", SUN_GENERATOR)
-        self.assertIn('directionalOpenness', SUN_GENERATOR)
-        self.assertIn('localProminence', SUN_GENERATOR)
-        self.assertIn("west: -84.02", SUN_GENERATOR)
-        self.assertIn("north: 38.15", SUN_GENERATOR)
-        self.assertIn("method: 'POST'", SUN_GENERATOR)
-        self.assertIn('RSP_BilinearInterpolation', SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['source']['id'], 'usgs-3dep-bare-earth-dem')
+        for contract in (
+            "SUNRISE_AZIMUTHS = [58, 90, 121]",
+            "SUNSET_AZIMUTHS = [239, 270, 302]",
+            "HYDRO_SERVICE = 'https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer'",
+            'FLOWLINE_EXCLUSION_BUFFER_METERS = 300',
+            'localTerrain',
+            'terrain.convexity',
+            'terrain.prominence',
+            'directionalOpenness',
+            'directionalAspectScore',
+            'waterMask[index]',
+            'elevationQ55',
+            'MIN_LOCAL_RELIEF_METERS',
+            'DISPLAY_CANDIDATE_QUANTILE',
+            "fetchHydroLayer(9)",
+            "fetchHydroLayer(8)",
+            "fetchHydroLayer(3)",
+            "fetchHydroLayer(4)",
+            "method: 'POST'",
+            'RSP_BilinearInterpolation',
+        ):
+            self.assertIn(contract, SUN_GENERATOR)
+
+        self.assertEqual(SUN_META['version'], 2)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-high-ground-sun-potential')
+        self.assertEqual(SUN_META['source']['elevation']['id'], 'usgs-3dep-bare-earth-dem')
+        self.assertEqual(SUN_META['source']['hydrography']['id'], 'usgs-nhdplus-hr')
+        self.assertGreater(SUN_META['source']['hydrography']['polygonFeatures'], 0)
+        self.assertGreater(SUN_META['source']['hydrography']['flowlineFeatures'], 0)
         self.assertEqual(SUN_META['bounds'], {
             'west': -84.02,
             'south': 37.52,
             'east': -83.18,
             'north': 38.15,
         })
-        self.assertEqual(SUN_META['grid']['cols'], 181)
-        self.assertEqual(SUN_META['grid']['rows'], 141)
-        self.assertGreater(SUN_META['grid']['returnedSamples'], 24000)
+        self.assertEqual(SUN_META['grid']['cols'], 271)
+        self.assertEqual(SUN_META['grid']['rows'], 211)
+        self.assertGreater(SUN_META['grid']['returnedSamples'], 47000)
         self.assertEqual(SUN_META['seasonalAzimuths']['sunrise'], [58, 90, 121])
         self.assertEqual(SUN_META['seasonalAzimuths']['sunset'], [239, 270, 302])
+        self.assertEqual(SUN_META['thresholds']['waterFlowlineExclusionBufferMeters'], 300)
+        self.assertGreater(SUN_META['coverage']['waterMaskCells'], 0)
+        self.assertGreater(SUN_META['coverage']['ridgeCandidateCells'], 0)
+        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 0.1)
+        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 0.1)
+        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 20)
+        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 20)
         self.assertEqual(SUN_META['display']['sunriseColor'], '#ff6f61')
         self.assertEqual(SUN_META['display']['sunsetColor'], '#4055d8')
         self.assertTrue(SUN_META['display']['lowPotentialTransparent'])
-        self.assertTrue(any('Bare-earth terrain model' in item for item in SUN_META['limitations']))
+        self.assertIn('Sparse ridge and upper-shoulder bands', SUN_META['display']['designIntent'])
+        self.assertTrue(any('mapped water is excluded' in item for item in SUN_META['limitations']))
         self.assertTrue(any('not a guarantee' in item for item in SUN_META['limitations']))
-        self.assertIn('viewBox="0 0 180 140"', SUN_OVERLAY)
+        self.assertIn('viewBox="0 0 270 210"', SUN_OVERLAY)
         self.assertIn('<metadata>', SUN_OVERLAY)
         self.assertIn('#ff6f61', SUN_OVERLAY)
         self.assertIn('#4055d8', SUN_OVERLAY)
-        self.assertGreaterEqual(SUN_OVERLAY.count('<path '), 12)
+        self.assertGreaterEqual(SUN_OVERLAY.count('<path '), 8)
 
         self.assertIn('Sunrise / Sunset potential', PRIVACY)
+        self.assertIn('USGS NHDPlus HR hydrography', PRIVACY)
+        self.assertIn('hard-excludes mapped water', PRIVACY)
         self.assertIn('loads the finished overlay from the RRGH website', PRIVACY)
         self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS', PRIVACY)
-        self.assertIn('generalized, bare-earth terrain model intended as a photography-planning aid', TERMS)
-        self.assertIn('they do not guarantee that the sun will be visible', TERMS)
+        self.assertIn('generalized high-ground terrain and hydrography model intended as a photography-planning aid', TERMS)
+        self.assertIn('excludes mapped water', TERMS)
+        self.assertIn('do not guarantee that the sun will be visible', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
