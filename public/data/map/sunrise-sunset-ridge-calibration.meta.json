@@ -1,67 +1,7 @@
 {
-  "version": 10,
-  "phase": "ridge-skeleton-only",
-  "generatedAtUtc": "2026-09-26T17:04:17Z",
-  "bounds": {
-    "west": -83.6505,
-    "south": 37.806,
-    "east": -83.617,
-    "north": 37.8345
-  },
-  "grid": {
-    "cols": 512,
-    "rows": 529,
-    "approximateCellMeters": [
-      5.75,
-      6.0
-    ]
-  },
-  "source": {
-    "elevation": {
-      "id": "kyfromabove-phase2-2ft-dem-meters",
-      "service": "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer",
-      "preferredSource": "kyfromabove-phase3-2ft-dem",
-      "fallbackSources": [
-        "kyfromabove-phase2-2ft-dem-meters",
-        "usgs-3dep-bare-earth-dem"
-      ],
-      "attemptErrors": [
-        {
-          "id": "kyfromabove-phase3-2ft-dem",
-          "error": "valid DEM coverage only 0.000"
-        }
-      ],
-      "rawRelief": 182.24122619628906,
-      "rawStandardDeviation": 47.404693603515625,
-      "rawMin": 207.42771911621094,
-      "rawMax": 389.6689453125
-    }
-  },
-  "topology": {
-    "method": "watershed basin labels; neighboring label changes form drainage divides, then thinned to a skeleton and pruned without relocating surviving divide pixels",
-    "watershedBasinCount": 39,
-    "minimaSeparationMeters": 70.0,
-    "crestCorridorMeters": 12.0,
-    "calibrationGridMeters": 6.0,
-    "trailOrAerialAffectsSkeleton": false,
-    "ridgeKeep": {
-      "minimumRelativeHeight": 0.3,
-      "minimumBroadTpiMeters": 0.0,
-      "maximumMetersBelowNearbyHigh": 5.0,
-      "nearbyHighRadiusMeters": 18.0
-    }
-  },
-  "coverage": {
-    "rawDividePercent": 1.567,
-    "ridgeSkeletonPercent": 0.823,
-    "crestCorridorPercent": 4.182
-  },
-  "review": {
-    "order": [
-      "1 \u00b7 LiDAR ridge skeleton",
-      "2 \u00b7 Crest corridor (~12 m)"
-    ],
-    "instruction": "Do not tune sunrise/sunset until the thin ridge skeleton visually follows known ridge tops. This ridge-only calibration uses a ~6 m topology grid for fast visual iteration; final sun scoring may return to finer terrain sampling after geometry approval.",
-    "finalCompositeStatus": "v9 composite retained but held; not recalculated in this ridge-only phase"
-  }
+  "activeMetadata": "sunrise-sunset-potential.meta.json",
+  "method": "transverse elevation maxima, thin skeleton and separate standing corridor",
+  "supersededVersion": 10,
+  "trailOrAerialAffectsGeometry": false,
+  "version": 11
 }

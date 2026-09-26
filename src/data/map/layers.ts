@@ -226,14 +226,14 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'sunrise-sunset-potential',
-    label: 'Sunrise / Sunset prior composite — hold',
+    label: 'Sunrise / Sunset potential',
     kind: 'derived',
     enabled: true,
     browserLoaded: true,
     serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer',
-    attribution: 'Red River Gorge Hiker: prior v9 composite retained for reference; v10 ridge diagnostics derived from KyFromAbove Phase 2 LiDAR DEM',
-    termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor. The current v10 ridge-only diagnostic uses a roughly 6 m topology grid from the KyFromAbove Phase 2 Z-meters DEM because the Phase 3 export returned no valid coverage for this pilot request. Trail, aerial, sunrise, and sunset inputs do not affect that ridge skeleton. Visitors load only finished RRGH-hosted diagnostic images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
+    attribution: 'Red River Gorge Hiker calibration derived from KyFromAbove Phase 2 elevation and point clouds; Phase 3 orthophotography',
+    termsUrl: 'https://kyfromabove.ky.gov/',
+    privacyNote: 'The v11 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time. Ridge geometry is determined before canopy and separate directional evaluation; trails do not affect geometry or scores. Visitors load only finished RRGH-hosted images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
     opacity: 0.68
   },
   {

@@ -1,0 +1,510 @@
+{
+  "a": {
+    "arrays": {
+      "canopyHeight": {
+        "dtype": "float32",
+        "sha256": "bafeff8d341cba46d87f3e3f6a097b05013835a365ed00005ed0439ad8e4fa3a",
+        "shape": [
+          2687,
+          2573
+        ]
+      },
+      "dem": {
+        "dtype": "float32",
+        "sha256": "26eb2dd2f56fe2731f82df99392098d6f79301dc9b7894b71a65b106ef7552cc",
+        "shape": [
+          2687,
+          2573
+        ]
+      },
+      "elevatedCount": {
+        "dtype": "uint32",
+        "sha256": "48feb6cb08ad576d85d8222baa3c0dd6293db0bf780832ddaf1f6c70a6a18527",
+        "shape": [
+          2687,
+          2573
+        ]
+      },
+      "ortho": {
+        "dtype": "uint8",
+        "sha256": "5faa6118e3dafe127179aba658b1c68d4b4af3dfee02aa395011ef81572e46e1",
+        "shape": [
+          4,
+          2687,
+          2573
+        ]
+      },
+      "returnCount": {
+        "dtype": "uint32",
+        "sha256": "859d6a40da704d0b6259171f2b24c0ea90bde5ee41d0b03f388192a1e3f98ae5",
+        "shape": [
+          2687,
+          2573
+        ]
+      }
+    },
+    "exports": {
+      "dem-phase2": {
+        "params": {
+          "adjustAspectRatio": "false",
+          "bbox": "-9313323.578345906,4550663.7389075495,-9306809.34791798,4557465.036251732",
+          "bboxSR": "3857",
+          "f": "json",
+          "format": "tiff",
+          "imageSR": "3857",
+          "interpolation": "RSP_BilinearInterpolation",
+          "pixelType": "F32",
+          "returnSquarePixels": "false",
+          "size": "2573,2687"
+        },
+        "service": "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
+      },
+      "ortho-phase3": {
+        "params": {
+          "adjustAspectRatio": "false",
+          "bandIds": "0,1,2,3",
+          "bbox": "-9313323.578345906,4550663.7389075495,-9306809.34791798,4557465.036251732",
+          "bboxSR": "3857",
+          "f": "json",
+          "format": "tiff",
+          "imageSR": "3857",
+          "interpolation": "RSP_BilinearInterpolation",
+          "pixelType": "U8",
+          "returnSquarePixels": "false",
+          "size": "2573,2687"
+        },
+        "service": "https://kyraster.ky.gov/arcgis/rest/services/ImageServices/Ky_KYAPED_Phase3_3IN_WGS84WM/ImageServer"
+      }
+    },
+    "gridTransform": [
+      2.5317646435780823,
+      0.0,
+      -9313323.578345906,
+      0.0,
+      -2.531186209223155,
+      4557465.036251732
+    ],
+    "groundResidualMetersP10P50P90": {
+      "N105E349_LAS_Phase2.copc": [
+        -1.0204,
+        -0.1014,
+        0.8438
+      ],
+      "N105E350_LAS_Phase2.copc": [
+        -0.7874,
+        0.0598,
+        0.8791
+      ],
+      "N105E351_LAS_Phase2.copc": [
+        -0.9294,
+        -0.0137,
+        0.7883
+      ],
+      "N105E352_LAS_Phase2.copc": [
+        -0.6932,
+        0.1959,
+        0.9202
+      ],
+      "N105E353_LAS_Phase2.copc": [
+        -1.2018,
+        -0.4155,
+        0.4659
+      ],
+      "N106E349_LAS_Phase2.copc": [
+        -1.016,
+        -0.1249,
+        0.7101
+      ],
+      "N106E350_LAS_Phase2.copc": [
+        -0.8143,
+        -0.0105,
+        0.8235
+      ],
+      "N106E351_LAS_Phase2.copc": [
+        -0.86,
+        0.046,
+        0.9178
+      ],
+      "N106E352_LAS_Phase2.copc": [
+        -0.9299,
+        -0.0778,
+        0.7753
+      ],
+      "N106E353_LAS_Phase2.copc": [
+        -0.977,
+        -0.1586,
+        0.789
+      ],
+      "N107E349_LAS_Phase2.copc": [
+        -1.0021,
+        -0.1637,
+        0.7302
+      ],
+      "N107E350_LAS_Phase2.copc": [
+        -1.0316,
+        -0.0101,
+        0.9543
+      ],
+      "N107E351_LAS_Phase2.copc": [
+        -0.9031,
+        0.012,
+        0.8344
+      ],
+      "N107E352_LAS_Phase2.copc": [
+        -0.9353,
+        0.0215,
+        0.8919
+      ],
+      "N107E353_LAS_Phase2.copc": [
+        -0.9792,
+        0.048,
+        0.7329
+      ],
+      "N108E349_LAS_Phase2.copc": [
+        -0.8324,
+        0.0162,
+        0.8791
+      ],
+      "N108E350_LAS_Phase2.copc": [
+        -0.8105,
+        0.0469,
+        0.8215
+      ],
+      "N108E351_LAS_Phase2.copc": [
+        -0.7775,
+        0.1253,
+        0.8326
+      ],
+      "N108E352_LAS_Phase2.copc": [
+        -0.9696,
+        -0.0457,
+        0.8413
+      ],
+      "N108E353_LAS_Phase2.copc": [
+        -0.6018,
+        0.094,
+        0.6504
+      ]
+    },
+    "inputBufferMeters": 1100.0,
+    "pointCloudResolutionFeet": 13.12336,
+    "pointCloudTiles": [
+      {
+        "id": "N105E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E351_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E351_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E352_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E352_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E353_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E353_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E351_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E351_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E352_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E352_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E353_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E353_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E351_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E351_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E352_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E352_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E353_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E353_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N108E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N108E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N108E351_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E351_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N108E352_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E352_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N108E353_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E353_LAS_Phase2.copc.laz"
+      }
+    ]
+  },
+  "b": {
+    "arrays": {
+      "canopyHeight": {
+        "dtype": "float32",
+        "sha256": "c25e8d2c1869c21e4688b8d3eb328caa372352bbd6613e45d8b8de278c13de79",
+        "shape": [
+          2492,
+          2243
+        ]
+      },
+      "dem": {
+        "dtype": "float32",
+        "sha256": "46f433d03ab6eeb5e1fc790aa93392f0b005282c401f7cda46993150a86b33b0",
+        "shape": [
+          2492,
+          2243
+        ]
+      },
+      "elevatedCount": {
+        "dtype": "uint32",
+        "sha256": "8ff4c19868543efcc65fcb825a8f133037d53a166e18330eeee7534c704016db",
+        "shape": [
+          2492,
+          2243
+        ]
+      },
+      "ortho": {
+        "dtype": "uint8",
+        "sha256": "91049250053a0c5f3de572c5fddfdd2f4854e866ab06c2536a4645acdce1be24",
+        "shape": [
+          4,
+          2492,
+          2243
+        ]
+      },
+      "returnCount": {
+        "dtype": "uint32",
+        "sha256": "2ff63305a373febf78b6a1fbbb108275e244b26b463347086dd9991aca6dc4d6",
+        "shape": [
+          2492,
+          2243
+        ]
+      }
+    },
+    "exports": {
+      "dem-phase2": {
+        "params": {
+          "adjustAspectRatio": "false",
+          "bbox": "-9317832.343297943,4553340.754251093,-9312152.35790115,4559650.300304537",
+          "bboxSR": "3857",
+          "f": "json",
+          "format": "tiff",
+          "imageSR": "3857",
+          "interpolation": "RSP_BilinearInterpolation",
+          "pixelType": "F32",
+          "returnSquarePixels": "false",
+          "size": "2243,2492"
+        },
+        "service": "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
+      },
+      "ortho-phase3": {
+        "params": {
+          "adjustAspectRatio": "false",
+          "bandIds": "0,1,2,3",
+          "bbox": "-9317832.343297943,4553340.754251093,-9312152.35790115,4559650.300304537",
+          "bboxSR": "3857",
+          "f": "json",
+          "format": "tiff",
+          "imageSR": "3857",
+          "interpolation": "RSP_BilinearInterpolation",
+          "pixelType": "U8",
+          "returnSquarePixels": "false",
+          "size": "2243,2492"
+        },
+        "service": "https://kyraster.ky.gov/arcgis/rest/services/ImageServices/Ky_KYAPED_Phase3_3IN_WGS84WM/ImageServer"
+      }
+    },
+    "gridTransform": [
+      2.5323162714191314,
+      0.0,
+      -9317832.343297943,
+      0.0,
+      -2.5319205671926306,
+      4559650.300304537
+    ],
+    "groundResidualMetersP10P50P90": {
+      "N104E347_LAS_Phase2.copc": [
+        -0.6534,
+        0.0125,
+        0.6991
+      ],
+      "N104E348_LAS_Phase2.copc": [
+        -0.8319,
+        0.1288,
+        0.9214
+      ],
+      "N104E349_LAS_Phase2.copc": [
+        -0.8841,
+        -0.0669,
+        0.7117
+      ],
+      "N104E350_LAS_Phase2.copc": [
+        -0.6136,
+        0.2101,
+        0.9359
+      ],
+      "N105E347_LAS_Phase2.copc": [
+        -0.6908,
+        0.0339,
+        0.8419
+      ],
+      "N105E348_LAS_Phase2.copc": [
+        -0.7161,
+        -0.0056,
+        0.7515
+      ],
+      "N105E349_LAS_Phase2.copc": [
+        -0.8899,
+        0.0185,
+        0.968
+      ],
+      "N105E350_LAS_Phase2.copc": [
+        -0.9928,
+        -0.1829,
+        0.8083
+      ],
+      "N106E347_LAS_Phase2.copc": [
+        -0.8676,
+        -0.0916,
+        0.6631
+      ],
+      "N106E348_LAS_Phase2.copc": [
+        -0.9733,
+        -0.0702,
+        0.7747
+      ],
+      "N106E349_LAS_Phase2.copc": [
+        -0.8683,
+        0.0834,
+        0.8566
+      ],
+      "N106E350_LAS_Phase2.copc": [
+        -0.8262,
+        0.0246,
+        0.8452
+      ],
+      "N107E347_LAS_Phase2.copc": [
+        -0.8549,
+        0.0438,
+        0.8384
+      ],
+      "N107E348_LAS_Phase2.copc": [
+        -0.9569,
+        -0.0148,
+        0.8622
+      ],
+      "N107E349_LAS_Phase2.copc": [
+        -1.0249,
+        0.0146,
+        0.9597
+      ],
+      "N107E350_LAS_Phase2.copc": [
+        -1.1864,
+        -0.0966,
+        1.0047
+      ]
+    },
+    "inputBufferMeters": 1100.0,
+    "pointCloudResolutionFeet": 13.12336,
+    "pointCloudTiles": [
+      {
+        "id": "N104E347_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N104E347_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N104E348_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N104E348_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N104E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N104E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N104E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N104E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E347_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E347_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E348_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E348_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N105E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N105E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E347_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E347_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E348_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E348_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N106E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N106E350_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E347_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E347_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E348_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E348_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E349_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E349_LAS_Phase2.copc.laz"
+      },
+      {
+        "id": "N107E350_LAS_Phase2.copc",
+        "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N107E350_LAS_Phase2.copc.laz"
+      }
+    ]
+  }
+}

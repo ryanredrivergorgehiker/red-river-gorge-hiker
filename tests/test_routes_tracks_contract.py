@@ -126,7 +126,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
-        self.assertIn('The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor', sun_source)
+        self.assertIn('The v11 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time', sun_source)
         self.assertIn('send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
@@ -440,59 +440,35 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_ridge_skeleton_is_isolated_calibration_phase(self):
-        self.assertIn('Sunrise / Sunset prior composite — hold', MAP)
-        self.assertIn('Ridge calibration diagnostics', MAP)
+    def test_sun_calibration_assets_are_local_off_by_default_and_fingerprinted(self):
+        diagnostics = ['sunrise-sunset-potential', 'sun-cal-ridge-skeleton', 'sun-cal-crest',
+                       'sun-cal-overlook', 'sun-cal-open-ground', 'sun-cal-sunrise-pass', 'sun-cal-sunset-pass']
+        for layer_id in diagnostics:
+            self.assertIn(f'data-map-layer="{layer_id}" />', MAP)
+            self.assertIn(f'data-opacity="{layer_id}"', MAP)
         self.assertIn('1 · LiDAR ridge skeleton', MAP)
-        self.assertIn('2 · Crest corridor (~12 m)', MAP)
-        self.assertNotIn('3 · Overlook / outcrop candidates', MAP)
-        self.assertIn('prior v9 result and is deliberately on hold', MAP)
-
-        for contract in (
-            'VERSION = 10',
-            'watershed(',
-            'watershed_line=False',
-            'raw_divide = label_min != label_max',
-            'PIXEL_METERS = 6.0',
-            'skeletonize',
-            'remove_small_objects',
-            'CREST_CORRIDOR_METERS = 12.0',
-            'meters_below_near_high <= 5.0',
-            'relative_height >= 0.30',
-            'broad_tpi >= 0.0',
-            'trailOrAerialAffectsSkeleton": False',
-            'finalCompositeStatus": "v9 composite retained but held; not recalculated in this ridge-only phase"',
-        ):
-            self.assertIn(contract, RIDGE_GENERATOR)
-
-        self.assertIn('scripts/generate-ridge-skeleton-calibration.py', GENERATOR_WORKFLOW)
-        self.assertNotIn('python scripts/generate-sunrise-sunset-viewshed.py', GENERATOR_WORKFLOW)
-
-        self.assertEqual(RIDGE_META['version'], 10)
-        self.assertEqual(RIDGE_META['phase'], 'ridge-skeleton-only')
-        self.assertEqual(RIDGE_META['topology']['crestCorridorMeters'], 12.0)
-        self.assertEqual(RIDGE_META['topology']['calibrationGridMeters'], 6.0)
-        self.assertFalse(RIDGE_META['topology']['trailOrAerialAffectsSkeleton'])
-        self.assertGreater(RIDGE_META['topology']['watershedBasinCount'], 20)
-        self.assertLess(RIDGE_META['topology']['watershedBasinCount'], 80)
-        self.assertEqual(RIDGE_META['source']['elevation']['id'], 'kyfromabove-phase2-2ft-dem-meters')
-        self.assertGreaterEqual(RIDGE_META['grid']['approximateCellMeters'][0], 5.5)
-        self.assertLessEqual(RIDGE_META['grid']['approximateCellMeters'][1], 6.1)
-        self.assertGreater(RIDGE_META['coverage']['ridgeSkeletonPercent'], 0.5)
-        self.assertLess(RIDGE_META['coverage']['ridgeSkeletonPercent'], 1.5)
-        self.assertGreater(RIDGE_META['coverage']['crestCorridorPercent'], 3)
-        self.assertLess(RIDGE_META['coverage']['crestCorridorPercent'], 6)
-        self.assertGreater(RIDGE_META['coverage']['crestCorridorPercent'], RIDGE_META['coverage']['ridgeSkeletonPercent'])
-        self.assertEqual(RIDGE_META['review']['order'][0], '1 · LiDAR ridge skeleton')
-        self.assertIn('Do not tune sunrise/sunset until', RIDGE_META['review']['instruction'])
-
-        skeleton = ROOT / 'public/data/map/sunrise-sunset-calibration-ridge-skeleton.png'
-        corridor = ROOT / 'public/data/map/sunrise-sunset-calibration-crest.png'
-        self.assertEqual(skeleton.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
-        self.assertEqual(corridor.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
-
-        self.assertIn('ridge-skeleton-only calibration phase', PRIVACY)
-        self.assertIn('earlier v9 red/blue composite is retained only as a reference', TERMS)
+        self.assertIn('3 · Overlook / outcrop candidates', MAP)
+        self.assertIn('7 · Sunrise / Sunset composite', MAP)
+        self.assertEqual(SUN_META['version'], 11)
+        self.assertEqual(set(SUN_META['areas']), {'a', 'b'})
+        self.assertFalse(SUN_META['trailOrAerialAffectsGeometry'])
+        self.assertFalse(SUN_META['trailAffectsScores'])
+        self.assertEqual(SUN_META['rules']['corridor_radius_m'], 6)
+        self.assertEqual(SUN_META['rules']['maximum_fade_m'], 70)
+        self.assertEqual(SUN_META['reviewFirst'], '1 · LiDAR ridge skeleton')
+        self.assertEqual(SUN_META['inputManifestSha256'], sha256(ROOT / 'scripts/data/sun-calibration-inputs.json'))
+        self.assertEqual(SUN_META['modelSha256'], sha256(ROOT / 'scripts/sun_calibration.py'))
+        for area in SUN_META['areas'].values():
+            self.assertEqual(len(area['outputs']), 7)
+            for filename, expected_hash in area['outputs'].items():
+                image = ROOT / 'public/data/map' / filename
+                self.assertEqual(image.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+                self.assertEqual(sha256(image), expected_hash)
+        self.assertIn('git diff --exit-code', GENERATOR_WORKFLOW)
+        self.assertIn('contents: read', GENERATOR_WORKFLOW)
+        self.assertNotIn('git push', GENERATOR_WORKFLOW)
+        self.assertIn('Phase 2 LiDAR point clouds', PRIVACY)
+        self.assertIn('Both areas use the same rules', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
