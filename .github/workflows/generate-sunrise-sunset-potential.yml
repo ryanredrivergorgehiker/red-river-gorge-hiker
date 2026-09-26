@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: sunrise-sunset-potential-staging
+  group: ridge-skeleton-calibration-v10-fast
   cancel-in-progress: true
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install photographic viewshed dependencies
-        run: python -m pip install --disable-pip-version-check numpy scipy scikit-image rasterio pillow requests shapely
+        run: python -m pip install --disable-pip-version-check numpy scipy scikit-image rasterio pillow requests
 
       - name: Generate Pinch-Em-Tight ridge skeleton calibration
         run: python scripts/generate-ridge-skeleton-calibration.py
