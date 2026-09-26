@@ -127,7 +127,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
         self.assertIn('The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor', sun_source)
-        self.assertIn('send no coordinates or map requests to USGS, USDA, or Overpass', sun_source)
+        self.assertIn('send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
         self.assertIn('enabled: false', parcel)
