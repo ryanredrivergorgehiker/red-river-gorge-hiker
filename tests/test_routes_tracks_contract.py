@@ -448,10 +448,10 @@ class RoutesTracksContractTests(unittest.TestCase):
 
         for contract in (
             'VERSION = 5',
-            'DISPLAY_CANDIDATE_QUANTILE = 0.45',
-            'RIDGE_CORRIDOR_MIN = 0.34',
-            'DIRECTIONAL_VIEW_MIN = 0.40',
-            'DUAL_VIEW_MIN = 0.68',
+            'DISPLAY_CANDIDATE_QUANTILE = 0.65',
+            'RIDGE_CORRIDOR_MIN = 0.38',
+            'DIRECTIONAL_VIEW_MIN = 0.46',
+            'DUAL_VIEW_MIN = 0.78',
             'fine_tpi',
             'broad_tpi',
             'ridge_corridor',
@@ -479,22 +479,26 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertGreater(SUN_META['grid']['rows'], 2000)
         self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 30)
         self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 30)
-        self.assertEqual(SUN_META['thresholds']['displayCandidateQuantile'], 0.45)
-        self.assertEqual(SUN_META['thresholds']['ridgeCorridorMin'], 0.34)
-        self.assertEqual(SUN_META['thresholds']['directionalViewMin'], 0.4)
-        self.assertEqual(SUN_META['thresholds']['dualViewMin'], 0.68)
-        self.assertGreater(SUN_META['coverage']['ridgeCorridorPercent'], 5)
+        self.assertEqual(SUN_META['thresholds']['displayCandidateQuantile'], 0.65)
+        self.assertEqual(SUN_META['thresholds']['ridgeCorridorMin'], 0.38)
+        self.assertEqual(SUN_META['thresholds']['directionalViewMin'], 0.46)
+        self.assertEqual(SUN_META['thresholds']['dualViewMin'], 0.78)
+        self.assertGreater(SUN_META['coverage']['ridgeCorridorPercent'], 35)
         self.assertLess(SUN_META['coverage']['ridgeCorridorPercent'], 45)
         self.assertGreater(SUN_META['coverage']['valleyZonePercent'], 1)
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 3)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 3)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 18)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 18)
+        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 10)
+        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 10)
+        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 16)
+        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 16)
+        self.assertGreater(SUN_META['coverage']['sunriseStrongPercent'], 3)
+        self.assertLess(SUN_META['coverage']['sunriseStrongPercent'], 6)
+        self.assertGreater(SUN_META['coverage']['sunsetStrongPercent'], 3)
+        self.assertLess(SUN_META['coverage']['sunsetStrongPercent'], 6)
         self.assertGreater(SUN_META['coverage']['denseCanopyPercent'], 20)
         self.assertLess(SUN_META['coverage']['denseCanopyPercent'], 45)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 8)
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 4)
         self.assertIn('fading along connected high ground and stopping before valley floors', SUN_META['display']['designIntent'])
         self.assertTrue(any('tree-by-tree canopy-height model' in item for item in SUN_META['limitations']))
         self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
