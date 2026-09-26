@@ -17,6 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Retry marker: topological ridge v10 after transient runner shutdown.
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
