@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ridge-skeleton-calibration-v10-fast
+  group: ridge-skeleton-v10-label-boundary
   cancel-in-progress: true
 
 jobs:
