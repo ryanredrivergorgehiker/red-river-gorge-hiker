@@ -1,8 +1,8 @@
 {
-  "version": 7,
-  "generatedAtUtc": "2026-09-26T12:51:26Z",
+  "version": 8,
+  "generatedAtUtc": "2026-09-26T13:45:53Z",
   "source": {
-    "id": "rrgh-pinch-em-tight-calibration-v7",
+    "id": "rrgh-pinch-em-tight-crest-first-v8",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
@@ -26,6 +26,14 @@
         "ndviP95": 0.4286
       }
     },
+    "trailSupport": {
+      "id": "openstreetmap-trails-pilot-support",
+      "attribution": "\u00a9 OpenStreetMap contributors",
+      "via": "Overpass API",
+      "endpointUsed": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "lineFeatures": 30,
+      "role": "supporting evidence only; trail proximity cannot create a crest candidate"
+    },
     "waterMask": {
       "id": "openstreetmap-water",
       "attribution": "\u00a9 OpenStreetMap contributors",
@@ -33,10 +41,10 @@
       "endpointsUsed": [
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.private.coffee/api/interpreter"
+        "https://overpass.maprva.org/api/interpreter"
       ],
-      "polygonFeatures": 1,
-      "flowlineFeatures": 23
+      "polygonFeatures": 0,
+      "flowlineFeatures": 15
     }
   },
   "bounds": {
@@ -54,7 +62,7 @@
     ],
     "output": "PNG RGBA"
   },
-  "method": "Pinch-Em-Tight calibration pilot for a cliff/overlook directional photographic viewshed. Two-meter analysis first requires explicit crest terrain before evaluating compact overlook/nose support. then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
+  "method": "Pinch-Em-Tight crest-first calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any sunrise/sunset direction is considered. then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
       58.0,
@@ -75,41 +83,81 @@
     "nearDropMin": 0.42,
     "directionalViewMin": 0.5,
     "dualViewMin": 0.82,
-    "sunriseDisplayScore": 0.4819,
-    "sunriseStrongScore": 0.9478,
-    "sunsetDisplayScore": 0.6687,
-    "sunsetStrongScore": 0.9674
+    "sunriseDisplayScore": 0.3014,
+    "sunriseStrongScore": 0.8877,
+    "sunsetDisplayScore": 0.3655,
+    "sunsetStrongScore": 0.9129
   },
   "coverage": {
-    "waterMaskPercent": 0.72,
-    "sunriseDisplayPercent": 6.5,
-    "sunsetDisplayPercent": 6.3,
-    "sunriseStrongPercent": 2.17,
-    "sunsetStrongPercent": 2.1,
+    "waterMaskPercent": 0.45,
+    "sunriseDisplayPercent": 4.92,
+    "sunsetDisplayPercent": 4.7,
+    "sunriseStrongPercent": 1.64,
+    "sunsetStrongPercent": 1.57,
     "denseCanopyPercent": 25.93,
     "highRidgeCorePercent": 34.26,
-    "ridgeCorridorPercent": 56.46,
-    "overlookSupportPercent": 39.21,
-    "crestMaskPercent": 34.63,
-    "sunriseSeedPercent": 9.88,
-    "sunsetSeedPercent": 10.03,
-    "valleyZonePercent": 45.33,
+    "ridgeCorridorPercent": 20.16,
+    "overlookSupportPercent": 20.04,
+    "crestMaskPercent": 20.16,
+    "bilateralRidgeCorePercent": 18.23,
+    "trailSupportPercent": 13.76,
+    "openGroundPercent": 30.6,
+    "sunriseSeedPercent": 6.26,
+    "sunsetSeedPercent": 6.39,
+    "valleyZonePercent": 48.92,
     "sunriseValleyLeakPercent": 0.0,
     "sunsetValleyLeakPercent": 0.0,
-    "dualDisplayPercent": 1.1
+    "dualDisplayPercent": 1.12
   },
+  "diagnostics": [
+    {
+      "id": "crest",
+      "file": "sunrise-sunset-calibration-crest.png",
+      "meaning": "LiDAR bilateral-relief crest mask"
+    },
+    {
+      "id": "overlook",
+      "file": "sunrise-sunset-calibration-overlook.png",
+      "meaning": "crest-qualified overlook/outcrop support"
+    },
+    {
+      "id": "open-ground",
+      "file": "sunrise-sunset-calibration-open-ground.png",
+      "meaning": "NAIP/local-site open-ground confidence"
+    },
+    {
+      "id": "sunrise-pass",
+      "file": "sunrise-sunset-calibration-sunrise-pass.png",
+      "meaning": "crest-qualified sunrise directional pass"
+    },
+    {
+      "id": "sunset-pass",
+      "file": "sunrise-sunset-calibration-sunset-pass.png",
+      "meaning": "crest-qualified sunset directional pass"
+    }
+  ],
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
     "maximumOpacity": 0.86,
-    "designIntent": "Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain, strongest at directional cliff/overlook breaks with a short 20\u2013100 m fade back along the crest and zero intended valley fill."
+    "designIntent": "Calibration pilot: LiDAR crest detection comes first; final sunrise/sunset lobes may exist only on the detected crest/ridge-nose mask, with aerial open-ground and trail proximity used as supporting evidence and directional sun tests applied last."
   },
   "calibrationArea": {
     "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
-    "status": "staging calibration only",
-    "expandOnlyAfterVisualApproval": true
+    "status": "staging crest-first calibration only",
+    "expandOnlyAfterVisualApproval": true,
+    "reviewOrder": [
+      "LiDAR crest mask",
+      "Overlook/outcrop candidates",
+      "Aerial open-ground confidence",
+      "Sunrise directional pass",
+      "Sunset directional pass",
+      "Final sunrise/sunset composite"
+    ]
   },
   "calibrationIntent": [
+    "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots.",
+    "Only after ridge placement is correct should aerial openness, trail support, and directional sunrise/sunset scoring affect the final result.",
     "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
     "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",
     "Keep gradients short and on crest support rather than allowing radial bleed into adjacent valleys.",
