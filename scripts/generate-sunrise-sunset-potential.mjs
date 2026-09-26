@@ -97,51 +97,90 @@ async function fetchElevationEnvelopeSamples(bounds) {
 }
 
 async function fetchHydroLayer(layerId) {
-  const features = [];
+  const isFlowline = layerId === 3 || layerId === 4;
+  const tilesAcross = isFlowline ? 4 : 2;
+  const where = layerId === 9 ? '1=1' : 'FTYPE=460';
   const pageSize = 2000;
+  const queryTiles = [];
 
-  for (let offset = 0; ; offset += pageSize) {
-    const url = new URL(`${HYDRO_SERVICE}/${layerId}/query`);
-    url.searchParams.set('f', 'geojson');
-    url.searchParams.set('where', '1=1');
-    url.searchParams.set('geometry', JSON.stringify({
-      xmin: BOUNDS.west,
-      ymin: BOUNDS.south,
-      xmax: BOUNDS.east,
-      ymax: BOUNDS.north,
-      spatialReference: { wkid: 4326 }
-    }));
-    url.searchParams.set('geometryType', 'esriGeometryEnvelope');
-    url.searchParams.set('inSR', '4326');
-    url.searchParams.set('outSR', '4326');
-    url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
-    url.searchParams.set('outFields', 'OBJECTID,FTYPE,FCODE,GNIS_NAME');
-    url.searchParams.set('returnGeometry', 'true');
-    url.searchParams.set('resultOffset', String(offset));
-    url.searchParams.set('resultRecordCount', String(pageSize));
-    url.searchParams.set('orderByFields', 'OBJECTID ASC');
-
-    let payload = null;
-    let lastError;
-    for (let attempt = 1; attempt <= 4; attempt += 1) {
-      try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(45000) });
-        if (!response.ok) throw new Error(`USGS NHDPlus HR layer ${layerId} HTTP ${response.status}`);
-        payload = await response.json();
-        if (payload.error) throw new Error(`USGS NHDPlus HR layer ${layerId} error: ${JSON.stringify(payload.error)}`);
-        break;
-      } catch (error) {
-        lastError = error;
-        if (attempt < 4) await sleep(1000 * attempt);
-      }
+  for (let tileY = 0; tileY < tilesAcross; tileY += 1) {
+    for (let tileX = 0; tileX < tilesAcross; tileX += 1) {
+      queryTiles.push({
+        west: BOUNDS.west + (tileX / tilesAcross) * (BOUNDS.east - BOUNDS.west),
+        east: BOUNDS.west + ((tileX + 1) / tilesAcross) * (BOUNDS.east - BOUNDS.west),
+        north: BOUNDS.north - (tileY / tilesAcross) * (BOUNDS.north - BOUNDS.south),
+        south: BOUNDS.north - ((tileY + 1) / tilesAcross) * (BOUNDS.north - BOUNDS.south)
+      });
     }
-    if (!payload) throw lastError;
-    const pageFeatures = Array.isArray(payload.features) ? payload.features : [];
-    features.push(...pageFeatures);
-    if (pageFeatures.length < pageSize) break;
   }
 
-  return features;
+  async function fetchTile(bounds) {
+    const tileFeatures = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const url = new URL(`${HYDRO_SERVICE}/${layerId}/query`);
+      url.searchParams.set('f', 'json');
+      url.searchParams.set('where', where);
+      url.searchParams.set('geometry', JSON.stringify({
+        xmin: bounds.west,
+        ymin: bounds.south,
+        xmax: bounds.east,
+        ymax: bounds.north,
+        spatialReference: { wkid: 4326 }
+      }));
+      url.searchParams.set('geometryType', 'esriGeometryEnvelope');
+      url.searchParams.set('inSR', '4326');
+      url.searchParams.set('outSR', '4326');
+      url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
+      url.searchParams.set('outFields', 'OBJECTID,FTYPE,FCODE,GNIS_NAME');
+      url.searchParams.set('returnGeometry', 'true');
+      url.searchParams.set('returnZ', 'false');
+      url.searchParams.set('returnM', 'false');
+      url.searchParams.set('geometryPrecision', '6');
+      url.searchParams.set('maxAllowableOffset', '0.00005');
+      url.searchParams.set('resultOffset', String(offset));
+      url.searchParams.set('resultRecordCount', String(pageSize));
+      url.searchParams.set('orderByFields', 'OBJECTID ASC');
+
+      let payload = null;
+      let lastError;
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          const response = await fetch(url, { signal: AbortSignal.timeout(25000) });
+          if (!response.ok) throw new Error(`USGS NHDPlus HR layer ${layerId} HTTP ${response.status}`);
+          payload = await response.json();
+          if (payload.error) throw new Error(`USGS NHDPlus HR layer ${layerId} error: ${JSON.stringify(payload.error)}`);
+          break;
+        } catch (error) {
+          lastError = error;
+          if (attempt < 3) await sleep(800 * attempt);
+        }
+      }
+      if (!payload) throw lastError;
+      const pageFeatures = Array.isArray(payload.features) ? payload.features : [];
+      tileFeatures.push(...pageFeatures);
+      if (pageFeatures.length < pageSize) break;
+    }
+    return tileFeatures;
+  }
+
+  const collected = [];
+  const hydroConcurrency = 6;
+  for (let offset = 0; offset < queryTiles.length; offset += hydroConcurrency) {
+    const batch = queryTiles.slice(offset, offset + hydroConcurrency);
+    const results = await Promise.all(batch.map((bounds) => fetchTile(bounds)));
+    for (const features of results) collected.push(...features);
+    console.log(`USGS NHDPlus HR layer ${layerId}: ${Math.min(offset + batch.length, queryTiles.length)}/${queryTiles.length} tiles queried`);
+  }
+
+  const deduped = new Map();
+  let anonymousIndex = 0;
+  for (const feature of collected) {
+    const objectId = feature?.attributes?.OBJECTID;
+    const key = objectId === undefined || objectId === null ? `anonymous-${anonymousIndex++}` : String(objectId);
+    if (!deduped.has(key)) deduped.set(key, feature);
+  }
+  console.log(`USGS NHDPlus HR layer ${layerId}: ${deduped.size} unique features retained`);
+  return [...deduped.values()];
 }
 
 function sampleMeters(sample) {
@@ -311,35 +350,23 @@ function markLineString(coordinates) {
   }
 }
 
-const hydroLayers = await Promise.all([
-  fetchHydroLayer(9), // NHDWaterbody polygons
-  fetchHydroLayer(8), // NHDArea polygons, including stream/river areas
-  fetchHydroLayer(3), // NetworkNHDFlowline
-  fetchHydroLayer(4)  // NonNetworkNHDFlowline
-]);
+const waterbodyFeatures = await fetchHydroLayer(9); // NHDWaterbody polygons
+const streamAreaFeatures = await fetchHydroLayer(8); // NHDArea StreamRiver polygons
+const networkFlowlineFeatures = await fetchHydroLayer(3); // Network StreamRiver flowlines
+const nonNetworkFlowlineFeatures = await fetchHydroLayer(4); // NonNetwork StreamRiver flowlines
 
-for (const feature of [...hydroLayers[0], ...hydroLayers[1]]) {
-  const geometry = feature.geometry;
-  if (!geometry) continue;
-  if (geometry.type === 'Polygon') {
-    markPolygon(geometry.coordinates);
-    hydroPolygonFeatures += 1;
-  } else if (geometry.type === 'MultiPolygon') {
-    for (const polygon of geometry.coordinates) markPolygon(polygon);
-    hydroPolygonFeatures += 1;
-  }
+for (const feature of [...waterbodyFeatures, ...streamAreaFeatures]) {
+  const rings = feature?.geometry?.rings;
+  if (!Array.isArray(rings) || !rings.length) continue;
+  markPolygon(rings);
+  hydroPolygonFeatures += 1;
 }
 
-for (const feature of [...hydroLayers[2], ...hydroLayers[3]]) {
-  const geometry = feature.geometry;
-  if (!geometry) continue;
-  if (geometry.type === 'LineString') {
-    markLineString(geometry.coordinates);
-    hydroFlowlineFeatures += 1;
-  } else if (geometry.type === 'MultiLineString') {
-    for (const line of geometry.coordinates) markLineString(line);
-    hydroFlowlineFeatures += 1;
-  }
+for (const feature of [...networkFlowlineFeatures, ...nonNetworkFlowlineFeatures]) {
+  const paths = feature?.geometry?.paths;
+  if (!Array.isArray(paths) || !paths.length) continue;
+  for (const line of paths) markLineString(line);
+  hydroFlowlineFeatures += 1;
 }
 
 function localTerrain(row, col, elevation) {
