@@ -1,8 +1,8 @@
 {
-  "version": 8,
-  "generatedAtUtc": "2026-09-26T13:45:53Z",
+  "version": 9,
+  "generatedAtUtc": "2026-09-26T14:57:51Z",
   "source": {
-    "id": "rrgh-pinch-em-tight-crest-first-v8",
+    "id": "rrgh-pinch-em-tight-crest-geodesic-v9",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
@@ -30,9 +30,9 @@
       "id": "openstreetmap-trails-pilot-support",
       "attribution": "\u00a9 OpenStreetMap contributors",
       "via": "Overpass API",
-      "endpointUsed": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+      "endpointUsed": "https://overpass-api.de/api/interpreter",
       "lineFeatures": 30,
-      "role": "supporting evidence only; trail proximity cannot create a crest candidate"
+      "role": "late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry"
     },
     "waterMask": {
       "id": "openstreetmap-water",
@@ -41,10 +41,11 @@
       "endpointsUsed": [
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.maprva.org/api/interpreter"
+        "https://overpass.maprva.org/api/interpreter",
+        "https://overpass.private.coffee/api/interpreter"
       ],
       "polygonFeatures": 0,
-      "flowlineFeatures": 15
+      "flowlineFeatures": 18
     }
   },
   "bounds": {
@@ -62,7 +63,7 @@
     ],
     "output": "PNG RGBA"
   },
-  "method": "Pinch-Em-Tight crest-first calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any sunrise/sunset direction is considered. then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
+  "method": "Pinch-Em-Tight crest-geodesic calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any aerial, trail, or sunrise/sunset evidence is considered. then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
       58.0,
@@ -83,31 +84,31 @@
     "nearDropMin": 0.42,
     "directionalViewMin": 0.5,
     "dualViewMin": 0.82,
-    "sunriseDisplayScore": 0.3014,
-    "sunriseStrongScore": 0.8877,
-    "sunsetDisplayScore": 0.3655,
-    "sunsetStrongScore": 0.9129
+    "sunriseDisplayScore": 0.855,
+    "sunriseStrongScore": 0.9501,
+    "sunsetDisplayScore": 0.8733,
+    "sunsetStrongScore": 0.9663
   },
   "coverage": {
-    "waterMaskPercent": 0.45,
-    "sunriseDisplayPercent": 4.92,
-    "sunsetDisplayPercent": 4.7,
-    "sunriseStrongPercent": 1.64,
-    "sunsetStrongPercent": 1.57,
+    "waterMaskPercent": 0.49,
+    "sunriseDisplayPercent": 3.16,
+    "sunsetDisplayPercent": 2.92,
+    "sunriseStrongPercent": 1.05,
+    "sunsetStrongPercent": 0.98,
     "denseCanopyPercent": 25.93,
     "highRidgeCorePercent": 34.26,
     "ridgeCorridorPercent": 20.16,
-    "overlookSupportPercent": 20.04,
+    "overlookSupportPercent": 20.12,
     "crestMaskPercent": 20.16,
     "bilateralRidgeCorePercent": 18.23,
     "trailSupportPercent": 13.76,
     "openGroundPercent": 30.6,
-    "sunriseSeedPercent": 6.26,
-    "sunsetSeedPercent": 6.39,
+    "sunriseSeedPercent": 6.43,
+    "sunsetSeedPercent": 6.49,
     "valleyZonePercent": 48.92,
     "sunriseValleyLeakPercent": 0.0,
     "sunsetValleyLeakPercent": 0.0,
-    "dualDisplayPercent": 1.12
+    "dualDisplayPercent": 1.58
   },
   "diagnostics": [
     {
@@ -140,11 +141,11 @@
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
     "maximumOpacity": 0.86,
-    "designIntent": "Calibration pilot: LiDAR crest detection comes first; final sunrise/sunset lobes may exist only on the detected crest/ridge-nose mask, with aerial open-ground and trail proximity used as supporting evidence and directional sun tests applied last."
+    "designIntent": "Calibration pilot: LiDAR alone defines crest/outcrop geometry; aerial evidence evaluates openness afterward; trail proximity is only a tiny late confidence boost; final sunrise/sunset fade walks connected crest pixels for up to about 100 m rather than using radial blur."
   },
   "calibrationArea": {
     "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
-    "status": "staging crest-first calibration only",
+    "status": "staging crest-geodesic calibration only",
     "expandOnlyAfterVisualApproval": true,
     "reviewOrder": [
       "LiDAR crest mask",
@@ -156,11 +157,11 @@
     ]
   },
   "calibrationIntent": [
-    "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots.",
-    "Only after ridge placement is correct should aerial openness, trail support, and directional sunrise/sunset scoring affect the final result.",
+    "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots; no trail or aerial input is permitted to alter this geometry.",
+    "Only after ridge placement is correct should aerial openness and directional sunrise/sunset scoring affect the seed; trail support may only slightly increase confidence in an already valid seed.",
     "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
     "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",
-    "Keep gradients short and on crest support rather than allowing radial bleed into adjacent valleys.",
+    "Propagate the display by connected crest pixels rather than Gaussian/radial blur, preventing drift across slopes, hollows, or toward nearby trails.",
     "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
     "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
     "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon.",
