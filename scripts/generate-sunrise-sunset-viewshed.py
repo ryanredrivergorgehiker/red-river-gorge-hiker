@@ -20,6 +20,7 @@ from skimage.segmentation import watershed
 
 ELEVATION_SERVICE = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"
 KENTUCKY_PHASE3_DEM_SERVICE = "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_WGS84WM/ImageServer"
+KENTUCKY_PHASE2_METERS_DEM_SERVICE = "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
 NAIP_SERVICE = "https://apps.geo.fpac.usda.gov/geo-imagery/rest/services/naip/conus_naip/ImageServer"
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -96,12 +97,27 @@ def request_json(url, *, params=None, data=None, timeout=120, attempts=4):
                 time.sleep(1.0 + attempt * 1.5)
     raise last
 
-def export_image(service, *, pixel_type, band_ids=None):
+def lonlat_to_web_mercator(lon, lat):
+    radius = 6378137.0
+    x = radius * math.radians(lon)
+    lat = max(-85.05112878, min(85.05112878, lat))
+    y = radius * math.log(math.tan(math.pi / 4.0 + math.radians(lat) / 2.0))
+    return x, y
+
+
+def web_mercator_bbox():
+    west, south = lonlat_to_web_mercator(BOUNDS["west"], BOUNDS["south"])
+    east, north = lonlat_to_web_mercator(BOUNDS["east"], BOUNDS["north"])
+    return (west, south, east, north)
+
+
+def export_image(service, *, pixel_type, band_ids=None, bbox=None, bbox_sr="4326", image_sr="4326"):
+    export_bbox = bbox or (BOUNDS["west"], BOUNDS["south"], BOUNDS["east"], BOUNDS["north"])
     params = {
         "f": "json",
-        "bbox": f'{BOUNDS["west"]},{BOUNDS["south"]},{BOUNDS["east"]},{BOUNDS["north"]}',
-        "bboxSR": "4326",
-        "imageSR": "4326",
+        "bbox": ",".join(str(value) for value in export_bbox),
+        "bboxSR": str(bbox_sr),
+        "imageSR": str(image_sr),
         "size": f"{COLS},{ROWS}",
         "format": "tiff",
         "pixelType": pixel_type,
@@ -130,6 +146,33 @@ def export_image(service, *, pixel_type, band_ids=None):
             if attempt < 3:
                 time.sleep(1.5 + attempt * 2)
     raise last
+
+
+def validate_dem_export(raw_dem, source):
+    raw = raw_dem.astype(np.float32)
+    valid = np.isfinite(raw)
+    valid &= raw > float(source["validMin"])
+    valid &= raw < float(source["validMax"])
+    valid_count = int(np.count_nonzero(valid))
+    valid_fraction = valid_count / raw.size
+    if valid_count < 1000 or valid_fraction < 0.90:
+        raise RuntimeError(f'DEM raster has insufficient valid coverage: {valid_fraction:.3f}')
+
+    values = raw[valid]
+    relief = float(np.max(values) - np.min(values))
+    standard_deviation = float(np.std(values))
+    if relief < float(source["minRelief"]) or standard_deviation < 1.0:
+        raise RuntimeError(
+            f'DEM raster lacks terrain variation: relief={relief:.3f}, std={standard_deviation:.3f}'
+        )
+
+    print(
+        f'DEM validation {source["id"]}: '
+        f'valid={valid_fraction:.3f}, min={float(np.min(values)):.2f}, '
+        f'max={float(np.max(values)):.2f}, relief={relief:.2f}, std={standard_deviation:.2f}'
+    )
+    return raw, valid
+
 
 def shift(arr, dr, dc, fill=np.nan):
     out = np.full(arr.shape, fill, dtype=np.float32)
@@ -463,20 +506,52 @@ elevation_sources = [
         "service": KENTUCKY_PHASE3_DEM_SERVICE,
         "zToMeters": 0.3048,
         "description": "KyFromAbove Phase 3 two-foot hydro-flattened DEM derived from ground-class LiDAR",
+        "bbox": web_mercator_bbox(),
+        "bboxSR": "3857",
+        "imageSR": "3857",
+        "validMin": 100.0,
+        "validMax": 5000.0,
+        "minRelief": 50.0,
+    },
+    {
+        "id": "kyfromabove-phase2-2ft-dem-meters",
+        "service": KENTUCKY_PHASE2_METERS_DEM_SERVICE,
+        "zToMeters": 1.0,
+        "description": "KyFromAbove Phase 2 two-foot DEM with elevations in meters",
+        "bbox": web_mercator_bbox(),
+        "bboxSR": "3857",
+        "imageSR": "3857",
+        "validMin": -100.0,
+        "validMax": 2000.0,
+        "minRelief": 15.0,
     },
     {
         "id": "usgs-3dep-bare-earth-dem",
         "service": ELEVATION_SERVICE,
         "zToMeters": 1.0,
         "description": "USGS 3DEP bare-earth DEM fallback",
+        "bbox": None,
+        "bboxSR": "4326",
+        "imageSR": "4326",
+        "validMin": -500.0,
+        "validMax": 5000.0,
+        "minRelief": 15.0,
     },
 ]
 dem_bands = None
 elevation_source_used = None
 elevation_source_errors = []
+dem_valid_mask = None
 for source in elevation_sources:
     try:
-        dem_bands = export_image(source["service"], pixel_type="F32")
+        dem_bands = export_image(
+            source["service"],
+            pixel_type="F32",
+            bbox=source["bbox"],
+            bbox_sr=source["bboxSR"],
+            image_sr=source["imageSR"],
+        )
+        raw_dem, dem_valid_mask = validate_dem_export(dem_bands[0], source)
         elevation_source_used = source
         print(f'Using elevation source: {source["id"]}')
         break
@@ -484,13 +559,15 @@ for source in elevation_sources:
         elevation_source_errors.append({"id": source["id"], "error": str(exc)})
         print(f'Elevation source failed ({source["id"]}): {exc}')
 
-if dem_bands is None or elevation_source_used is None:
+if dem_bands is None or elevation_source_used is None or dem_valid_mask is None:
     raise RuntimeError(f"No elevation source succeeded: {elevation_source_errors}")
 
-dem = dem_bands[0].astype(np.float32) * float(elevation_source_used["zToMeters"])
-bad_dem = ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
+dem = raw_dem * float(elevation_source_used["zToMeters"])
+bad_dem = ~dem_valid_mask | ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
 if np.any(bad_dem):
     replacement = float(np.nanmedian(np.where(bad_dem, np.nan, dem)))
+    if not np.isfinite(replacement):
+        raise RuntimeError("DEM replacement elevation is not finite after source validation.")
     dem[bad_dem] = replacement
 
 naip = export_image(NAIP_SERVICE, pixel_type="U8", band_ids=[0, 1, 2, 3]).astype(np.float32)
@@ -926,7 +1003,7 @@ metadata = {
             "pixelType": "F32",
             "zConvertedToMeters": elevation_source_used["zToMeters"] != 1.0,
             "preferredSource": "kyfromabove-phase3-2ft-dem",
-            "fallbackSource": "usgs-3dep-bare-earth-dem",
+            "fallbackSources": ["kyfromabove-phase2-2ft-dem-meters", "usgs-3dep-bare-earth-dem"],
             "attemptErrors": elevation_source_errors,
         },
         "aerial": {

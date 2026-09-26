@@ -449,6 +449,9 @@ class RoutesTracksContractTests(unittest.TestCase):
             'VERSION = 10',
             'topological_ridge_skeleton',
             'KENTUCKY_PHASE3_DEM_SERVICE',
+            'KENTUCKY_PHASE2_METERS_DEM_SERVICE',
+            'validate_dem_export',
+            'web_mercator_bbox',
             'peak_local_max',
             'watershed(',
             'watershed_line=True',
@@ -470,8 +473,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(SUN_META['version'], 10)
         self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-ridge-skeleton-v10')
         self.assertEqual(SUN_META['source']['elevation']['preferredSource'], 'kyfromabove-phase3-2ft-dem')
-        self.assertEqual(SUN_META['source']['elevation']['fallbackSource'], 'usgs-3dep-bare-earth-dem')
-        self.assertIn(SUN_META['source']['elevation']['id'], {'kyfromabove-phase3-2ft-dem', 'usgs-3dep-bare-earth-dem'})
+        self.assertEqual(SUN_META['source']['elevation']['fallbackSources'], ['kyfromabove-phase2-2ft-dem-meters', 'usgs-3dep-bare-earth-dem'])
+        self.assertIn(SUN_META['source']['elevation']['id'], {'kyfromabove-phase3-2ft-dem', 'kyfromabove-phase2-2ft-dem-meters', 'usgs-3dep-bare-earth-dem'})
         self.assertEqual(SUN_META['calibrationArea']['status'], 'staging topological-ridge calibration only')
         self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR ridge skeleton')
         self.assertEqual(SUN_META['ridgeTopology']['crestCorridorMeters'], 12.0)
