@@ -198,12 +198,12 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="sunrise-sunset-potential" />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span>Sunrise / Sunset pilot — ridge-skeleton</span>
+            <span>Sunrise / Sunset prior composite — hold</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · topological ridge calibration pilot</p>
-          <details class="route-layer-fine-tune">
-            <summary>Calibration diagnostics</summary>
-            <p class="route-layer-note">Review these one at a time. Start with <strong>1 · LiDAR ridge skeleton</strong>: the thin yellow line should sit on the actual drainage divide/ridge top. Then check the orange <strong>2 · Crest corridor</strong>, which is only about 12 m around that line. Trail and aerial data cannot move either geometry.</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Prior v9 composite · held while ridge geometry is calibrated</p>
+          <details class="route-layer-fine-tune" open>
+            <summary>Ridge calibration diagnostics</summary>
+            <p class="route-layer-note">Judge only these two layers for now. <strong>1 · LiDAR ridge skeleton</strong> is the thin watershed/divide line; <strong>2 · Crest corridor</strong> is only about 12 m around it. The sunrise/sunset composite above is the prior v9 result and is deliberately on hold.</p>
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-ridge-skeleton" />
               <span class="route-layer-swatch" style="background:#ffff50" aria-hidden="true"></span>
@@ -213,26 +213,6 @@ const enabledSources = enabledBrowserMapSources;
               <input type="checkbox" data-map-layer="sun-cal-crest" />
               <span class="route-layer-swatch" style="background:#ffb020" aria-hidden="true"></span>
               <span>2 · Crest corridor (~12 m)</span>
-            </label>
-            <label class="route-layer-toggle-row">
-              <input type="checkbox" data-map-layer="sun-cal-overlook" />
-              <span class="route-layer-swatch" style="background:#ff46dc" aria-hidden="true"></span>
-              <span>3 · Overlook / outcrop candidates</span>
-            </label>
-            <label class="route-layer-toggle-row">
-              <input type="checkbox" data-map-layer="sun-cal-open-ground" />
-              <span class="route-layer-swatch" style="background:#46dc78" aria-hidden="true"></span>
-              <span>4 · Aerial open-ground confidence</span>
-            </label>
-            <label class="route-layer-toggle-row">
-              <input type="checkbox" data-map-layer="sun-cal-sunrise-pass" />
-              <span class="route-layer-swatch" style="background:#ff6f61" aria-hidden="true"></span>
-              <span>5 · Sunrise directional pass</span>
-            </label>
-            <label class="route-layer-toggle-row">
-              <input type="checkbox" data-map-layer="sun-cal-sunset-pass" />
-              <span class="route-layer-swatch" style="background:#4055d8" aria-hidden="true"></span>
-              <span>6 · Sunset directional pass</span>
             </label>
           </details>
           <label class="route-layer-toggle-row">
@@ -274,10 +254,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Sunrise / Sunset pilot</span><input type="range" min="0" max="100" value="68" data-opacity="sunrise-sunset-potential" /></label>
             <label><span>LiDAR ridge skeleton</span><input type="range" min="0" max="100" value="96" data-opacity="sun-cal-ridge-skeleton" /></label>
             <label><span>Crest corridor</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-crest" /></label>
-            <label><span>Overlook candidate diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-overlook" /></label>
-            <label><span>Aerial open-ground diagnostic</span><input type="range" min="0" max="100" value="62" data-opacity="sun-cal-open-ground" /></label>
-            <label><span>Sunrise pass diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-sunrise-pass" /></label>
-            <label><span>Sunset pass diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-sunset-pass" /></label>
+
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
@@ -368,7 +345,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. The model now starts from Kentucky KyFromAbove Phase 3 LiDAR-derived bare-earth elevation (with USGS 3DEP fallback), derives hydrologic basins, and thins their drainage divides to a topological ridge skeleton. A location must lie within a narrow crest corridor around that skeleton before any overlook, aerial, trail, sunrise, or sunset scoring can occur. Aerial open-ground confidence is evaluated only after that geometry exists. Nearby trail geometry cannot create, move, or broaden the crest; it can only provide a tiny late confidence boost to an already valid overlook. Sunrise and sunset are evaluated last, and their fade follows connected crest pixels rather than a two-dimensional blur. Use <strong>Calibration diagnostics → 1 · LiDAR crest mask</strong> first. Outside the pilot box the layer is intentionally blank.</p>
+      <p><strong>Ridge-skeleton calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. The model now starts from Kentucky KyFromAbove Phase 3 LiDAR-derived bare-earth elevation (with USGS 3DEP fallback), derives hydrologic basins, and thins their drainage divides to a topological ridge skeleton. A location must lie within a narrow crest corridor around that skeleton before any overlook, aerial, trail, sunrise, or sunset scoring can occur. Aerial open-ground confidence is evaluated only after that geometry exists. Nearby trail geometry cannot create, move, or broaden the crest; it can only provide a tiny late confidence boost to an already valid overlook. Sunrise and sunset are evaluated last, and their fade follows connected crest pixels rather than a two-dimensional blur. Use <strong>Calibration diagnostics → 1 · LiDAR crest mask</strong> first. Outside the pilot box the layer is intentionally blank.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -692,10 +669,7 @@ const enabledSources = enabledBrowserMapSources;
     const sunCalibrationImages = [
       ['sun-cal-ridge-skeleton', 'sunrise-sunset-calibration-ridge-skeleton.png'],
       ['sun-cal-crest', 'sunrise-sunset-calibration-crest.png'],
-      ['sun-cal-overlook', 'sunrise-sunset-calibration-overlook.png'],
-      ['sun-cal-open-ground', 'sunrise-sunset-calibration-open-ground.png'],
-      ['sun-cal-sunrise-pass', 'sunrise-sunset-calibration-sunrise-pass.png'],
-      ['sun-cal-sunset-pass', 'sunrise-sunset-calibration-sunset-pass.png']
+
     ] as const;
     for (const [id, file] of sunCalibrationImages) {
       const layer = L.imageOverlay(

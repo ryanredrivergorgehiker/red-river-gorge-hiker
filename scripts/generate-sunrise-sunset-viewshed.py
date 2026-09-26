@@ -12,15 +12,10 @@ from PIL import Image
 from rasterio.features import rasterize
 from rasterio.io import MemoryFile
 from rasterio.transform import from_bounds
-from scipy.ndimage import distance_transform_edt, gaussian_filter, label as ndi_label, maximum_filter, minimum_filter, uniform_filter
+from scipy.ndimage import binary_dilation, distance_transform_edt, gaussian_filter, maximum_filter, minimum_filter, uniform_filter
 from shapely.geometry import LineString, Polygon, mapping
-from skimage.feature import peak_local_max
-from skimage.morphology import remove_small_objects, skeletonize
-from skimage.segmentation import watershed
 
 ELEVATION_SERVICE = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"
-KENTUCKY_PHASE3_DEM_SERVICE = "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_WGS84WM/ImageServer"
-KENTUCKY_PHASE2_METERS_DEM_SERVICE = "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
 NAIP_SERVICE = "https://apps.geo.fpac.usda.gov/geo-imagery/rest/services/naip/conus_naip/ImageServer"
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -44,13 +39,12 @@ OVERLOOK_SUPPORT_MIN = 0.42
 NEAR_DROP_MIN = 0.42
 DIRECTIONAL_VIEW_MIN = 0.50
 DUAL_VIEW_MIN = 0.82
-VERSION = 10
+VERSION = 9
 
 OUT_DIR = Path("public/data/map")
 PNG_PATH = OUT_DIR / "sunrise-sunset-potential.png"
 META_PATH = OUT_DIR / "sunrise-sunset-potential.meta.json"
 OLD_SVG_PATH = OUT_DIR / "sunrise-sunset-potential.svg"
-DIAG_SKELETON_PATH = OUT_DIR / "sunrise-sunset-calibration-ridge-skeleton.png"
 DIAG_CREST_PATH = OUT_DIR / "sunrise-sunset-calibration-crest.png"
 DIAG_OVERLOOK_PATH = OUT_DIR / "sunrise-sunset-calibration-overlook.png"
 DIAG_OPEN_PATH = OUT_DIR / "sunrise-sunset-calibration-open-ground.png"
@@ -97,27 +91,12 @@ def request_json(url, *, params=None, data=None, timeout=120, attempts=4):
                 time.sleep(1.0 + attempt * 1.5)
     raise last
 
-def lonlat_to_web_mercator(lon, lat):
-    radius = 6378137.0
-    x = radius * math.radians(lon)
-    lat = max(-85.05112878, min(85.05112878, lat))
-    y = radius * math.log(math.tan(math.pi / 4.0 + math.radians(lat) / 2.0))
-    return x, y
-
-
-def web_mercator_bbox():
-    west, south = lonlat_to_web_mercator(BOUNDS["west"], BOUNDS["south"])
-    east, north = lonlat_to_web_mercator(BOUNDS["east"], BOUNDS["north"])
-    return (west, south, east, north)
-
-
-def export_image(service, *, pixel_type, band_ids=None, bbox=None, bbox_sr="4326", image_sr="4326"):
-    export_bbox = bbox or (BOUNDS["west"], BOUNDS["south"], BOUNDS["east"], BOUNDS["north"])
+def export_image(service, *, pixel_type, band_ids=None):
     params = {
         "f": "json",
-        "bbox": ",".join(str(value) for value in export_bbox),
-        "bboxSR": str(bbox_sr),
-        "imageSR": str(image_sr),
+        "bbox": f'{BOUNDS["west"]},{BOUNDS["south"]},{BOUNDS["east"]},{BOUNDS["north"]}',
+        "bboxSR": "4326",
+        "imageSR": "4326",
         "size": f"{COLS},{ROWS}",
         "format": "tiff",
         "pixelType": pixel_type,
@@ -146,33 +125,6 @@ def export_image(service, *, pixel_type, band_ids=None, bbox=None, bbox_sr="4326
             if attempt < 3:
                 time.sleep(1.5 + attempt * 2)
     raise last
-
-
-def validate_dem_export(raw_dem, source):
-    raw = raw_dem.astype(np.float32)
-    valid = np.isfinite(raw)
-    valid &= raw > float(source["validMin"])
-    valid &= raw < float(source["validMax"])
-    valid_count = int(np.count_nonzero(valid))
-    valid_fraction = valid_count / raw.size
-    if valid_count < 1000 or valid_fraction < 0.90:
-        raise RuntimeError(f'DEM raster has insufficient valid coverage: {valid_fraction:.3f}')
-
-    values = raw[valid]
-    relief = float(np.max(values) - np.min(values))
-    standard_deviation = float(np.std(values))
-    if relief < float(source["minRelief"]) or standard_deviation < 1.0:
-        raise RuntimeError(
-            f'DEM raster lacks terrain variation: relief={relief:.3f}, std={standard_deviation:.3f}'
-        )
-
-    print(
-        f'DEM validation {source["id"]}: '
-        f'valid={valid_fraction:.3f}, min={float(np.min(values)):.2f}, '
-        f'max={float(np.max(values)):.2f}, relief={relief:.2f}, std={standard_deviation:.2f}'
-    )
-    return raw, valid
-
 
 def shift(arr, dr, dc, fill=np.nan):
     out = np.full(arr.shape, fill, dtype=np.float32)
@@ -222,71 +174,6 @@ def bilateral_ridge_relief(dem):
 
     ridge_score = smoothstep(best_relief, 3.0, 18.0)
     return best_relief, ridge_score
-
-
-
-def topological_ridge_skeleton(dem, relative_height, prominence, broad_tpi, bilateral_relief_m, convexity):
-    """
-    Extract hydrologic drainage divides from the LiDAR DEM, then thin and prune
-    them into an actual ridge skeleton. This line is topological geometry, not a
-    fuzzy upper-slope score.
-    """
-    mean_cell = (X_METERS + Y_METERS) / 2.0
-    hydro_sigma = max(1.0, 6.0 / mean_cell)
-    hydro_dem = gaussian_filter(dem, sigma=hydro_sigma)
-
-    # Hydro-flattened DEMs may not contain deep pixel-scale minima. Seed
-    # watershed basins from spatially separated local low points instead.
-    minima_separation_m = 70.0
-    min_distance_px = max(8, int(round(minima_separation_m / mean_cell)))
-    minima_coords = peak_local_max(
-        -hydro_dem,
-        min_distance=min_distance_px,
-        exclude_border=False,
-        num_peaks=220,
-    )
-    if minima_coords.shape[0] < 8:
-        minima_separation_m = 40.0
-        min_distance_px = max(6, int(round(minima_separation_m / mean_cell)))
-        minima_coords = peak_local_max(
-            -hydro_dem,
-            min_distance=min_distance_px,
-            exclude_border=False,
-            num_peaks=320,
-        )
-
-    basin_count = int(minima_coords.shape[0])
-    if basin_count < 2:
-        raise RuntimeError(f"Too few hydrologic basin markers for ridge extraction: {basin_count}")
-
-    markers = np.zeros(dem.shape, dtype=np.int32)
-    for marker_id, (row, col) in enumerate(minima_coords, start=1):
-        markers[int(row), int(col)] = marker_id
-
-    basin_labels = watershed(
-        hydro_dem,
-        markers=markers,
-        connectivity=np.ones((3, 3), dtype=np.uint8),
-        watershed_line=True,
-    )
-    raw_divide = basin_labels == 0
-    raw_skeleton = skeletonize(raw_divide)
-
-    # Prune low saddles and incidental basin boundaries without moving the
-    # divide line. The remaining pixels must still occupy locally elevated,
-    # ridge-like terrain.
-    ridge_keep = (
-        (relative_height >= 0.14)
-        & (prominence >= 0.10)
-        & (broad_tpi >= -1.5)
-        & ((bilateral_relief_m >= 2.5) | (convexity >= 0.56))
-    )
-    skeleton = raw_skeleton & ridge_keep
-    min_segment_pixels = max(6, int(round(24.0 / mean_cell)))
-    skeleton = remove_small_objects(skeleton, min_size=min_segment_pixels, connectivity=2)
-    skeleton = skeletonize(skeleton)
-
-    return skeleton, raw_skeleton, basin_count, minima_separation_m
 
 
 def fetch_trail_elements():
@@ -497,77 +384,11 @@ def water_shapes(elements):
     return polygon_shapes, line_shapes
 
 print(f"V7 Pinch-Em-Tight calibration viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
-# For this Kentucky calibration pilot, prefer Kentucky's own Phase 3 two-foot
-# LiDAR-derived DEM so the ridge analysis is registered to the same statewide
-# elevation program as the Kentucky relief map. USGS 3DEP remains a fallback.
-elevation_sources = [
-    {
-        "id": "kyfromabove-phase3-2ft-dem",
-        "service": KENTUCKY_PHASE3_DEM_SERVICE,
-        "zToMeters": 0.3048,
-        "description": "KyFromAbove Phase 3 two-foot hydro-flattened DEM derived from ground-class LiDAR",
-        "bbox": web_mercator_bbox(),
-        "bboxSR": "3857",
-        "imageSR": "3857",
-        "validMin": 100.0,
-        "validMax": 5000.0,
-        "minRelief": 50.0,
-    },
-    {
-        "id": "kyfromabove-phase2-2ft-dem-meters",
-        "service": KENTUCKY_PHASE2_METERS_DEM_SERVICE,
-        "zToMeters": 1.0,
-        "description": "KyFromAbove Phase 2 two-foot DEM with elevations in meters",
-        "bbox": web_mercator_bbox(),
-        "bboxSR": "3857",
-        "imageSR": "3857",
-        "validMin": -100.0,
-        "validMax": 2000.0,
-        "minRelief": 15.0,
-    },
-    {
-        "id": "usgs-3dep-bare-earth-dem",
-        "service": ELEVATION_SERVICE,
-        "zToMeters": 1.0,
-        "description": "USGS 3DEP bare-earth DEM fallback",
-        "bbox": None,
-        "bboxSR": "4326",
-        "imageSR": "4326",
-        "validMin": -500.0,
-        "validMax": 5000.0,
-        "minRelief": 15.0,
-    },
-]
-dem_bands = None
-elevation_source_used = None
-elevation_source_errors = []
-dem_valid_mask = None
-for source in elevation_sources:
-    try:
-        dem_bands = export_image(
-            source["service"],
-            pixel_type="F32",
-            bbox=source["bbox"],
-            bbox_sr=source["bboxSR"],
-            image_sr=source["imageSR"],
-        )
-        raw_dem, dem_valid_mask = validate_dem_export(dem_bands[0], source)
-        elevation_source_used = source
-        print(f'Using elevation source: {source["id"]}')
-        break
-    except Exception as exc:
-        elevation_source_errors.append({"id": source["id"], "error": str(exc)})
-        print(f'Elevation source failed ({source["id"]}): {exc}')
-
-if dem_bands is None or elevation_source_used is None or dem_valid_mask is None:
-    raise RuntimeError(f"No elevation source succeeded: {elevation_source_errors}")
-
-dem = raw_dem * float(elevation_source_used["zToMeters"])
-bad_dem = ~dem_valid_mask | ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
+dem_bands = export_image(ELEVATION_SERVICE, pixel_type="F32")
+dem = dem_bands[0].astype(np.float32)
+bad_dem = ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
 if np.any(bad_dem):
     replacement = float(np.nanmedian(np.where(bad_dem, np.nan, dem)))
-    if not np.isfinite(replacement):
-        raise RuntimeError("DEM replacement elevation is not finite after source validation.")
     dem[bad_dem] = replacement
 
 naip = export_image(NAIP_SERVICE, pixel_type="U8", band_ids=[0, 1, 2, 3]).astype(np.float32)
@@ -653,47 +474,47 @@ broad_ridge = smoothstep(broad_tpi, -4.0, 28.0)
 height_gate = smoothstep(relative_height, 0.18, 0.62)
 prominence_gate = smoothstep(prominence, 0.14, 0.58)
 
-# V10 topological geometry: derive the actual drainage-divide skeleton first.
-# Sunrise, sunset, aerial, and trail inputs are not allowed to create or move it.
+# Crest-first LiDAR model: a ridge must fall away on BOTH sides across at least
+# one cross-ridge orientation. This is deliberately computed before any
+# sunrise/sunset direction is considered.
 bilateral_relief_m, bilateral_ridge = bilateral_ridge_relief(dem)
-ridge_skeleton, raw_ridge_skeleton, watershed_basin_count, watershed_minima_separation_m = topological_ridge_skeleton(
-    dem,
-    relative_height,
-    prominence,
-    broad_tpi,
-    bilateral_relief_m,
-    convexity,
-)
-
-mean_cell_m = (X_METERS + Y_METERS) / 2.0
-CREST_CORRIDOR_METERS = 12.0
-ridge_distance_m = distance_transform_edt(
-    ~ridge_skeleton,
-    sampling=(Y_METERS, X_METERS),
-)
-skeleton_proximity = clamp01(1.0 - ridge_distance_m / CREST_CORRIDOR_METERS)
-crest_mask = ridge_distance_m <= CREST_CORRIDOR_METERS
-
-# The score can vary inside the corridor, but the corridor location itself is
-# determined only by distance to the topological ridge skeleton.
 crest_strength = clamp01(
-    0.58 * skeleton_proximity
-    + 0.20 * bilateral_ridge
-    + 0.10 * ridge_core
-    + 0.07 * convexity
-    + 0.05 * broad_ridge
+    0.46 * bilateral_ridge
+    + 0.19 * broad_ridge
+    + 0.12 * fine_ridge
+    + 0.11 * height_gate
+    + 0.07 * prominence_gate
+    + 0.05 * convexity
 )
-ridge_corridor = crest_strength * crest_mask.astype(np.float32)
+crest_core = (
+    (bilateral_relief_m >= 5.0)
+    & (crest_strength >= 0.46)
+    & (relative_height >= 0.20)
+    & (prominence >= 0.16)
+    & (broad_tpi >= -1.0)
+)
+# A narrow dilation keeps the crest visible/continuous without turning the
+# entire upper slope into a ridge. Final candidates still require crest strength.
+crest_mask = binary_dilation(crest_core, iterations=3) & (crest_strength >= 0.38)
+
+ridge_corridor = clamp01(
+    0.42 * crest_strength
+    + 0.20 * ridge_core
+    + 0.15 * broad_ridge
+    + 0.09 * fine_ridge
+    + 0.08 * height_gate
+    + 0.06 * prominence_gate
+)
+ridge_corridor *= crest_mask.astype(np.float32)
 
 valley_zone = (
     (~crest_mask)
     & (
-        (relative_height < 0.28)
-        | (broad_tpi < -2.0)
-        | ((fine_tpi < -0.5) & (prominence < 0.30))
+        (relative_height < 0.24)
+        | (broad_tpi < -3.0)
+        | ((fine_tpi < -1.0) & (prominence < 0.28))
     )
 )
-
 valley_penalty = (
     0.22 * clamp01((0.34 - relative_height) / 0.34)
     + 0.16 * clamp01((0.30 - prominence) / 0.30)
@@ -751,16 +572,18 @@ trail_support = 1.0 - smoothstep(trail_distance_m, 10.0, 55.0)
 # Crest/nose support is intentionally narrower than the v5 ridge corridor.
 # Strong positive TPI plus convexity/prominence favors projecting ridge noses
 # and cliff rims, not broad wooded plateau interiors.
-# Geometry remains LiDAR-only and is centered on the divide skeleton.
+# Geometry is LiDAR-only. Neither trail proximity nor aerial appearance is
+# allowed to move, create, or broaden the crest/outcrop geometry.
 overlook_support = clamp01(
-    0.52 * skeleton_proximity
-    + 0.20 * bilateral_ridge
-    + 0.12 * convexity
-    + 0.09 * prominence_gate
-    + 0.07 * height_gate
+    0.43 * crest_strength
+    + 0.22 * bilateral_ridge
+    + 0.15 * convexity
+    + 0.11 * prominence_gate
+    + 0.09 * height_gate
 )
 overlook_support *= crest_mask.astype(np.float32)
 
+# Aerial evidence comes only AFTER the LiDAR geometry exists.
 site_open = clamp01(
     0.68 * (1.0 - local_canopy)
     + 0.32 * open_ground
@@ -853,8 +676,8 @@ def crest_connected_propagation(seed):
     support = (
         crest_mask
         & (~valley_zone)
-        & (skeleton_proximity > 0.0)
-        & (crest_strength >= 0.36)
+        & (crest_strength >= 0.40)
+        & (bilateral_ridge >= 0.22)
     )
     result = np.where(support, seed, 0.0).astype(np.float32)
     current = result.copy()
@@ -968,8 +791,7 @@ Image.fromarray(rgba, mode="RGBA").save(PNG_PATH, optimize=True, compress_level=
 
 # Staging calibration diagnostics. These are intentionally separate from the
 # final composite so the user can verify the LiDAR crest model first.
-skeleton_diag = diagnostic_rgba(ridge_skeleton.astype(np.float32), (255, 255, 80), 0.98)
-crest_diag = diagnostic_rgba(skeleton_proximity * crest_mask.astype(np.float32), (255, 176, 32), 0.78)
+crest_diag = diagnostic_rgba(crest_strength * crest_mask.astype(np.float32), (255, 224, 64), 0.86)
 overlook_diag_strength = clamp01(overlook_support * np.maximum(sunrise_near_drop, sunset_near_drop))
 overlook_diag = diagnostic_rgba(overlook_diag_strength, (255, 70, 220), 0.82)
 open_diag = diagnostic_rgba(site_open, (70, 220, 120), 0.66)
@@ -978,7 +800,6 @@ sunset_diag_strength = clamp01(sunset_view * sunset_edge_gate * sunset_direction
 sunrise_diag = diagnostic_rgba(sunrise_diag_strength, (255, 111, 97), 0.80)
 sunset_diag = diagnostic_rgba(sunset_diag_strength, (64, 85, 216), 0.80)
 
-Image.fromarray(skeleton_diag, mode="RGBA").save(DIAG_SKELETON_PATH, optimize=True, compress_level=9)
 Image.fromarray(crest_diag, mode="RGBA").save(DIAG_CREST_PATH, optimize=True, compress_level=9)
 Image.fromarray(overlook_diag, mode="RGBA").save(DIAG_OVERLOOK_PATH, optimize=True, compress_level=9)
 Image.fromarray(open_diag, mode="RGBA").save(DIAG_OPEN_PATH, optimize=True, compress_level=9)
@@ -995,16 +816,11 @@ metadata = {
     "version": VERSION,
     "generatedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "source": {
-        "id": "rrgh-pinch-em-tight-ridge-skeleton-v10",
+        "id": "rrgh-pinch-em-tight-crest-geodesic-v9",
         "elevation": {
-            "id": elevation_source_used["id"],
-            "service": elevation_source_used["service"],
-            "description": elevation_source_used["description"],
+            "id": "usgs-3dep-bare-earth-dem",
+            "service": ELEVATION_SERVICE,
             "pixelType": "F32",
-            "zConvertedToMeters": elevation_source_used["zToMeters"] != 1.0,
-            "preferredSource": "kyfromabove-phase3-2ft-dem",
-            "fallbackSources": ["kyfromabove-phase2-2ft-dem-meters", "usgs-3dep-bare-earth-dem"],
-            "attemptErrors": elevation_source_errors,
         },
         "aerial": {
             "id": "usda-naip-four-band",
@@ -1038,20 +854,13 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Pinch-Em-Tight topological ridge-skeleton calibration pilot. Two-meter analysis prefers Kentucky's Phase 3 LiDAR-derived bare-earth DEM (with USGS 3DEP fallback) and is smoothed only enough to suppress tiny pits, hydrologic basins are delineated by watershed segmentation, their drainage divides are thinned to a ridge skeleton, and only a narrow crest corridor around that skeleton is eligible before any aerial, trail, or sunrise/sunset evidence is considered. "
+        "Pinch-Em-Tight crest-geodesic calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any aerial, trail, or sunrise/sunset evidence is considered. "
         "then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP "
         "aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained "
         "to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The "
         "weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded."
     ),
     "seasonalAzimuths": {"sunrise": SUNRISE_AZIMUTHS, "sunset": SUNSET_AZIMUTHS},
-    "ridgeTopology": {
-        "method": "watershed drainage divides from smoothed bare-earth LiDAR",
-        "watershedBasinCount": watershed_basin_count,
-        "minimaSeparationMeters": watershed_minima_separation_m,
-        "crestCorridorMeters": CREST_CORRIDOR_METERS,
-        "trailOrAerialAffectsSkeleton": False
-    },
     "thresholds": {
         "displayCandidateQuantile": DISPLAY_CANDIDATE_QUANTILE,
         "strongCandidateQuantile": STRONG_CANDIDATE_QUANTILE,
@@ -1075,10 +884,7 @@ metadata = {
         "highRidgeCorePercent": percent(ridge_core >= 0.62),
         "ridgeCorridorPercent": percent(ridge_corridor >= 0.38),
         "overlookSupportPercent": percent(overlook_support >= OVERLOOK_SUPPORT_MIN),
-        "ridgeSkeletonPercent": percent(ridge_skeleton),
-        "rawRidgeSkeletonPercent": percent(raw_ridge_skeleton),
         "crestMaskPercent": percent(crest_mask),
-        "watershedBasinCount": watershed_basin_count,
         "bilateralRidgeCorePercent": percent(bilateral_relief_m >= 5.0),
         "trailSupportPercent": percent(trail_support >= 0.5),
         "openGroundPercent": percent(open_ground >= 0.55),
@@ -1090,8 +896,7 @@ metadata = {
         "dualDisplayPercent": percent((sunrise_strength > 0) & (sunset_strength > 0)),
     },
     "diagnostics": [
-        {"id": "ridge-skeleton", "file": DIAG_SKELETON_PATH.name, "meaning": "thin LiDAR watershed/divide ridge skeleton"},
-        {"id": "crest", "file": DIAG_CREST_PATH.name, "meaning": "12 m crest corridor around the topological ridge skeleton"},
+        {"id": "crest", "file": DIAG_CREST_PATH.name, "meaning": "LiDAR bilateral-relief crest mask"},
         {"id": "overlook", "file": DIAG_OVERLOOK_PATH.name, "meaning": "crest-qualified overlook/outcrop support"},
         {"id": "open-ground", "file": DIAG_OPEN_PATH.name, "meaning": "NAIP/local-site open-ground confidence"},
         {"id": "sunrise-pass", "file": DIAG_SUNRISE_PATH.name, "meaning": "crest-qualified sunrise directional pass"},
@@ -1101,15 +906,14 @@ metadata = {
         "sunriseColor": "#ff6f61",
         "sunsetColor": "#4055d8",
         "maximumOpacity": 0.86,
-        "designIntent": "Calibration pilot: a thin LiDAR watershed/divide skeleton defines the ridge centerline first; final geometry is limited to a roughly 12 m corridor around that line. Aerial and trail evidence cannot move the skeleton. Sunrise/sunset scoring and connected propagation happen only inside that corridor.",
+        "designIntent": "Calibration pilot: LiDAR alone defines crest/outcrop geometry; aerial evidence evaluates openness afterward; trail proximity is only a tiny late confidence boost; final sunrise/sunset fade walks connected crest pixels for up to about 100 m rather than using radial blur.",
     },
     "calibrationArea": {
         "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
-        "status": "staging topological-ridge calibration only",
+        "status": "staging crest-geodesic calibration only",
         "expandOnlyAfterVisualApproval": True,
         "reviewOrder": [
-            "LiDAR ridge skeleton",
-            "Narrow crest corridor",
+            "LiDAR crest mask",
             "Overlook/outcrop candidates",
             "Aerial open-ground confidence",
             "Sunrise directional pass",
@@ -1118,7 +922,7 @@ metadata = {
         ]
     },
     "calibrationIntent": [
-        "First verify that the thin LiDAR watershed/divide skeleton follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots; no trail or aerial input is permitted to alter that line.",
+        "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots; no trail or aerial input is permitted to alter this geometry.",
         "Only after ridge placement is correct should aerial openness and directional sunrise/sunset scoring affect the seed; trail support may only slightly increase confidence in an already valid seed.",
         "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
         "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",

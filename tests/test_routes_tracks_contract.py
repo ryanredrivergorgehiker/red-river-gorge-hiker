@@ -27,7 +27,7 @@ TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
-SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')\nGENERATOR_WORKFLOW = (ROOT / '.github/workflows/generate-sunrise-sunset-potential.yml').read_text(encoding='utf-8')
+SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')\nRIDGE_GENERATOR = (ROOT / 'scripts/generate-ridge-skeleton-calibration.py').read_text(encoding='utf-8')\nRIDGE_META_PATH = ROOT / 'public/data/map/sunrise-sunset-ridge-calibration.meta.json'\nRIDGE_META = json.loads(RIDGE_META_PATH.read_text(encoding='utf-8')) if RIDGE_META_PATH.exists() else {}\nGENERATOR_WORKFLOW = (ROOT / '.github/workflows/generate-sunrise-sunset-potential.yml').read_text(encoding='utf-8')
 SUN_META_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.meta.json'
 SUN_OVERLAY_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.png'
 SUN_META = json.loads(SUN_META_PATH.read_text(encoding='utf-8'))
@@ -436,69 +436,50 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_topological_ridge_pilot(self):
-        self.assertIn('Sunrise / Sunset pilot — ridge-skeleton', MAP)
+    def test_sunrise_sunset_ridge_skeleton_is_isolated_calibration_phase(self):
+        self.assertIn('Sunrise / Sunset prior composite — hold', MAP)
+        self.assertIn('Ridge calibration diagnostics', MAP)
         self.assertIn('1 · LiDAR ridge skeleton', MAP)
         self.assertIn('2 · Crest corridor (~12 m)', MAP)
-        self.assertIn('data-map-layer="sun-cal-ridge-skeleton"', MAP)
-        self.assertIn('data-opacity="sun-cal-ridge-skeleton"', MAP)
-        self.assertIn('drainage divide/ridge top', MAP)
-        self.assertIn('Trail and aerial data cannot move either geometry', MAP)
+        self.assertNotIn('3 · Overlook / outcrop candidates', MAP)
+        self.assertIn('prior v9 result and is deliberately on hold', MAP)
 
         for contract in (
             'VERSION = 10',
-            'topological_ridge_skeleton',
-            'KENTUCKY_PHASE3_DEM_SERVICE',
-            'KENTUCKY_PHASE2_METERS_DEM_SERVICE',
-            'validate_dem_export',
-            'web_mercator_bbox',
-            'peak_local_max',
             'watershed(',
             'watershed_line=True',
             'skeletonize',
             'remove_small_objects',
-            'ridge_skeleton',
             'CREST_CORRIDOR_METERS = 12.0',
-            'ridge_distance_m = distance_transform_edt',
-            'crest_mask = ridge_distance_m <= CREST_CORRIDOR_METERS',
+            'meters_below_near_high <= 5.0',
+            'relative_height >= 0.30',
+            'broad_tpi >= 0.0',
             'trailOrAerialAffectsSkeleton": False',
-            'sunrise-sunset-calibration-ridge-skeleton.png',
-            'crest_connected_propagation',
+            'finalCompositeStatus": "v9 composite retained but held; not recalculated in this ridge-only phase"',
         ):
-            self.assertIn(contract, SUN_GENERATOR)
+            self.assertIn(contract, RIDGE_GENERATOR)
 
-        self.assertNotIn('binary_dilation(crest_core', SUN_GENERATOR)
-        self.assertIn('scikit-image', GENERATOR_WORKFLOW)
+        self.assertIn('scripts/generate-ridge-skeleton-calibration.py', GENERATOR_WORKFLOW)
+        self.assertNotIn('python scripts/generate-sunrise-sunset-viewshed.py', GENERATOR_WORKFLOW)
 
-        self.assertEqual(SUN_META['version'], 10)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-ridge-skeleton-v10')
-        self.assertEqual(SUN_META['source']['elevation']['preferredSource'], 'kyfromabove-phase3-2ft-dem')
-        self.assertEqual(SUN_META['source']['elevation']['fallbackSources'], ['kyfromabove-phase2-2ft-dem-meters', 'usgs-3dep-bare-earth-dem'])
-        self.assertIn(SUN_META['source']['elevation']['id'], {'kyfromabove-phase3-2ft-dem', 'kyfromabove-phase2-2ft-dem-meters', 'usgs-3dep-bare-earth-dem'})
-        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging topological-ridge calibration only')
-        self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR ridge skeleton')
-        self.assertEqual(SUN_META['ridgeTopology']['crestCorridorMeters'], 12.0)
-        self.assertFalse(SUN_META['ridgeTopology']['trailOrAerialAffectsSkeleton'])
-        self.assertGreater(SUN_META['ridgeTopology']['watershedBasinCount'], 1)
-        self.assertGreaterEqual(SUN_META['ridgeTopology']['minimaSeparationMeters'], 40.0)
-        self.assertGreater(SUN_META['coverage']['ridgeSkeletonPercent'], 0)
-        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], SUN_META['coverage']['ridgeSkeletonPercent'])
-        self.assertLess(SUN_META['coverage']['crestMaskPercent'], 25)
-        self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
-        self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 3)
-        self.assertEqual(len(SUN_META['diagnostics']), 6)
-        self.assertEqual(SUN_META['diagnostics'][0]['id'], 'ridge-skeleton')
-        self.assertIn('watershed/divide skeleton defines the ridge centerline first', SUN_META['display']['designIntent'])
-        for diagnostic in SUN_META['diagnostics']:
-            diagnostic_path = ROOT / 'public' / 'data' / 'map' / diagnostic['file']
-            self.assertTrue(diagnostic_path.exists(), diagnostic['file'])
-            self.assertEqual(diagnostic_path.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+        self.assertEqual(RIDGE_META['version'], 10)
+        self.assertEqual(RIDGE_META['phase'], 'ridge-skeleton-only')
+        self.assertEqual(RIDGE_META['topology']['crestCorridorMeters'], 12.0)
+        self.assertFalse(RIDGE_META['topology']['trailOrAerialAffectsSkeleton'])
+        self.assertGreater(RIDGE_META['topology']['watershedBasinCount'], 1)
+        self.assertGreater(RIDGE_META['coverage']['ridgeSkeletonPercent'], 0)
+        self.assertGreater(RIDGE_META['coverage']['crestCorridorPercent'], RIDGE_META['coverage']['ridgeSkeletonPercent'])
+        self.assertLess(RIDGE_META['coverage']['crestCorridorPercent'], 20)
+        self.assertEqual(RIDGE_META['review']['order'][0], '1 · LiDAR ridge skeleton')
+        self.assertIn('Do not tune sunrise/sunset until', RIDGE_META['review']['instruction'])
 
-        self.assertIn('topological ridge skeleton', PRIVACY)
-        self.assertIn('Kentucky KyFromAbove Phase 3 two-foot LiDAR-derived DEM', PRIVACY)
-        self.assertIn('roughly 12 meters around that skeleton', PRIVACY)
-        self.assertIn('cannot alter the skeleton or corridor geometry', TERMS)
+        skeleton = ROOT / 'public/data/map/sunrise-sunset-calibration-ridge-skeleton.png'
+        corridor = ROOT / 'public/data/map/sunrise-sunset-calibration-crest.png'
+        self.assertEqual(skeleton.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+        self.assertEqual(corridor.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+
+        self.assertIn('ridge-skeleton-only calibration phase', PRIVACY)
+        self.assertIn('earlier v9 red/blue composite is retained only as a reference', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)

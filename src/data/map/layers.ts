@@ -226,14 +226,14 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'sunrise-sunset-potential',
-    label: 'Sunrise / Sunset pilot — ridge-skeleton',
+    label: 'Sunrise / Sunset prior composite — hold',
     kind: 'derived',
     enabled: true,
     browserLoaded: true,
     serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_WGS84WM/ImageServer',
     attribution: 'Red River Gorge Hiker topological-ridge Pinch-Em-Tight calibration derived from KyFromAbove Phase 3 LiDAR DEM, USDA NAIP imagery, and © OpenStreetMap contributors trail/water features',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'This staging crest-connected calibration overlay is generated in advance for the Pinch-Em-Tight pilot area from KyFromAbove Phase 3 LiDAR-derived terrain (with USGS 3DEP fallback), USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Compact crest/nose support, near-field directional terrain breaks, and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal overlook potential, not guaranteed visibility.',
+    privacyNote: 'The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor. The prior composite was generated in advance for the Pinch-Em-Tight pilot area from KyFromAbove Phase 3 LiDAR-derived terrain (with USGS 3DEP fallback), USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Compact crest/nose support, near-field directional terrain breaks, and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal overlook potential, not guaranteed visibility.',
     opacity: 0.68
   },
   {
