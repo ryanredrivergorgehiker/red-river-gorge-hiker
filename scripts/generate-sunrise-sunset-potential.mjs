@@ -338,8 +338,6 @@ function markLineString(coordinates) {
 }
 
 const waterSource = await fetchWaterElements();
-let waterPolygonFeatures = 0;
-let waterFlowlineFeatures = 0;
 
 const coordsFromGeometry = (geometry) =>
   Array.isArray(geometry)
