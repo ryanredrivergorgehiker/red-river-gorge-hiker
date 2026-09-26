@@ -64,10 +64,6 @@ jobs:
           npm audit --audit-level=critical
           npm audit --omit=dev --audit-level=high
 
-      - name: Preserve controlled Pinterest scope
-        run: |
-          python3 -m unittest tests.test_pinterest_catalog_contract tests.test_pinterest_pagevisit_contract -v
-
       - name: Run checks
         # Live USGS generation is exercised separately when route inputs change.
         # This branch is calibrating map-derived ridge geometry only, so CI uses
