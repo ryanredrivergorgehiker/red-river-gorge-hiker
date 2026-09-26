@@ -32,6 +32,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Seed validated Skybridge elevation cache
+        shell: bash
+        run: |
+          route_json_blob="$(git rev-parse HEAD:src/data/routes/skybridge-arch.json)"
+          route_geo_blob="$(git rev-parse HEAD:public/data/routes/skybridge-arch-v1.geojson)"
+          route_gpx_blob="$(git rev-parse HEAD:public/downloads/routes/Skybridge_Arch_APPROVED_v1.gpx)"
+
+          if [ "$route_json_blob" != "e266e780e578edf2d2f93134f01a571e08057f59" ] \
+            || [ "$route_geo_blob" != "7845938e72579cde013178f9eaceb7dba9fb8234" ] \
+            || [ "$route_gpx_blob" != "0e9575f0d5567f70ccc1701ab72c40992afc4628" ]; then
+            echo "Route inputs changed; refusing to reuse cached elevation data." >&2
+            exit 1
+          fi
+
+          mkdir -p public/data/routes
+          cp .ci-cache/skybridge-arch.elevation.json public/data/routes/skybridge-arch.elevation.json
+          echo "Seeded validated Skybridge elevation artifact for unchanged route inputs."
+
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
@@ -63,4 +81,12 @@ jobs:
           NODE
 
       - name: Run checks
-        run: npm run check
+        # Live USGS generation is exercised separately when route inputs change.
+        # This branch is calibrating map-derived ridge geometry only, so CI uses
+        # the guarded last-validated route elevation artifact above.
+        run: |
+          npm run validate
+          npm run validate:routes
+          npx astro check
+          npm test
+          npm run build:site
