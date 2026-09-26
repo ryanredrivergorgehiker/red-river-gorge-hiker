@@ -200,7 +200,7 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
             <span>Sunrise / Sunset potential</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · strong ridge cores → fading shoulders</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · photographic viewshed · ridge/open-sky gradient</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -328,7 +328,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset potential:</strong> coral marks stronger sunrise terrain potential; indigo marks the sunset equivalent. Solid color identifies the strongest ridge and upper-shoulder terrain, then fades through still-plausible shoulders. Actual mapped water is excluded; valley position lowers the score rather than erasing nearby high ground.</p>
+      <p><strong>Sunrise / Sunset potential:</strong> coral marks stronger sunrise viewshed potential; indigo marks the sunset equivalent. The strongest color favors ridge/cliff noses with terrain falling away toward the sun and lower vegetation obstruction in that viewing sector, then fades down usable shoulders. Valley-floor locations and forest-blocked views are downgraded.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -338,7 +338,7 @@ const enabledSources = enabledBrowserMapSources;
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
-      <p>The Sunrise / Sunset potential layer is an RRGH-hosted weighted terrain model derived from fixed USGS 3DEP elevation and OpenStreetMap water features. Actual mapped water is excluded, but nearby streams do not broadly disqualify high terrain. Relative height above local lows, ridge/upper-shoulder position, convexity, local relief, directional horizon clearance, slope/aspect, and regional elevation contribute continuously; valley position is a penalty rather than a veto. It does not model current clouds, haze, vegetation, buildings, seasonal foliage or small local obstructions, and it is not a guarantee of a visible sunrise or sunset.</p>
+      <p>The Sunrise / Sunset potential layer is an RRGH-hosted photographic viewshed proxy derived from USGS 3DEP bare-earth elevation, USDA NAIP four-band aerial imagery, and mapped water. It evaluates relative height, ridge/upper-shoulder shape, terrain drop toward the seasonal sun direction, terrain horizon clearance, sun-facing aspect, and an aerial vegetation/open-ground proxy in the viewing sector. Actual mapped water is excluded. NAIP vegetation classification is not a tree-by-tree canopy-height model, and the layer does not account for every small obstruction, current weather, seasonal leaf-off conditions, or legal access; it is not a guarantee of a visible sunrise or sunset.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>
@@ -636,7 +636,7 @@ const enabledSources = enabledBrowserMapSources;
       [38.15, -83.18]
     ]);
     const sunPotentialLayer = L.imageOverlay(
-      import.meta.env.BASE_URL + 'data/map/sunrise-sunset-potential.svg',
+      import.meta.env.BASE_URL + 'data/map/sunrise-sunset-potential.png',
       sunPotentialBounds,
       {
         opacity: opacity('sunrise-sunset-potential'),
