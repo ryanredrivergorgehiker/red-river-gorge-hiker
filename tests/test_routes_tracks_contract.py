@@ -27,7 +27,11 @@ TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
-SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')\nRIDGE_GENERATOR = (ROOT / 'scripts/generate-ridge-skeleton-calibration.py').read_text(encoding='utf-8')\nRIDGE_META_PATH = ROOT / 'public/data/map/sunrise-sunset-ridge-calibration.meta.json'\nRIDGE_META = json.loads(RIDGE_META_PATH.read_text(encoding='utf-8')) if RIDGE_META_PATH.exists() else {}\nGENERATOR_WORKFLOW = (ROOT / '.github/workflows/generate-sunrise-sunset-potential.yml').read_text(encoding='utf-8')
+SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')
+RIDGE_GENERATOR = (ROOT / 'scripts/generate-ridge-skeleton-calibration.py').read_text(encoding='utf-8')
+RIDGE_META_PATH = ROOT / 'public/data/map/sunrise-sunset-ridge-calibration.meta.json'
+RIDGE_META = json.loads(RIDGE_META_PATH.read_text(encoding='utf-8')) if RIDGE_META_PATH.exists() else {}
+GENERATOR_WORKFLOW = (ROOT / '.github/workflows/generate-sunrise-sunset-potential.yml').read_text(encoding='utf-8')
 SUN_META_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.meta.json'
 SUN_OVERLAY_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.png'
 SUN_META = json.loads(SUN_META_PATH.read_text(encoding='utf-8'))
@@ -122,7 +126,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
-        self.assertIn('This staging crest-connected calibration overlay is generated in advance for the Pinch-Em-Tight pilot area', sun_source)
+        self.assertIn('The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor', sun_source)
         self.assertIn('send no coordinates or map requests to USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
@@ -447,7 +451,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         for contract in (
             'VERSION = 10',
             'watershed(',
-            'watershed_line=True',
+            'watershed_line=False',
+            'raw_divide = label_min != label_max',
+            'PIXEL_METERS = 6.0',
             'skeletonize',
             'remove_small_objects',
             'CREST_CORRIDOR_METERS = 12.0',
@@ -465,11 +471,18 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(RIDGE_META['version'], 10)
         self.assertEqual(RIDGE_META['phase'], 'ridge-skeleton-only')
         self.assertEqual(RIDGE_META['topology']['crestCorridorMeters'], 12.0)
+        self.assertEqual(RIDGE_META['topology']['calibrationGridMeters'], 6.0)
         self.assertFalse(RIDGE_META['topology']['trailOrAerialAffectsSkeleton'])
-        self.assertGreater(RIDGE_META['topology']['watershedBasinCount'], 1)
-        self.assertGreater(RIDGE_META['coverage']['ridgeSkeletonPercent'], 0)
+        self.assertGreater(RIDGE_META['topology']['watershedBasinCount'], 20)
+        self.assertLess(RIDGE_META['topology']['watershedBasinCount'], 80)
+        self.assertEqual(RIDGE_META['source']['elevation']['id'], 'kyfromabove-phase2-2ft-dem-meters')
+        self.assertGreaterEqual(RIDGE_META['grid']['approximateCellMeters'][0], 5.5)
+        self.assertLessEqual(RIDGE_META['grid']['approximateCellMeters'][1], 6.1)
+        self.assertGreater(RIDGE_META['coverage']['ridgeSkeletonPercent'], 0.5)
+        self.assertLess(RIDGE_META['coverage']['ridgeSkeletonPercent'], 1.5)
+        self.assertGreater(RIDGE_META['coverage']['crestCorridorPercent'], 3)
+        self.assertLess(RIDGE_META['coverage']['crestCorridorPercent'], 6)
         self.assertGreater(RIDGE_META['coverage']['crestCorridorPercent'], RIDGE_META['coverage']['ridgeSkeletonPercent'])
-        self.assertLess(RIDGE_META['coverage']['crestCorridorPercent'], 20)
         self.assertEqual(RIDGE_META['review']['order'][0], '1 · LiDAR ridge skeleton')
         self.assertIn('Do not tune sunrise/sunset until', RIDGE_META['review']['instruction'])
 

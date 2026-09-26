@@ -230,10 +230,10 @@ export const mapSources: readonly MapSource[] = [
     kind: 'derived',
     enabled: true,
     browserLoaded: true,
-    serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_WGS84WM/ImageServer',
-    attribution: 'Red River Gorge Hiker topological-ridge Pinch-Em-Tight calibration derived from KyFromAbove Phase 3 LiDAR DEM, USDA NAIP imagery, and © OpenStreetMap contributors trail/water features',
+    serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer',
+    attribution: 'Red River Gorge Hiker: prior v9 composite retained for reference; v10 ridge diagnostics derived from KyFromAbove Phase 2 LiDAR DEM',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor. The prior composite was generated in advance for the Pinch-Em-Tight pilot area from KyFromAbove Phase 3 LiDAR-derived terrain (with USGS 3DEP fallback), USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Compact crest/nose support, near-field directional terrain breaks, and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal overlook potential, not guaranteed visibility.',
+    privacyNote: 'The red/blue image remains the prior v9 calibration composite while v10 calibrates only the topological ridge skeleton and narrow crest corridor. The current v10 ridge-only diagnostic uses a roughly 6 m topology grid from the KyFromAbove Phase 2 Z-meters DEM because the Phase 3 export returned no valid coverage for this pilot request. Trail, aerial, sunrise, and sunset inputs do not affect that ridge skeleton. Visitors load only finished RRGH-hosted diagnostic images and send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass merely to view them.',
     opacity: 0.68
   },
   {
