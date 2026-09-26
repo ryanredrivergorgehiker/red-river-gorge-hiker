@@ -79,11 +79,11 @@ def export_raster(service, bbox, bbox_sr, image_sr):
         "interpolation": "RSP_BilinearInterpolation",
         "returnSquarePixels": "false",
     }
-    payload = request_json(service + "/exportImage", params=params, timeout=45, attempts=1)
+    payload = request_json(service + "/exportImage", params=params, timeout=20, attempts=1)
     href = payload.get("href")
     if not href:
         raise RuntimeError("Image service returned no export href.")
-    response = session.get(href, timeout=60)
+    response = session.get(href, timeout=30)
     response.raise_for_status()
     with MemoryFile(response.content) as mem:
         with mem.open() as src:
