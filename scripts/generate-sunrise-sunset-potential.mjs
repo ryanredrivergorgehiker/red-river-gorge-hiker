@@ -2,7 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const ELEVATION_SERVICE = 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/getSamples';
-const HYDRO_SERVICE = 'https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer';
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.maprva.org/api/interpreter'
+];
+const WATER_QUERY_TILES_X = 3;
+const WATER_QUERY_TILES_Y = 3;
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'data', 'map');
 const SVG_PATH = path.join(OUTPUT_DIR, 'sunrise-sunset-potential.svg');
 const META_PATH = path.join(OUTPUT_DIR, 'sunrise-sunset-potential.meta.json');
@@ -96,91 +103,71 @@ async function fetchElevationEnvelopeSamples(bounds) {
   throw lastError;
 }
 
-async function fetchHydroLayer(layerId) {
-  const isFlowline = layerId === 3 || layerId === 4;
-  const tilesAcross = isFlowline ? 4 : 2;
-  const where = layerId === 9 ? '1=1' : 'FTYPE=460';
-  const pageSize = 2000;
-  const queryTiles = [];
-
-  for (let tileY = 0; tileY < tilesAcross; tileY += 1) {
-    for (let tileX = 0; tileX < tilesAcross; tileX += 1) {
-      queryTiles.push({
-        west: BOUNDS.west + (tileX / tilesAcross) * (BOUNDS.east - BOUNDS.west),
-        east: BOUNDS.west + ((tileX + 1) / tilesAcross) * (BOUNDS.east - BOUNDS.west),
-        north: BOUNDS.north - (tileY / tilesAcross) * (BOUNDS.north - BOUNDS.south),
-        south: BOUNDS.north - ((tileY + 1) / tilesAcross) * (BOUNDS.north - BOUNDS.south)
+async function fetchWaterElements() {
+  const tiles = [];
+  for (let tileY = 0; tileY < WATER_QUERY_TILES_Y; tileY += 1) {
+    for (let tileX = 0; tileX < WATER_QUERY_TILES_X; tileX += 1) {
+      tiles.push({
+        west: BOUNDS.west + (tileX / WATER_QUERY_TILES_X) * (BOUNDS.east - BOUNDS.west),
+        east: BOUNDS.west + ((tileX + 1) / WATER_QUERY_TILES_X) * (BOUNDS.east - BOUNDS.west),
+        north: BOUNDS.north - (tileY / WATER_QUERY_TILES_Y) * (BOUNDS.north - BOUNDS.south),
+        south: BOUNDS.north - ((tileY + 1) / WATER_QUERY_TILES_Y) * (BOUNDS.north - BOUNDS.south)
       });
     }
   }
 
   async function fetchTile(bounds) {
-    const tileFeatures = [];
-    for (let offset = 0; ; offset += pageSize) {
-      const url = new URL(`${HYDRO_SERVICE}/${layerId}/query`);
-      url.searchParams.set('f', 'json');
-      url.searchParams.set('where', where);
-      url.searchParams.set('geometry', JSON.stringify({
-        xmin: bounds.west,
-        ymin: bounds.south,
-        xmax: bounds.east,
-        ymax: bounds.north,
-        spatialReference: { wkid: 4326 }
-      }));
-      url.searchParams.set('geometryType', 'esriGeometryEnvelope');
-      url.searchParams.set('inSR', '4326');
-      url.searchParams.set('outSR', '4326');
-      url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
-      url.searchParams.set('outFields', 'OBJECTID,FTYPE,FCODE,GNIS_NAME');
-      url.searchParams.set('returnGeometry', 'true');
-      url.searchParams.set('returnZ', 'false');
-      url.searchParams.set('returnM', 'false');
-      url.searchParams.set('geometryPrecision', '6');
-      url.searchParams.set('maxAllowableOffset', '0.00005');
-      url.searchParams.set('resultOffset', String(offset));
-      url.searchParams.set('resultRecordCount', String(pageSize));
-      url.searchParams.set('orderByFields', 'OBJECTID ASC');
+    const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
+    const query = `[out:json][timeout:40];
+(
+  way["natural"="water"](${bbox});
+  relation["natural"="water"](${bbox});
+  way["waterway"="riverbank"](${bbox});
+  relation["waterway"="riverbank"](${bbox});
+  way["waterway"~"^(river|stream|creek|canal)$"](${bbox});
+);
+out tags geom qt;`;
 
-      let payload = null;
-      let lastError;
-      for (let attempt = 1; attempt <= 3; attempt += 1) {
-        try {
-          const response = await fetch(url, { signal: AbortSignal.timeout(25000) });
-          if (!response.ok) throw new Error(`USGS NHDPlus HR layer ${layerId} HTTP ${response.status}`);
-          payload = await response.json();
-          if (payload.error) throw new Error(`USGS NHDPlus HR layer ${layerId} error: ${JSON.stringify(payload.error)}`);
-          break;
-        } catch (error) {
-          lastError = error;
-          if (attempt < 3) await sleep(800 * attempt);
-        }
+    let lastError;
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            'User-Agent': 'RedRiverGorgeHiker/1.0 (+https://redrivergorgehiker.com/)'
+          },
+          body: new URLSearchParams({ data: query }),
+          signal: AbortSignal.timeout(50000)
+        });
+        if (!response.ok) throw new Error(`Overpass HTTP ${response.status}`);
+        const payload = await response.json();
+        if (!payload || !Array.isArray(payload.elements)) throw new Error('Invalid Overpass water response.');
+        return { elements: payload.elements, endpoint };
+      } catch (error) {
+        lastError = error;
       }
-      if (!payload) throw lastError;
-      const pageFeatures = Array.isArray(payload.features) ? payload.features : [];
-      tileFeatures.push(...pageFeatures);
-      if (pageFeatures.length < pageSize) break;
     }
-    return tileFeatures;
+    throw lastError;
   }
 
-  const collected = [];
-  const hydroConcurrency = 6;
-  for (let offset = 0; offset < queryTiles.length; offset += hydroConcurrency) {
-    const batch = queryTiles.slice(offset, offset + hydroConcurrency);
+  const allElements = new Map();
+  const usedEndpoints = new Set();
+  const concurrency = 3;
+  for (let offset = 0; offset < tiles.length; offset += concurrency) {
+    const batch = tiles.slice(offset, offset + concurrency);
     const results = await Promise.all(batch.map((bounds) => fetchTile(bounds)));
-    for (const features of results) collected.push(...features);
-    console.log(`USGS NHDPlus HR layer ${layerId}: ${Math.min(offset + batch.length, queryTiles.length)}/${queryTiles.length} tiles queried`);
+    for (const result of results) {
+      usedEndpoints.add(result.endpoint);
+      for (const element of result.elements) {
+        if (!element?.type || element?.id === undefined || element?.id === null) continue;
+        allElements.set(`${element.type}:${element.id}`, element);
+      }
+    }
+    console.log(`OpenStreetMap water mask: ${Math.min(offset + batch.length, tiles.length)}/${tiles.length} tiles queried; ${allElements.size} unique elements`);
   }
 
-  const deduped = new Map();
-  let anonymousIndex = 0;
-  for (const feature of collected) {
-    const objectId = feature?.attributes?.OBJECTID;
-    const key = objectId === undefined || objectId === null ? `anonymous-${anonymousIndex++}` : String(objectId);
-    if (!deduped.has(key)) deduped.set(key, feature);
-  }
-  console.log(`USGS NHDPlus HR layer ${layerId}: ${deduped.size} unique features retained`);
-  return [...deduped.values()];
+  return { elements: [...allElements.values()], usedEndpoints: [...usedEndpoints].sort() };
 }
 
 function sampleMeters(sample) {
@@ -295,8 +282,8 @@ function pointInPolygon(lon, lat, rings) {
 }
 
 const waterMask = new Array(COLS * ROWS).fill(false);
-let hydroPolygonFeatures = 0;
-let hydroFlowlineFeatures = 0;
+let waterPolygonFeatures = 0;
+let waterFlowlineFeatures = 0;
 
 function markPolygon(rings) {
   if (!rings?.length) return;
@@ -350,23 +337,105 @@ function markLineString(coordinates) {
   }
 }
 
-const waterbodyFeatures = await fetchHydroLayer(9); // NHDWaterbody polygons
-const streamAreaFeatures = await fetchHydroLayer(8); // NHDArea StreamRiver polygons
-const networkFlowlineFeatures = await fetchHydroLayer(3); // Network StreamRiver flowlines
-const nonNetworkFlowlineFeatures = await fetchHydroLayer(4); // NonNetwork StreamRiver flowlines
+const waterSource = await fetchWaterElements();
+let waterPolygonFeatures = 0;
+let waterFlowlineFeatures = 0;
 
-for (const feature of [...waterbodyFeatures, ...streamAreaFeatures]) {
-  const rings = feature?.geometry?.rings;
-  if (!Array.isArray(rings) || !rings.length) continue;
-  markPolygon(rings);
-  hydroPolygonFeatures += 1;
+const coordsFromGeometry = (geometry) =>
+  Array.isArray(geometry)
+    ? geometry
+      .filter((point) => point && Number.isFinite(Number(point.lon)) && Number.isFinite(Number(point.lat)))
+      .map((point) => [Number(point.lon), Number(point.lat)])
+    : [];
+
+const samePoint = (a, b) =>
+  Boolean(a && b && Math.abs(a[0] - b[0]) < 1e-7 && Math.abs(a[1] - b[1]) < 1e-7);
+
+function joinSegments(segments) {
+  const remaining = segments.filter((segment) => segment.length >= 2).map((segment) => segment.slice());
+  const rings = [];
+  const leftovers = [];
+
+  while (remaining.length) {
+    let chain = remaining.shift();
+    let progress = true;
+    while (progress && chain.length >= 2 && !samePoint(chain[0], chain[chain.length - 1])) {
+      progress = false;
+      const start = chain[0];
+      const end = chain[chain.length - 1];
+
+      for (let i = 0; i < remaining.length; i += 1) {
+        const segment = remaining[i];
+        const first = segment[0];
+        const last = segment[segment.length - 1];
+
+        if (samePoint(end, first)) {
+          chain.push(...segment.slice(1));
+        } else if (samePoint(end, last)) {
+          chain.push(...segment.slice(0, -1).reverse());
+        } else if (samePoint(start, last)) {
+          chain = [...segment.slice(0, -1), ...chain];
+        } else if (samePoint(start, first)) {
+          chain = [...segment.slice(1).reverse(), ...chain];
+        } else {
+          continue;
+        }
+
+        remaining.splice(i, 1);
+        progress = true;
+        break;
+      }
+    }
+
+    if (chain.length >= 4 && samePoint(chain[0], chain[chain.length - 1])) rings.push(chain);
+    else leftovers.push(chain);
+  }
+
+  return { rings, leftovers };
 }
 
-for (const feature of [...networkFlowlineFeatures, ...nonNetworkFlowlineFeatures]) {
-  const paths = feature?.geometry?.paths;
-  if (!Array.isArray(paths) || !paths.length) continue;
-  for (const line of paths) markLineString(line);
-  hydroFlowlineFeatures += 1;
+for (const element of waterSource.elements) {
+  const tags = element.tags || {};
+  const isWaterPolygon = tags.natural === 'water' || tags.waterway === 'riverbank';
+  const isFlowline = /^(river|stream|creek|canal)$/.test(String(tags.waterway || ''));
+
+  if (element.type === 'way') {
+    const coordinates = coordsFromGeometry(element.geometry);
+    if (coordinates.length < 2) continue;
+
+    if (isWaterPolygon && coordinates.length >= 4 && samePoint(coordinates[0], coordinates[coordinates.length - 1])) {
+      markPolygon([coordinates]);
+      waterPolygonFeatures += 1;
+    } else if (isWaterPolygon || isFlowline) {
+      markLineString(coordinates);
+      waterFlowlineFeatures += 1;
+    }
+    continue;
+  }
+
+  if (element.type === 'relation' && isWaterPolygon) {
+    const outerSegments = [];
+    const innerSegments = [];
+    for (const member of element.members || []) {
+      const coordinates = coordsFromGeometry(member.geometry);
+      if (coordinates.length < 2) continue;
+      if (member.role === 'inner') innerSegments.push(coordinates);
+      else outerSegments.push(coordinates);
+    }
+
+    const outerJoined = joinSegments(outerSegments);
+    const innerJoined = joinSegments(innerSegments);
+
+    for (const outer of outerJoined.rings) {
+      const holes = innerJoined.rings.filter((ring) => pointInRing(ring[0][0], ring[0][1], outer));
+      markPolygon([outer, ...holes]);
+      waterPolygonFeatures += 1;
+    }
+    for (const leftover of [...outerJoined.leftovers, ...innerJoined.leftovers]) {
+      markLineString(leftover);
+      waterFlowlineFeatures += 1;
+    }
+  }
 }
 
 function localTerrain(row, col, elevation) {
@@ -561,17 +630,13 @@ const metadata = {
       service: ELEVATION_SERVICE.replace('/getSamples', ''),
       interpolation: 'RSP_BilinearInterpolation'
     },
-    hydrography: {
-      id: 'usgs-nhdplus-hr',
-      service: HYDRO_SERVICE,
-      layers: {
-        networkFlowline: 3,
-        nonNetworkFlowline: 4,
-        area: 8,
-        waterbody: 9
-      },
-      polygonFeatures: hydroPolygonFeatures,
-      flowlineFeatures: hydroFlowlineFeatures
+    waterMask: {
+      id: 'openstreetmap-water',
+      attribution: '© OpenStreetMap contributors',
+      via: 'Overpass API',
+      endpointsUsed: waterSource.usedEndpoints,
+      polygonFeatures: waterPolygonFeatures,
+      flowlineFeatures: waterFlowlineFeatures
     }
   },
   bounds: BOUNDS,

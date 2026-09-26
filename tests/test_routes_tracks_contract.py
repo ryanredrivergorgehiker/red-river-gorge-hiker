@@ -453,7 +453,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         for contract in (
             "SUNRISE_AZIMUTHS = [58, 90, 121]",
             "SUNSET_AZIMUTHS = [239, 270, 302]",
-            "HYDRO_SERVICE = 'https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer'",
+            'OVERPASS_ENDPOINTS = [',
+            'fetchWaterElements',
+            '["natural"="water"]',
+            '["waterway"="riverbank"]',
+            '["waterway"~"^(river|stream|creek|canal)$"]',
             'FLOWLINE_EXCLUSION_BUFFER_METERS = 300',
             'localTerrain',
             'terrain.convexity',
@@ -464,10 +468,6 @@ class RoutesTracksContractTests(unittest.TestCase):
             'elevationQ55',
             'MIN_LOCAL_RELIEF_METERS',
             'DISPLAY_CANDIDATE_QUANTILE',
-            "fetchHydroLayer(9)",
-            "fetchHydroLayer(8)",
-            "fetchHydroLayer(3)",
-            "fetchHydroLayer(4)",
             "method: 'POST'",
             'RSP_BilinearInterpolation',
         ):
@@ -476,9 +476,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(SUN_META['version'], 2)
         self.assertEqual(SUN_META['source']['id'], 'rrgh-high-ground-sun-potential')
         self.assertEqual(SUN_META['source']['elevation']['id'], 'usgs-3dep-bare-earth-dem')
-        self.assertEqual(SUN_META['source']['hydrography']['id'], 'usgs-nhdplus-hr')
-        self.assertGreater(SUN_META['source']['hydrography']['polygonFeatures'], 0)
-        self.assertGreater(SUN_META['source']['hydrography']['flowlineFeatures'], 0)
+        self.assertEqual(SUN_META['source']['waterMask']['id'], 'openstreetmap-water')
+        self.assertEqual(SUN_META['source']['waterMask']['attribution'], '© OpenStreetMap contributors')
+        self.assertGreater(len(SUN_META['source']['waterMask']['endpointsUsed']), 0)
+        self.assertGreater(SUN_META['source']['waterMask']['polygonFeatures'], 0)
+        self.assertGreater(SUN_META['source']['waterMask']['flowlineFeatures'], 0)
         self.assertEqual(SUN_META['bounds'], {
             'west': -84.02,
             'south': 37.52,
@@ -510,11 +512,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertGreaterEqual(SUN_OVERLAY.count('<path '), 8)
 
         self.assertIn('Sunrise / Sunset potential', PRIVACY)
-        self.assertIn('USGS NHDPlus HR hydrography', PRIVACY)
+        self.assertIn('OpenStreetMap water features obtained during the build through public Overpass API services', PRIVACY)
         self.assertIn('hard-excludes mapped water', PRIVACY)
         self.assertIn('loads the finished overlay from the RRGH website', PRIVACY)
         self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS', PRIVACY)
-        self.assertIn('generalized high-ground terrain and hydrography model intended as a photography-planning aid', TERMS)
+        self.assertIn('generalized high-ground terrain and mapped-water model intended as a photography-planning aid', TERMS)
         self.assertIn('excludes mapped water', TERMS)
         self.assertIn('do not guarantee that the sun will be visible', TERMS)
 
