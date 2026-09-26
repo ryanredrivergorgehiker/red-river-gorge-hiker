@@ -231,9 +231,9 @@ export const mapSources: readonly MapSource[] = [
     enabled: true,
     browserLoaded: true,
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
-    attribution: 'Red River Gorge Hiker ridge-constrained photographic viewshed derived from USGS 3DEP elevation, USDA NAIP imagery, and © OpenStreetMap contributors water features',
+    attribution: 'Red River Gorge Hiker cliff/overlook photographic viewshed derived from USGS 3DEP elevation, USDA NAIP imagery, and © OpenStreetMap contributors water features',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'This RRGH-hosted derived overlay is generated in advance from fixed Red River Gorge USGS 3DEP terrain, USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Ridge/spur support and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal photographic viewshed potential, not guaranteed visibility.',
+    privacyNote: 'This RRGH-hosted derived overlay is generated in advance from fixed Red River Gorge USGS 3DEP terrain, USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Compact crest/nose support, near-field directional terrain breaks, and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal overlook potential, not guaranteed visibility.',
     opacity: 0.68
   },
   {

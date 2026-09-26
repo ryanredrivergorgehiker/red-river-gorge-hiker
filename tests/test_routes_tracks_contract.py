@@ -436,81 +436,71 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_optional_local_and_ridge_constrained(self):
+    def test_sunrise_sunset_potential_is_optional_local_and_overlook_seeded(self):
         self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
         self.assertIn('value="68" data-opacity="sunrise-sunset-potential"', MAP)
         self.assertIn('swatch-sun-potential', MAP)
-        self.assertIn('Color begins on exposed ridge, spur, and cliff-nose terrain', MAP)
-        self.assertIn('fades along connected high ground instead of downhill into hollows', MAP)
-        self.assertIn('weaker direction is suppressed unless both east- and west-side viewsheds are genuinely open', MAP)
+        self.assertIn('seeded at compact cliff edges and projecting ridge noses', MAP)
+        self.assertIn('fades only a short distance back onto the same crest', MAP)
+        self.assertIn('Both colors appear together only where both viewing directions independently qualify', MAP)
         self.assertIn('not a guarantee of a visible sunrise or sunset', MAP)
         self.assertIn("data/map/sunrise-sunset-potential.png", MAP)
 
         for contract in (
-            'VERSION = 5',
-            'DISPLAY_CANDIDATE_QUANTILE = 0.65',
-            'RIDGE_CORRIDOR_MIN = 0.38',
-            'DIRECTIONAL_VIEW_MIN = 0.46',
-            'DUAL_VIEW_MIN = 0.78',
-            'fine_tpi',
-            'broad_tpi',
-            'ridge_corridor',
-            'valley_zone',
-            'sunrise_view',
-            'sunset_view',
-            'dual_open',
-            'sunrise_direction_gate',
-            'sunset_direction_gate',
-            'ridge_constrained_gradient',
-            'result[valley_zone] = 0.0',
+            'VERSION = 6',
+            'PIXEL_METERS = 20.0',
+            'OVERLOOK_SUPPORT_MIN = 0.42',
+            'NEAR_DROP_MIN = 0.42',
+            'DIRECTIONAL_VIEW_MIN = 0.50',
+            'DUAL_VIEW_MIN = 0.82',
+            'max_near_drop',
+            'near_drop_score',
+            'overlook_support',
+            'sunrise_edge_gate',
+            'sunset_edge_gate',
+            'overlook_lobe',
+            'gaussian_filter(seed, sigma=2.7)',
             'sunrise_candidate',
             'sunset_candidate',
-            'sector_vegetation',
+            'result[valley_zone] = 0.0',
             'NAIP NIR/red NDVI calibrated to local 30th–78th percentiles',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['version'], 5)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-ridge-constrained-viewshed-v5')
-        self.assertEqual(SUN_META['source']['elevation']['id'], 'usgs-3dep-bare-earth-dem')
-        self.assertEqual(SUN_META['source']['aerial']['id'], 'usda-naip-four-band')
+        self.assertEqual(SUN_META['version'], 6)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-cliff-overlook-viewshed-v6')
         self.assertEqual(SUN_META['grid']['output'], 'PNG RGBA')
-        self.assertGreater(SUN_META['grid']['cols'], 2000)
-        self.assertGreater(SUN_META['grid']['rows'], 2000)
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 30)
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 30)
-        self.assertEqual(SUN_META['thresholds']['displayCandidateQuantile'], 0.65)
-        self.assertEqual(SUN_META['thresholds']['ridgeCorridorMin'], 0.38)
-        self.assertEqual(SUN_META['thresholds']['directionalViewMin'], 0.46)
-        self.assertEqual(SUN_META['thresholds']['dualViewMin'], 0.78)
-        self.assertGreater(SUN_META['coverage']['ridgeCorridorPercent'], 35)
-        self.assertLess(SUN_META['coverage']['ridgeCorridorPercent'], 45)
-        self.assertGreater(SUN_META['coverage']['valleyZonePercent'], 1)
+        self.assertGreater(SUN_META['grid']['cols'], 3500)
+        self.assertGreater(SUN_META['grid']['rows'], 3400)
+        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 22)
+        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 22)
+        self.assertEqual(SUN_META['thresholds']['overlookSupportMin'], 0.42)
+        self.assertEqual(SUN_META['thresholds']['nearDropMin'], 0.42)
+        self.assertEqual(SUN_META['thresholds']['directionalViewMin'], 0.5)
+        self.assertEqual(SUN_META['thresholds']['dualViewMin'], 0.82)
+        self.assertGreater(SUN_META['coverage']['overlookSupportPercent'], 1)
+        self.assertLess(SUN_META['coverage']['overlookSupportPercent'], 30)
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 10)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 10)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 16)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 16)
-        self.assertGreater(SUN_META['coverage']['sunriseStrongPercent'], 3)
-        self.assertLess(SUN_META['coverage']['sunriseStrongPercent'], 6)
-        self.assertGreater(SUN_META['coverage']['sunsetStrongPercent'], 3)
-        self.assertLess(SUN_META['coverage']['sunsetStrongPercent'], 6)
+        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 1)
+        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 1)
+        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 12)
+        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 12)
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 3)
         self.assertGreater(SUN_META['coverage']['denseCanopyPercent'], 20)
         self.assertLess(SUN_META['coverage']['denseCanopyPercent'], 45)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 4)
-        self.assertIn('fading along connected high ground and stopping before valley floors', SUN_META['display']['designIntent'])
+        self.assertIn('Compact sunrise/sunset lobes at exposed cliff edges and projecting ridge noses', SUN_META['display']['designIntent'])
         self.assertTrue(any('tree-by-tree canopy-height model' in item for item in SUN_META['limitations']))
         self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
         self.assertGreater(len(SUN_OVERLAY), 10000)
 
-        self.assertIn('ridge, spur, upper-shoulder, and cliff-nose support', PRIVACY)
-        self.assertIn('gradient is constrained to connected high-ground support', PRIVACY)
-        self.assertIn('weaker sunrise/sunset direction is suppressed unless both viewing sectors are independently strong', PRIVACY)
+        self.assertIn('compact crest, projecting ridge-nose, upper-shoulder, and cliff-edge support', PRIVACY)
+        self.assertIn('near-field terrain break in that viewing direction', PRIVACY)
+        self.assertIn('displayed lobe is deliberately short', PRIVACY)
         self.assertIn('loads the finished PNG overlay from the RRGH website', PRIVACY)
         self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS, USDA, or Overpass', PRIVACY)
         self.assertIn('generalized photographic viewshed proxy intended as a photography-planning aid', TERMS)
-        self.assertIn('Color is constrained to connected high-ground support', TERMS)
+        self.assertIn('displayed lobe is strongest near that likely overlook edge', TERMS)
         self.assertIn('do not guarantee that the sun will be visible', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):

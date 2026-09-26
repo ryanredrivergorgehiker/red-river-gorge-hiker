@@ -200,7 +200,7 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
             <span>Sunrise / Sunset potential</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · ridge-constrained viewshed</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · overlook / cliff-edge viewshed</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -328,7 +328,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset potential:</strong> coral marks stronger sunrise viewshed potential; indigo marks sunset. Color begins on exposed ridge, spur, and cliff-nose terrain, then fades along connected high ground instead of downhill into hollows. The weaker direction is suppressed unless both east- and west-side viewsheds are genuinely open. Valley floors and forest-blocked sectors are strongly reduced.</p>
+      <p><strong>Sunrise / Sunset potential:</strong> coral marks sunrise overlook potential; indigo marks sunset. The strongest color is seeded at compact cliff edges and projecting ridge noses where the ground drops away toward the sun, then fades only a short distance back onto the same crest. Broad ridge interiors, valleys, and forest-blocked sectors are reduced. Both colors appear together only where both viewing directions independently qualify.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -338,7 +338,7 @@ const enabledSources = enabledBrowserMapSources;
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
-      <p>The Sunrise / Sunset potential layer is an RRGH-hosted ridge-constrained photographic viewshed proxy derived from USGS 3DEP bare-earth elevation, USDA NAIP four-band aerial imagery, and mapped water. Terrain is first classified for ridge/spur/cliff-nose support using relative height, prominence, convexity, and topographic position at multiple scales. Sunrise and sunset are then evaluated separately from directional terrain drop, horizon clearance, aspect, and aerial vegetation/open-ground confidence. The display gradient is constrained back onto connected high ground so it should not bleed into adjacent valley floors. Actual mapped water is excluded. NAIP vegetation classification is not a tree-by-tree canopy-height model, and the layer does not account for every small obstruction, current weather, seasonal leaf-off conditions, or legal access; it is not a guarantee of a visible sunrise or sunset.</p>
+      <p>The Sunrise / Sunset potential layer is an RRGH-hosted cliff/overlook photographic viewshed proxy derived from USGS 3DEP bare-earth elevation, USDA NAIP four-band aerial imagery, and mapped water. It first finds compact crest/nose support, then requires a near-field terrain break toward the sunrise or sunset direction before seeding color. Longer-range horizon clearance, sun-facing aspect, relief, and aerial vegetation/open-ground confidence refine that seed. The resulting lobe is intentionally short—strongest at the likely overlook edge and fading back onto the immediate crest rather than filling an entire ridge or hollow. Actual mapped water is excluded. NAIP vegetation classification is not a tree-by-tree canopy-height model, and the layer does not account for every small obstruction, current weather, seasonal leaf-off conditions, or legal access; it is not a guarantee of a visible sunrise or sunset.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>
