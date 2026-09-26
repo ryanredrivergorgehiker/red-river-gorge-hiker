@@ -6,7 +6,9 @@ from pathlib import Path
 try:
     import numpy as np
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-    from sun_calibration import ridge_geometry, surface_classes, directional_pass, crest_fade, measured_horizon_surface, Rules
+    from sun_calibration import (ridge_geometry, surface_classes, directional_pass,
+        measured_horizon_surface, absolute_point_surfaces, upper_lip_rock_support,
+        generate, Rules)
     HAS_GEOMETRY_LIBS = True
 except ImportError:
     HAS_GEOMETRY_LIBS = False
@@ -90,19 +92,76 @@ class SunCalibrationBehavior(unittest.TestCase):
         known[:, 750:] = False
         self.assertFalse(directional_pass(z, canopy, known, candidates, openness, 2, (90,)).any())
 
-    def test_fade_cannot_cross_a_hollow_or_cut_diagonal_corners(self):
-        corridor = np.zeros((50, 100), dtype=bool)
-        corridor[10:15, 5:90] = True
-        corridor[25:30, 5:90] = True
-        strength = np.ones(corridor.shape, dtype='float32')
-        result = crest_fade(corridor, [(12, 10)], strength, strength, 2)
-        self.assertGreater(result[12, 12], 0)
-        self.assertFalse(result[25:30].any())
-        self.assertFalse(result[~corridor].any())
-        self.assertEqual(result[12, 80], 0)
-        diagonal = np.eye(5, dtype=bool)
-        result = crest_fade(diagonal, [(0, 0)], np.ones((5, 5)), np.ones((5, 5)), 2)
-        self.assertFalse(result[1:].any())
+    def test_cliff_cells_preserve_absolute_obstructions_and_measured_upper_ground(self):
+        dem = np.array([[100., 70., 70., 100.]])
+        ground_returns = np.array([[101., 99., -np.inf, -np.inf]])
+        surface_returns = np.array([[102., 104., 90., -np.inf]])
+        ground, cover = absolute_point_surfaces(dem, ground_returns, surface_returns)
+        np.testing.assert_array_equal(ground, [[101., 99., 70., 100.]])
+        np.testing.assert_array_equal(cover, [[1., 5., 20., 0.]])
+        np.testing.assert_array_equal((ground + cover)[0, :3], surface_returns[0, :3])
+
+    def test_rock_face_can_qualify_nearby_upper_lip_but_not_lower_or_distant_ground(self):
+        z = np.full((20, 20), 90.)
+        z[6, 10] = z[4, 10] = z[10, 0] = 110
+        material = np.zeros_like(z, dtype=bool); material[10, 10] = True
+        support = upper_lip_rock_support(z, material, 2)
+        self.assertTrue(support[6, 10])  # eight meters away, above visible rock
+        self.assertFalse(support[4, 10])  # twelve meters away
+        self.assertFalse(support[9, 10])  # not an upper lip
+        self.assertFalse(support[10, 0])  # no wrap across raster edge
+        self.assertFalse(upper_lip_rock_support(z, material * False, 2).any())
+
+    def test_descending_east_spur_has_sunrise_without_sunset_uphill_into_trees(self):
+        z = np.full((151, 151), 60., dtype='float32')
+        z[:, :76] = np.linspace(125, 100, 76)
+        canopy = np.zeros_like(z); canopy[:, :73] = 20
+        known = np.ones_like(z, dtype=bool)
+        candidates = np.zeros_like(known); candidates[74:77, 74:76] = True
+        rules = Rules(horizon_distance_m=100)
+        rise = directional_pass(z, canopy, known, candidates, z * 0 + 1, 2, (90,), rules)
+        setting = directional_pass(z, canopy, known, candidates, z * 0 + 1, 2, (270,), rules)
+        self.assertTrue(rise[candidates].all())
+        self.assertFalse(setting.any())
+
+    def test_narrow_view_on_usable_rock_footprint_is_retained_at_its_actual_cell(self):
+        z = np.full((151, 151), 60., dtype='float32'); z[:, :76] = 100
+        canopy = np.zeros_like(z); canopy[:, 76] = 60
+        canopy[75, 76] = 0  # one clear eye-level opening on a larger standing top
+        known = np.ones_like(z, dtype=bool)
+        candidates = np.zeros_like(known); candidates[73:78, 74:76] = True
+        result = directional_pass(z, canopy, known, candidates, z * 0 + 1, 2, (90,),
+                                  Rules(horizon_distance_m=100))
+        self.assertGreater(result[75, 75], 0)
+        self.assertEqual(result[74, 75], 0)
+        self.assertEqual(result[76, 75], 0)
+
+    def test_northwest_opening_does_not_pass_blocked_west(self):
+        z = np.full((151, 151), 60., dtype='float32'); z[70:81, 70:81] = 100
+        canopy = np.zeros_like(z); canopy[72:79, 55:65] = 70
+        known = np.ones_like(z, dtype=bool)
+        candidates = np.zeros_like(known); candidates[74:77, 74:77] = True
+        rules = Rules(horizon_distance_m=100)
+        west = directional_pass(z, canopy, known, candidates, z * 0 + 1, 2, (270,), rules)
+        northwest = directional_pass(z, canopy, known, candidates, z * 0 + 1, 2, (302,), rules)
+        self.assertFalse(west.any())
+        self.assertTrue(northwest.any())
+
+    def test_composite_never_spreads_past_each_cells_own_visibility(self):
+        y, x = np.mgrid[-300:302:2, -300:302:2]
+        z = np.where((np.abs(x) < 55) & (np.abs(y) < 100), 260., 220.).astype('float32')
+        ortho = np.full((4, *z.shape), 130, dtype='uint8')
+        canopy = np.zeros_like(z); canopy[(x < -50) & (y > 0)] = 60
+        count = np.full(z.shape, 10, dtype='uint16')
+        result = generate(z, ortho, canopy, count, count * 0, 2, Rules(horizon_distance_m=150))
+        rise, setting = result['sunrise'], result['sunset']
+        self.assertTrue((rise > 0).any())
+        self.assertTrue((setting > 0).any())
+        self.assertTrue(((rise > 0) & (setting > 0)).any())
+        for direction in ['sunrise', 'sunset']:
+            np.testing.assert_array_equal(result[direction], result[direction + '_pass'])
+            self.assertGreater(np.count_nonzero(result[direction]), len(result[direction + '_seeds']))
+            self.assertFalse(result[direction][~result['candidates']].any())
 
     def test_flat_rock_top_is_not_limited_to_a_centerline_buffer(self):
         y, x = np.mgrid[-200:202:2, -200:202:2]
@@ -135,7 +194,7 @@ class SunCalibrationBehavior(unittest.TestCase):
         self.assertFalse(valid[12, 24])
         self.assertTrue(np.isnan(top[12, 24]))
 
-    def test_single_pixel_view_gap_is_not_a_usable_direction(self):
+    def test_isolated_candidate_pixel_is_not_a_usable_standing_footprint(self):
         z = np.full((151, 151), 50, dtype='float32'); z[:, :76] = 100
         known = np.ones_like(z, dtype=bool)
         candidate = np.zeros_like(known); candidate[75, 75] = True

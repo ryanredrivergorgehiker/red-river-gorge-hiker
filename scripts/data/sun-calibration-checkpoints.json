@@ -1,5 +1,5 @@
 {
-  "reference": "Ryan's five yellow marks, image(20260926-195012).png, September 26 2026",
+  "reference": "Ryan's five yellow marks and the circled ridge/eastern descending spur in image(20260926-214833).png and image(20260926-215341).png, September 26 2026",
   "purpose": "Review-region regression checks only; these coordinates are never input to geometry, classification, scoring or rendering.",
   "radiusMeters": 50,
   "points": [
@@ -28,10 +28,11 @@
       "id": "4",
       "name": "Eastern trail-end overlook",
       "lat": 37.81662,
-      "lon": -83.6268,
+      "lon": -83.626609,
       "expected": "sunrise",
-      "exclusive": false,
-      "note": "Ryan confirms sunrise. v13 separately verifies a seasonal northwest sector; the direction is not added from relative elevation or the sunrise label."
+      "exclusive": true,
+      "radiusMeters": 25,
+      "note": "Ryan confirms sunrise and rejects sunset looking west uphill into wooded terrain. Review center is on the measured upper trail-end ledge; the former longitude was below its western cliff."
     },
     {
       "id": "5",
@@ -48,6 +49,20 @@
       "expected": "both",
       "radiusMeters": 20,
       "evidence": "Post-generation leaf-off aerial and independent horizon review, not user-supplied field confirmation."
+    },
+    {
+      "id": "7",
+      "name": "Large circled ridge: eastern rock rim",
+      "bounds": [-83.6315, 37.8202, -83.6304, 37.8220],
+      "expected": "sunrise",
+      "exclusive": true
+    },
+    {
+      "id": "8",
+      "name": "Large circled ridge: western rock rim",
+      "bounds": [-83.6345, 37.8206, -83.6334, 37.8221],
+      "expected": "sunset",
+      "exclusive": true
     }
   ]
 }

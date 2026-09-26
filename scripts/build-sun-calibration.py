@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch, fingerprint and regenerate the Pinch-Em-Tight v13 calibration area.
+"""Fetch, fingerprint and regenerate the Pinch-Em-Tight v14 calibration area.
 
 Normal operation verifies every input array against the checked-in manifest.
 Only an explicit --record-inputs operation accepts a new source snapshot.
@@ -24,7 +24,7 @@ from rasterio.warp import reproject, Resampling
 import requests
 from scipy.ndimage import map_coordinates
 
-from sun_calibration import DEFAULT_RULES, VERSION, generate
+from sun_calibration import DEFAULT_RULES, VERSION, generate, absolute_point_surfaces
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'scripts/data/sun-calibration-inputs.json'
@@ -70,7 +70,7 @@ def get_json(url, **kwargs):
     return response.json()
 
 
-def fetch_inputs(area, cache, expected=None):
+def fetch_inputs(area, cache, expected=None, record_inputs=False):
     west, south, east, north = area['bounds']
     to_web = Transformer.from_crs(4326, 3857, always_xy=True)
     low = to_web.transform(west, south)
@@ -126,7 +126,7 @@ def fetch_inputs(area, cache, expected=None):
     assert tiles, 'No measured canopy coverage'
 
     def fetch_tile(tile):
-        path = cache / (tile['id'] + '.npz')
+        path = cache / (tile['id'] + '-absolute-v2.npz')
         if path.exists():
             return path
         print('Querying', tile['id'], flush=True)
@@ -148,7 +148,8 @@ def fetch_inputs(area, cache, expected=None):
             keep = ((row >= 0) & (row < rows - 1) & (col >= 0) & (col < cols - 1)
                     & ~np.isin(classification, [7, 18]) & (np.array(points.withheld) == 0))
             row, col, classification = row[keep], col[keep], classification[keep]
-            height = np.array(points.z)[keep] * 0.3048006096012192 - map_coordinates(dem, [row, col], order=1, mode='nearest')
+            absolute_z = np.array(points.z)[keep] * 0.3048006096012192
+            height = absolute_z - map_coordinates(dem, [row, col], order=1, mode='nearest')
             ground = height[classification == 2]
             ground_residual = np.percentile(ground, [10, 50, 90]) if len(ground) else np.zeros(3)
             if len(ground) and abs(ground_residual[1]) > 1.5:
@@ -158,41 +159,56 @@ def fetch_inputs(area, cache, expected=None):
             height = height[valid]
             count = np.zeros(dem.size, 'uint32')
             above = count.copy()
-            top = np.zeros(dem.size, 'float32')
+            surface_absolute = np.full(dem.size, -np.inf, 'float32')
+            ground_absolute = np.full(dem.size, -np.inf, 'float32')
             np.add.at(count, index, 1)
             np.add.at(above, index, (height > 2).astype('uint32'))
-            np.maximum.at(top, index, np.maximum(height, 0))
-            write_npz(path, count=count.reshape(dem.shape), above=above.reshape(dem.shape), top=top.reshape(dem.shape), ground_residual=ground_residual)
+            np.maximum.at(surface_absolute, index, absolute_z[valid])
+            is_ground = classification[valid] == 2
+            np.maximum.at(ground_absolute, index[is_ground], absolute_z[valid][is_ground])
+            write_npz(path, count=count.reshape(dem.shape), above=above.reshape(dem.shape),
+                      surface_absolute=surface_absolute.reshape(dem.shape),
+                      ground_absolute=ground_absolute.reshape(dem.shape), ground_residual=ground_residual)
         return path
 
     if (cache / 'canopy.npz').exists() and (cache / 'identity.json').exists():
         with np.load(cache / 'canopy.npz') as item:
             top, count, above = item['top'], item['count'], item['above']
+            if 'terrain' not in item or 'surface_absolute' not in item:
+                raise RuntimeError('Legacy normalized-height cache cannot be used for v14; use a new cache directory.')
+            terrain, surface_absolute = item['terrain'], item['surface_absolute']
         residuals = json.loads((cache / 'identity.json').read_text())['groundResidualMetersP10P50P90']
     else:
         with ThreadPoolExecutor(max_workers=3) as pool:
             paths = list(pool.map(fetch_tile, tiles))
         count = np.zeros(dem.shape, 'uint32')
         above = count.copy()
-        top = np.zeros(dem.shape, 'float32')
+        surface_absolute = np.full(dem.shape, -np.inf, 'float32')
+        ground_absolute = np.full(dem.shape, -np.inf, 'float32')
         residuals = {}
         for path in paths:
             with np.load(path) as item:
                 count += item['count']
                 above += item['above']
-                top = np.maximum(top, item['top'])
-                residuals[path.stem] = item['ground_residual'].round(4).tolist()
-        write_npz(cache / 'canopy.npz', top=top, count=count, above=above)
+                surface_absolute = np.maximum(surface_absolute, item['surface_absolute'])
+                ground_absolute = np.maximum(ground_absolute, item['ground_absolute'])
+                residuals[path.stem.removesuffix('-absolute-v2')] = item['ground_residual'].round(4).tolist()
+        terrain, top = absolute_point_surfaces(dem, ground_absolute, surface_absolute)
+        write_npz(cache / 'canopy.npz', top=top, count=count, above=above,
+                  terrain=terrain, surface_absolute=surface_absolute)
     identity = {'exports': exports, 'pointCloudTiles': tiles, 'pointCloudResolutionFeet': COPC_RESOLUTION_FT,
                 'inputBufferMeters': BUFFER_M, 'gridTransform': list(transform)[:6],
+                'pointProcessing': 'v2: classified-ground upper envelope and absolute surface maxima; no renormalized point heights',
                 'arrays': {name: array_identity(value) for name, value in
-                           [('dem', dem), ('ortho', ortho), ('canopyHeight', top), ('returnCount', count), ('elevatedCount', above)]},
+                           [('dem', dem), ('ortho', ortho), ('terrainUpperGround', terrain),
+                            ('surfaceAbsolute', surface_absolute), ('canopyHeight', top),
+                            ('returnCount', count), ('elevatedCount', above)]},
                 'groundResidualMetersP10P50P90': residuals}
-    if expected and identity != expected:
+    if expected and not record_inputs and identity != expected:
         write_json(cache / 'unexpected-inputs.json', identity)
         raise RuntimeError('Source inputs changed. Review unexpected-inputs.json; do not silently regenerate or shift the overlay.')
     write_json(cache / 'identity.json', identity)
-    return (dem, ortho, top, count, above, transform), identity
+    return (terrain, ortho, top, count, above, transform), identity
 
 
 def render_area(key, area, inputs, destination, cache):
@@ -261,34 +277,42 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT / 'public/data/map')
     parser.add_argument('--record-inputs', action='store_true')
     args = parser.parse_args()
-    existing = {} if args.record_inputs else json.loads(MANIFEST.read_text())
+    # Recording a reviewed processing change preserves the selected source tiles.
+    # It does not silently re-run the catalog and substitute a new acquisition.
+    existing = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
     identities, areas = {}, {}
     for key, area in AREAS.items():
         cache = args.cache / key
         cache.mkdir(parents=True, exist_ok=True)
-        inputs, identity = fetch_inputs(area, cache, existing.get(key))
+        inputs, identity = fetch_inputs(area, cache, existing.get(key), args.record_inputs)
         identities[key] = identity
         areas[key] = render_area(key, area, inputs, args.output, cache)
     if args.record_inputs:
-        write_json(MANIFEST, identities)
+        # Retain provenance for paused historical areas without regenerating them.
+        write_json(MANIFEST, {**existing, **identities})
     metadata = {'version': VERSION, 'status': 'staging calibration; Ryan visual approval pending',
                 'areas': areas, 'rules': asdict(DEFAULT_RULES), 'cellGroundMetersApproximate': CELL_M,
                 'pausedAreas': ['Auxier Ridge / Courthouse Rock; v12 assets retained as history, not displayed'],
-                'source': {'elevation': 'KyFromAbove Phase 2 2-foot Z-meters DEM',
-                           'canopy': 'KyFromAbove Phase 2 COPC point cloud; US survey feet converted to meters',
+                'source': {'elevation': 'KyFromAbove Phase 2 2-foot Z-meters DEM, retaining higher classified-ground point elevations within each cell',
+                           'canopy': 'KyFromAbove Phase 2 COPC absolute surface elevations; US survey feet converted to meters without reconstructing point Z from normalized heights',
                            'aerial': 'KyFromAbove Phase 3 leaf-off four-band RGB/NIR orthophotography'},
+                'directions': {'sunrise': {'centerDegrees': 90, 'neighborDegrees': [85, 95]},
+                               'sunset': {'centerDegrees': 270, 'neighborDegrees': [265, 275]},
+                               'meaning': 'general east/west view potential; not a date-specific solar prediction',
+                               'display': 'each cell displays only its own directional result; no propagation'},
                 'inputManifestSha256': hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
                 'modelSha256': hashlib.sha256((ROOT / 'scripts/sun_calibration.py').read_bytes()).hexdigest(),
                 'trailOrAerialAffectsGeometry': False, 'trailAffectsScores': False,
                 'reviewFirst': '1 · LiDAR ridge skeleton',
-                'limits': ['Connected rock-like aerial material and low measured cover are evidence, not proof of safe footing.',
+                'limits': ['Connected rock-like leaf-off aerial material on the top or within 8 m downhill is evidence, not proof of safe footing.',
                            'Small point-cloud gaps use nearby measured absolute surface elevations; larger gaps stay unknown. Narrow, shaded or spectrally ambiguous outcrops can be missed.',
-                           'The sampled 1 km horizon and representative seasonal azimuths do not predict an exact date or unobstructed astronomical sunrise.',
+                           'A visible cell must pass its own east or west sightline and a neighboring ray within 5 degrees, on a connected candidate standing footprint of at least 16 square meters.',
+                           'The sampled 1 km horizon, 3-degree obstruction limit and fixed east/west directions do not predict an exact date or visibility at the astronomical horizon. Seasonal northeast/northwest openings do not substitute for blocked east/west views.',
                            'Cliff access, current vegetation, weather and legal access are not established.']}
     write_json(args.output / 'sunrise-sunset-potential.meta.json', metadata)
     write_json(args.output / 'sunrise-sunset-ridge-calibration.meta.json', {
-        'version': VERSION, 'supersededVersion': 12, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
-        'method': 'connected upper-landform topology, elevation-routed crest, upper cliff-lip standing ground and connected rock qualification',
+        'version': VERSION, 'supersededVersion': 13, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
+        'method': 'connected upper-landform topology, measured upper-ground crest, nearby downhill rock evidence, absolute obstruction elevations and independent per-cell east/west visibility',
         'trailOrAerialAffectsGeometry': False})
     print('Generated Pinch-Em-Tight only. Inputs verified:', not args.record_inputs, flush=True)
 

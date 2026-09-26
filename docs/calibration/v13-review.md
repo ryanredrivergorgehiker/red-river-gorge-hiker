@@ -1,3 +1,5 @@
+> Superseded by [v14](v14-review.md) after Ryan rejected the missing eastern-rim sunrise and the descending eastern spur's sunset/purple label. The v13 explanation below is historical; v14 documents the confirmed height, material-association and display defects.
+
 # v13 — Pinch-Em-Tight crest and rock-top correction
 
 Status: staging candidate; Ryan's visual acceptance is pending. This pass generates and displays **Pinch-Em-Tight only**. Auxier generation and display are paused; its v12 assets and review remain historical. Production and approved route geometry are unchanged.

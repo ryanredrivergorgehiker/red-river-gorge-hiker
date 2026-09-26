@@ -5,7 +5,6 @@ standing candidate and its viewing sector; it cannot move the terrain geometry.
 All distances below are ground meters, not Web Mercator map meters.
 """
 from dataclasses import dataclass
-import heapq
 import math
 
 import numpy as np
@@ -17,7 +16,7 @@ from scipy.ndimage import (
 from skimage.morphology import skeletonize
 from skimage.graph import route_through_array
 
-VERSION = 13
+VERSION = 14
 
 
 @dataclass(frozen=True)
@@ -27,19 +26,68 @@ class Rules:
     corridor_max_below_crest_m: float = 1.8
     max_standing_slope_deg: float = 25.0
     minimum_segment_m: float = 40.0
-    maximum_fade_m: float = 70.0
+    maximum_fade_m: float = 0.0
     observer_height_m: float = 1.6
     horizon_limit_deg: float = 3.0
     horizon_distance_m: float = 1000.0
     canopy_gap_radius_m: float = 12.0
-    minimum_view_area_m2: float = 16.0
-    minimum_sector_degrees: float = 30.0
+    minimum_standing_area_m2: float = 16.0
+    minimum_sector_degrees: float = 10.0
     minimum_seed_strength: float = 0.6
     top_neighborhood_m: float = 24.0
     near_view_distance_m: float = 80.0
+    rock_evidence_radius_m: float = 8.0
 
 
 DEFAULT_RULES = Rules()
+
+
+def absolute_point_surfaces(dem, ground_absolute, surface_absolute):
+    """Retain measured upper ground and absolute obstruction elevations.
+
+    A cell spanning a cliff may contain an upper ledge above its sampled DEM
+    center. Classified ground returns preserve that ledge. Never normalize
+    point Z at one XY and restore it using a different ground elevation: that
+    invents tall obstructions at cliff edges.
+    """
+    ground = np.maximum(dem, ground_absolute).astype(np.float32)
+    cover = np.maximum(surface_absolute - ground, 0).astype(np.float32)
+    cover[~np.isfinite(surface_absolute)] = 0
+    return ground, cover
+
+
+def rock_material(ortho, cell_m):
+    red, green, blue, nir = np.asarray(ortho, dtype=np.float32)
+    ndvi = (nir - red) / np.maximum(nir + red, 1)
+    brightness = (red + green + blue) / 3
+    chroma = (np.maximum.reduce([red, green, blue]) - np.minimum.reduce([red, green, blue])) / np.maximum(brightness, 1)
+    return remove_short_components((ndvi < .15) & (brightness >= 90) & (chroma < .4),
+                                   math.ceil(24 / cell_m ** 2))
+
+
+def upper_lip_rock_support(z, material, cell_m, rules=DEFAULT_RULES):
+    """Associate visible downhill rock with its neighboring upper lip.
+
+    The face may be bright bare rock while the standing top is shaded or under
+    branches. This is only material evidence; terrain and each actual outward
+    sightline still have to pass. Association is limited to eight meters and a
+    measured downhill rock face; no review coordinate enters this calculation.
+    """
+    support = material.copy()
+    radius = math.ceil(rules.rock_evidence_radius_m / cell_m)
+    for dr in range(-radius, radius + 1):
+        for dc in range(-radius, radius + 1):
+            if not (0 < math.hypot(dr, dc) * cell_m <= rules.rock_evidence_radius_m):
+                continue
+            nearby = np.roll(material, (dr, dc), axis=(0, 1))
+            lower = np.roll(z, (dr, dc), axis=(0, 1))
+            eligible = nearby & (z >= lower + 1)
+            if dr > 0: eligible[:dr] = False
+            if dr < 0: eligible[dr:] = False
+            if dc > 0: eligible[:, :dc] = False
+            if dc < 0: eligible[:, dc:] = False
+            support |= eligible
+    return support
 
 
 def remove_short_components(mask, min_pixels):
@@ -208,8 +256,7 @@ def surface_classes(ortho, canopy_height, return_count, elevated_count, cell_m=2
     total = uniform_filter(return_count.astype(np.float32), 3)
     fraction = uniform_filter(elevated_count.astype(np.float32), 3) / np.maximum(total, .01)
     known = (return_count > 0) & (brightness > 5)
-    material = (ndvi < .15) & (brightness >= 90) & (chroma < .4)
-    material = remove_short_components(material, math.ceil(24 / cell_m ** 2))
+    material = rock_material(ortho, cell_m)
     exposed = known & material & (canopy_height < 4)
     low_cover = known & (canopy_height <= 3) & (fraction < .4)
     classes = np.zeros(canopy_height.shape, dtype=np.uint8)
@@ -264,25 +311,33 @@ def directional_pass(z, canopy, known, candidates, open_ground, cell_m,
                      azimuths, rules=DEFAULT_RULES, horizon=None):
     """Require a broad low-obstruction sector and a usable connected footprint.
 
-    Evaluate every 5° around each representative seasonal azimuth. A 30° window must pass
-    six of seven rays: <=3° measured horizon and >=10 m fall-away within 80 m.
-    A passing direction is retained independently of the opposite score.
-    The direction must also occupy at least 16 m² of adjacent candidate ground.
+    Evaluate the actual east or west direction plus its immediate neighbors.
+    The center and at least two of three rays in the 10° window must pass:
+    <=3° measured horizon and >=10 m fall-away within 80 m. An oblique seasonal
+    opening cannot substitute for the blocked east/west direction.
+    Candidate standing ground must connect to at least 16 m² of candidate area.
+    Visibility belongs to each individual cell on that footprint: an opening
+    at the lip is not erased because neighboring standing cells are obstructed.
     The opposite direction is evaluated independently with exactly these rules.
     """
+    candidates = remove_short_components(candidates,
+        math.ceil(rules.minimum_standing_area_m2 / cell_m ** 2))
     rr, cc = np.nonzero(candidates)
     result = np.zeros(z.shape, np.float32)
     if not len(rr):
         return result
     surface, covered = horizon if horizon is not None else measured_horizon_surface(z, canopy, known, cell_m, rules)
     coverage_grid = covered.astype(np.uint8)
-    distances = np.arange(4, rules.horizon_distance_m + 1, 4, dtype=np.float32)
+    distances = np.unique(np.r_[np.arange(cell_m, min(40, rules.horizon_distance_m), cell_m),
+                                 np.arange(40, rules.horizon_distance_m, 4),
+                                 rules.horizon_distance_m]).astype(np.float32)
     width = round(rules.minimum_sector_degrees / 5) + 1
     offsets = np.linspace(-rules.minimum_sector_degrees / 2,
                           rules.minimum_sector_degrees / 2, width)
     angles = [azimuth + offset for azimuth in azimuths for offset in offsets]
     # Vectorize each ray, in bounded batches, rather than resampling full grids
-    # once for every individual distance. This retains four-meter sampling.
+    # once for every individual distance. Sample every native cell near the
+    # observer and every four meters beyond forty meters.
     for start in range(0, len(rr), 2048):
         rows, cols = rr[start:start + 2048], cc[start:start + 2048]
         eye = z[rows, cols, None] + rules.observer_height_m
@@ -304,15 +359,13 @@ def directional_pass(z, canopy, known, candidates, open_ground, cell_m,
         scores = np.asarray(scores)
         sectors = []
         for index in range(0, len(angles), width):
-            # The actual seasonal solar azimuth must pass too; clear neighbors
+            # The actual east/west center ray must pass too; clear neighbors
             # cannot turn an obstructed center ray into a sun-facing viewpoint.
             sector = np.sort(scores[index:index + width], axis=0)[1]
             sector[scores[index + width // 2] == 0] = 0
             sectors.append(sector)
         best = np.max(sectors, axis=0)
         result[rows, cols] = np.where(best > 0, .65 + .35 * best * open_ground[rows, cols], 0)
-    usable = remove_short_components(result >= .18, math.ceil(rules.minimum_view_area_m2 / cell_m ** 2))
-    result[~usable] = 0
     return result
 
 
@@ -328,58 +381,28 @@ def select_seeds(strength, cell_m, spacing_m=45, minimum_strength=.6):
     return chosen
 
 
-def crest_fade(corridor, seeds, strength, open_ground, cell_m, rules=DEFAULT_RULES):
-    """Fade along connected standable crest cells with no radial blur.
-
-    Every colored pixel is reached by an 8-neighbor walk from a qualifying
-    viewpoint. Tall cover shortens the path. Diagonal corner cutting is banned.
-    """
-    rows, cols = corridor.shape
-    result = np.zeros(corridor.shape, np.float32)
-    for sr, sc in seeds:
-        queue = [(0., sr, sc)]
-        distances = {(sr, sc): 0.}
-        seed_strength = float(strength[sr, sc])
-        while queue:
-            distance, r, c = heapq.heappop(queue)
-            if distance != distances[(r, c)] or distance > rules.maximum_fade_m:
-                continue
-            value = seed_strength * (1 - distance / rules.maximum_fade_m) ** 1.5
-            result[r, c] = max(result[r, c], value)
-            for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)):
-                nr, nc = r + dr, c + dc
-                if not (0 <= nr < rows and 0 <= nc < cols and corridor[nr, nc]):
-                    continue
-                if dr and dc and not (corridor[r, nc] and corridor[nr, c]):
-                    continue
-                cost = cell_m * math.hypot(dr, dc) * (1 + 1.5 * (1 - float(open_ground[nr, nc])))
-                next_distance = distance + cost
-                if next_distance < distances.get((nr, nc), float('inf')) and next_distance <= rules.maximum_fade_m:
-                    distances[nr, nc] = next_distance
-                    heapq.heappush(queue, (next_distance, nr, nc))
-    return result
-
-
 def generate(elevation, ortho, canopy_height, return_count, elevated_count,
              cell_m, rules=DEFAULT_RULES):
     geometry = ridge_geometry(elevation, cell_m, rules)
     overlooks = geometric_overlooks(elevation, geometry['corridor'], cell_m)
     classes, openness, canopy_surface = surface_classes(ortho, canopy_height, return_count, elevated_count, cell_m)
-    candidates = (overlooks > 0) & (openness >= .2)
+    material = rock_material(ortho, cell_m)
+    rock_support = upper_lip_rock_support(elevation, material, cell_m, rules)
+    candidates = (overlooks > 0) & rock_support & (return_count > 0)
     # Diagnostic 2 displays the narrow crest plus actual rock-qualified tops,
     # never the broad terrain-search footprint.
     geometry['corridor'] = geometry['narrow_crest'] | candidates
     known = return_count > 0
     horizon = measured_horizon_surface(elevation, canopy_surface, known, cell_m, rules)
-    sunrise = directional_pass(elevation, canopy_surface, known, candidates, openness, cell_m, (58, 90, 122), rules, horizon)
-    sunset = directional_pass(elevation, canopy_surface, known, candidates, openness, cell_m, (238, 270, 302), rules, horizon)
-    # Both directions must qualify independently; do not manufacture the weaker
-    # direction from a shared elevation or aspect score.
-    fade_ground = geometry['corridor']
+    evidence = np.where(candidates, 1., 0.).astype(np.float32)
+    sunrise = directional_pass(elevation, canopy_surface, known, candidates, evidence, cell_m, (90,), rules, horizon)
+    sunset = directional_pass(elevation, canopy_surface, known, candidates, evidence, cell_m, (270,), rules, horizon)
+    # Every visible cell carries its OWN passing result. Review-point thinning
+    # does not affect the display, and no color propagates into a failed cell.
     rise_seeds = select_seeds(sunrise, cell_m, minimum_strength=rules.minimum_seed_strength)
     set_seeds = select_seeds(sunset, cell_m, minimum_strength=rules.minimum_seed_strength)
     return {**geometry, 'overlooks': overlooks, 'classes': classes, 'openness': openness,
+            'rock_material': material, 'rock_support': rock_support, 'candidates': candidates,
             'sunrise_pass': sunrise, 'sunset_pass': sunset,
-            'sunrise': crest_fade(fade_ground, rise_seeds, sunrise, openness, cell_m, rules),
-            'sunset': crest_fade(fade_ground, set_seeds, sunset, openness, cell_m, rules),
+            'sunrise': sunrise.copy(), 'sunset': sunset.copy(),
             'sunrise_seeds': rise_seeds, 'sunset_seeds': set_seeds}

@@ -3,7 +3,7 @@
     "arrays": {
       "canopyHeight": {
         "dtype": "float32",
-        "sha256": "bafeff8d341cba46d87f3e3f6a097b05013835a365ed00005ed0439ad8e4fa3a",
+        "sha256": "176c7fa070d946847fc7c47e8bac47a05ba04a3503a073d71907b79a53da91b2",
         "shape": [
           2687,
           2573
@@ -37,6 +37,22 @@
       "returnCount": {
         "dtype": "uint32",
         "sha256": "859d6a40da704d0b6259171f2b24c0ea90bde5ee41d0b03f388192a1e3f98ae5",
+        "shape": [
+          2687,
+          2573
+        ]
+      },
+      "surfaceAbsolute": {
+        "dtype": "float32",
+        "sha256": "e92f689beac3df09b333d073e1f7e9fc991f3deefe3b883de98ee5e230ab948b",
+        "shape": [
+          2687,
+          2573
+        ]
+      },
+      "terrainUpperGround": {
+        "dtype": "float32",
+        "sha256": "9812b0b4d8bec1be2d0006922ff7a9a2acac1a106529b41c837085f894a9b7c8",
         "shape": [
           2687,
           2573
@@ -269,7 +285,8 @@
         "id": "N108E353_LAS_Phase2.copc",
         "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/PointCloud/Phase2/N108E353_LAS_Phase2.copc.laz"
       }
-    ]
+    ],
+    "pointProcessing": "v2: classified-ground upper envelope and absolute surface maxima; no renormalized point heights"
   },
   "b": {
     "arrays": {
