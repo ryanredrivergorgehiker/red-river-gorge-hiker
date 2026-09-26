@@ -24,7 +24,7 @@ from rasterio.warp import reproject, Resampling
 import requests
 from scipy.ndimage import map_coordinates
 
-from sun_calibration import DEFAULT_RULES, VERSION, generate, absolute_point_surfaces
+from sun_calibration import DEFAULT_RULES, VERSION, generate, absolute_point_surfaces, composite_rgba
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'scripts/data/sun-calibration-inputs.json'
@@ -250,15 +250,7 @@ def render_area(key, area, inputs, destination, cache):
     save('calibration-open-ground', palette[result['classes']])
     save('calibration-sunrise-pass', layer(result['sunrise_pass'], [255, 111, 97], 1.6))
     save('calibration-sunset-pass', layer(result['sunset_pass'], [64, 85, 216], 1.6))
-    rise, setting = result['sunrise'], result['sunset']
-    total = np.maximum(rise + setting, 1e-8)
-    composite = np.zeros((*dem.shape, 4), np.uint8)
-    for band, (coral, indigo) in enumerate(zip([255, 111, 97], [64, 85, 216])):
-        composite[:, :, band] = (coral * rise / total + indigo * setting / total).astype(np.uint8)
-    # Explicit overlap color: both directions independently passed.
-    composite[(rise > 0) & (setting > 0), :3] = [156, 77, 204]
-    composite[:, :, 3] = (np.clip(np.maximum(rise, setting) * 1.6, 0, 1) * 255).astype(np.uint8)
-    save('potential', composite)
+    save('potential', composite_rgba(result['sunrise'], result['sunset']))
     back = Transformer.from_crs(3857, 4326, always_xy=True)
     seeds = {}
     for direction in ['sunrise', 'sunset']:

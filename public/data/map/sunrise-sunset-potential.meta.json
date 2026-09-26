@@ -19,7 +19,7 @@
         "sunrise-sunset-calibration-ridge-skeleton.png": "6e160e173112b6875a9765329dda61e587e3df9fd8010198f109af678097f1b6",
         "sunrise-sunset-calibration-sunrise-pass.png": "9f179a38ae54d9929a562c4d660118879cf621135d524c71feb85d97cf7c756e",
         "sunrise-sunset-calibration-sunset-pass.png": "9327ed5d0c70aa64065037ab03dbce632203a1b4383c204d19985384f6ab7bcf",
-        "sunrise-sunset-potential.png": "7517b5abb3521d5691c8cc3c0d89403775e6dcb5085373218c6425918c4b3e9b"
+        "sunrise-sunset-potential.png": "b30cbcaa80453e6d80f4c03b9aee69591d7215d189c18c2f63bfc5f33414df45"
       },
       "seeds": {
         "sunrise": [
@@ -301,7 +301,7 @@
     "The sampled 1 km horizon, 3-degree obstruction limit and fixed east/west directions do not predict an exact date or visibility at the astronomical horizon. Seasonal northeast/northwest openings do not substitute for blocked east/west views.",
     "Cliff access, current vegetation, weather and legal access are not established."
   ],
-  "modelSha256": "fdf4fe07ab3c53101da5abd0b92367b73d4ee0201e242b068aba8d1ef28d134a",
+  "modelSha256": "17523fad844c891c0e3ee878da75eeb2da0570df9054525be3b3efbdca3c2c02",
   "pausedAreas": [
     "Auxier Ridge / Courthouse Rock; v12 assets retained as history, not displayed"
   ],

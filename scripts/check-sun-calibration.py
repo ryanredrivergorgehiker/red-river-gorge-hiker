@@ -41,6 +41,8 @@ with np.load(args.cache / 'a/result.npz') as result:
     purple = (pixels[:, :, :3] == [156, 77, 204]).all(axis=2) & (pixels[:, :, 3] > 0)
     np.testing.assert_array_equal(purple, rise & setting,
                                   err_msg='Purple must mean both directions pass at the same cell')
+    assert (pixels[rise & ~setting, :3] == [255, 111, 97]).all(), 'Sunrise color differs from legend'
+    assert (pixels[setting & ~rise, :3] == [64, 85, 216]).all(), 'Sunset color differs from legend'
     print(json.dumps({'invariants': 'passed', 'sunriseImageCells': int(rise.sum()),
                       'sunsetImageCells': int(setting.sum()), 'sameCellPurple': int(purple.sum())}))
     for point in checks['points']:

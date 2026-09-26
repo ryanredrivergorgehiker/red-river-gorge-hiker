@@ -8,7 +8,7 @@ try:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
     from sun_calibration import (ridge_geometry, surface_classes, directional_pass,
         measured_horizon_surface, absolute_point_surfaces, upper_lip_rock_support,
-        generate, Rules)
+        generate, composite_rgba, Rules)
     HAS_GEOMETRY_LIBS = True
 except ImportError:
     HAS_GEOMETRY_LIBS = False
@@ -16,6 +16,17 @@ except ImportError:
 
 @unittest.skipUnless(HAS_GEOMETRY_LIBS, 'Scientific dependencies run in the calibration workflow')
 class SunCalibrationBehavior(unittest.TestCase):
+    def test_composite_uses_exact_legend_hues_at_every_passing_strength(self):
+        strength = np.linspace(.65, 1, 501, dtype=np.float32)[None, :]
+        zero = np.zeros_like(strength)
+        for rise, setting, color in [(strength, zero, [255, 111, 97]),
+                                     (zero, strength, [64, 85, 216]),
+                                     (strength, strength[:, ::-1], [156, 77, 204])]:
+            image = composite_rgba(rise, setting)
+            self.assertTrue((image[:, :, :3] == color).all())
+            self.assertTrue((image[:, :, 3] == 255).all())
+        self.assertFalse(composite_rgba(zero, zero).any())
+
     def test_crest_is_centered_and_planar_flank_is_not_a_ridge(self):
         y, x = np.mgrid[-200:202:2, -200:202:2]
         z = (220 + 45 * np.exp(-(x / 35) ** 2)).astype('float32')

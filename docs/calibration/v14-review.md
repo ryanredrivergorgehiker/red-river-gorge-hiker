@@ -34,6 +34,6 @@ At the selected eastern trail-end cell, the east horizon peaks at −0.95°; the
 
 ## Verification and limits
 
-Seventeen scientific behavior tests cover crest continuity, cliff lips, absolute elevations, downhill rock association, descending spurs, blocked west versus open northwest, narrow views on standing ground, unknown coverage, independent directions and no display propagation. The calibration workflow re-fetches the pinned sources, verifies all array fingerprints and reproduces all seven PNGs byte for byte.
+Eighteen scientific behavior tests cover crest continuity, cliff lips, absolute elevations, downhill rock association, descending spurs, blocked west versus open northwest, narrow views on standing ground, unknown coverage, independent directions and no display propagation. The initial fresh-data run reproduced every input and sightline but exposed floating-point rounding in the composite RGB blend. The renderer now assigns exact integer coral/indigo/purple values; opacity alone represents strength. A regression test checks every passing strength against the legend. The calibration workflow re-fetches the pinned sources, verifies all array fingerprints and reproduces all seven PNGs byte for byte.
 
 These are evidence-backed model checks, not field validation or a guarantee of accessible footing. Sparse or ambiguous rock evidence, point spacing, vegetation changes and terrain beyond 1 km remain limitations. The original photos, approved route files, private/RAW data exclusions and disabled parcel layer are unaffected.

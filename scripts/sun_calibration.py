@@ -381,6 +381,21 @@ def select_seeds(strength, cell_m, spacing_m=45, minimum_strength=.6):
     return chosen
 
 
+def composite_rgba(sunrise, sunset):
+    """Exact legend colors; strength affects opacity, never categorical hue.
+
+    Floating division by the same strength can round 255 to 254 differently
+    across SIMD implementations. There is no blending to calculate: a cell is
+    east, west, both, or neither.
+    """
+    rgba = np.zeros((*sunrise.shape, 4), np.uint8)
+    rgba[sunrise > 0, :3] = [255, 111, 97]
+    rgba[sunset > 0, :3] = [64, 85, 216]
+    rgba[(sunrise > 0) & (sunset > 0), :3] = [156, 77, 204]
+    rgba[:, :, 3] = (np.clip(np.maximum(sunrise, sunset) * 1.6, 0, 1) * 255).astype(np.uint8)
+    return rgba
+
+
 def generate(elevation, ortho, canopy_height, return_count, elevated_count,
              cell_m, rules=DEFAULT_RULES):
     geometry = ridge_geometry(elevation, cell_m, rules)
