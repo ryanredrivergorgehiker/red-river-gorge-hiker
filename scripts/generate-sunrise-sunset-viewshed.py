@@ -315,14 +315,35 @@ blue = naip[2]
 if naip.shape[0] >= 4:
     nir = naip[3]
     ndvi = (nir - red) / np.maximum(nir + red, 1.0)
-    vegetation = smoothstep(ndvi, 0.28, 0.66)
-    vegetation_method = "NAIP NIR/red NDVI"
+    valid_ndvi = ndvi[np.isfinite(ndvi) & ((nir + red) > 8.0)]
+    if valid_ndvi.size < 1000:
+        raise RuntimeError("NAIP NDVI returned too few valid pixels for local calibration.")
+    ndvi_open = float(np.quantile(valid_ndvi, 0.30))
+    ndvi_dense = float(np.quantile(valid_ndvi, 0.78))
+    if ndvi_dense - ndvi_open < 0.035:
+        ndvi_dense = ndvi_open + 0.035
+    vegetation = smoothstep(ndvi, ndvi_open, ndvi_dense)
+    vegetation_method = "NAIP NIR/red NDVI calibrated to local 30th–78th percentiles"
+    vegetation_stats = {
+        "ndviP05": round(float(np.quantile(valid_ndvi, 0.05)), 4),
+        "ndviP30Open": round(ndvi_open, 4),
+        "ndviP50": round(float(np.quantile(valid_ndvi, 0.50)), 4),
+        "ndviP78Dense": round(ndvi_dense, 4),
+        "ndviP95": round(float(np.quantile(valid_ndvi, 0.95)), 4),
+    }
 else:
-    # Fallback if an unexpected mosaic omits NIR: excessive-green index still
-    # distinguishes much leafy canopy from rock/road/open ground.
+    # Fallback if an unexpected mosaic omits NIR: calibrate excessive-green
+    # locally so the forest/open-ground split remains specific to this imagery.
     exg = 2.0 * green - red - blue
-    vegetation = smoothstep(exg, 18.0, 70.0)
-    vegetation_method = "NAIP visible-band excessive-green fallback"
+    valid_exg = exg[np.isfinite(exg)]
+    exg_open = float(np.quantile(valid_exg, 0.30))
+    exg_dense = float(np.quantile(valid_exg, 0.78))
+    vegetation = smoothstep(exg, exg_open, exg_dense)
+    vegetation_method = "NAIP visible-band excessive-green fallback calibrated locally"
+    vegetation_stats = {
+        "exgP30Open": round(exg_open, 2),
+        "exgP78Dense": round(exg_dense, 2),
+    }
 
 vegetation = gaussian_filter(vegetation.astype(np.float32), sigma=0.8)
 local_canopy = uniform_filter(vegetation, size=3, mode="nearest")
@@ -474,6 +495,7 @@ metadata = {
             "service": NAIP_SERVICE,
             "bandsRequested": [0, 1, 2, 3],
             "vegetationMethod": vegetation_method,
+            "vegetationCalibration": vegetation_stats,
         },
         "waterMask": {
             "id": "openstreetmap-water",
