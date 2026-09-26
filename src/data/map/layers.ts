@@ -226,12 +226,12 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'sunrise-sunset-potential',
-    label: 'Sunrise / Sunset pilot — crest-connected',
+    label: 'Sunrise / Sunset pilot — ridge-skeleton',
     kind: 'derived',
     enabled: true,
     browserLoaded: true,
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
-    attribution: 'Red River Gorge Hiker crest-connected Pinch-Em-Tight calibration derived from USGS 3DEP elevation, USDA NAIP imagery, and © OpenStreetMap contributors trail/water features',
+    attribution: 'Red River Gorge Hiker topological-ridge Pinch-Em-Tight calibration derived from USGS 3DEP elevation, USDA NAIP imagery, and © OpenStreetMap contributors trail/water features',
     termsUrl: 'https://www.openstreetmap.org/copyright',
     privacyNote: 'This staging crest-connected calibration overlay is generated in advance for the Pinch-Em-Tight pilot area from USGS 3DEP terrain, USDA NAIP four-band aerial imagery, and OpenStreetMap water data. Compact crest/nose support, near-field directional terrain breaks, and sunrise/sunset viewing sectors are calculated during the build; visitors load only the finished local overlay and send no coordinates or map requests to USGS, USDA, or Overpass merely to view it. It indicates generalized seasonal overlook potential, not guaranteed visibility.',
     opacity: 0.68

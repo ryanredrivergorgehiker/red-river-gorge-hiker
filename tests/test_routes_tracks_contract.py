@@ -27,7 +27,7 @@ TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
-SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')
+SUN_GENERATOR = (ROOT / 'scripts/generate-sunrise-sunset-viewshed.py').read_text(encoding='utf-8')\nGENERATOR_WORKFLOW = (ROOT / '.github/workflows/generate-sunrise-sunset-potential.yml').read_text(encoding='utf-8')
 SUN_META_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.meta.json'
 SUN_OVERLAY_PATH = ROOT / 'public/data/map/sunrise-sunset-potential.png'
 SUN_META = json.loads(SUN_META_PATH.read_text(encoding='utf-8'))
@@ -436,66 +436,60 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_crest_connected_pinch_em_tight_pilot(self):
-        self.assertIn('Sunrise / Sunset pilot — crest-connected', MAP)
-        self.assertIn('LiDAR crest mask', MAP)
-        self.assertIn('Trail and aerial data cannot move it', MAP)
-        self.assertIn('fade walks connected crest pixels rather than using radial blur', MAP)
-        self.assertIn('cannot create, move, or broaden the crest', MAP)
+    def test_sunrise_sunset_potential_is_topological_ridge_pilot(self):
+        self.assertIn('Sunrise / Sunset pilot — ridge-skeleton', MAP)
+        self.assertIn('1 · LiDAR ridge skeleton', MAP)
+        self.assertIn('2 · Crest corridor (~12 m)', MAP)
+        self.assertIn('data-map-layer="sun-cal-ridge-skeleton"', MAP)
+        self.assertIn('data-opacity="sun-cal-ridge-skeleton"', MAP)
+        self.assertIn('drainage divide/ridge top', MAP)
+        self.assertIn('Trail and aerial data cannot move either geometry', MAP)
 
         for contract in (
-            'VERSION = 9',
-            'bilateral_ridge_relief',
-            'crest_mask',
-            'Geometry is LiDAR-only',
-            'Aerial evidence comes only AFTER the LiDAR geometry exists',
-            'trail_confidence = 1.0 + 0.03 * trail_support',
+            'VERSION = 10',
+            'topological_ridge_skeleton',
+            'h_minima',
+            'watershed(',
+            'watershed_line=True',
+            'skeletonize',
+            'remove_small_objects',
+            'ridge_skeleton',
+            'CREST_CORRIDOR_METERS = 12.0',
+            'ridge_distance_m = distance_transform_edt',
+            'crest_mask = ridge_distance_m <= CREST_CORRIDOR_METERS',
+            'trailOrAerialAffectsSkeleton": False',
+            'sunrise-sunset-calibration-ridge-skeleton.png',
             'crest_connected_propagation',
-            'maximum_filter(current, size=3, mode="constant", cval=0.0)',
-            'max_distance_m = 100.0',
-            'current[~support] = 0.0',
-            'result[~support] = 0.0',
-            'late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertNotIn('gaussian_filter(seed, sigma=', SUN_GENERATOR)
-        support_start = SUN_GENERATOR.index('overlook_support = clamp01(')
-        support_end = SUN_GENERATOR.index('overlook_support *=', support_start)
-        self.assertNotIn('trail_support', SUN_GENERATOR[support_start:support_end])
-        self.assertNotIn('open_ground', SUN_GENERATOR[support_start:support_end])
+        self.assertNotIn('binary_dilation(crest_core', SUN_GENERATOR)
+        self.assertIn('scikit-image', GENERATOR_WORKFLOW)
 
-        self.assertEqual(SUN_META['version'], 9)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-crest-geodesic-v9')
-        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging crest-geodesic calibration only')
-        self.assertTrue(SUN_META['calibrationArea']['expandOnlyAfterVisualApproval'])
-        self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR crest mask')
-        self.assertEqual(SUN_META['source']['trailSupport']['role'], 'late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry')
-        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], 15)
+        self.assertEqual(SUN_META['version'], 10)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-ridge-skeleton-v10')
+        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging topological-ridge calibration only')
+        self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR ridge skeleton')
+        self.assertEqual(SUN_META['ridgeTopology']['crestCorridorMeters'], 12.0)
+        self.assertFalse(SUN_META['ridgeTopology']['trailOrAerialAffectsSkeleton'])
+        self.assertGreater(SUN_META['ridgeTopology']['watershedBasinCount'], 1)
+        self.assertGreater(SUN_META['coverage']['ridgeSkeletonPercent'], 0)
+        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], SUN_META['coverage']['ridgeSkeletonPercent'])
         self.assertLess(SUN_META['coverage']['crestMaskPercent'], 25)
-        self.assertGreater(SUN_META['coverage']['bilateralRidgeCorePercent'], 15)
-        self.assertLess(SUN_META['coverage']['bilateralRidgeCorePercent'], 25)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 2)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 5)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 2)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 5)
-        self.assertGreater(SUN_META['coverage']['sunriseStrongPercent'], 0.5)
-        self.assertLess(SUN_META['coverage']['sunriseStrongPercent'], 2)
-        self.assertGreater(SUN_META['coverage']['sunsetStrongPercent'], 0.5)
-        self.assertLess(SUN_META['coverage']['sunsetStrongPercent'], 2)
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 2.5)
-        self.assertEqual(len(SUN_META['diagnostics']), 5)
-        self.assertIn('LiDAR alone defines crest/outcrop geometry', SUN_META['display']['designIntent'])
-        self.assertIn('connected crest pixels', SUN_META['display']['designIntent'])
-        self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 3)
+        self.assertEqual(len(SUN_META['diagnostics']), 6)
+        self.assertEqual(SUN_META['diagnostics'][0]['id'], 'ridge-skeleton')
+        self.assertIn('watershed/divide skeleton defines the ridge centerline first', SUN_META['display']['designIntent'])
+        for diagnostic in SUN_META['diagnostics']:
+            diagnostic_path = ROOT / 'public' / 'data' / 'map' / diagnostic['file']
+            self.assertTrue(diagnostic_path.exists(), diagnostic['file'])
+            self.assertEqual(diagnostic_path.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
 
-        self.assertIn('Trail proximity and aerial appearance do not participate in that geometry', PRIVACY)
-        self.assertIn('cannot create, move, or broaden crest/outcrop geometry', PRIVACY)
-        self.assertIn('connected crest pixels rather than by radial image blur', PRIVACY)
-        self.assertIn('trail and aerial inputs cannot alter that crest geometry', TERMS)
-        self.assertIn('connected crest pixels rather than radial blur', TERMS)
+        self.assertIn('topological ridge skeleton', PRIVACY)
+        self.assertIn('roughly 12 meters around that skeleton', PRIVACY)
+        self.assertIn('cannot alter the skeleton or corridor geometry', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
