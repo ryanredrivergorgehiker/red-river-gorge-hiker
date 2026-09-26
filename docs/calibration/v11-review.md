@@ -1,5 +1,7 @@
 # Sunrise / Sunset v11 calibration review
 
+Historical candidate, superseded by [v12 marked-point correction](v12-review.md) after Ryan identified missed and reversed views. The observations below document the earlier attempt, not current acceptance.
+
 Staging only. Ryan's geometry approval is pending. PR #46 remains draft and unmerged. This candidate does not authorize production or Gorge-wide generation.
 
 ## Review order

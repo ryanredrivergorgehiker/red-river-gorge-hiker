@@ -126,7 +126,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'sunrise-sunset-potential'", LAYERS)
         sun_source = LAYERS.split("id: 'sunrise-sunset-potential'", 1)[1].split("}", 1)[0]
         self.assertIn("kind: 'derived'", sun_source)
-        self.assertIn('The v11 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time', sun_source)
+        self.assertIn('The v12 calibration uses KyFromAbove Phase 2 bare-earth elevation and point-cloud canopy heights plus Phase 3 RGB/NIR aerial imagery at build time', sun_source)
         self.assertIn('send no coordinates or map requests to Kentucky GIS, USGS, USDA, or Overpass', sun_source)
         self.assertIn("id: 'parcel-private-property'", LAYERS)
         parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
@@ -449,7 +449,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('1 · LiDAR ridge skeleton', MAP)
         self.assertIn('3 · Overlook / outcrop candidates', MAP)
         self.assertIn('7 · Sunrise / Sunset composite', MAP)
-        self.assertEqual(SUN_META['version'], 11)
+        self.assertEqual(SUN_META['version'], 12)
         self.assertEqual(set(SUN_META['areas']), {'a', 'b'})
         self.assertFalse(SUN_META['trailOrAerialAffectsGeometry'])
         self.assertFalse(SUN_META['trailAffectsScores'])

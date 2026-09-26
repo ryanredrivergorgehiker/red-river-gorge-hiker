@@ -212,7 +212,7 @@ const enabledSources = enabledBrowserMapSources;
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-crest" />
               <span class="route-layer-swatch" style="background:#ffb020" aria-hidden="true"></span>
-              <span>2 · Crest corridor (~12 m)</span>
+              <span>2 · Crest / standable rock-top ground</span>
             </label>
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-overlook" />
@@ -224,7 +224,7 @@ const enabledSources = enabledBrowserMapSources;
               <span class="route-layer-swatch" style="background:linear-gradient(90deg,#f5d48c,#6ddbb0,#bab24a,#175d35)" aria-hidden="true"></span>
               <span>4 · Aerial / canopy classification</span>
             </label>
-            <p class="route-layer-note">Tan: low cover / exposed-surface evidence · mint: green clearing · yellow: partial cover · dark green: tall or dense cover · gray: unknown. Low cover does not prove bare rock or safe footing.</p>
+            <p class="route-layer-note">Tan: connected exposed-surface evidence · mint: green clearing · yellow: partial cover · dark green: tall or dense cover · gray: unknown. Aerial appearance and LiDAR height do not establish safe footing.</p>
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-sunrise-pass" />
               <span class="route-layer-swatch" style="background:#ff6f61" aria-hidden="true"></span>
@@ -379,7 +379,7 @@ const enabledSources = enabledBrowserMapSources;
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
-      <p>The staging calibration uses Kentucky KyFromAbove Phase 2 bare-earth LiDAR elevation and point-cloud canopy heights, with Phase 3 four-band aerial imagery. Thin transverse elevation maxima define the ridge skeleton on an approximately 2 m grid. The standing corridor extends at most 6 m to either side, excludes steep ground and cells more than 1.8 m below the nearest crest, and cannot be moved by imagery or trails. Cliff-break candidates are then qualified by measured canopy and aerial cover. Sunrise and sunset use separate seasonal viewing fans with a sampled 1 km terrain-and-canopy horizon; unknown coverage fails. Color fades along connected standing-corridor cells for at most 70 m, shortening through canopy. Trails are visual context only. Low cover does not establish exposed rock or legal, safe access. Leaf-off canopy gaps, flat-topped cliffs, narrow ledges, vegetation changes and obstructions beyond the sampled horizon remain limitations; this is not an exact-date sun-visibility forecast.</p>
+      <p>The staging calibration uses Kentucky KyFromAbove Phase 2 bare-earth LiDAR elevation and point-cloud canopy heights, with Phase 3 four-band aerial imagery. Thin transverse elevation maxima define the ridge skeleton on an approximately 2 m grid. Gentle, locally high rock-top ground can extend beyond the narrow crest corridor; its geometry comes from elevation. Candidates must also have a cliff break and connected, low-vegetation, rock-like aerial material with low measured cover. Sunrise and sunset independently require a broad viewing sector and a connected standing footprint against a sampled 1 km terrain-and-canopy horizon. Small LiDAR-return gaps use nearby measured surface elevations; larger gaps remain unknown and fail. Color follows connected exposed ground and the narrow crest for at most 70 m, shortening through canopy. Trails are visual context only. Aerial classification does not establish safe or legal access. Leaf-off canopy gaps, narrow ledges, vegetation changes and obstructions beyond the sampled horizon remain limitations; this is not an exact-date sun-visibility forecast.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>

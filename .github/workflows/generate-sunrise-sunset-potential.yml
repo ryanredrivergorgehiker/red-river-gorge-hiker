@@ -6,6 +6,8 @@ on:
     paths:
       - scripts/sun_calibration.py
       - scripts/build-sun-calibration.py
+      - scripts/check-sun-calibration.py
+      - scripts/data/sun-calibration-checkpoints.json
       - scripts/calibration-requirements.txt
       - scripts/data/sun-calibration-inputs.json
       - public/data/map/sunrise-sunset*
@@ -40,6 +42,7 @@ jobs:
       - name: Reproduce both areas from fingerprinted source data
         run: |
           python scripts/build-sun-calibration.py --cache .calibration-cache
+          python scripts/check-sun-calibration.py --cache .calibration-cache
           git diff --exit-code -- public/data/map scripts/data/sun-calibration-inputs.json
       - name: Preserve exact input arrays and generated review assets
         if: success()

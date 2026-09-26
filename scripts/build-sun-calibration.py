@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch, fingerprint and regenerate the two v11 calibration areas.
+"""Fetch, fingerprint and regenerate the two v12 calibration areas.
 
 Normal operation verifies every input array against the checked-in manifest.
 Only an explicit --record-inputs operation accepts a new source snapshot.
@@ -279,14 +279,14 @@ def main():
                 'modelSha256': hashlib.sha256((ROOT / 'scripts/sun_calibration.py').read_bytes()).hexdigest(),
                 'trailOrAerialAffectsGeometry': False, 'trailAffectsScores': False,
                 'reviewFirst': '1 · LiDAR ridge skeleton',
-                'limits': ['Low cover is not proof of exposed rock or safe footing.',
-                           'Leaf-off point-cloud canopy gaps and narrow or broad flat outcrops can be misclassified or missed.',
+                'limits': ['Connected rock-like aerial material and low measured cover are evidence, not proof of safe footing.',
+                           'Small point-cloud gaps use nearby measured absolute surface elevations; larger gaps stay unknown. Narrow, shaded or spectrally ambiguous outcrops can be missed.',
                            'The sampled 1 km horizon and representative seasonal azimuths do not predict an exact date or unobstructed astronomical sunrise.',
                            'Cliff access, current vegetation, weather and legal access are not established.']}
     write_json(args.output / 'sunrise-sunset-potential.meta.json', metadata)
     write_json(args.output / 'sunrise-sunset-ridge-calibration.meta.json', {
-        'version': VERSION, 'supersededVersion': 10, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
-        'method': 'transverse elevation maxima, thin skeleton and separate standing corridor',
+        'version': VERSION, 'supersededVersion': 11, 'activeMetadata': 'sunrise-sunset-potential.meta.json',
+        'method': 'transverse elevation maxima, adjacent gentle high ground and connected exposed-surface qualification',
         'trailOrAerialAffectsGeometry': False})
     print('Generated both areas with the same rules. Inputs verified:', not args.record_inputs, flush=True)
 
