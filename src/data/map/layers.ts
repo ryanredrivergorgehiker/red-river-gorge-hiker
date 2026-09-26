@@ -231,9 +231,9 @@ export const mapSources: readonly MapSource[] = [
     enabled: true,
     browserLoaded: true,
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
-    attribution: 'Red River Gorge Hiker high-ground model derived from USGS 3DEP elevation and © OpenStreetMap contributors water features',
+    attribution: 'Red River Gorge Hiker weighted terrain model derived from USGS 3DEP elevation and © OpenStreetMap contributors water features',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'This RRGH-hosted derived overlay is generated in advance from fixed Red River Gorge USGS elevation and OpenStreetMap water data. Mapped water and low valley terrain are suppressed. Viewing it sends no coordinates or map requests to USGS. It indicates seasonal high-ground potential for sunrise and sunset photography, not guaranteed visibility.',
+    privacyNote: 'This RRGH-hosted derived overlay is generated in advance from fixed Red River Gorge USGS elevation and OpenStreetMap water data. Actual mapped water is excluded; terrain suitability is otherwise weighted continuously, so nearby drainage does not broadly erase high ridges. Viewing it sends no coordinates or map requests to USGS. It indicates generalized seasonal sunrise/sunset photography potential, not guaranteed visibility.',
     opacity: 0.68
   },
   {

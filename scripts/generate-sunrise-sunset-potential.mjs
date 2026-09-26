@@ -22,7 +22,7 @@ const BOUNDS = {
   north: 38.15
 };
 
-// V2 intentionally uses a denser grid and a much more conservative high-ground model.
+// V3 uses a weighted suitability model: water is the only hard geographic exclusion; terrain factors score continuously.
 const COLS = 271;
 const ROWS = 211;
 const SAMPLE_TILES_X = 7;
@@ -32,18 +32,17 @@ const SAMPLE_CONCURRENCY = 7;
 const HORIZON_STEPS = 18;
 const PROMINENCE_RADIUS = 9;
 const CONVEXITY_RADIUS = 3;
-const MIN_LOCAL_RELIEF_METERS = 42;
-const MIN_PROMINENCE = 0.64;
-const MIN_CONVEXITY = 0.34;
-const MIN_DIRECTIONAL_OPENNESS = 0.58;
-const MIN_DISPLAY_SCORE = 0.70;
-const DISPLAY_CANDIDATE_QUANTILE = 0.45;
-const FLOWLINE_EXCLUSION_BUFFER_METERS = 300;
+const RELIEF_REFERENCE_METERS = 100;
+const HEIGHT_ABOVE_LOW_REFERENCE_METERS = 110;
+const FLOWLINE_WATER_MASK_METERS = 45;
+const DISPLAY_QUANTILE = 0.90;
+const STRONG_QUANTILE = 0.97;
+const PEAK_QUANTILE = 0.995;
 const SUNRISE_AZIMUTHS = [58, 90, 121];
 const SUNSET_AZIMUTHS = [239, 270, 302];
 const SUNRISE_COLOR = '#ff6f61';
 const SUNSET_COLOR = '#4055d8';
-const VERSION = 2;
+const VERSION = 3;
 
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const radians = (degrees) => degrees * Math.PI / 180;
@@ -253,7 +252,7 @@ const midLat = (BOUNDS.south + BOUNDS.north) / 2;
 const xMeters = 111320 * Math.cos(radians(midLat)) * (BOUNDS.east - BOUNDS.west) / (COLS - 1);
 const yMeters = 111320 * (BOUNDS.north - BOUNDS.south) / (ROWS - 1);
 const elevationValues = elevations.filter(Number.isFinite);
-const elevationQ55 = quantile(elevationValues, 0.55);
+const elevationQ25 = quantile(elevationValues, 0.25);
 const elevationQ90 = quantile(elevationValues, 0.90);
 
 const cellLon = (col) => BOUNDS.west + (col / (COLS - 1)) * (BOUNDS.east - BOUNDS.west);
@@ -321,14 +320,14 @@ function markLineString(coordinates) {
       const rowFloat = rowA + (rowB - rowA) * t;
       const colCenter = Math.round(colFloat);
       const rowCenter = Math.round(rowFloat);
-      const colRadius = Math.ceil(FLOWLINE_EXCLUSION_BUFFER_METERS / xMeters) + 1;
-      const rowRadius = Math.ceil(FLOWLINE_EXCLUSION_BUFFER_METERS / yMeters) + 1;
+      const colRadius = Math.ceil(FLOWLINE_WATER_MASK_METERS / xMeters) + 1;
+      const rowRadius = Math.ceil(FLOWLINE_WATER_MASK_METERS / yMeters) + 1;
 
       for (let row = Math.max(0, rowCenter - rowRadius); row <= Math.min(ROWS - 1, rowCenter + rowRadius); row += 1) {
         for (let col = Math.max(0, colCenter - colRadius); col <= Math.min(COLS - 1, colCenter + colRadius); col += 1) {
           const dx = (col - colFloat) * xMeters;
           const dy = (row - rowFloat) * yMeters;
-          if (Math.hypot(dx, dy) <= FLOWLINE_EXCLUSION_BUFFER_METERS) {
+          if (Math.hypot(dx, dy) <= FLOWLINE_WATER_MASK_METERS) {
             waterMask[row * COLS + col] = true;
           }
         }
@@ -519,31 +518,53 @@ function directionalAspectScore(aspect, slopeDegrees, azimuths) {
   return 0.55 * (1 - slopeStrength) + bestAlignment * slopeStrength;
 }
 
-function rawPotential(row, col, elevation, azimuths, terrain, regionalElevationScore, aspectInfo) {
+function weightedPotential(row, col, elevation, azimuths, terrain, regionalElevationScore, aspectInfo) {
   const opennessValues = azimuths.map((azimuth) => directionalOpenness(row, col, elevation, azimuth));
   const bestOpenness = Math.max(...opennessValues);
   const averageOpenness = opennessValues.reduce((sum, value) => sum + value, 0) / opennessValues.length;
-  const openness = 0.58 * bestOpenness + 0.42 * averageOpenness;
+  const openness = 0.60 * bestOpenness + 0.40 * averageOpenness;
   const aspect = directionalAspectScore(aspectInfo.aspect, aspectInfo.slopeDegrees, azimuths);
 
-  if (terrain.relief < MIN_LOCAL_RELIEF_METERS) return 0;
-  if (terrain.prominence < MIN_PROMINENCE) return 0;
-  if (terrain.convexity < MIN_CONVEXITY) return 0;
-  if (bestOpenness < MIN_DIRECTIONAL_OPENNESS) return 0;
-  if (elevation < elevationQ55) return 0;
-
-  return clamp01(
-    0.34 * terrain.prominence
-    + 0.22 * regionalElevationScore
+  // V3 deliberately avoids compounded pass/fail terrain gates. A ridge close to
+  // a creek in plan view can still be hundreds of feet above the valley floor,
+  // so relative vertical position matters more than horizontal drainage distance.
+  const heightAboveLow = Math.max(0, elevation - terrain.low);
+  const relativeHeight = clamp01(heightAboveLow / HEIGHT_ABOVE_LOW_REFERENCE_METERS);
+  const reliefScore = clamp01(terrain.relief / RELIEF_REFERENCE_METERS);
+  const ridgeShoulder = clamp01(
+    0.42 * relativeHeight
+    + 0.28 * terrain.prominence
     + 0.17 * terrain.convexity
-    + 0.20 * openness
-    + 0.07 * aspect
+    + 0.13 * reliefScore
   );
+
+  // Valleys are penalized continuously rather than disqualified. This lets the
+  // color fade down shoulders while keeping enclosed low terrain weak.
+  const valleyPenalty = (
+    0.11 * clamp01((0.42 - relativeHeight) / 0.42)
+    + 0.09 * clamp01((0.38 - terrain.prominence) / 0.38)
+  );
+
+  const score = (
+    0.40 * ridgeShoulder
+    + 0.28 * openness
+    + 0.14 * aspect
+    + 0.10 * regionalElevationScore
+    + 0.08 * reliefScore
+    - valleyPenalty
+  );
+
+  return {
+    score: clamp01(score),
+    ridgeShoulder,
+    relativeHeight,
+    openness
+  };
 }
 
 const sunriseRaw = new Array(elevations.length).fill(0);
 const sunsetRaw = new Array(elevations.length).fill(0);
-let ridgeCandidateCells = 0;
+let weightedHighGroundCells = 0;
 
 for (let row = 0; row < ROWS; row += 1) {
   for (let col = 0; col < COLS; col += 1) {
@@ -552,32 +573,35 @@ for (let row = 0; row < ROWS; row += 1) {
     if (elevation === null || waterMask[index]) continue;
 
     const terrain = localTerrain(row, col, elevation);
-    const regionalElevationScore = clamp01((elevation - elevationQ55) / Math.max(1, elevationQ90 - elevationQ55));
+    const regionalElevationScore = clamp01((elevation - elevationQ25) / Math.max(1, elevationQ90 - elevationQ25));
     const aspectInfo = slopeAspect(row, col);
 
-    if (
-      terrain.relief >= MIN_LOCAL_RELIEF_METERS
-      && terrain.prominence >= MIN_PROMINENCE
-      && terrain.convexity >= MIN_CONVEXITY
-      && elevation >= elevationQ55
-    ) ridgeCandidateCells += 1;
+    const sunriseResult = weightedPotential(row, col, elevation, SUNRISE_AZIMUTHS, terrain, regionalElevationScore, aspectInfo);
+    const sunsetResult = weightedPotential(row, col, elevation, SUNSET_AZIMUTHS, terrain, regionalElevationScore, aspectInfo);
+    sunriseRaw[index] = sunriseResult.score;
+    sunsetRaw[index] = sunsetResult.score;
 
-    sunriseRaw[index] = rawPotential(row, col, elevation, SUNRISE_AZIMUTHS, terrain, regionalElevationScore, aspectInfo);
-    sunsetRaw[index] = rawPotential(row, col, elevation, SUNSET_AZIMUTHS, terrain, regionalElevationScore, aspectInfo);
+    if (Math.max(sunriseResult.ridgeShoulder, sunsetResult.ridgeShoulder) >= 0.58) weightedHighGroundCells += 1;
   }
 }
 
-function displayThreshold(scores) {
-  const candidates = scores.filter((value) => value > 0);
-  return Math.max(MIN_DISPLAY_SCORE, quantile(candidates, DISPLAY_CANDIDATE_QUANTILE));
+function displayBreaks(scores) {
+  const candidates = scores.filter((value, index) => !waterMask[index] && Number.isFinite(value));
+  return {
+    threshold: quantile(candidates, DISPLAY_QUANTILE),
+    strong: quantile(candidates, STRONG_QUANTILE),
+    peak: quantile(candidates, PEAK_QUANTILE)
+  };
 }
 
-const sunriseThreshold = displayThreshold(sunriseRaw);
-const sunsetThreshold = displayThreshold(sunsetRaw);
-const sunriseHigh = Math.max(sunriseThreshold + 0.01, quantile(sunriseRaw.filter((value) => value > 0), 0.98));
-const sunsetHigh = Math.max(sunsetThreshold + 0.01, quantile(sunsetRaw.filter((value) => value > 0), 0.98));
+const sunriseBreaks = displayBreaks(sunriseRaw);
+const sunsetBreaks = displayBreaks(sunsetRaw);
+const sunriseThreshold = sunriseBreaks.threshold;
+const sunsetThreshold = sunsetBreaks.threshold;
+const sunriseHigh = Math.max(sunriseBreaks.peak, sunriseThreshold + 0.01);
+const sunsetHigh = Math.max(sunsetBreaks.peak, sunsetThreshold + 0.01);
 
-const OPACITY_LEVELS = [0.18, 0.29, 0.41, 0.54, 0.67, 0.79, 0.88];
+const OPACITY_LEVELS = [0.12, 0.19, 0.28, 0.39, 0.52, 0.67, 0.82];
 const paths = {
   sunrise: OPACITY_LEVELS.map(() => []),
   sunset: OPACITY_LEVELS.map(() => [])
@@ -646,17 +670,20 @@ const metadata = {
     requestedSamplesPerTile: SAMPLES_PER_TILE,
     returnedSamples: returnedSampleCount
   },
-  method: 'Conservative high-ground photographic potential: hard water exclusion, regional elevation floor, local relief, ridge/upper-shoulder prominence, terrain convexity, directional terrain-horizon clearance, and slope/aspect alignment.',
+  method: 'Weighted photographic terrain suitability: actual mapped water is the only hard geographic exclusion; relative height above local lows, ridge/upper-shoulder position, terrain convexity, local relief, directional horizon openness, slope/aspect alignment, and regional elevation contribute continuously; valley position is a penalty rather than a veto.',
   thresholds: {
-    elevationQ55Meters: Number(elevationQ55.toFixed(1)),
+    elevationQ25Meters: Number(elevationQ25.toFixed(1)),
     elevationQ90Meters: Number(elevationQ90.toFixed(1)),
-    minLocalReliefMeters: MIN_LOCAL_RELIEF_METERS,
-    minProminence: MIN_PROMINENCE,
-    minConvexity: MIN_CONVEXITY,
-    minDirectionalOpenness: MIN_DIRECTIONAL_OPENNESS,
-    waterFlowlineExclusionBufferMeters: FLOWLINE_EXCLUSION_BUFFER_METERS,
+    reliefReferenceMeters: RELIEF_REFERENCE_METERS,
+    heightAboveLowReferenceMeters: HEIGHT_ABOVE_LOW_REFERENCE_METERS,
+    flowlineWaterMaskMeters: FLOWLINE_WATER_MASK_METERS,
+    displayQuantile: DISPLAY_QUANTILE,
+    strongQuantile: STRONG_QUANTILE,
+    peakQuantile: PEAK_QUANTILE,
     sunriseDisplayScore: Number(sunriseThreshold.toFixed(4)),
-    sunsetDisplayScore: Number(sunsetThreshold.toFixed(4))
+    sunriseStrongScore: Number(sunriseBreaks.strong.toFixed(4)),
+    sunsetDisplayScore: Number(sunsetThreshold.toFixed(4)),
+    sunsetStrongScore: Number(sunsetBreaks.strong.toFixed(4))
   },
   seasonalAzimuths: {
     sunrise: SUNRISE_AZIMUTHS,
@@ -666,8 +693,8 @@ const metadata = {
   coverage: {
     waterMaskCells,
     waterMaskPercent: percent(waterMaskCells, COLS * ROWS),
-    ridgeCandidateCells,
-    ridgeCandidatePercent: percent(ridgeCandidateCells, COLS * ROWS),
+    weightedHighGroundCells,
+    weightedHighGroundPercent: percent(weightedHighGroundCells, COLS * ROWS),
     sunriseDisplayCells,
     sunriseDisplayPercent: percent(sunriseDisplayCells, totalDisplayCells),
     sunsetDisplayCells,
@@ -678,10 +705,10 @@ const metadata = {
     sunsetColor: SUNSET_COLOR,
     maximumOpacity: OPACITY_LEVELS.at(-1),
     lowPotentialTransparent: true,
-    designIntent: 'Sparse ridge and upper-shoulder bands; low valleys and mapped water suppressed.'
+    designIntent: 'Strong ridge and upper-shoulder cores with a fading shoulder gradient; actual mapped water excluded; valleys penalized rather than broadly erased.'
   },
   limitations: [
-    'Terrain and hydrography model only; mapped water is excluded and low/valley terrain is strongly suppressed.',
+    'Terrain and mapped-water model only; mapped water is excluded, while valley position is a weighted penalty rather than a broad exclusion zone.',
     'Does not account for current weather, haze, vegetation, buildings, seasonal foliage, access, or small local obstructions not represented by the source data.',
     'Potential is seasonal/generalized and is not a guarantee of visible sunrise, visible sunset, legal access, or a good photographic view.'
   ]

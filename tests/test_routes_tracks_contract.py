@@ -436,12 +436,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_optional_local_and_high_ground_filtered(self):
+    def test_sunrise_sunset_potential_is_optional_local_and_weighted(self):
         self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
         self.assertIn('value="68" data-opacity="sunrise-sunset-potential"', MAP)
         self.assertIn('swatch-sun-potential', MAP)
-        self.assertIn('high-ridge or upper-shoulder sunrise potential', MAP)
-        self.assertIn('Mapped water and low valley terrain are suppressed', MAP)
+        self.assertIn('Solid color identifies the strongest ridge and upper-shoulder terrain', MAP)
+        self.assertIn('valley position lowers the score rather than erasing nearby high ground', MAP)
         self.assertIn('not a guarantee of a visible sunrise or sunset', MAP)
         self.assertIn('sunPotential: 250', MAP)
         self.assertIn("data/map/sunrise-sunset-potential.svg", MAP)
@@ -458,22 +458,25 @@ class RoutesTracksContractTests(unittest.TestCase):
             '["natural"="water"]',
             '["waterway"="riverbank"]',
             '["waterway"~"^(river|stream|creek|canal)$"]',
-            'FLOWLINE_EXCLUSION_BUFFER_METERS = 300',
-            'localTerrain',
-            'terrain.convexity',
-            'terrain.prominence',
+            'FLOWLINE_WATER_MASK_METERS = 45',
+            'RELIEF_REFERENCE_METERS = 100',
+            'HEIGHT_ABOVE_LOW_REFERENCE_METERS = 110',
+            'DISPLAY_QUANTILE = 0.90',
+            'STRONG_QUANTILE = 0.97',
+            'PEAK_QUANTILE = 0.995',
+            'weightedPotential',
+            'ridgeShoulder',
+            'relativeHeight',
+            'valleyPenalty',
             'directionalOpenness',
             'directionalAspectScore',
             'waterMask[index]',
-            'elevationQ55',
-            'MIN_LOCAL_RELIEF_METERS',
-            'DISPLAY_CANDIDATE_QUANTILE',
             "method: 'POST'",
             'RSP_BilinearInterpolation',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['version'], 2)
+        self.assertEqual(SUN_META['version'], 3)
         self.assertEqual(SUN_META['source']['id'], 'rrgh-high-ground-sun-potential')
         self.assertEqual(SUN_META['source']['elevation']['id'], 'usgs-3dep-bare-earth-dem')
         self.assertEqual(SUN_META['source']['waterMask']['id'], 'openstreetmap-water')
@@ -492,20 +495,23 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertGreater(SUN_META['grid']['returnedSamples'], 47000)
         self.assertEqual(SUN_META['seasonalAzimuths']['sunrise'], [58, 90, 121])
         self.assertEqual(SUN_META['seasonalAzimuths']['sunset'], [239, 270, 302])
-        self.assertEqual(SUN_META['thresholds']['waterFlowlineExclusionBufferMeters'], 300)
+        self.assertEqual(SUN_META['thresholds']['flowlineWaterMaskMeters'], 45)
+        self.assertEqual(SUN_META['thresholds']['displayQuantile'], 0.9)
+        self.assertEqual(SUN_META['thresholds']['strongQuantile'], 0.97)
+        self.assertEqual(SUN_META['thresholds']['peakQuantile'], 0.995)
         self.assertGreater(SUN_META['coverage']['waterMaskCells'], 0)
-        self.assertGreater(SUN_META['coverage']['ridgeCandidateCells'], 0)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 0.1)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 0.1)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 5)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 5)
-        self.assertGreater(SUN_META['coverage']['waterMaskPercent'], 10)
-        self.assertLess(SUN_META['coverage']['ridgeCandidatePercent'], 30)
+        self.assertGreater(SUN_META['coverage']['weightedHighGroundCells'], 0)
+        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 5)
+        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 5)
+        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 15)
+        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 15)
+        self.assertGreater(SUN_META['coverage']['waterMaskPercent'], 0.1)
+        self.assertLess(SUN_META['coverage']['waterMaskPercent'], 15)
         self.assertEqual(SUN_META['display']['sunriseColor'], '#ff6f61')
         self.assertEqual(SUN_META['display']['sunsetColor'], '#4055d8')
         self.assertTrue(SUN_META['display']['lowPotentialTransparent'])
-        self.assertIn('Sparse ridge and upper-shoulder bands', SUN_META['display']['designIntent'])
-        self.assertTrue(any('mapped water is excluded' in item for item in SUN_META['limitations']))
+        self.assertIn('Strong ridge and upper-shoulder cores with a fading shoulder gradient', SUN_META['display']['designIntent'])
+        self.assertTrue(any('valley position is a weighted penalty' in item for item in SUN_META['limitations']))
         self.assertTrue(any('not a guarantee' in item for item in SUN_META['limitations']))
         self.assertIn('viewBox="0 0 270 210"', SUN_OVERLAY)
         self.assertIn('<metadata>', SUN_OVERLAY)
@@ -515,11 +521,11 @@ class RoutesTracksContractTests(unittest.TestCase):
 
         self.assertIn('Sunrise / Sunset potential', PRIVACY)
         self.assertIn('OpenStreetMap water features obtained during the build through public Overpass API services', PRIVACY)
-        self.assertIn('hard-excludes mapped water', PRIVACY)
+        self.assertIn('does not apply the prior broad stream exclusion buffer', PRIVACY)
         self.assertIn('loads the finished overlay from the RRGH website', PRIVACY)
         self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS', PRIVACY)
-        self.assertIn('generalized high-ground terrain and mapped-water model intended as a photography-planning aid', TERMS)
-        self.assertIn('excludes mapped water', TERMS)
+        self.assertIn('generalized weighted terrain and mapped-water model intended as a photography-planning aid', TERMS)
+        self.assertIn('does not broadly disqualify high terrain merely because a mapped stream is nearby', TERMS)
         self.assertIn('do not guarantee that the sun will be visible', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
