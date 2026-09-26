@@ -29,12 +29,12 @@ SUNRISE_AZIMUTHS = [58.0, 90.0, 121.0]
 SUNSET_AZIMUTHS = [239.0, 270.0, 302.0]
 SUNRISE_RGB = np.array([255.0, 111.0, 97.0], dtype=np.float32)
 SUNSET_RGB = np.array([64.0, 85.0, 216.0], dtype=np.float32)
-DISPLAY_CANDIDATE_QUANTILE = 0.45
-STRONG_CANDIDATE_QUANTILE = 0.82
-PEAK_CANDIDATE_QUANTILE = 0.97
-RIDGE_CORRIDOR_MIN = 0.34
-DIRECTIONAL_VIEW_MIN = 0.40
-DUAL_VIEW_MIN = 0.68
+DISPLAY_CANDIDATE_QUANTILE = 0.65
+STRONG_CANDIDATE_QUANTILE = 0.88
+PEAK_CANDIDATE_QUANTILE = 0.98
+RIDGE_CORRIDOR_MIN = 0.38
+DIRECTIONAL_VIEW_MIN = 0.46
+DUAL_VIEW_MIN = 0.78
 VERSION = 5
 
 OUT_DIR = Path("public/data/map")
@@ -438,18 +438,20 @@ sunset_view = clamp01(
 dual_open = (
     (sunrise_view >= DUAL_VIEW_MIN)
     & (sunset_view >= DUAL_VIEW_MIN)
-    & (ridge_corridor >= 0.56)
+    & (ridge_corridor >= 0.64)
+    & (sunrise_aerial >= 0.35)
+    & (sunset_aerial >= 0.35)
 )
 view_difference = sunrise_view - sunset_view
 sunrise_direction_gate = np.where(
     dual_open,
     1.0,
-    smoothstep(view_difference, -0.015, 0.12),
+    smoothstep(view_difference, 0.02, 0.14),
 ).astype(np.float32)
 sunset_direction_gate = np.where(
     dual_open,
     1.0,
-    smoothstep(-view_difference, -0.015, 0.12),
+    smoothstep(-view_difference, 0.02, 0.14),
 ).astype(np.float32)
 
 sunrise_opening_gate = 0.20 + 0.80 * smoothstep(sunrise_aerial, 0.18, 0.68)
