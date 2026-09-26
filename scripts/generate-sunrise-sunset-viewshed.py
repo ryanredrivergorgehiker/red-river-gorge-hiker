@@ -23,8 +23,11 @@ OVERPASS_ENDPOINTS = [
     "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass.maprva.org/api/interpreter",
 ]
-BOUNDS = {"west": -84.02, "south": 37.52, "east": -83.18, "north": 38.15}
-PIXEL_METERS = 20.0
+# Calibration pilot only: Pinch-Em-Tight / Sheltowee suspension-bridge terrain.
+# Keep this small until the ridge/valley and directional-overlook geometry is
+# visually correct, then apply the same rules to an independent validation area.
+BOUNDS = {"west": -83.6505, "south": 37.8060, "east": -83.6170, "north": 37.8345}
+PIXEL_METERS = 2.0
 SUNRISE_AZIMUTHS = [58.0, 90.0, 121.0]
 SUNSET_AZIMUTHS = [239.0, 270.0, 302.0]
 SUNRISE_RGB = np.array([255.0, 111.0, 97.0], dtype=np.float32)
@@ -36,7 +39,7 @@ OVERLOOK_SUPPORT_MIN = 0.42
 NEAR_DROP_MIN = 0.42
 DIRECTIONAL_VIEW_MIN = 0.50
 DUAL_VIEW_MIN = 0.82
-VERSION = 6
+VERSION = 7
 
 OUT_DIR = Path("public/data/map")
 PNG_PATH = OUT_DIR / "sunrise-sunset-potential.png"
@@ -159,7 +162,7 @@ def directional_metrics(dem, vegetation, azimuths):
             max_near_drop = np.zeros(dem.shape, dtype=np.float32)
             veg_samples = []
 
-            for distance_px in [1, 2, 3, 5, 8, 16, 32, 64, 96, 128]:
+            for distance_px in [3, 6, 12, 24, 48, 96, 192, 320]:
                 dr = int(round(-north * distance_px))
                 dc = int(round(east * distance_px))
                 target = shift(dem, dr, dc)
@@ -168,10 +171,10 @@ def directional_metrics(dem, vegetation, azimuths):
                 valid = np.isfinite(target)
                 max_angle = np.where(valid, np.maximum(max_angle, angle), max_angle)
                 max_drop = np.where(valid, np.maximum(max_drop, dem - target), max_drop)
-                if distance_px <= 6:
+                if distance_px <= 40:
                     max_near_drop = np.where(valid, np.maximum(max_near_drop, dem - target), max_near_drop)
 
-            for distance_px in [1, 2, 3, 5, 8, 12]:
+            for distance_px in [2, 4, 8, 16, 24]:
                 dr = int(round(-north * distance_px))
                 dc = int(round(east * distance_px))
                 sample = shift(vegetation, dr, dc, fill=1.0)
@@ -311,7 +314,7 @@ def water_shapes(elements):
                         pass
     return polygon_shapes, line_shapes
 
-print(f"V6 cliff/overlook directional viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
+print(f"V7 Pinch-Em-Tight calibration viewshed grid: {COLS} x {ROWS} at approximately {X_METERS:.1f} m x {Y_METERS:.1f} m")
 dem_bands = export_image(ELEVATION_SERVICE, pixel_type="F32")
 dem = dem_bands[0].astype(np.float32)
 bad_dem = ~np.isfinite(dem) | (dem < -500.0) | (dem > 5000.0)
@@ -412,7 +415,17 @@ ridge_corridor = clamp01(
 ridge_corridor *= smoothstep(relative_height, 0.12, 0.48)
 ridge_corridor *= smoothstep(prominence, 0.08, 0.44)
 
-valley_zone = (relative_height < 0.16) | ((prominence < 0.16) & (broad_tpi < -3.0))
+valley_zone = (
+    (relative_height < 0.20)
+    | (broad_tpi < -6.0)
+    | ((fine_tpi < -2.0) & (prominence < 0.24))
+)
+crest_mask = (
+    (relative_height >= 0.24)
+    & (prominence >= 0.20)
+    & (broad_tpi >= 1.5)
+    & (fine_tpi >= -0.5)
+)
 valley_penalty = (
     0.22 * clamp01((0.34 - relative_height) / 0.34)
     + 0.16 * clamp01((0.30 - prominence) / 0.30)
@@ -533,33 +546,43 @@ sunset_seed = clamp01(
 # a short distance back onto the same crest. Keep propagation to roughly
 # 20–120 m and multiply every step by high-ground support.
 def overlook_lobe(seed):
-    support = smoothstep(overlook_support, 0.28, 0.72) * smoothstep(ridge_corridor, 0.24, 0.62)
+    support = (
+        smoothstep(overlook_support, 0.30, 0.72)
+        * smoothstep(ridge_corridor, 0.28, 0.64)
+        * crest_mask.astype(np.float32)
+    )
     core = seed
-    near = gaussian_filter(seed, sigma=0.75) * support
-    back = gaussian_filter(seed, sigma=1.55) * np.power(support, 1.25)
-    tail = gaussian_filter(seed, sigma=2.7) * np.power(support, 1.65)
+    # At the 2 m pilot resolution these correspond to a compact edge halo and
+    # roughly 20–100 m of fade back along the supported crest.
+    near = gaussian_filter(seed, sigma=3.0) * support
+    back = gaussian_filter(seed, sigma=10.0) * np.power(support, 1.30)
+    tail = gaussian_filter(seed, sigma=24.0) * np.power(support, 1.75)
     result = np.maximum.reduce([
         core,
-        0.86 * near,
-        0.58 * back,
-        0.28 * tail,
+        0.88 * near,
+        0.56 * back,
+        0.22 * tail,
     ])
-    result[valley_zone] = 0.0
+    result[valley_zone | (~crest_mask)] = 0.0
     return clamp01(result)
 
 sunrise_score = overlook_lobe(sunrise_seed)
 sunset_score = overlook_lobe(sunset_seed)
 
 sunrise_candidate = (
-    (overlook_support >= OVERLOOK_SUPPORT_MIN)
+    crest_mask
+    & (overlook_support >= OVERLOOK_SUPPORT_MIN)
     & (sunrise_near_drop >= NEAR_DROP_MIN)
     & (sunrise_view >= DIRECTIONAL_VIEW_MIN)
+    & ((sunrise_aerial >= 0.24) | (site_open >= 0.30))
     & (~valley_zone)
 )
 sunset_candidate = (
-    (overlook_support >= OVERLOOK_SUPPORT_MIN)
+    crest_mask
+    & (overlook_support >= OVERLOOK_SUPPORT_MIN)
     & (sunset_near_drop >= NEAR_DROP_MIN)
     & (sunset_view >= DIRECTIONAL_VIEW_MIN)
+    & ((sunset_aerial >= 0.24) | (site_open >= 0.30))
     & (~valley_zone)
 )
 sunrise_score[~sunrise_candidate] = 0.0
@@ -637,7 +660,7 @@ metadata = {
     "version": VERSION,
     "generatedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "source": {
-        "id": "rrgh-cliff-overlook-viewshed-v6",
+        "id": "rrgh-pinch-em-tight-calibration-v7",
         "elevation": {
             "id": "usgs-3dep-bare-earth-dem",
             "service": ELEVATION_SERVICE,
@@ -667,7 +690,7 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Cliff/overlook directional photographic viewshed proxy. High-resolution bare-earth terrain identifies compact crest/nose support, "
+        "Pinch-Em-Tight calibration pilot for a cliff/overlook directional photographic viewshed. Two-meter analysis first requires explicit crest terrain before evaluating compact overlook/nose support. "
         "then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP "
         "aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained "
         "to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The "
@@ -697,6 +720,7 @@ metadata = {
         "highRidgeCorePercent": percent(ridge_core >= 0.62),
         "ridgeCorridorPercent": percent(ridge_corridor >= 0.38),
         "overlookSupportPercent": percent(overlook_support >= OVERLOOK_SUPPORT_MIN),
+        "crestMaskPercent": percent(crest_mask),
         "sunriseSeedPercent": percent(sunrise_seed > 0.10),
         "sunsetSeedPercent": percent(sunset_seed > 0.10),
         "valleyZonePercent": percent(valley_zone),
@@ -708,7 +732,12 @@ metadata = {
         "sunriseColor": "#ff6f61",
         "sunsetColor": "#4055d8",
         "maximumOpacity": 0.86,
-        "designIntent": "Compact sunrise/sunset lobes at exposed cliff edges and projecting ridge noses; strongest at the directional breakline, with a short fade back onto the crest and no intentional valley fill.",
+        "designIntent": "Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain, strongest at directional cliff/overlook breaks with a short 20–100 m fade back along the crest and zero intended valley fill.",
+    },
+    "calibrationArea": {
+        "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
+        "status": "staging calibration only",
+        "expandOnlyAfterVisualApproval": True
     },
     "calibrationIntent": [
         "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",

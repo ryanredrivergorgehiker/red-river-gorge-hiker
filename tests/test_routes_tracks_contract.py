@@ -436,76 +436,68 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_optional_local_and_overlook_seeded(self):
+    def test_sunrise_sunset_potential_is_pinch_em_tight_calibration_pilot(self):
         self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
-        self.assertIn('value="68" data-opacity="sunrise-sunset-potential"', MAP)
-        self.assertIn('swatch-sun-potential', MAP)
-        self.assertIn('seeded at compact cliff edges and projecting ridge noses', MAP)
-        self.assertIn('fades only a short distance back onto the same crest', MAP)
-        self.assertIn('Both colors appear together only where both viewing directions independently qualify', MAP)
-        self.assertIn('not a guarantee of a visible sunrise or sunset', MAP)
+        self.assertIn('Sunrise / Sunset pilot — Pinch-Em-Tight', MAP)
+        self.assertIn('staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area', MAP)
+        self.assertIn('roughly 2 m analysis resolution', MAP)
+        self.assertIn('Outside the pilot box the layer is intentionally blank', MAP)
+        self.assertIn('[37.8060, -83.6505]', MAP)
+        self.assertIn('[37.8345, -83.6170]', MAP)
         self.assertIn("data/map/sunrise-sunset-potential.png", MAP)
 
         for contract in (
-            'VERSION = 6',
-            'PIXEL_METERS = 20.0',
-            'OVERLOOK_SUPPORT_MIN = 0.42',
-            'NEAR_DROP_MIN = 0.42',
-            'DIRECTIONAL_VIEW_MIN = 0.50',
-            'DUAL_VIEW_MIN = 0.82',
-            'max_near_drop',
-            'near_drop_score',
-            'overlook_support',
-            'sunrise_edge_gate',
-            'sunset_edge_gate',
-            'overlook_lobe',
-            'gaussian_filter(seed, sigma=2.7)',
+            'VERSION = 7',
+            'BOUNDS = {"west": -83.6505, "south": 37.8060, "east": -83.6170, "north": 37.8345}',
+            'PIXEL_METERS = 2.0',
+            'crest_mask',
+            '(broad_tpi >= 1.5)',
+            '(fine_tpi >= -0.5)',
+            'result[valley_zone | (~crest_mask)] = 0.0',
+            'gaussian_filter(seed, sigma=3.0)',
+            'gaussian_filter(seed, sigma=10.0)',
+            'gaussian_filter(seed, sigma=24.0)',
             'sunrise_candidate',
             'sunset_candidate',
-            'result[valley_zone] = 0.0',
+            'site_open >= 0.30',
             'NAIP NIR/red NDVI calibrated to local 30th–78th percentiles',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['version'], 6)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-cliff-overlook-viewshed-v6')
+        self.assertEqual(SUN_META['version'], 7)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-calibration-v7')
+        self.assertEqual(SUN_META['calibrationArea']['name'], 'Pinch-Em-Tight / Sheltowee suspension-bridge pilot')
+        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging calibration only')
+        self.assertTrue(SUN_META['calibrationArea']['expandOnlyAfterVisualApproval'])
+        self.assertEqual(SUN_META['bounds'], {
+            'west': -83.6505,
+            'south': 37.8060,
+            'east': -83.6170,
+            'north': 37.8345,
+        })
         self.assertEqual(SUN_META['grid']['output'], 'PNG RGBA')
-        self.assertGreater(SUN_META['grid']['cols'], 3500)
-        self.assertGreater(SUN_META['grid']['rows'], 3400)
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 22)
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 22)
-        self.assertEqual(SUN_META['thresholds']['overlookSupportMin'], 0.42)
-        self.assertEqual(SUN_META['thresholds']['nearDropMin'], 0.42)
-        self.assertEqual(SUN_META['thresholds']['directionalViewMin'], 0.5)
-        self.assertEqual(SUN_META['thresholds']['dualViewMin'], 0.82)
-        self.assertGreater(SUN_META['coverage']['overlookSupportPercent'], 20)
-        self.assertLess(SUN_META['coverage']['overlookSupportPercent'], 35)
+        self.assertGreater(SUN_META['grid']['cols'], 1000)
+        self.assertGreater(SUN_META['grid']['rows'], 1000)
+        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 2.2)
+        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 2.2)
+        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], 1)
+        self.assertLess(SUN_META['coverage']['crestMaskPercent'], 55)
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 5)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 5)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 9)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 9)
-        self.assertGreater(SUN_META['coverage']['sunriseStrongPercent'], 1)
-        self.assertLess(SUN_META['coverage']['sunriseStrongPercent'], 4)
-        self.assertGreater(SUN_META['coverage']['sunsetStrongPercent'], 1)
-        self.assertLess(SUN_META['coverage']['sunsetStrongPercent'], 4)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 1)
-        self.assertGreater(SUN_META['coverage']['denseCanopyPercent'], 20)
-        self.assertLess(SUN_META['coverage']['denseCanopyPercent'], 45)
-        self.assertIn('Compact sunrise/sunset lobes at exposed cliff edges and projecting ridge noses', SUN_META['display']['designIntent'])
-        self.assertTrue(any('tree-by-tree canopy-height model' in item for item in SUN_META['limitations']))
+        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 0.2)
+        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 0.2)
+        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 20)
+        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 20)
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 5)
+        self.assertIn('Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain', SUN_META['display']['designIntent'])
         self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
         self.assertGreater(len(SUN_OVERLAY), 10000)
 
-        self.assertIn('compact crest, projecting ridge-nose, upper-shoulder, and cliff-edge support', PRIVACY)
-        self.assertIn('near-field terrain break in that viewing direction', PRIVACY)
-        self.assertIn('displayed lobe is deliberately short', PRIVACY)
-        self.assertIn('loads the finished PNG overlay from the RRGH website', PRIVACY)
-        self.assertIn('does not send the visitor’s map position, device location, or other coordinates to USGS, USDA, or Overpass', PRIVACY)
-        self.assertIn('generalized photographic viewshed proxy intended as a photography-planning aid', TERMS)
-        self.assertIn('displayed lobe is strongest near that likely overlook edge', TERMS)
-        self.assertIn('do not guarantee that the sun will be visible', TERMS)
+        self.assertIn('limited Pinch-Em-Tight calibration pilot', PRIVACY)
+        self.assertIn('approximately two-meter analysis resolution', PRIVACY)
+        self.assertIn('Outside the pilot area the calibration overlay is intentionally blank', PRIVACY)
+        self.assertIn('limited Pinch-Em-Tight calibration pilot', TERMS)
+        self.assertIn('Outside the pilot area the overlay is intentionally blank', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)

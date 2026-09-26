@@ -198,9 +198,9 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="sunrise-sunset-potential" />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span>Sunrise / Sunset potential</span>
+            <span>Sunrise / Sunset pilot — Pinch-Em-Tight</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · overlook / cliff-edge viewshed</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · calibration pilot · crest/outcrop only</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -328,7 +328,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset potential:</strong> coral marks sunrise overlook potential; indigo marks sunset. The strongest color is seeded at compact cliff edges and projecting ridge noses where the ground drops away toward the sun, then fades only a short distance back onto the same crest. Broad ridge interiors, valleys, and forest-blocked sectors are reduced. Both colors appear together only where both viewing directions independently qualify.</p>
+      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. Coral marks sunrise overlook potential; indigo marks sunset. At roughly 2 m analysis resolution, color is permitted only on explicit crest/ridge-nose terrain, seeded where the ground drops away toward the sun, and faded only about 20–100 m back along that crest. Outside the pilot box the layer is intentionally blank.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -338,7 +338,7 @@ const enabledSources = enabledBrowserMapSources;
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
       <p>Topo opacity controls how strongly contour and cartographic detail sit above terrain relief. Different sources can disagree because they were collected, generalized, or updated at different times. On desktop, right-click the map for decimal-degree and UTM coordinates. On mobile, press and hold the map.</p>
-      <p>The Sunrise / Sunset potential layer is an RRGH-hosted cliff/overlook photographic viewshed proxy derived from USGS 3DEP bare-earth elevation, USDA NAIP four-band aerial imagery, and mapped water. It first finds compact crest/nose support, then requires a near-field terrain break toward the sunrise or sunset direction before seeding color. Longer-range horizon clearance, sun-facing aspect, relief, and aerial vegetation/open-ground confidence refine that seed. The resulting lobe is intentionally short—strongest at the likely overlook edge and fading back onto the immediate crest rather than filling an entire ridge or hollow. Actual mapped water is excluded. NAIP vegetation classification is not a tree-by-tree canopy-height model, and the layer does not account for every small obstruction, current weather, seasonal leaf-off conditions, or legal access; it is not a guarantee of a visible sunrise or sunset.</p>
+      <p>The current staging Sunrise / Sunset layer is a Pinch-Em-Tight calibration pilot for an RRGH-hosted cliff/overlook photographic viewshed derived from USGS 3DEP bare-earth elevation, USDA NAIP four-band aerial imagery, and mapped water. It first finds compact crest/nose support, then requires a near-field terrain break toward the sunrise or sunset direction before seeding color. Longer-range horizon clearance, sun-facing aspect, relief, and aerial vegetation/open-ground confidence refine that seed. The resulting lobe is intentionally short—strongest at the likely overlook edge and fading back onto the immediate crest rather than filling an entire ridge or hollow. Actual mapped water is excluded. NAIP vegetation classification is not a tree-by-tree canopy-height model, and the layer does not account for every small obstruction, current weather, seasonal leaf-off conditions, or legal access; it is not a guarantee of a visible sunrise or sunset.</p>
       <p><a href={import.meta.env.BASE_URL + 'guides/kentucky-lidar/'}>Learn more about Kentucky LiDAR, contours and terrain →</a></p>
     </details>
   </details>
@@ -632,8 +632,8 @@ const enabledSources = enabledBrowserMapSources;
     }
 
     const sunPotentialBounds = L.latLngBounds([
-      [37.52, -84.02],
-      [38.15, -83.18]
+      [37.8060, -83.6505],
+      [37.8345, -83.6170]
     ]);
     const sunPotentialLayer = L.imageOverlay(
       import.meta.env.BASE_URL + 'data/map/sunrise-sunset-potential.png',
