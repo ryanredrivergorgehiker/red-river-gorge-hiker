@@ -1,8 +1,8 @@
 {
-  "version": 6,
-  "generatedAtUtc": "2026-09-26T02:52:49Z",
+  "version": 7,
+  "generatedAtUtc": "2026-09-26T12:51:26Z",
   "source": {
-    "id": "rrgh-cliff-overlook-viewshed-v6",
+    "id": "rrgh-pinch-em-tight-calibration-v7",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
@@ -19,11 +19,11 @@
       ],
       "vegetationMethod": "NAIP NIR/red NDVI calibrated to local 30th\u201378th percentiles",
       "vegetationCalibration": {
-        "ndviP05": 0.0355,
-        "ndviP30Open": 0.2632,
-        "ndviP50": 0.3188,
-        "ndviP78Dense": 0.3765,
-        "ndviP95": 0.435
+        "ndviP05": 0.1841,
+        "ndviP30Open": 0.3125,
+        "ndviP50": 0.3497,
+        "ndviP78Dense": 0.3905,
+        "ndviP95": 0.4286
       }
     },
     "waterMask": {
@@ -31,29 +31,30 @@
       "attribution": "\u00a9 OpenStreetMap contributors",
       "via": "Overpass API",
       "endpointsUsed": [
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.maprva.org/api/interpreter"
+        "https://overpass.private.coffee/api/interpreter"
       ],
-      "polygonFeatures": 592,
-      "flowlineFeatures": 2172
+      "polygonFeatures": 1,
+      "flowlineFeatures": 23
     }
   },
   "bounds": {
-    "west": -84.02,
-    "south": 37.52,
-    "east": -83.18,
-    "north": 38.15
+    "west": -83.6505,
+    "south": 37.806,
+    "east": -83.617,
+    "north": 37.8345
   },
   "grid": {
-    "cols": 3693,
-    "rows": 3507,
+    "cols": 1473,
+    "rows": 1586,
     "approximateCellMeters": [
-      20.0,
-      20.0
+      2.0,
+      2.0
     ],
     "output": "PNG RGBA"
   },
-  "method": "Cliff/overlook directional photographic viewshed proxy. High-resolution bare-earth terrain identifies compact crest/nose support, then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
+  "method": "Pinch-Em-Tight calibration pilot for a cliff/overlook directional photographic viewshed. Two-meter analysis first requires explicit crest terrain before evaluating compact overlook/nose support. then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The weaker sunrise/sunset direction is suppressed unless both overlook sectors are independently excellent; mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
       58.0,
@@ -74,33 +75,39 @@
     "nearDropMin": 0.42,
     "directionalViewMin": 0.5,
     "dualViewMin": 0.82,
-    "sunriseDisplayScore": 0.1386,
-    "sunriseStrongScore": 0.5385,
-    "sunsetDisplayScore": 0.138,
-    "sunsetStrongScore": 0.5311
+    "sunriseDisplayScore": 0.4819,
+    "sunriseStrongScore": 0.9478,
+    "sunsetDisplayScore": 0.6687,
+    "sunsetStrongScore": 0.9674
   },
   "coverage": {
-    "waterMaskPercent": 1.64,
-    "sunriseDisplayPercent": 7.07,
-    "sunsetDisplayPercent": 7.02,
-    "sunriseStrongPercent": 2.36,
-    "sunsetStrongPercent": 2.34,
-    "denseCanopyPercent": 32.8,
-    "highRidgeCorePercent": 24.31,
-    "ridgeCorridorPercent": 43.41,
-    "overlookSupportPercent": 29.53,
-    "sunriseSeedPercent": 7.74,
-    "sunsetSeedPercent": 7.67,
-    "valleyZonePercent": 20.14,
+    "waterMaskPercent": 0.72,
+    "sunriseDisplayPercent": 6.5,
+    "sunsetDisplayPercent": 6.3,
+    "sunriseStrongPercent": 2.17,
+    "sunsetStrongPercent": 2.1,
+    "denseCanopyPercent": 25.93,
+    "highRidgeCorePercent": 34.26,
+    "ridgeCorridorPercent": 56.46,
+    "overlookSupportPercent": 39.21,
+    "crestMaskPercent": 34.63,
+    "sunriseSeedPercent": 9.88,
+    "sunsetSeedPercent": 10.03,
+    "valleyZonePercent": 45.33,
     "sunriseValleyLeakPercent": 0.0,
     "sunsetValleyLeakPercent": 0.0,
-    "dualDisplayPercent": 0.34
+    "dualDisplayPercent": 1.1
   },
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
     "maximumOpacity": 0.86,
-    "designIntent": "Compact sunrise/sunset lobes at exposed cliff edges and projecting ridge noses; strongest at the directional breakline, with a short fade back onto the crest and no intentional valley fill."
+    "designIntent": "Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain, strongest at directional cliff/overlook breaks with a short 20\u2013100 m fade back along the crest and zero intended valley fill."
+  },
+  "calibrationArea": {
+    "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
+    "status": "staging calibration only",
+    "expandOnlyAfterVisualApproval": true
   },
   "calibrationIntent": [
     "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
