@@ -198,9 +198,38 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="sunrise-sunset-potential" />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span>Sunrise / Sunset pilot — Pinch-Em-Tight</span>
+            <span>Sunrise / Sunset pilot — crest-first</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · calibration pilot · crest/outcrop only</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · crest-first calibration pilot</p>
+          <details class="route-layer-fine-tune">
+            <summary>Calibration diagnostics</summary>
+            <p class="route-layer-note">Review these one at a time. Start with <strong>LiDAR crest mask</strong>; sunrise/sunset scoring is not meaningful until that yellow ridge mask is correct.</p>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-crest" />
+              <span class="route-layer-swatch" style="background:#ffe040" aria-hidden="true"></span>
+              <span>1 · LiDAR crest mask</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-overlook" />
+              <span class="route-layer-swatch" style="background:#ff46dc" aria-hidden="true"></span>
+              <span>2 · Overlook / outcrop candidates</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-open-ground" />
+              <span class="route-layer-swatch" style="background:#46dc78" aria-hidden="true"></span>
+              <span>3 · Aerial open-ground confidence</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-sunrise-pass" />
+              <span class="route-layer-swatch" style="background:#ff6f61" aria-hidden="true"></span>
+              <span>4 · Sunrise directional pass</span>
+            </label>
+            <label class="route-layer-toggle-row">
+              <input type="checkbox" data-map-layer="sun-cal-sunset-pass" />
+              <span class="route-layer-swatch" style="background:#4055d8" aria-hidden="true"></span>
+              <span>5 · Sunset directional pass</span>
+            </label>
+          </details>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -237,7 +266,12 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
             <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
-            <label><span>Sunrise / Sunset potential</span><input type="range" min="0" max="100" value="68" data-opacity="sunrise-sunset-potential" /></label>
+            <label><span>Sunrise / Sunset pilot</span><input type="range" min="0" max="100" value="68" data-opacity="sunrise-sunset-potential" /></label>
+            <label><span>LiDAR crest diagnostic</span><input type="range" min="0" max="100" value="78" data-opacity="sun-cal-crest" /></label>
+            <label><span>Overlook candidate diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-overlook" /></label>
+            <label><span>Aerial open-ground diagnostic</span><input type="range" min="0" max="100" value="62" data-opacity="sun-cal-open-ground" /></label>
+            <label><span>Sunrise pass diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-sunrise-pass" /></label>
+            <label><span>Sunset pass diagnostic</span><input type="range" min="0" max="100" value="72" data-opacity="sun-cal-sunset-pass" /></label>
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
@@ -328,7 +362,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. Coral marks sunrise overlook potential; indigo marks sunset. At roughly 2 m analysis resolution, color is permitted only on explicit crest/ridge-nose terrain, seeded where the ground drops away toward the sun, and faded only about 20–100 m back along that crest. Outside the pilot box the layer is intentionally blank.</p>
+      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. The model now starts with bare-earth LiDAR only: a location must behave like a ridge crest by falling away on both sides across at least one cross-ridge direction. Aerial open-ground confidence and nearby trail geometry are supporting evidence only; sunrise and sunset are evaluated last. Use <strong>Calibration diagnostics → 1 · LiDAR crest mask</strong> first. Outside the pilot box the layer is intentionally blank.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -648,6 +682,29 @@ const enabledSources = enabledBrowserMapSources;
     mapLayers.set('sunrise-sunset-potential', sunPotentialLayer);
     opacitySetters.set('sunrise-sunset-potential', (value) => sunPotentialLayer.setOpacity(value));
     syncVisibility('sunrise-sunset-potential');
+
+    const sunCalibrationImages = [
+      ['sun-cal-crest', 'sunrise-sunset-calibration-crest.png'],
+      ['sun-cal-overlook', 'sunrise-sunset-calibration-overlook.png'],
+      ['sun-cal-open-ground', 'sunrise-sunset-calibration-open-ground.png'],
+      ['sun-cal-sunrise-pass', 'sunrise-sunset-calibration-sunrise-pass.png'],
+      ['sun-cal-sunset-pass', 'sunrise-sunset-calibration-sunset-pass.png']
+    ] as const;
+    for (const [id, file] of sunCalibrationImages) {
+      const layer = L.imageOverlay(
+        import.meta.env.BASE_URL + 'data/map/' + file,
+        sunPotentialBounds,
+        {
+          opacity: opacity(id),
+          pane: 'sunPotential',
+          interactive: false,
+          className: 'rrgh-sun-calibration-overlay'
+        }
+      );
+      mapLayers.set(id, layer);
+      opacitySetters.set(id, (value) => layer.setOpacity(value));
+      syncVisibility(id);
+    }
 
     const routeGroup = L.layerGroup();
     const routeStartGroup = L.layerGroup();

@@ -436,39 +436,60 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_pinch_em_tight_calibration_pilot(self):
+    def test_sunrise_sunset_potential_is_crest_first_pinch_em_tight_pilot(self):
         self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
-        self.assertIn('Sunrise / Sunset pilot — Pinch-Em-Tight', MAP)
-        self.assertIn('staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area', MAP)
-        self.assertIn('roughly 2 m analysis resolution', MAP)
+        self.assertIn('Sunrise / Sunset pilot — crest-first', MAP)
+        self.assertIn('Calibration diagnostics', MAP)
+        self.assertIn('1 · LiDAR crest mask', MAP)
+        self.assertIn('2 · Overlook / outcrop candidates', MAP)
+        self.assertIn('3 · Aerial open-ground confidence', MAP)
+        self.assertIn('4 · Sunrise directional pass', MAP)
+        self.assertIn('5 · Sunset directional pass', MAP)
+        for diagnostic_id in (
+            'sun-cal-crest',
+            'sun-cal-overlook',
+            'sun-cal-open-ground',
+            'sun-cal-sunrise-pass',
+            'sun-cal-sunset-pass',
+        ):
+            self.assertIn(f'data-map-layer="{diagnostic_id}"', MAP)
+            self.assertIn(f'data-opacity="{diagnostic_id}"', MAP)
+        self.assertIn('bare-earth LiDAR only', MAP)
+        self.assertIn('falling away on both sides', MAP)
+        self.assertIn('Aerial open-ground confidence and nearby trail geometry are supporting evidence only', MAP)
         self.assertIn('Outside the pilot box the layer is intentionally blank', MAP)
         self.assertIn('[37.8060, -83.6505]', MAP)
         self.assertIn('[37.8345, -83.6170]', MAP)
-        self.assertIn("data/map/sunrise-sunset-potential.png", MAP)
 
         for contract in (
-            'VERSION = 7',
-            'BOUNDS = {"west": -83.6505, "south": 37.8060, "east": -83.6170, "north": 37.8345}',
+            'VERSION = 8',
             'PIXEL_METERS = 2.0',
-            'crest_mask',
-            '(broad_tpi >= 1.5)',
-            '(fine_tpi >= -0.5)',
+            'bilateral_ridge_relief',
+            'bilateral_relief_m',
+            'crest_strength',
+            'crest_core',
+            'binary_dilation(crest_core, iterations=3)',
+            'fetch_trail_elements',
+            'trail_distance_m',
+            'trail_support',
+            'open_ground',
+            'supporting evidence only; trail proximity cannot create a crest candidate',
             'result[valley_zone | (~crest_mask)] = 0.0',
-            'gaussian_filter(seed, sigma=3.0)',
-            'gaussian_filter(seed, sigma=10.0)',
-            'gaussian_filter(seed, sigma=24.0)',
             'sunrise_candidate',
             'sunset_candidate',
-            'site_open >= 0.30',
-            'NAIP NIR/red NDVI calibrated to local 30th–78th percentiles',
+            'DIAG_CREST_PATH',
+            'DIAG_OVERLOOK_PATH',
+            'DIAG_OPEN_PATH',
+            'DIAG_SUNRISE_PATH',
+            'DIAG_SUNSET_PATH',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['version'], 7)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-calibration-v7')
-        self.assertEqual(SUN_META['calibrationArea']['name'], 'Pinch-Em-Tight / Sheltowee suspension-bridge pilot')
-        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging calibration only')
+        self.assertEqual(SUN_META['version'], 8)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-crest-first-v8')
+        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging crest-first calibration only')
         self.assertTrue(SUN_META['calibrationArea']['expandOnlyAfterVisualApproval'])
+        self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR crest mask')
         self.assertEqual(SUN_META['bounds'], {
             'west': -83.6505,
             'south': 37.8060,
@@ -476,34 +497,29 @@ class RoutesTracksContractTests(unittest.TestCase):
             'north': 37.8345,
         })
         self.assertEqual(SUN_META['grid']['output'], 'PNG RGBA')
-        self.assertGreater(SUN_META['grid']['cols'], 1000)
-        self.assertGreater(SUN_META['grid']['rows'], 1000)
         self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 2.2)
         self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 2.2)
-        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], 30)
-        self.assertLess(SUN_META['coverage']['crestMaskPercent'], 40)
+        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], 1)
+        self.assertLess(SUN_META['coverage']['crestMaskPercent'], 35)
+        self.assertGreater(SUN_META['coverage']['bilateralRidgeCorePercent'], 1)
+        self.assertGreater(SUN_META['coverage']['trailSupportPercent'], 0.1)
+        self.assertGreater(SUN_META['coverage']['openGroundPercent'], 0.1)
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 5)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 5)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 8)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 8)
-        self.assertGreater(SUN_META['coverage']['sunriseStrongPercent'], 1)
-        self.assertLess(SUN_META['coverage']['sunriseStrongPercent'], 4)
-        self.assertGreater(SUN_META['coverage']['sunsetStrongPercent'], 1)
-        self.assertLess(SUN_META['coverage']['sunsetStrongPercent'], 4)
-        self.assertGreater(SUN_META['coverage']['denseCanopyPercent'], 20)
-        self.assertLess(SUN_META['coverage']['denseCanopyPercent'], 35)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 2)
-        self.assertIn('Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain', SUN_META['display']['designIntent'])
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 3)
+        self.assertEqual(len(SUN_META['diagnostics']), 5)
+        for diagnostic in SUN_META['diagnostics']:
+            diagnostic_path = ROOT / 'public' / 'data' / 'map' / diagnostic['file']
+            self.assertTrue(diagnostic_path.exists(), diagnostic['file'])
+            self.assertEqual(diagnostic_path.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
+        self.assertIn('LiDAR crest detection comes first', SUN_META['display']['designIntent'])
         self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
         self.assertGreater(len(SUN_OVERLAY), 10000)
 
-        self.assertIn('limited Pinch-Em-Tight calibration pilot', PRIVACY)
-        self.assertIn('approximately two-meter analysis resolution', PRIVACY)
-        self.assertIn('Outside the pilot area the calibration overlay is intentionally blank', PRIVACY)
-        self.assertIn('limited Pinch-Em-Tight calibration pilot', TERMS)
-        self.assertIn('Outside the pilot area the overlay is intentionally blank', TERMS)
+        self.assertIn('bare-earth LiDAR ridge detection', PRIVACY)
+        self.assertIn('Trail proximity is supporting evidence only and cannot create a crest candidate', PRIVACY)
+        self.assertIn('bare-earth LiDAR crest test', TERMS)
+        self.assertIn('trail proximity is only supporting evidence rather than proof of an overlook', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)

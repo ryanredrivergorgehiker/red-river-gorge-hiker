@@ -12,7 +12,7 @@ from PIL import Image
 from rasterio.features import rasterize
 from rasterio.io import MemoryFile
 from rasterio.transform import from_bounds
-from scipy.ndimage import gaussian_filter, maximum_filter, minimum_filter, uniform_filter
+from scipy.ndimage import binary_dilation, distance_transform_edt, gaussian_filter, maximum_filter, minimum_filter, uniform_filter
 from shapely.geometry import LineString, Polygon, mapping
 
 ELEVATION_SERVICE = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer"
@@ -39,12 +39,17 @@ OVERLOOK_SUPPORT_MIN = 0.42
 NEAR_DROP_MIN = 0.42
 DIRECTIONAL_VIEW_MIN = 0.50
 DUAL_VIEW_MIN = 0.82
-VERSION = 7
+VERSION = 8
 
 OUT_DIR = Path("public/data/map")
 PNG_PATH = OUT_DIR / "sunrise-sunset-potential.png"
 META_PATH = OUT_DIR / "sunrise-sunset-potential.meta.json"
 OLD_SVG_PATH = OUT_DIR / "sunrise-sunset-potential.svg"
+DIAG_CREST_PATH = OUT_DIR / "sunrise-sunset-calibration-crest.png"
+DIAG_OVERLOOK_PATH = OUT_DIR / "sunrise-sunset-calibration-overlook.png"
+DIAG_OPEN_PATH = OUT_DIR / "sunrise-sunset-calibration-open-ground.png"
+DIAG_SUNRISE_PATH = OUT_DIR / "sunrise-sunset-calibration-sunrise-pass.png"
+DIAG_SUNSET_PATH = OUT_DIR / "sunrise-sunset-calibration-sunset-pass.png"
 
 MID_LAT = (BOUNDS["south"] + BOUNDS["north"]) / 2
 WIDTH_METERS = 111320.0 * math.cos(math.radians(MID_LAT)) * (BOUNDS["east"] - BOUNDS["west"])
@@ -135,6 +140,70 @@ def shift(arr, dr, dc, fill=np.nan):
     if src_r1 > src_r0 and src_c1 > src_c0 and dst_r1 > dst_r0 and dst_c1 > dst_c0:
         out[dst_r0:dst_r1, dst_c0:dst_c1] = arr[src_r0:src_r1, src_c0:src_c1]
     return out
+
+
+def bilateral_ridge_relief(dem):
+    """Measure whether terrain falls away on both sides of some local ridge axis."""
+    best_relief = np.zeros(dem.shape, dtype=np.float32)
+    mean_cell = (X_METERS + Y_METERS) / 2.0
+    distances_m = [12.0, 24.0, 48.0, 80.0]
+    weights = [0.34, 0.30, 0.23, 0.13]
+
+    # These are cross-ridge normals. Taking the best orientation makes the
+    # detector agnostic to the direction the ridge itself runs.
+    for normal_degrees in [0.0, 30.0, 60.0, 90.0, 120.0, 150.0]:
+        angle = math.radians(normal_degrees)
+        east = math.sin(angle)
+        north = math.cos(angle)
+        plus_score = np.zeros(dem.shape, dtype=np.float32)
+        minus_score = np.zeros(dem.shape, dtype=np.float32)
+
+        for distance_m, weight in zip(distances_m, weights):
+            distance_px = max(1, int(round(distance_m / mean_cell)))
+            dr = int(round(-north * distance_px))
+            dc = int(round(east * distance_px))
+            plus = shift(dem, dr, dc)
+            minus = shift(dem, -dr, -dc)
+            plus_drop = np.where(np.isfinite(plus), np.maximum(0.0, dem - plus), 0.0)
+            minus_drop = np.where(np.isfinite(minus), np.maximum(0.0, dem - minus), 0.0)
+            plus_score += weight * plus_drop
+            minus_score += weight * minus_drop
+
+        bilateral = np.minimum(plus_score, minus_score)
+        best_relief = np.maximum(best_relief, bilateral)
+
+    ridge_score = smoothstep(best_relief, 3.0, 18.0)
+    return best_relief, ridge_score
+
+
+def fetch_trail_elements():
+    bbox = f'{BOUNDS["south"]},{BOUNDS["west"]},{BOUNDS["north"]},{BOUNDS["east"]}'
+    query = f"""[out:json][timeout:40];
+(
+  way["highway"~"^(path|footway|track)$"]({bbox});
+  way["route"="hiking"]({bbox});
+);
+out tags geom qt;"""
+    last = None
+    for endpoint in OVERPASS_ENDPOINTS:
+        try:
+            payload = request_json(endpoint, data={"data": query}, timeout=55, attempts=1)
+            elements = [
+                element for element in payload.get("elements", [])
+                if element.get("type") == "way" and element.get("geometry")
+            ]
+            return elements, endpoint
+        except Exception as exc:
+            last = exc
+    raise last
+
+
+def diagnostic_rgba(strength, rgb, alpha_max=0.78):
+    strength = clamp01(strength.astype(np.float32))
+    rgba = np.zeros((ROWS, COLS, 4), dtype=np.uint8)
+    rgba[..., :3] = np.array(rgb, dtype=np.uint8)
+    rgba[..., 3] = np.clip(strength * alpha_max * 255.0, 0, 255).astype(np.uint8)
+    return rgba
 
 def directional_metrics(dem, vegetation, azimuths):
     best_score = np.zeros(dem.shape, dtype=np.float32)
@@ -364,6 +433,8 @@ else:
 
 vegetation = gaussian_filter(vegetation.astype(np.float32), sigma=0.8)
 local_canopy = uniform_filter(vegetation, size=3, mode="nearest")
+brightness = clamp01((red + green + blue) / (3.0 * 255.0))
+open_ground = clamp01((1.0 - vegetation) * (0.58 + 0.42 * smoothstep(brightness, 0.18, 0.58)))
 
 radius_px = max(5, int(round(550.0 / ((X_METERS + Y_METERS) / 2.0))))
 size = radius_px * 2 + 1
@@ -403,28 +474,46 @@ broad_ridge = smoothstep(broad_tpi, -4.0, 28.0)
 height_gate = smoothstep(relative_height, 0.18, 0.62)
 prominence_gate = smoothstep(prominence, 0.14, 0.58)
 
-ridge_corridor = clamp01(
-    0.30 * ridge_core
-    + 0.24 * broad_ridge
-    + 0.17 * fine_ridge
-    + 0.17 * height_gate
-    + 0.12 * prominence_gate
+# Crest-first LiDAR model: a ridge must fall away on BOTH sides across at least
+# one cross-ridge orientation. This is deliberately computed before any
+# sunrise/sunset direction is considered.
+bilateral_relief_m, bilateral_ridge = bilateral_ridge_relief(dem)
+crest_strength = clamp01(
+    0.46 * bilateral_ridge
+    + 0.19 * broad_ridge
+    + 0.12 * fine_ridge
+    + 0.11 * height_gate
+    + 0.07 * prominence_gate
+    + 0.05 * convexity
 )
-# The support surface itself fades down a shoulder, but collapses before the
-# valley floor. This is what keeps the displayed gradient on connected high ground.
-ridge_corridor *= smoothstep(relative_height, 0.12, 0.48)
-ridge_corridor *= smoothstep(prominence, 0.08, 0.44)
+crest_core = (
+    (bilateral_relief_m >= 5.0)
+    & (crest_strength >= 0.46)
+    & (relative_height >= 0.20)
+    & (prominence >= 0.16)
+    & (broad_tpi >= -1.0)
+)
+# A narrow dilation keeps the crest visible/continuous without turning the
+# entire upper slope into a ridge. Final candidates still require crest strength.
+crest_mask = binary_dilation(crest_core, iterations=3) & (crest_strength >= 0.38)
+
+ridge_corridor = clamp01(
+    0.42 * crest_strength
+    + 0.20 * ridge_core
+    + 0.15 * broad_ridge
+    + 0.09 * fine_ridge
+    + 0.08 * height_gate
+    + 0.06 * prominence_gate
+)
+ridge_corridor *= crest_mask.astype(np.float32)
 
 valley_zone = (
-    (relative_height < 0.20)
-    | (broad_tpi < -6.0)
-    | ((fine_tpi < -2.0) & (prominence < 0.24))
-)
-crest_mask = (
-    (relative_height >= 0.24)
-    & (prominence >= 0.20)
-    & (broad_tpi >= 1.5)
-    & (fine_tpi >= -0.5)
+    (~crest_mask)
+    & (
+        (relative_height < 0.24)
+        | (broad_tpi < -3.0)
+        | ((fine_tpi < -1.0) & (prominence < 0.28))
+    )
 )
 valley_penalty = (
     0.22 * clamp01((0.34 - relative_height) / 0.34)
@@ -463,16 +552,21 @@ sunset_view = clamp01(
 # Strong positive TPI plus convexity/prominence favors projecting ridge noses
 # and cliff rims, not broad wooded plateau interiors.
 overlook_support = clamp01(
-    0.28 * broad_ridge
-    + 0.23 * fine_ridge
-    + 0.19 * convexity
-    + 0.16 * prominence_gate
-    + 0.14 * height_gate
+    0.36 * crest_strength
+    + 0.18 * bilateral_ridge
+    + 0.14 * convexity
+    + 0.11 * prominence_gate
+    + 0.09 * height_gate
+    + 0.07 * open_ground
+    + 0.05 * trail_support
 )
-overlook_support *= smoothstep(relative_height, 0.22, 0.62)
-overlook_support *= smoothstep(prominence, 0.14, 0.54)
+overlook_support *= crest_mask.astype(np.float32)
 
-site_open = clamp01(1.0 - local_canopy)
+site_open = clamp01(
+    0.62 * (1.0 - local_canopy)
+    + 0.28 * open_ground
+    + 0.10 * trail_support
+)
 sunrise_opening_gate = 0.18 + 0.82 * smoothstep(
     0.62 * sunrise_aerial + 0.38 * site_open,
     0.20,
@@ -548,7 +642,7 @@ sunset_seed = clamp01(
 def overlook_lobe(seed):
     support = (
         smoothstep(overlook_support, 0.30, 0.72)
-        * smoothstep(ridge_corridor, 0.28, 0.64)
+        * smoothstep(crest_strength, 0.34, 0.70)
         * crest_mask.astype(np.float32)
     )
     core = seed
@@ -574,6 +668,7 @@ sunrise_candidate = (
     & (overlook_support >= OVERLOOK_SUPPORT_MIN)
     & (sunrise_near_drop >= NEAR_DROP_MIN)
     & (sunrise_view >= DIRECTIONAL_VIEW_MIN)
+    & crest_mask
     & ((sunrise_aerial >= 0.24) | (site_open >= 0.30))
     & (~valley_zone)
 )
@@ -582,11 +677,33 @@ sunset_candidate = (
     & (overlook_support >= OVERLOOK_SUPPORT_MIN)
     & (sunset_near_drop >= NEAR_DROP_MIN)
     & (sunset_view >= DIRECTIONAL_VIEW_MIN)
+    & crest_mask
     & ((sunset_aerial >= 0.24) | (site_open >= 0.30))
     & (~valley_zone)
 )
 sunrise_score[~sunrise_candidate] = 0.0
 sunset_score[~sunset_candidate] = 0.0
+
+trail_elements, trail_overpass_endpoint = fetch_trail_elements()
+trail_lines = []
+for element in trail_elements:
+    xy = coords(element.get("geometry"))
+    if len(xy) >= 2:
+        try:
+            trail_lines.append(LineString(xy))
+        except Exception:
+            pass
+
+trail_mask = rasterize(
+    [(mapping(shape), 1) for shape in trail_lines],
+    out_shape=(ROWS, COLS),
+    transform=TRANSFORM,
+    fill=0,
+    all_touched=True,
+    dtype="uint8",
+).astype(bool)
+trail_distance_m = distance_transform_edt(~trail_mask, sampling=(Y_METERS, X_METERS))
+trail_support = 1.0 - smoothstep(trail_distance_m, 10.0, 55.0)
 
 water_elements, overpass_used = fetch_water_elements()
 water_polygons, water_lines = water_shapes(water_elements)
@@ -650,6 +767,24 @@ rgba[water_mask, 3] = 0
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 Image.fromarray(rgba, mode="RGBA").save(PNG_PATH, optimize=True, compress_level=9)
+
+# Staging calibration diagnostics. These are intentionally separate from the
+# final composite so the user can verify the LiDAR crest model first.
+crest_diag = diagnostic_rgba(crest_strength * crest_mask.astype(np.float32), (255, 224, 64), 0.86)
+overlook_diag_strength = clamp01(overlook_support * np.maximum(sunrise_near_drop, sunset_near_drop))
+overlook_diag = diagnostic_rgba(overlook_diag_strength, (255, 70, 220), 0.82)
+open_diag = diagnostic_rgba(site_open, (70, 220, 120), 0.66)
+sunrise_diag_strength = clamp01(sunrise_view * sunrise_edge_gate * sunrise_direction_gate * crest_mask.astype(np.float32))
+sunset_diag_strength = clamp01(sunset_view * sunset_edge_gate * sunset_direction_gate * crest_mask.astype(np.float32))
+sunrise_diag = diagnostic_rgba(sunrise_diag_strength, (255, 111, 97), 0.80)
+sunset_diag = diagnostic_rgba(sunset_diag_strength, (64, 85, 216), 0.80)
+
+Image.fromarray(crest_diag, mode="RGBA").save(DIAG_CREST_PATH, optimize=True, compress_level=9)
+Image.fromarray(overlook_diag, mode="RGBA").save(DIAG_OVERLOOK_PATH, optimize=True, compress_level=9)
+Image.fromarray(open_diag, mode="RGBA").save(DIAG_OPEN_PATH, optimize=True, compress_level=9)
+Image.fromarray(sunrise_diag, mode="RGBA").save(DIAG_SUNRISE_PATH, optimize=True, compress_level=9)
+Image.fromarray(sunset_diag, mode="RGBA").save(DIAG_SUNSET_PATH, optimize=True, compress_level=9)
+
 if OLD_SVG_PATH.exists():
     OLD_SVG_PATH.unlink()
 
@@ -660,7 +795,7 @@ metadata = {
     "version": VERSION,
     "generatedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "source": {
-        "id": "rrgh-pinch-em-tight-calibration-v7",
+        "id": "rrgh-pinch-em-tight-crest-first-v8",
         "elevation": {
             "id": "usgs-3dep-bare-earth-dem",
             "service": ELEVATION_SERVICE,
@@ -672,6 +807,14 @@ metadata = {
             "bandsRequested": [0, 1, 2, 3],
             "vegetationMethod": vegetation_method,
             "vegetationCalibration": vegetation_stats,
+        },
+        "trailSupport": {
+            "id": "openstreetmap-trails-pilot-support",
+            "attribution": "© OpenStreetMap contributors",
+            "via": "Overpass API",
+            "endpointUsed": trail_overpass_endpoint,
+            "lineFeatures": len(trail_lines),
+            "role": "supporting evidence only; trail proximity cannot create a crest candidate"
         },
         "waterMask": {
             "id": "openstreetmap-water",
@@ -690,7 +833,7 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Pinch-Em-Tight calibration pilot for a cliff/overlook directional photographic viewshed. Two-meter analysis first requires explicit crest terrain before evaluating compact overlook/nose support. "
+        "Pinch-Em-Tight crest-first calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any sunrise/sunset direction is considered. "
         "then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP "
         "aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained "
         "to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The "
@@ -721,6 +864,9 @@ metadata = {
         "ridgeCorridorPercent": percent(ridge_corridor >= 0.38),
         "overlookSupportPercent": percent(overlook_support >= OVERLOOK_SUPPORT_MIN),
         "crestMaskPercent": percent(crest_mask),
+        "bilateralRidgeCorePercent": percent(bilateral_relief_m >= 5.0),
+        "trailSupportPercent": percent(trail_support >= 0.5),
+        "openGroundPercent": percent(open_ground >= 0.55),
         "sunriseSeedPercent": percent(sunrise_seed > 0.10),
         "sunsetSeedPercent": percent(sunset_seed > 0.10),
         "valleyZonePercent": percent(valley_zone),
@@ -728,18 +874,35 @@ metadata = {
         "sunsetValleyLeakPercent": percent((sunset_strength > 0) & valley_zone),
         "dualDisplayPercent": percent((sunrise_strength > 0) & (sunset_strength > 0)),
     },
+    "diagnostics": [
+        {"id": "crest", "file": DIAG_CREST_PATH.name, "meaning": "LiDAR bilateral-relief crest mask"},
+        {"id": "overlook", "file": DIAG_OVERLOOK_PATH.name, "meaning": "crest-qualified overlook/outcrop support"},
+        {"id": "open-ground", "file": DIAG_OPEN_PATH.name, "meaning": "NAIP/local-site open-ground confidence"},
+        {"id": "sunrise-pass", "file": DIAG_SUNRISE_PATH.name, "meaning": "crest-qualified sunrise directional pass"},
+        {"id": "sunset-pass", "file": DIAG_SUNSET_PATH.name, "meaning": "crest-qualified sunset directional pass"}
+    ],
     "display": {
         "sunriseColor": "#ff6f61",
         "sunsetColor": "#4055d8",
         "maximumOpacity": 0.86,
-        "designIntent": "Calibration pilot: compact sunrise/sunset lobes only on explicit Pinch-Em-Tight crest/ridge-nose terrain, strongest at directional cliff/overlook breaks with a short 20–100 m fade back along the crest and zero intended valley fill.",
+        "designIntent": "Calibration pilot: LiDAR crest detection comes first; final sunrise/sunset lobes may exist only on the detected crest/ridge-nose mask, with aerial open-ground and trail proximity used as supporting evidence and directional sun tests applied last.",
     },
     "calibrationArea": {
         "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
-        "status": "staging calibration only",
-        "expandOnlyAfterVisualApproval": True
+        "status": "staging crest-first calibration only",
+        "expandOnlyAfterVisualApproval": True,
+        "reviewOrder": [
+            "LiDAR crest mask",
+            "Overlook/outcrop candidates",
+            "Aerial open-ground confidence",
+            "Sunrise directional pass",
+            "Sunset directional pass",
+            "Final sunrise/sunset composite"
+        ]
     },
     "calibrationIntent": [
+        "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots.",
+        "Only after ridge placement is correct should aerial openness, trail support, and directional sunrise/sunset scoring affect the final result.",
         "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
         "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",
         "Keep gradients short and on crest support rather than allowing radial bleed into adjacent valleys.",
