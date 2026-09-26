@@ -198,12 +198,12 @@ const enabledSources = enabledBrowserMapSources;
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="sunrise-sunset-potential" />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span>Sunrise / Sunset pilot — crest-first</span>
+            <span>Sunrise / Sunset pilot — crest-connected</span>
           </label>
-          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · crest-first calibration pilot</p>
+          <p class="route-layer-note"><span class="route-sun-key route-sun-key-sunrise" aria-hidden="true"></span> Sunrise <span class="route-sun-key route-sun-key-sunset" aria-hidden="true"></span> Sunset · crest-connected calibration pilot</p>
           <details class="route-layer-fine-tune">
             <summary>Calibration diagnostics</summary>
-            <p class="route-layer-note">Review these one at a time. Start with <strong>LiDAR crest mask</strong>; sunrise/sunset scoring is not meaningful until that yellow ridge mask is correct.</p>
+            <p class="route-layer-note">Review these one at a time. Start with <strong>LiDAR crest mask</strong>. That yellow geometry is now derived from LiDAR only. Trail and aerial data cannot move it. The final fade walks connected crest pixels rather than using radial blur.</p>
             <label class="route-layer-toggle-row">
               <input type="checkbox" data-map-layer="sun-cal-crest" />
               <span class="route-layer-swatch" style="background:#ffe040" aria-hidden="true"></span>
@@ -362,7 +362,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. The model now starts with bare-earth LiDAR only: a location must behave like a ridge crest by falling away on both sides across at least one cross-ridge direction. Aerial open-ground confidence and nearby trail geometry are supporting evidence only; sunrise and sunset are evaluated last. Use <strong>Calibration diagnostics → 1 · LiDAR crest mask</strong> first. Outside the pilot box the layer is intentionally blank.</p>
+      <p><strong>Sunrise / Sunset calibration pilot:</strong> this staging-only test is intentionally limited to the Pinch-Em-Tight / suspension-bridge area. The model now starts with bare-earth LiDAR only: a location must behave like a ridge crest by falling away on both sides across at least one cross-ridge direction. Aerial open-ground confidence is evaluated only after that geometry exists. Nearby trail geometry cannot create, move, or broaden the crest; it can only provide a tiny late confidence boost to an already valid overlook. Sunrise and sunset are evaluated last, and their fade follows connected crest pixels rather than a two-dimensional blur. Use <strong>Calibration diagnostics → 1 · LiDAR crest mask</strong> first. Outside the pilot box the layer is intentionally blank.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>

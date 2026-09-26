@@ -39,7 +39,7 @@ OVERLOOK_SUPPORT_MIN = 0.42
 NEAR_DROP_MIN = 0.42
 DIRECTIONAL_VIEW_MIN = 0.50
 DUAL_VIEW_MIN = 0.82
-VERSION = 8
+VERSION = 9
 
 OUT_DIR = Path("public/data/map")
 PNG_PATH = OUT_DIR / "sunrise-sunset-potential.png"
@@ -572,21 +572,21 @@ trail_support = 1.0 - smoothstep(trail_distance_m, 10.0, 55.0)
 # Crest/nose support is intentionally narrower than the v5 ridge corridor.
 # Strong positive TPI plus convexity/prominence favors projecting ridge noses
 # and cliff rims, not broad wooded plateau interiors.
+# Geometry is LiDAR-only. Neither trail proximity nor aerial appearance is
+# allowed to move, create, or broaden the crest/outcrop geometry.
 overlook_support = clamp01(
-    0.36 * crest_strength
-    + 0.18 * bilateral_ridge
-    + 0.14 * convexity
+    0.43 * crest_strength
+    + 0.22 * bilateral_ridge
+    + 0.15 * convexity
     + 0.11 * prominence_gate
     + 0.09 * height_gate
-    + 0.07 * open_ground
-    + 0.05 * trail_support
 )
 overlook_support *= crest_mask.astype(np.float32)
 
+# Aerial evidence comes only AFTER the LiDAR geometry exists.
 site_open = clamp01(
-    0.62 * (1.0 - local_canopy)
-    + 0.28 * open_ground
-    + 0.10 * trail_support
+    0.68 * (1.0 - local_canopy)
+    + 0.32 * open_ground
 )
 sunrise_opening_gate = 0.18 + 0.82 * smoothstep(
     0.62 * sunrise_aerial + 0.38 * site_open,
@@ -657,32 +657,53 @@ sunset_seed = clamp01(
     * sunset_direction_gate
 )
 
+# Trail support is applied only after a LiDAR/aerial candidate exists. This
+# small multiplier can increase confidence at an already valid overlook but can
+# never create geometry, shift a seed, or pull a lobe toward the trail.
+trail_confidence = 1.0 + 0.03 * trail_support
+sunrise_seed = clamp01(sunrise_seed * trail_confidence)
+sunset_seed = clamp01(sunset_seed * trail_confidence)
+
 # The reference map uses compact lobes: strong at the exposed edge, fading only
 # a short distance back onto the same crest. Keep propagation to roughly
 # 20–120 m and multiply every step by high-ground support.
-def overlook_lobe(seed):
+def crest_connected_propagation(seed):
+    """
+    Propagate only through connected crest pixels. This is a graph-like
+    geodesic walk over the raster mask, not a 2-D blur, so a seed cannot jump
+    across a hollow or drift toward a nearby trail.
+    """
     support = (
-        smoothstep(overlook_support, 0.30, 0.72)
-        * smoothstep(crest_strength, 0.34, 0.70)
-        * crest_mask.astype(np.float32)
+        crest_mask
+        & (~valley_zone)
+        & (crest_strength >= 0.40)
+        & (bilateral_ridge >= 0.22)
     )
-    core = seed
-    # At the 2 m pilot resolution these correspond to a compact edge halo and
-    # roughly 20–100 m of fade back along the supported crest.
-    near = gaussian_filter(seed, sigma=3.0) * support
-    back = gaussian_filter(seed, sigma=10.0) * np.power(support, 1.30)
-    tail = gaussian_filter(seed, sigma=24.0) * np.power(support, 1.75)
-    result = np.maximum.reduce([
-        core,
-        0.88 * near,
-        0.56 * back,
-        0.22 * tail,
-    ])
-    result[valley_zone | (~crest_mask)] = 0.0
+    result = np.where(support, seed, 0.0).astype(np.float32)
+    current = result.copy()
+
+    mean_cell_m = (X_METERS + Y_METERS) / 2.0
+    max_distance_m = 100.0
+    steps = max(1, int(round(max_distance_m / mean_cell_m)))
+    # About 18% of source intensity remains at the 100 m extent.
+    decay = math.exp(math.log(0.18) / steps)
+    support_weight = (
+        0.90
+        + 0.10 * smoothstep(crest_strength, 0.40, 0.72)
+    ).astype(np.float32)
+
+    for _ in range(steps):
+        current = maximum_filter(current, size=3, mode="constant", cval=0.0)
+        current = current * decay * support_weight
+        current[~support] = 0.0
+        result = np.maximum(result, current)
+
+    result[~support] = 0.0
     return clamp01(result)
 
-sunrise_score = overlook_lobe(sunrise_seed)
-sunset_score = overlook_lobe(sunset_seed)
+
+sunrise_score = crest_connected_propagation(sunrise_seed)
+sunset_score = crest_connected_propagation(sunset_seed)
 
 sunrise_candidate = (
     crest_mask
@@ -795,7 +816,7 @@ metadata = {
     "version": VERSION,
     "generatedAtUtc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "source": {
-        "id": "rrgh-pinch-em-tight-crest-first-v8",
+        "id": "rrgh-pinch-em-tight-crest-geodesic-v9",
         "elevation": {
             "id": "usgs-3dep-bare-earth-dem",
             "service": ELEVATION_SERVICE,
@@ -814,7 +835,7 @@ metadata = {
             "via": "Overpass API",
             "endpointUsed": trail_overpass_endpoint,
             "lineFeatures": len(trail_lines),
-            "role": "supporting evidence only; trail proximity cannot create a crest candidate"
+            "role": "late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry"
         },
         "waterMask": {
             "id": "openstreetmap-water",
@@ -833,7 +854,7 @@ metadata = {
         "output": "PNG RGBA",
     },
     "method": (
-        "Pinch-Em-Tight crest-first calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any sunrise/sunset direction is considered. "
+        "Pinch-Em-Tight crest-geodesic calibration pilot. Two-meter bare-earth LiDAR analysis first detects ridge crests from bilateral terrain fall-away across multiple cross-ridge orientations, before any aerial, trail, or sunrise/sunset evidence is considered. "
         "then requires a near-field terrain break in the sunrise or sunset direction in addition to the longer horizon, aspect, and NAIP "
         "aerial openness. Strong seeds represent likely overlook/outcrop edges; display propagation is deliberately short and constrained "
         "to the same high-ground crest so lobes fade back from an edge rather than painting whole ridge systems or adjacent valleys. The "
@@ -885,11 +906,11 @@ metadata = {
         "sunriseColor": "#ff6f61",
         "sunsetColor": "#4055d8",
         "maximumOpacity": 0.86,
-        "designIntent": "Calibration pilot: LiDAR crest detection comes first; final sunrise/sunset lobes may exist only on the detected crest/ridge-nose mask, with aerial open-ground and trail proximity used as supporting evidence and directional sun tests applied last.",
+        "designIntent": "Calibration pilot: LiDAR alone defines crest/outcrop geometry; aerial evidence evaluates openness afterward; trail proximity is only a tiny late confidence boost; final sunrise/sunset fade walks connected crest pixels for up to about 100 m rather than using radial blur.",
     },
     "calibrationArea": {
         "name": "Pinch-Em-Tight / Sheltowee suspension-bridge pilot",
-        "status": "staging crest-first calibration only",
+        "status": "staging crest-geodesic calibration only",
         "expandOnlyAfterVisualApproval": True,
         "reviewOrder": [
             "LiDAR crest mask",
@@ -901,11 +922,11 @@ metadata = {
         ]
     },
     "calibrationIntent": [
-        "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots.",
-        "Only after ridge placement is correct should aerial openness, trail support, and directional sunrise/sunset scoring affect the final result.",
+        "First verify that the LiDAR bilateral-relief crest mask follows the actual ridge tops in the user-provided Pinch-Em-Tight screenshots; no trail or aerial input is permitted to alter this geometry.",
+        "Only after ridge placement is correct should aerial openness and directional sunrise/sunset scoring affect the seed; trail support may only slightly increase confidence in an already valid seed.",
         "Match the compact lobe shape of the user-provided overlook reference rather than painting whole ridge corridors.",
         "Require a near-field terrain break toward the sunrise/sunset horizon before seeding color.",
-        "Keep gradients short and on crest support rather than allowing radial bleed into adjacent valleys.",
+        "Propagate the display by connected crest pixels rather than Gaussian/radial blur, preventing drift across slopes, hollows, or toward nearby trails.",
         "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
         "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
         "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon.",

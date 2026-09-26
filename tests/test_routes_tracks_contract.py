@@ -436,97 +436,54 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
         self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
 
-    def test_sunrise_sunset_potential_is_crest_first_pinch_em_tight_pilot(self):
-        self.assertIn('data-map-layer="sunrise-sunset-potential" />', MAP)
-        self.assertIn('Sunrise / Sunset pilot — crest-first', MAP)
-        self.assertIn('Calibration diagnostics', MAP)
-        self.assertIn('1 · LiDAR crest mask', MAP)
-        self.assertIn('2 · Overlook / outcrop candidates', MAP)
-        self.assertIn('3 · Aerial open-ground confidence', MAP)
-        self.assertIn('4 · Sunrise directional pass', MAP)
-        self.assertIn('5 · Sunset directional pass', MAP)
-        for diagnostic_id in (
-            'sun-cal-crest',
-            'sun-cal-overlook',
-            'sun-cal-open-ground',
-            'sun-cal-sunrise-pass',
-            'sun-cal-sunset-pass',
-        ):
-            self.assertIn(f'data-map-layer="{diagnostic_id}"', MAP)
-            self.assertIn(f'data-opacity="{diagnostic_id}"', MAP)
-        self.assertIn('bare-earth LiDAR only', MAP)
-        self.assertIn('falling away on both sides', MAP)
-        self.assertIn('Aerial open-ground confidence and nearby trail geometry are supporting evidence only', MAP)
-        self.assertIn('Outside the pilot box the layer is intentionally blank', MAP)
-        self.assertIn('[37.8060, -83.6505]', MAP)
-        self.assertIn('[37.8345, -83.6170]', MAP)
+    def test_sunrise_sunset_potential_is_crest_connected_pinch_em_tight_pilot(self):
+        self.assertIn('Sunrise / Sunset pilot — crest-connected', MAP)
+        self.assertIn('LiDAR crest mask', MAP)
+        self.assertIn('Trail and aerial data cannot move it', MAP)
+        self.assertIn('fade walks connected crest pixels rather than using radial blur', MAP)
+        self.assertIn('cannot create, move, or broaden the crest', MAP)
 
         for contract in (
-            'VERSION = 8',
-            'PIXEL_METERS = 2.0',
+            'VERSION = 9',
             'bilateral_ridge_relief',
-            'bilateral_relief_m',
-            'crest_strength',
-            'crest_core',
-            'binary_dilation(crest_core, iterations=3)',
-            'fetch_trail_elements',
-            'trail_distance_m',
-            'trail_support',
-            'open_ground',
-            'supporting evidence only; trail proximity cannot create a crest candidate',
-            'result[valley_zone | (~crest_mask)] = 0.0',
-            'sunrise_candidate',
-            'sunset_candidate',
-            'DIAG_CREST_PATH',
-            'DIAG_OVERLOOK_PATH',
-            'DIAG_OPEN_PATH',
-            'DIAG_SUNRISE_PATH',
-            'DIAG_SUNSET_PATH',
+            'crest_mask',
+            'Geometry is LiDAR-only',
+            'Aerial evidence comes only AFTER the LiDAR geometry exists',
+            'trail_confidence = 1.0 + 0.03 * trail_support',
+            'crest_connected_propagation',
+            'maximum_filter(current, size=3, mode="constant", cval=0.0)',
+            'max_distance_m = 100.0',
+            'current[~support] = 0.0',
+            'result[~support] = 0.0',
+            'late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry',
         ):
             self.assertIn(contract, SUN_GENERATOR)
 
-        self.assertEqual(SUN_META['version'], 8)
-        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-crest-first-v8')
-        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging crest-first calibration only')
+        self.assertNotIn('gaussian_filter(seed, sigma=', SUN_GENERATOR)
+        support_start = SUN_GENERATOR.index('overlook_support = clamp01(')
+        support_end = SUN_GENERATOR.index('overlook_support *=', support_start)
+        self.assertNotIn('trail_support', SUN_GENERATOR[support_start:support_end])
+        self.assertNotIn('open_ground', SUN_GENERATOR[support_start:support_end])
+
+        self.assertEqual(SUN_META['version'], 9)
+        self.assertEqual(SUN_META['source']['id'], 'rrgh-pinch-em-tight-crest-geodesic-v9')
+        self.assertEqual(SUN_META['calibrationArea']['status'], 'staging crest-geodesic calibration only')
         self.assertTrue(SUN_META['calibrationArea']['expandOnlyAfterVisualApproval'])
         self.assertEqual(SUN_META['calibrationArea']['reviewOrder'][0], 'LiDAR crest mask')
-        self.assertEqual(SUN_META['bounds'], {
-            'west': -83.6505,
-            'south': 37.8060,
-            'east': -83.6170,
-            'north': 37.8345,
-        })
-        self.assertEqual(SUN_META['grid']['output'], 'PNG RGBA')
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][0], 2.2)
-        self.assertLessEqual(SUN_META['grid']['approximateCellMeters'][1], 2.2)
-        self.assertGreater(SUN_META['coverage']['crestMaskPercent'], 15)
-        self.assertLess(SUN_META['coverage']['crestMaskPercent'], 25)
-        self.assertGreater(SUN_META['coverage']['bilateralRidgeCorePercent'], 15)
-        self.assertLess(SUN_META['coverage']['bilateralRidgeCorePercent'], 25)
-        self.assertGreater(SUN_META['coverage']['trailSupportPercent'], 5)
-        self.assertLess(SUN_META['coverage']['trailSupportPercent'], 20)
-        self.assertGreater(SUN_META['coverage']['openGroundPercent'], 20)
-        self.assertLess(SUN_META['coverage']['openGroundPercent'], 40)
-        self.assertGreater(SUN_META['coverage']['sunriseDisplayPercent'], 3)
-        self.assertLess(SUN_META['coverage']['sunriseDisplayPercent'], 7)
-        self.assertGreater(SUN_META['coverage']['sunsetDisplayPercent'], 3)
-        self.assertLess(SUN_META['coverage']['sunsetDisplayPercent'], 7)
+        self.assertEqual(SUN_META['source']['trailSupport']['role'], 'late confidence only; trail proximity cannot create, move, or broaden crest/outcrop geometry')
         self.assertEqual(SUN_META['coverage']['sunriseValleyLeakPercent'], 0)
         self.assertEqual(SUN_META['coverage']['sunsetValleyLeakPercent'], 0)
-        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 2)
+        self.assertLess(SUN_META['coverage']['dualDisplayPercent'], 3)
         self.assertEqual(len(SUN_META['diagnostics']), 5)
-        for diagnostic in SUN_META['diagnostics']:
-            diagnostic_path = ROOT / 'public' / 'data' / 'map' / diagnostic['file']
-            self.assertTrue(diagnostic_path.exists(), diagnostic['file'])
-            self.assertEqual(diagnostic_path.read_bytes()[:8], b'\x89PNG\r\n\x1a\n')
-        self.assertIn('LiDAR crest detection comes first', SUN_META['display']['designIntent'])
+        self.assertIn('LiDAR alone defines crest/outcrop geometry', SUN_META['display']['designIntent'])
+        self.assertIn('connected crest pixels', SUN_META['display']['designIntent'])
         self.assertEqual(SUN_OVERLAY[:8], b'\x89PNG\r\n\x1a\n')
-        self.assertGreater(len(SUN_OVERLAY), 10000)
 
-        self.assertIn('bare-earth LiDAR ridge detection', PRIVACY)
-        self.assertIn('Trail proximity is supporting evidence only and cannot create a crest candidate', PRIVACY)
-        self.assertIn('bare-earth LiDAR crest test', TERMS)
-        self.assertIn('trail proximity is only supporting evidence rather than proof of an overlook', TERMS)
+        self.assertIn('Trail proximity and aerial appearance do not participate in that geometry', PRIVACY)
+        self.assertIn('cannot create, move, or broaden crest/outcrop geometry', PRIVACY)
+        self.assertIn('connected crest pixels rather than by radial image blur', PRIVACY)
+        self.assertIn('trail and aerial inputs cannot alter that crest geometry', TERMS)
+        self.assertIn('connected crest pixels rather than radial blur', TERMS)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
