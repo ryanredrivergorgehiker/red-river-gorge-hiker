@@ -79,11 +79,11 @@ def export_raster(service, bbox, bbox_sr, image_sr):
         "interpolation": "RSP_BilinearInterpolation",
         "returnSquarePixels": "false",
     }
-    payload = request_json(service + "/exportImage", params=params, timeout=180)
+    payload = request_json(service + "/exportImage", params=params, timeout=45, attempts=1)
     href = payload.get("href")
     if not href:
         raise RuntimeError("Image service returned no export href.")
-    response = session.get(href, timeout=180)
+    response = session.get(href, timeout=60)
     response.raise_for_status()
     with MemoryFile(response.content) as mem:
         with mem.open() as src:
@@ -147,6 +147,7 @@ source_errors = []
 source_stats = None
 for source in sources:
     try:
+        print(f'Trying DEM source {source["id"]}...', flush=True)
         candidate = export_raster(source["service"], source["bbox"], source["bboxSR"], source["imageSR"])
         candidate_valid, relief, std, minimum, maximum = validate(candidate, source)
         raw_dem = candidate
