@@ -14,7 +14,7 @@ from skimage.morphology import remove_small_objects, skeletonize
 from skimage.segmentation import watershed
 
 BOUNDS = {"west": -83.6505, "south": 37.8060, "east": -83.6170, "north": 37.8345}
-PIXEL_METERS = 4.0
+PIXEL_METERS = 6.0
 CREST_CORRIDOR_METERS = 12.0
 VERSION = 10
 
@@ -208,9 +208,17 @@ basins = watershed(
     hydro_dem,
     markers=markers,
     connectivity=np.ones((3, 3), dtype=np.uint8),
-    watershed_line=True,
+    watershed_line=False,
 )
-raw_skeleton = skeletonize(basins == 0)
+print(f'Watershed labels complete in {time.monotonic() - stage_started:.1f}s', flush=True)
+
+# Derive divides from neighboring basin-label changes instead of asking
+# skimage to construct watershed_line pixels during the flood itself. This is
+# topologically equivalent for this calibration purpose and dramatically faster.
+label_min = minimum_filter(basins, size=3, mode="nearest")
+label_max = maximum_filter(basins, size=3, mode="nearest")
+raw_divide = label_min != label_max
+raw_skeleton = skeletonize(raw_divide)
 print(f'Built raw watershed divide skeleton in {time.monotonic() - stage_started:.1f}s', flush=True)
 
 # Prune basin divides that run through low saddles or flanks. The pruning can
@@ -293,7 +301,7 @@ metadata = {
         }
     },
     "topology": {
-        "method": "watershed drainage divides thinned to a skeleton, then pruned without relocating surviving divide pixels",
+        "method": "watershed basin labels; neighboring label changes form drainage divides, then thinned to a skeleton and pruned without relocating surviving divide pixels",
         "watershedBasinCount": basin_count,
         "minimaSeparationMeters": minima_separation_m,
         "crestCorridorMeters": CREST_CORRIDOR_METERS,
@@ -316,7 +324,7 @@ metadata = {
             "1 · LiDAR ridge skeleton",
             "2 · Crest corridor (~12 m)",
         ],
-        "instruction": "Do not tune sunrise/sunset until the thin ridge skeleton visually follows known ridge tops. This ridge-only calibration uses a ~4 m topology grid for fast iteration; final sun scoring may return to finer terrain sampling after geometry approval.",
+        "instruction": "Do not tune sunrise/sunset until the thin ridge skeleton visually follows known ridge tops. This ridge-only calibration uses a ~6 m topology grid for fast visual iteration; final sun scoring may return to finer terrain sampling after geometry approval.",
         "finalCompositeStatus": "v9 composite retained but held; not recalculated in this ridge-only phase",
     },
 }
