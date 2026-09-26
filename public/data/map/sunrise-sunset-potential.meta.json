@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "generatedAtUtc": "2026-09-26T01:21:43Z",
+  "generatedAtUtc": "2026-09-26T01:32:10Z",
   "source": {
     "id": "rrgh-photographic-viewshed-v4",
     "elevation": {
@@ -17,18 +17,25 @@
         2,
         3
       ],
-      "vegetationMethod": "NAIP NIR/red NDVI"
+      "vegetationMethod": "NAIP NIR/red NDVI calibrated to local 30th\u201378th percentiles",
+      "vegetationCalibration": {
+        "ndviP05": 0.0355,
+        "ndviP30Open": 0.2632,
+        "ndviP50": 0.3188,
+        "ndviP78Dense": 0.3765,
+        "ndviP95": 0.435
+      }
     },
     "waterMask": {
       "id": "openstreetmap-water",
       "attribution": "\u00a9 OpenStreetMap contributors",
       "via": "Overpass API",
       "endpointsUsed": [
-        "https://overpass-api.de/api/interpreter",
-        "https://overpass.maprva.org/api/interpreter"
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+        "https://overpass-api.de/api/interpreter"
       ],
-      "polygonFeatures": 636,
-      "flowlineFeatures": 2065
+      "polygonFeatures": 673,
+      "flowlineFeatures": 2283
     }
   },
   "bounds": {
@@ -63,18 +70,18 @@
     "displayQuantile": 0.84,
     "strongQuantile": 0.95,
     "peakQuantile": 0.99,
-    "sunriseDisplayScore": 0.7006,
-    "sunriseStrongScore": 0.7921,
-    "sunsetDisplayScore": 0.702,
-    "sunsetStrongScore": 0.7944
+    "sunriseDisplayScore": 0.6279,
+    "sunriseStrongScore": 0.7217,
+    "sunsetDisplayScore": 0.6287,
+    "sunsetStrongScore": 0.7219
   },
   "coverage": {
-    "waterMaskPercent": 1.99,
-    "sunriseDisplayPercent": 15.68,
-    "sunsetDisplayPercent": 15.68,
+    "waterMaskPercent": 2.09,
+    "sunriseDisplayPercent": 15.67,
+    "sunsetDisplayPercent": 15.67,
     "sunriseStrongPercent": 4.9,
     "sunsetStrongPercent": 4.9,
-    "denseCanopyPercent": 0.03,
+    "denseCanopyPercent": 31.81,
     "highRidgeCorePercent": 24.13
   },
   "display": {
