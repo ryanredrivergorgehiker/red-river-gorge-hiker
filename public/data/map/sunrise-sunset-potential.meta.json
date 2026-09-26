@@ -1,24 +1,34 @@
 {
-  "version": 3,
-  "generatedAtUtc": "2026-09-26T00:56:40.696Z",
+  "version": 4,
+  "generatedAtUtc": "2026-09-26T01:21:43Z",
   "source": {
-    "id": "rrgh-high-ground-sun-potential",
+    "id": "rrgh-photographic-viewshed-v4",
     "elevation": {
       "id": "usgs-3dep-bare-earth-dem",
       "service": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
-      "interpolation": "RSP_BilinearInterpolation"
+      "pixelType": "F32"
+    },
+    "aerial": {
+      "id": "usda-naip-four-band",
+      "service": "https://apps.geo.fpac.usda.gov/geo-imagery/rest/services/naip/conus_naip/ImageServer",
+      "bandsRequested": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "vegetationMethod": "NAIP NIR/red NDVI"
     },
     "waterMask": {
       "id": "openstreetmap-water",
-      "attribution": "© OpenStreetMap contributors",
+      "attribution": "\u00a9 OpenStreetMap contributors",
       "via": "Overpass API",
       "endpointsUsed": [
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.maprva.org/api/interpreter",
-        "https://overpass.private.coffee/api/interpreter"
+        "https://overpass.maprva.org/api/interpreter"
       ],
-      "polygonFeatures": 620,
-      "flowlineFeatures": 1869
+      "polygonFeatures": 636,
+      "flowlineFeatures": 2065
     }
   },
   "bounds": {
@@ -28,67 +38,59 @@
     "north": 38.15
   },
   "grid": {
-    "cols": 271,
-    "rows": 211,
+    "cols": 2954,
+    "rows": 2805,
     "approximateCellMeters": [
-      274,
-      334
+      25.0,
+      25.0
     ],
-    "samplingTiles": [
-      7,
-      7
-    ],
-    "requestedSamplesPerTile": 1000,
-    "returnedSamples": 48951
+    "output": "PNG RGBA"
   },
-  "method": "Weighted photographic terrain suitability: actual mapped water is the only hard geographic exclusion; relative height above local lows, ridge/upper-shoulder position, terrain convexity, local relief, directional horizon openness, slope/aspect alignment, and regional elevation contribute continuously; valley position is a penalty rather than a veto.",
-  "thresholds": {
-    "elevationQ25Meters": 265.2,
-    "elevationQ90Meters": 359.9,
-    "reliefReferenceMeters": 100,
-    "heightAboveLowReferenceMeters": 110,
-    "flowlineWaterMaskMeters": 45,
-    "displayQuantile": 0.9,
-    "strongQuantile": 0.97,
-    "peakQuantile": 0.995,
-    "sunriseDisplayScore": 0.7531,
-    "sunriseStrongScore": 0.7936,
-    "sunsetDisplayScore": 0.7513,
-    "sunsetStrongScore": 0.7937
-  },
+  "method": "Photographic viewshed proxy using high-resolution bare-earth terrain plus NAIP vegetation/open-ground confidence. Scores favor ridge/upper-shoulder relative height, convexity, local relief, directional terrain drop, low terrain horizon, directional aerial openness, and sun-facing aspect. Valley position and dense canopy in the viewing sector reduce the score; actual mapped water is excluded.",
   "seasonalAzimuths": {
     "sunrise": [
-      58,
-      90,
-      121
+      58.0,
+      90.0,
+      121.0
     ],
     "sunset": [
-      239,
-      270,
-      302
-    ],
-    "note": "Representative summer/equinox/winter directions for the Red River Gorge latitude; not a date-specific solar ephemeris."
+      239.0,
+      270.0,
+      302.0
+    ]
+  },
+  "thresholds": {
+    "displayQuantile": 0.84,
+    "strongQuantile": 0.95,
+    "peakQuantile": 0.99,
+    "sunriseDisplayScore": 0.7006,
+    "sunriseStrongScore": 0.7921,
+    "sunsetDisplayScore": 0.702,
+    "sunsetStrongScore": 0.7944
   },
   "coverage": {
-    "waterMaskCells": 2539,
-    "waterMaskPercent": 4.44,
-    "weightedHighGroundCells": 28283,
-    "weightedHighGroundPercent": 49.46,
-    "sunriseDisplayCells": 5450,
-    "sunriseDisplayPercent": 9.61,
-    "sunsetDisplayCells": 5431,
-    "sunsetDisplayPercent": 9.58
+    "waterMaskPercent": 1.99,
+    "sunriseDisplayPercent": 15.68,
+    "sunsetDisplayPercent": 15.68,
+    "sunriseStrongPercent": 4.9,
+    "sunsetStrongPercent": 4.9,
+    "denseCanopyPercent": 0.03,
+    "highRidgeCorePercent": 24.13
   },
   "display": {
     "sunriseColor": "#ff6f61",
     "sunsetColor": "#4055d8",
-    "maximumOpacity": 0.82,
-    "lowPotentialTransparent": true,
-    "designIntent": "Strong ridge and upper-shoulder cores with a fading shoulder gradient; actual mapped water excluded; valleys penalized rather than broadly erased."
+    "maximumOpacity": 0.86,
+    "designIntent": "Strong ridge/cliff-nose cores with a smooth fade down usable shoulders; valley-floor and forest-blocked false positives reduced."
   },
+  "calibrationIntent": [
+    "Suppress valley-floor trail endpoints even when a seasonal sun azimuth is geometrically favorable.",
+    "Reduce forested ridge false positives when NAIP indicates dense vegetation in the viewing sector.",
+    "Favor projecting ridge/cliff noses with terrain falling away toward the sunrise or sunset horizon."
+  ],
   "limitations": [
-    "Terrain and mapped-water model only; mapped water is excluded, while valley position is a weighted penalty rather than a broad exclusion zone.",
-    "Does not account for current weather, haze, vegetation, buildings, seasonal foliage, access, or small local obstructions not represented by the source data.",
-    "Potential is seasonal/generalized and is not a guarantee of visible sunrise, visible sunset, legal access, or a good photographic view."
+    "NAIP vegetation/open-ground classification is a proxy, not a direct tree-by-tree canopy-height model.",
+    "Bare-earth terrain and aerial imagery do not capture every small obstruction, seasonal leaf-off condition, access issue, or current weather condition.",
+    "The layer is a generalized planning aid and does not guarantee a visible sunrise, sunset, legal access, or a good photographic view."
   ]
 }
