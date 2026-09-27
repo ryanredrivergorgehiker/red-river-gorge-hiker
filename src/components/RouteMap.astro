@@ -824,6 +824,11 @@ const enabledSources = enabledBrowserMapSources;
     const routeRecords: Array<{ layer: any; routeCategory: string }> = [];
     const routeStartRecords: Array<{ layer: any; routeCategory: string }> = [];
     const landmarkRecords: Array<{ layer: any; routeCategory: string }> = [];
+    const routeCategoryLabel = (category: string) => ({
+      'day-hike': 'Day hike',
+      backpacking: 'Backpacking',
+      'off-trail': 'Off-trail'
+    }[category] ?? category);
     const trailPaths: any[] = [];
     const trailCasingPaths: any[] = [];
     const roadPaths: any[] = [];
@@ -1887,11 +1892,6 @@ const enabledSources = enabledBrowserMapSources;
     bridgeNearbyNetworkNodes();
     container.dataset.plannerNodeCount = String(graph.size);
 
-    const routeCategoryLabel = (category: string) => ({
-      'day-hike': 'Day hike',
-      backpacking: 'Backpacking',
-      'off-trail': 'Off-trail'
-    }[category] ?? category);
     const routeCategoryEnabled = (routeCategory: string) =>
       shell.querySelector<HTMLInputElement>('[data-route-category-filter="' + routeCategory + '"]')?.checked ?? true;
 
