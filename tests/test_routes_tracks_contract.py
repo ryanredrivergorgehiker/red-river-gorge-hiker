@@ -211,6 +211,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-map-status{\n    display:none!important;', ROUTES_CSS)
         self.assertIn('.route-map-mobile-bar{\n    position:static;', ROUTES_CSS)
         self.assertIn('height:72svh;', ROUTES_CSS)
+        mobile_scale_css = ROUTES_CSS.split('.route-map .leaflet-top.leaflet-left .leaflet-control-scale{', 2)[-1].split('}', 1)[0]
+        self.assertIn('margin-top:.55rem!important;', mobile_scale_css)
+        self.assertIn('margin-left:.55rem!important;', mobile_scale_css)
+        self.assertIn('margin-bottom:0!important;', mobile_scale_css)
         self.assertIn('.route-layer-panel[open]{\n    top:.5rem;', ROUTES_CSS)
         desktop_equal_height_css = ROUTES_CSS.split('@media(min-width:981px){', 1)[1]
         self.assertIn('.route-map-preset-buttons button,', desktop_equal_height_css)
@@ -427,10 +431,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('data-sheet-open="layers"', mobile_bottom_bar)
         self.assertIn("const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]')", MAP)
         self.assertIn("mobileStatus.textContent = message", MAP)
-        self.assertIn("mobilePageScrollGesture", MAP)
-        self.assertIn("Math.abs(dy) > 28", MAP)
-        self.assertIn("Math.abs(dy) > Math.abs(dx) * 1.35", MAP)
-        self.assertIn("window.scrollBy(0, mobilePageScrollGesture.lastY - touch.clientY)", MAP)
+        self.assertNotIn("mobilePageScrollGesture", MAP)
+        self.assertNotIn("mobilePageScrollEscape", MAP)
+        self.assertNotIn("window.scrollBy(0, mobilePageScrollGesture", MAP)
         self.assertIn("container.addEventListener('touchend'", MAP)
 
     def test_explore_is_a_route_browser_and_plan_is_single_entry_point(self):
