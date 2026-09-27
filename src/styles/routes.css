@@ -1496,7 +1496,9 @@
     bottom:.5rem;
   }
 
-  .route-map .leaflet-control-scale{
-    margin-bottom:10px!important;
+  .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
+    margin-top:.55rem!important;
+    margin-left:.55rem!important;
+    margin-bottom:0!important;
   }
 }
