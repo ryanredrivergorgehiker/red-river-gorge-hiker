@@ -855,9 +855,9 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncLandContextStyles = () => {
-      const aerialActive = checked('kyaerial-phase3');
-      shell.dataset.aerialActive = String(aerialActive);
-      const styles = aerialActive ? aerialContextStyles : normalContextStyles;
+      const aerialModeActive = aerialActive();
+      shell.dataset.aerialActive = String(aerialModeActive);
+      const styles = aerialModeActive ? aerialContextStyles : normalContextStyles;
       const apply = (id: string, paths: any[]) => {
         const style = styles[id];
         if (!style) return;

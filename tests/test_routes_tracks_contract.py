@@ -535,10 +535,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("color: '#ff4fd8'", MAP)
         self.assertIn("color: '#ffe14a'", MAP)
         self.assertIn("color: '#62ff9d'", MAP)
-        self.assertIn("shell.dataset.aerialActive = String(aerialActive)", MAP)
+        self.assertIn("shell.dataset.aerialActive = String(aerialModeActive)", MAP)
         self.assertIn("setLayerControl('kytopo', false)", MAP)
         self.assertIn("setLayerControl('usgs-topo', false)", MAP)
-        self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
+        self.assertIn("aerialExclusiveIds.has(id) && checkbox.checked", MAP)
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
