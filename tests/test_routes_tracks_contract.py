@@ -12,6 +12,9 @@ GEO = ROOT / 'public/data/routes/skybridge-arch-v1.geojson'
 CONTENT_CONFIG = (ROOT / 'src/content.config.ts').read_text(encoding='utf-8')
 LAYERS = (ROOT / 'src/data/map/layers.ts').read_text(encoding='utf-8')
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
+ROUTES_CSS = (ROOT / 'src/styles/routes.css').read_text(encoding='utf-8')
+SAR_CSS = (ROOT / 'src/styles/sar.css').read_text(encoding='utf-8')
+SAR = (ROOT / 'src/pages/search-and-rescue.astro').read_text(encoding='utf-8')
 NOTICE = (ROOT / 'src/components/RouteNotice.astro').read_text(encoding='utf-8')
 GPX_COMPONENT = (ROOT / 'src/components/GpxDownload.astro').read_text(encoding='utf-8')
 DETAIL = (ROOT / 'src/pages/routes/[slug].astro').read_text(encoding='utf-8')
@@ -92,6 +95,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_TrailNFSPublishWithDataStatus_01',
             'EDW_RoadBasic_01',
             'Ky_CountyLines_WGS84WM',
+            'Ky_911_Road_Centerlines_WGS84WM',
             'EDW_RecInfraRecreationSites_02',
             'EDW_Wilderness_01',
             'EDW_SpecialInterestManagementArea_01',
@@ -101,6 +105,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'usfs-trails'", LAYERS)
         self.assertIn("id: 'usfs-roads'", LAYERS)
         self.assertIn("id: 'ky-counties'", LAYERS)
+        self.assertIn("id: 'ky-road-centerlines'", LAYERS)
+        road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
+        self.assertIn('Kentucky 911 Services Board & Kentucky PSAPs', road_planning)
+        self.assertIn('fixed Red River Gorge-area road-centerline query', road_planning)
         self.assertIn("id: 'usfs-recreation-sites'", LAYERS)
         self.assertIn("id: 'usfs-wilderness'", LAYERS)
         self.assertIn("id: 'usfs-special-management'", LAYERS)
@@ -112,12 +120,20 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('Gaia', LAYERS)
         self.assertNotIn('CalTopo', LAYERS)
 
-    def test_elevation_is_build_time_usgs_3dep_only(self):
+    def test_elevation_uses_usgs_3dep_for_published_profiles_and_live_planning(self):
         self.assertIn('3DEPElevation/ImageServer/getSamples', GENERATOR)
         self.assertEqual(ROUTE['elevation']['sampleCount'], 100)
         self.assertIn('RSP_BilinearInterpolation', GENERATOR)
-        self.assertIn('Build-time only', LAYERS)
-        self.assertNotIn('elevation.nationalmap.gov', MAP)
+        elevation = LAYERS.split("id: 'usgs-3dep-bare-earth-dem'", 1)[1].split("}", 1)[0]
+        self.assertIn('browserLoaded: true', elevation)
+        self.assertIn('Measure distance or Build trail route', elevation)
+        self.assertIn("source.serviceUrl + '/getSamples?'", MAP)
+        self.assertIn("interpolation: 'RSP_BilinearInterpolation'", MAP)
+        self.assertIn('fetchElevations', MAP)
+        self.assertIn('scheduleMeasureElevation', MAP)
+        self.assertIn('schedulePlanElevation', MAP)
+        self.assertIn('sample coordinates to the USGS 3D Elevation Program (3DEP)', PRIVACY)
+        self.assertIn('does not automatically send your device’s precise “My location” coordinates', PRIVACY)
 
     def test_route_pages_and_legal_controls_are_present(self):
         self.assertIn("getCollection('routes')", INDEX)
@@ -139,6 +155,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Outdoor safety and location disclaimer', MAP)
         self.assertIn('copyright-and-terms/#outdoor-safety-location-disclaimer', MAP)
         self.assertIn('Interactive Maps and Map-Data Services', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertIn('default map layers begin loading immediately', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
@@ -191,8 +208,22 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("routeColorFor", MAP)
         self.assertIn("color: routeColor", MAP)
         self.assertIn("color: '#00c8ff'", MAP)
+        self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("color: '#ffcf33'", MAP)
-        self.assertIn("color: restricted ? '#f2f2f2' : '#b8f34a'", MAP)
+        self.assertIn("dashArray: '12 6'", MAP)
+        self.assertIn('trailCasingPaths', MAP)
+        self.assertIn('roadCasingPaths', MAP)
+        self.assertIn("mapLayers.set('usfs-trails', L.layerGroup([trailCasingLayer, trailLayer]))", MAP)
+        self.assertIn("mapLayers.set('usfs-roads', L.layerGroup([roadCasingLayer, roadLayer]))", MAP)
+        self.assertIn("weight: 5.4", MAP)
+        self.assertIn("weight: 6", MAP)
+        self.assertIn("lineCap: 'round'", MAP)
+        self.assertIn(".swatch-usfs-trail::after{border-top:3px dashed #00c8ff}", ROUTES_CSS)
+        self.assertIn(".swatch-usfs-road::after{border-top:3px dashed #ffcf33}", ROUTES_CSS)
+        self.assertIn("border-top:6px dashed #22313a", ROUTES_CSS)
+        self.assertIn("color: '#22313a'", MAP)
+        self.assertIn("color: restricted ? '#b9b9b9' : '#f7f2e7'", MAP)
+        self.assertIn('informalCasingPaths', MAP)
         self.assertIn("color: '#665d4f'", MAP)
         self.assertIn("dashArray: '8 5'", MAP)
         self.assertIn("weight: 7.5", MAP)
@@ -210,9 +241,18 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("container.dataset.mapCenter", MAP)
         self.assertIn("container.dataset.mapNorthWest", MAP)
         self.assertIn("map.on('moveend', syncViewportDiagnostics)", MAP)
-        self.assertIn("L.control.scale", MAP)
+        self.assertIn("L.control.scale({ position: 'topleft'", MAP)
         self.assertIn('data-coordinate-card', MAP)
         self.assertIn('Copy coordinates', MAP)
+        self.assertIn('data-coordinate-close', MAP)
+        self.assertIn('display:flex!important;', ROUTES_CSS)
+        self.assertIn('justify-content:flex-start;', ROUTES_CSS)
+        self.assertIn('margin-left:0!important;', ROUTES_CSS)
+        self.assertIn("map.on('contextmenu'", MAP)
+        self.assertIn("container.addEventListener('touchstart'", MAP)
+        self.assertIn("longPressTimer = window.setTimeout", MAP)
+        self.assertIn("Math.hypot(touch.clientX - longPressStart.x", MAP)
+        self.assertIn("if (activeTool === null) return;", MAP)
         self.assertIn('navigator.geolocation.getCurrentPosition', MAP)
         self.assertIn('route-map-mobile-bar', MAP)
         self.assertIn("container.addEventListener('touchend'", MAP)
@@ -309,12 +349,32 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("application/gpx+xml", MAP)
         self.assertIn("RRGH-planned-route-", MAP)
 
+    def test_planning_and_measurement_show_live_distance_and_elevation_feedback(self):
+        self.assertIn('data-plan-live-stats', MAP)
+        for marker in ('data-plan-stats-distance', 'data-plan-stats-gain', 'data-plan-stats-loss', 'data-plan-stats-range'):
+            self.assertIn(marker, MAP)
+        self.assertIn('rrgh-planning-distance-label', MAP)
+        self.assertIn("formatDistance(segmentDistance)", MAP)
+        self.assertIn("formatElevationDelta(delta)", MAP)
+        self.assertIn("updateLiveStats('Measured line'", MAP)
+        self.assertIn("updateLiveStats('Planned route'", MAP)
+        self.assertIn("USGS 3DEP sampled along the planned route.", MAP)
+        self.assertIn("USGS 3DEP elevation at each measurement point.", MAP)
+        self.assertIn("redrawMeasure(false)", MAP)
+        self.assertIn("redrawPlan(false)", MAP)
+
     def test_planner_uses_official_roads_and_loaded_informal_paths(self):
         self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
         self.assertIn("Not used for route snapping", MAP)
         self.assertIn("Available for route snapping", MAP)
         self.assertIn("accessLower === 'no' || accessLower === 'private'", MAP)
-        self.assertIn("bridgeNearbyEndpoints();", MAP)
+        self.assertIn("bridgeNearbyNetworkNodes();", MAP)
+        self.assertIn("Math.ceil(from.distanceTo(to) / 15)", MAP)
+        self.assertIn("point.distanceTo(other) <= 12", MAP)
+        self.assertIn("fetchPagedGeoJson('ky-road-centerlines')", MAP)
+        self.assertIn("container.dataset.planningRoadFeatureCount", MAP)
+        self.assertIn("excludedRoadClass = /interstate|freeway|expressway|limited\\s*access|ramp|parkway/i", MAP)
+        self.assertIn("addSnapLine(line)", MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
@@ -339,10 +399,18 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("container.dataset.currentZoom", MAP)
         self.assertIn("name === 'hiking'", MAP)
         self.assertIn("name === 'terrain'", MAP)
-        self.assertIn("setLayerControl('kytopo', true, 72)", MAP)
-        self.assertGreaterEqual(MAP.count("setLayerControl('usgs-topo', true, 72)"), 2)
-        self.assertIn('data-map-layer="usgs-topo" checked', MAP)
-        self.assertIn("setLayerControl('ky-hillshade', true, 72)", MAP)
+        hiking_block = MAP.split("if (name === 'hiking')", 1)[1].split("} else if (name === 'terrain')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', false, 88)", hiking_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 100)", hiking_block)
+        self.assertIn("setLayerControl('ky-hillshade', false, 18)", hiking_block)
+        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        self.assertIn('data-map-layer="kytopo" />', base_markup)
+        self.assertIn('data-map-layer="usgs-topo" checked', base_markup)
+        self.assertIn('data-map-layer="ky-hillshade" />', base_markup)
+        terrain_block = MAP.split("} else if (name === 'terrain')", 1)[1].split("} else if (name === 'aerial')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', true, 72)", terrain_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 72)", terrain_block)
+        self.assertIn("setLayerControl('ky-hillshade', true, 72)", terrain_block)
         self.assertIn("setLayerControl('usfs-wilderness', true)", MAP)
         self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
         self.assertNotIn('Wilderness full opacity (100%)', MAP)
@@ -381,6 +449,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap data', PRIVACY)
         self.assertIn('planner may snap to displayed community/informal paths', TERMS)
         self.assertIn('do not substantially match the authoritative USDA Forest Service trail geometry', TERMS)
+        self.assertIn('snap to mapped road-centerline geometry from USDA Forest Service and Kentucky public road datasets', TERMS)
+        self.assertIn('does not determine whether a road has a lawful or safe pedestrian route', TERMS)
+        self.assertIn('fixed Red River Gorge-area set of Kentucky 911 road-centerline geometry', PRIVACY)
+        self.assertIn('not generated from the visitor’s device location', PRIVACY)
 
     def test_cached_osm_candidates_are_nonempty_and_geographically_bounded(self):
         self.assertEqual(OSM_CACHE.get('type'), 'FeatureCollection')
@@ -401,6 +473,8 @@ class RoutesTracksContractTests(unittest.TestCase):
                 self.assertLessEqual(lon, east)
 
     def test_land_management_defaults_on_and_counties_are_fixed_context(self):
+        self.assertIn('<span>National Forest Wilderness</span>', MAP)
+        self.assertIn("label: 'National Forest Wilderness'", LAYERS)
         for layer in ('usfs-wilderness', 'usfs-special-management', 'usfs-land-units'):
             self.assertIn('data-map-layer="' + layer + '" checked', MAP)
         self.assertIn("loadLandContext('usfs-wilderness')", MAP)
@@ -418,6 +492,14 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Terrain relief (LiDAR)', MAP)
         self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
         self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
+        self.assertIn("search-and-rescue/#current-conditions", MAP)
+        self.assertNotIn("search-and-rescue/#hiking-safety'}>Before you go", MAP)
+        self.assertIn('id="current-conditions"', SAR)
+        self.assertIn('Current conditions are part of the route', SAR)
+        self.assertIn('.sar-conditions { padding: 0 0 4.8rem; scroll-margin-top: 12rem; }', SAR_CSS)
+        self.assertIn("if (window.location.hash !== '#current-conditions') return;", SAR)
+        self.assertIn("target.scrollIntoView({ block: 'start', behavior: 'auto' })", SAR)
+        self.assertIn("window.setTimeout(alignCurrentConditions, 250)", SAR)
         self.assertIn('Outdoor safety and location disclaimer', MAP)
         self.assertIn('If you choose “My location,”', PRIVACY)
 
