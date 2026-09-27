@@ -1311,8 +1311,9 @@
 
 @media(max-width:700px){
   .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
-    margin-top:3.45rem!important;
+    margin-top:.55rem!important;
     margin-left:.55rem!important;
+    margin-bottom:0!important;
   }
   .route-map-left-stack{top:6.1rem;left:.55rem}
   .route-plan-live-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
