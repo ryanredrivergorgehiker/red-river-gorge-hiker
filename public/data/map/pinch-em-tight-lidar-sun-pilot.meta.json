@@ -1,0 +1,71 @@
+{
+  "area": "Pinch-Em-Tight",
+  "boundsWgs84": [
+    -83.6365,
+    37.813,
+    -83.6175,
+    37.8255
+  ],
+  "counts": {
+    "features": 703,
+    "sunriseGradientCells": 36681,
+    "sunriseHardCells": 2586,
+    "sunsetGradientCells": 42842,
+    "sunsetHardCells": 2437
+  },
+  "disclaimer": "Terrain-only planning heuristic. It identifies LiDAR-derived directional ridge/cliff exposure, not guaranteed standing room, legal access, safety, vegetation clearance, or an actual photographic viewpoint.",
+  "generationInputs": {
+    "usesAerial": false,
+    "usesCanopy": false,
+    "usesMarkedReviewPoints": false,
+    "usesOnlyLidarDerivedBareEarthTerrain": true,
+    "usesTrails": false
+  },
+  "minimumElevationFeet": 1100.0,
+  "outputSha256": {
+    "geojson": "2697daad68f23b339b6a3efbfce75b04d070d7e6bfb6f392ef2720a66ddca953",
+    "reviewPng": "2ae344c9842425a03ba50c4a99e5c62623a1eafce1f1d76291d074d08c21240a"
+  },
+  "rules": {
+    "cliffMinSlopeDegrees": 45.0,
+    "eastAspectDegrees": [
+      30.0,
+      150.0
+    ],
+    "gradient": "hard line at directional cliff lip; fade inward/uphill to local crest",
+    "lipSearchPixels": 3.0,
+    "topMaxSlopeDegrees": 30.0,
+    "traceFlatStopAfterMeters": 12.0,
+    "traceMaxMeters": 100.0,
+    "traceTpiMinMeters": -1.8,
+    "westAspectDegrees": [
+      210.0,
+      330.0
+    ]
+  },
+  "source": {
+    "expectedDemArraySha256": "26eb2dd2f56fe2731f82df99392098d6f79301dc9b7894b71a65b106ef7552cc",
+    "fullAreaExportParams": {
+      "adjustAspectRatio": "false",
+      "bbox": "-9313323.578345906,4550663.7389075495,-9306809.34791798,4557465.036251732",
+      "bboxSR": "3857",
+      "f": "json",
+      "format": "tiff",
+      "imageSR": "3857",
+      "interpolation": "RSP_BilinearInterpolation",
+      "pixelType": "F32",
+      "returnSquarePixels": "false",
+      "size": "2573,2687"
+    },
+    "name": "KyFromAbove Phase 2 2-foot LiDAR-derived bare-earth DEM",
+    "service": "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
+  },
+  "status": "staging-pilot-only",
+  "version": "lidar-only-pilot-v1",
+  "windowRowsCols": [
+    1051,
+    1748,
+    1165,
+    2001
+  ]
+}
