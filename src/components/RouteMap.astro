@@ -196,6 +196,12 @@ const enabledSources = enabledBrowserMapSources;
             <span>Terrain relief (LiDAR)</span>
           </label>
           <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="pinch-lidar-sun-pilot" />
+            <span class="route-layer-swatch swatch-lidar-sun-pilot" aria-hidden="true"></span>
+            <span>LiDAR sunrise / sunset pilot</span>
+          </label>
+          <p class="route-layer-help"><strong>Pinch-Em-Tight pilot:</strong> terrain at or above 1,100 ft only. Coral marks east-facing sunrise rims; indigo marks west-facing sunset rims. Color is hardest at the LiDAR cliff lip and fades inward/uphill toward the local crest. No aerial or vegetation data is used.</p>
+          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
             <span>Aerial imagery</span>
@@ -231,6 +237,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
             <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
+            <label><span>LiDAR sunrise / sunset pilot</span><input type="range" min="0" max="100" value="100" data-opacity="pinch-lidar-sun-pilot" /></label>
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
@@ -321,6 +328,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
+      <p><strong>LiDAR sunrise / sunset pilot:</strong> Pinch-Em-Tight terrain-only experiment above 1,100 ft. Coral begins at east-facing cliff lips and fades back to the local crest; indigo does the opposite from west-facing cliff lips.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -349,6 +357,7 @@ const enabledSources = enabledBrowserMapSources;
         </li>
       ))}
     </ul>
+    <p class="route-small"><strong>Pinch-Em-Tight LiDAR sunrise/sunset pilot:</strong> generated locally from the pinned KyFromAbove Phase 2 two-foot bare-earth DEM. The pilot makes no browser request to aerial imagery and uses no aerial, canopy, trail, or marked-review-point input. It is a terrain-exposure heuristic, not a guarantee of standing room, legal access, safety, vegetation clearance, or a photographic viewpoint.</p>
     <p class="route-small">Parcel/private-property boundaries are not displayed.</p>
   </details>
 </section>
@@ -543,6 +552,7 @@ const enabledSources = enabledBrowserMapSources;
       informalTrails: 370,
       trails: 390,
       counties: 415,
+      lidarSun: 425,
       routes: 440,
       recreation: 450,
       routeStarts: 460,
@@ -619,6 +629,54 @@ const enabledSources = enabledBrowserMapSources;
       mapLayers.set(source.id, layer);
       opacitySetters.set(source.id, (value) => layer.setOpacity(value));
       syncVisibility(source.id);
+    }
+
+    const pilotLayerId = 'pinch-lidar-sun-pilot';
+    const pilotSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset'; strength: number; hard: boolean }> = [];
+    const pilotStyle = (kind: 'sunrise' | 'sunset', strength: number, hard: boolean, multiplier: number) => {
+      const color = kind === 'sunset' ? '#4640b0' : '#f2685c';
+      const boundedStrength = Math.max(0, Math.min(1, strength));
+      return {
+        color,
+        weight: hard ? 1.5 : 0,
+        opacity: hard ? multiplier : 0,
+        fillColor: color,
+        fillOpacity: (hard ? 0.92 : 0.12 + boundedStrength * 0.58) * multiplier,
+        lineJoin: 'round'
+      };
+    };
+    try {
+      const response = await fetch(import.meta.env.BASE_URL + 'data/map/pinch-em-tight-lidar-sun-pilot.geojson', {
+        credentials: 'same-origin',
+        cache: 'no-cache'
+      });
+      if (!response.ok) throw new Error('Pinch-Em-Tight LiDAR pilot HTTP ' + response.status);
+      const pilot = await response.json();
+      const pilotLayer = L.geoJSON(pilot, {
+        pane: 'lidarSun',
+        interactive: false,
+        style: (feature: any) => {
+          const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+          const strength = Number(feature?.properties?.strength ?? 0);
+          const hard = feature?.properties?.hard === true;
+          return pilotStyle(kind, strength, hard, opacity(pilotLayerId));
+        },
+        onEachFeature: (feature: any, layer: any) => {
+          const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+          const strength = Number(feature?.properties?.strength ?? 0);
+          const hard = feature?.properties?.hard === true;
+          pilotSunPaths.push({ layer, kind, strength, hard });
+        }
+      });
+      mapLayers.set(pilotLayerId, pilotLayer);
+      opacitySetters.set(pilotLayerId, (value) => {
+        pilotSunPaths.forEach((item) => item.layer.setStyle(pilotStyle(item.kind, item.strength, item.hard, value)));
+      });
+      container.dataset.pinchLidarSunFeatureCount = String(Array.isArray(pilot?.features) ? pilot.features.length : 0);
+      syncVisibility(pilotLayerId);
+    } catch (error) {
+      console.error(error);
+      container.dataset.pinchLidarSunFeatureCount = '0';
     }
 
     const routeGroup = L.layerGroup();

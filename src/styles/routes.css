@@ -519,13 +519,14 @@
   transform:translateY(-50%);border-radius:4px;background:#fff;color:#17372d;border:2px solid #17372d;
   font-size:.6rem;font-weight:900;
 }
-.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,
+.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,.swatch-lidar-sun-pilot::before,
 .swatch-wilderness::before,.swatch-management::before,.swatch-land-unit::before{
   left:.08rem;right:.08rem;height:.72rem;border-radius:3px;
 }
 .swatch-topo::before{background:repeating-linear-gradient(0deg,#e8e5d6 0 3px,#a98762 3px 4px)}
 .swatch-topo-usgs::before{background:repeating-linear-gradient(0deg,#f1ecd8 0 3px,#897056 3px 4px)}
 .swatch-relief::before{background:linear-gradient(135deg,#e5e7df,#7d847c)}
+.swatch-lidar-sun-pilot::before{background:linear-gradient(90deg,#f2685c 0 42%,#f7f2e7 49% 51%,#4640b0 58% 100%);border:1px solid #6a6258}
 .swatch-aerial::before{background:linear-gradient(135deg,#526a47,#8f7756,#39586b)}
 .swatch-wilderness::before{border:2px dashed #356b4a;background:rgba(117,168,109,.12)}
 .swatch-management::before{border:2px dashed #a57c34;background:rgba(216,184,108,.12)}

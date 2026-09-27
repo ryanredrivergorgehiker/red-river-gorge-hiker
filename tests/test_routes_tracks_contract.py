@@ -27,6 +27,9 @@ TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
+LIDAR_SUN_GEO = ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.geojson'
+LIDAR_SUN_META = json.loads((ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.meta.json').read_text(encoding='utf-8'))
+LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_text(encoding='utf-8')
 
 
 def sha256(path):
@@ -34,6 +37,40 @@ def sha256(path):
 
 
 class RoutesTracksContractTests(unittest.TestCase):
+    def test_pinch_lidar_sun_pilot_is_locked_to_terrain_only_inputs(self):
+        self.assertEqual(LIDAR_SUN_META['version'], 'lidar-only-pilot-v1')
+        self.assertEqual(LIDAR_SUN_META['area'], 'Pinch-Em-Tight')
+        self.assertEqual(LIDAR_SUN_META['minimumElevationFeet'], 1100.0)
+        self.assertEqual(LIDAR_SUN_META['boundsWgs84'], [-83.6365, 37.813, -83.6175, 37.8255])
+        inputs = LIDAR_SUN_META['generationInputs']
+        self.assertTrue(inputs['usesOnlyLidarDerivedBareEarthTerrain'])
+        self.assertFalse(inputs['usesAerial'])
+        self.assertFalse(inputs['usesCanopy'])
+        self.assertFalse(inputs['usesTrails'])
+        self.assertFalse(inputs['usesMarkedReviewPoints'])
+        self.assertEqual(
+            LIDAR_SUN_META['source']['expectedDemArraySha256'],
+            '26eb2dd2f56fe2731f82df99392098d6f79301dc9b7894b71a65b106ef7552cc'
+        )
+        self.assertEqual(sha256(LIDAR_SUN_GEO), LIDAR_SUN_META['outputSha256']['geojson'])
+        self.assertIn('MIN_ELEVATION_FT = 1100.0', LIDAR_SUN_GENERATOR)
+        self.assertIn('hard line at directional cliff lip; fade inward/uphill to local crest', LIDAR_SUN_GENERATOR)
+        self.assertNotIn('ImageServices/', LIDAR_SUN_GENERATOR)
+        self.assertNotIn('ortho', LIDAR_SUN_GENERATOR.lower())
+
+    def test_pinch_lidar_sun_pilot_is_off_by_default_and_map_local(self):
+        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        self.assertIn('data-map-layer="pinch-lidar-sun-pilot" />', base_markup)
+        self.assertIn('data-opacity="pinch-lidar-sun-pilot"', MAP)
+        self.assertIn("const pilotLayerId = 'pinch-lidar-sun-pilot'", MAP)
+        self.assertIn("pane: 'lidarSun'", MAP)
+        self.assertIn("data/map/pinch-em-tight-lidar-sun-pilot.geojson", MAP)
+        self.assertIn("container.dataset.pinchLidarSunFeatureCount", MAP)
+        self.assertIn("kind === 'sunset' ? '#4640b0' : '#f2685c'", MAP)
+        self.assertIn('terrain at or above 1,100 ft only', MAP)
+        self.assertIn('No aerial or vegetation data is used.', MAP)
+        self.assertIn('.swatch-lidar-sun-pilot::before', ROUTES_CSS)
+
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
         self.assertEqual(ROUTE['publicationStatus'], 'Approved — Publication Ready')
