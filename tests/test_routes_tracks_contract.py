@@ -198,6 +198,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-route-category-filter="day-hike"', MAP)
         self.assertIn('data-route-category-filter="backpacking"', MAP)
         self.assertIn('data-route-category-filter="off-trail"', MAP)
+        map_preset_css = ROUTES_CSS.split('.route-map-preset-buttons button{', 1)[1].split('}', 1)[0]
+        map_route_filter_css = ROUTES_CSS.split('.route-map-trip-options label{', 1)[1].split('}', 1)[0]
+        self.assertIn('min-height:58px;', map_preset_css)
+        self.assertIn('min-height:58px;', map_route_filter_css)
+        self.assertIn('align-items:center;', map_route_filter_css)
+        self.assertIn('padding:.58rem .58rem;', map_route_filter_css)
         self.assertNotIn('data-route-trip-filter', MAP)
         self.assertNotIn('data-route-status-filter', MAP)
         self.assertNotIn('> Multi-day<', MAP)
