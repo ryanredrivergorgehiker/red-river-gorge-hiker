@@ -1405,7 +1405,8 @@
   backdrop-filter:blur(10px);
 }
 .route-map-mobile-topbar,
-.route-map-mobile-status{
+.route-map-mobile-status,
+.route-map-mobile-scroll-gutter{
   display:none;
 }
 
@@ -1415,6 +1416,21 @@
     min-height:500px;
     max-height:720px;
   }
+
+  .route-map-mobile-scroll-gutter{
+    display:block;
+    position:absolute;
+    z-index:850;
+    top:0;
+    bottom:0;
+    width:24px;
+    background:transparent;
+    touch-action:pan-y;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .route-map-mobile-scroll-gutter-left{left:0}
+  .route-map-mobile-scroll-gutter-right{right:0}
 
   .route-map-mobile-topbar{
     display:grid;
