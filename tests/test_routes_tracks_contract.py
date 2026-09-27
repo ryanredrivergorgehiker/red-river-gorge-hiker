@@ -65,7 +65,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
         self.assertNotIn('pinch-lidar-sun-pilot', MAP)
         self.assertNotIn('LiDAR sunrise / sunset pilot', MAP)
-        self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', base_markup)
         self.assertIn('Sunrise / Sunset Potential', base_markup)
         self.assertIn('Sunrise Potential', base_markup)
         self.assertIn('Sunset Potential', base_markup)
@@ -113,7 +113,7 @@ class RoutesTracksContractTests(unittest.TestCase):
 
     def test_sunrise_sunset_potential_is_off_by_default_and_sector_loaded(self):
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
-        self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', base_markup)
         self.assertIn('Sunrise / Sunset Potential', base_markup)
         self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
         self.assertIn('data-fine-tune-layer="rrg-lidar-sun"', MAP)
@@ -494,10 +494,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("counties: 415", MAP)
         self.assertIn("routes: 440", MAP)
         self.assertIn("pane.style.mixBlendMode = 'multiply'", MAP)
-        self.assertIn("id === 'kyaerial-phase3' && checkbox.checked", MAP)
+        self.assertIn("aerialLayerIds.has(id) && checkbox.checked", MAP)
+        self.assertIn("aerialExclusiveIds.has(id) && checkbox.checked", MAP)
+        self.assertIn("for (const otherAerialId of aerialLayerIds)", MAP)
+        self.assertIn("for (const aerialId of aerialLayerIds)", MAP)
         self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
-        self.assertIn("(id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked", MAP)
         self.assertIn("setLayerControl('kyaerial-phase3', false)", MAP)
+        self.assertIn("setLayerControl('kyaerial-phase2-leafoff', false)", MAP)
         self.assertIn("new Set(['Wolfe', 'Powell', 'Menifee', 'Lee'])", MAP)
         self.assertIn("map.setMaxBounds(paddedBounds)", MAP)
         self.assertIn("countyLayer.addTo(map)", MAP)
@@ -512,7 +515,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         hiking_block = MAP.split("if (name === 'hiking')", 1)[1].split("} else if (name === 'terrain')", 1)[0]
         self.assertIn("setLayerControl('kytopo', false, 88)", hiking_block)
         self.assertIn("setLayerControl('usgs-topo', true, 100)", hiking_block)
-        self.assertIn("setLayerControl('ky-hillshade', false, 18)", hiking_block)
+        self.assertIn("setLayerControl('ky-hillshade', false, 75)", hiking_block)
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
         self.assertIn('data-map-layer="kytopo" />', base_markup)
         self.assertIn('data-map-layer="usgs-topo" checked', base_markup)
@@ -520,7 +523,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         terrain_block = MAP.split("} else if (name === 'terrain')", 1)[1].split("} else if (name === 'aerial')", 1)[0]
         self.assertIn("setLayerControl('kytopo', true, 72)", terrain_block)
         self.assertIn("setLayerControl('usgs-topo', true, 72)", terrain_block)
-        self.assertIn("setLayerControl('ky-hillshade', true, 72)", terrain_block)
+        self.assertIn("setLayerControl('ky-hillshade', true, 75)", terrain_block)
         self.assertIn("setLayerControl('usfs-wilderness', true)", MAP)
         self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
         self.assertNotIn('Wilderness full opacity (100%)', MAP)
