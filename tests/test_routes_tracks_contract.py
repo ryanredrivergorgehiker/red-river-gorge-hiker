@@ -204,6 +204,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('min-height:58px;', map_route_filter_css)
         self.assertIn('align-items:center;', map_route_filter_css)
         self.assertIn('padding:.58rem .58rem;', map_route_filter_css)
+        desktop_equal_height_css = ROUTES_CSS.split('@media(min-width:981px){', 1)[1]
+        self.assertIn('.route-map-preset-buttons button,', desktop_equal_height_css)
+        self.assertIn('.route-map-trip-options label{', desktop_equal_height_css)
+        self.assertIn('box-sizing:border-box;', desktop_equal_height_css)
+        self.assertGreaterEqual(desktop_equal_height_css.count('height:67px;'), 2)
         self.assertNotIn('data-route-trip-filter', MAP)
         self.assertNotIn('data-route-status-filter', MAP)
         self.assertNotIn('> Multi-day<', MAP)
