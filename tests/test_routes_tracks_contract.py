@@ -211,7 +211,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-map-status{\n    display:none!important;', ROUTES_CSS)
         self.assertIn('.route-map-mobile-bar{\n    position:static;', ROUTES_CSS)
         self.assertIn('height:72svh;', ROUTES_CSS)
-        mobile_scroll_gutter_css = ROUTES_CSS.split('.route-map-mobile-scroll-gutter{', 1)[1].split('}', 1)[0]
+        mobile_scroll_gutter_css = ROUTES_CSS.split('.route-map-mobile-scroll-gutter{', 2)[-1].split('}', 1)[0]
         self.assertIn('position:absolute;', mobile_scroll_gutter_css)
         self.assertIn('width:24px;', mobile_scroll_gutter_css)
         self.assertIn('touch-action:pan-y;', mobile_scroll_gutter_css)
