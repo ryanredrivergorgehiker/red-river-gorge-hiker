@@ -202,6 +202,12 @@ const enabledSources = enabledBrowserMapSources;
           </label>
           <p class="route-layer-help"><strong>Pinch-Em-Tight pilot:</strong> terrain at or above 1,100 ft only. Coral marks east-facing sunrise rims; indigo marks west-facing sunset rims. Color is hardest at the LiDAR cliff lip and fades inward/uphill toward the local crest. No aerial or vegetation data is used.</p>
           <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="rrg-lidar-sun" />
+            <span class="route-layer-swatch swatch-lidar-sun-pilot" aria-hidden="true"></span>
+            <span>LiDAR sunrise / sunset — Gorge expansion</span>
+          </label>
+          <p class="route-layer-help"><strong>Gorge expansion:</strong> the same locked terrain-only method is applied across a broad Red River Gorge working envelope. Only terrain at or above 1,100 ft is eligible. Coral starts hard at east-facing LiDAR cliff/rim lips and fades inward/uphill to the same-ridge crest; indigo does the opposite from west-facing lips. No aerial, canopy, trail, or marked-review-point input is used.</p>
+          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
             <span>Aerial imagery</span>
@@ -238,6 +244,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
             <label><span>LiDAR sunrise / sunset pilot</span><input type="range" min="0" max="100" value="100" data-opacity="pinch-lidar-sun-pilot" /></label>
+            <label><span>LiDAR sunrise / sunset — Gorge expansion</span><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" /></label>
             <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
             <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
             <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
@@ -329,6 +336,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
       <p><strong>LiDAR sunrise / sunset pilot:</strong> Pinch-Em-Tight terrain-only experiment above 1,100 ft. Coral begins at east-facing cliff lips and fades back to the local crest; indigo does the opposite from west-facing cliff lips.</p>
+      <p><strong>Gorge LiDAR expansion:</strong> the accepted Pinch-Em-Tight rule is repeated sector by sector across the wider Gorge working envelope, still using bare-earth LiDAR terrain only and the same 1,100 ft floor.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -358,6 +366,7 @@ const enabledSources = enabledBrowserMapSources;
       ))}
     </ul>
     <p class="route-small"><strong>Pinch-Em-Tight LiDAR sunrise/sunset pilot:</strong> generated locally from the pinned KyFromAbove Phase 2 two-foot bare-earth DEM. The pilot makes no browser request to aerial imagery and uses no aerial, canopy, trail, or marked-review-point input. It is a terrain-exposure heuristic, not a guarantee of standing room, legal access, safety, vegetation clearance, or a photographic viewpoint.</p>
+    <p class="route-small"><strong>Gorge LiDAR sunrise/sunset expansion:</strong> generated locally in overlapping sectors from the KyFromAbove Phase 2 two-foot bare-earth DEM, with each sector source array fingerprinted and later regeneration set to fail closed if the source changes. The processing envelope is not a legal or ownership boundary. The layer uses no aerial, canopy, trail, or marked-review-point input and remains a terrain-exposure heuristic rather than a guarantee of standing room, access, safety, vegetation clearance, or a photographic viewpoint.</p>
     <p class="route-small">Parcel/private-property boundaries are not displayed.</p>
   </details>
 </section>
@@ -678,6 +687,101 @@ const enabledSources = enabledBrowserMapSources;
       console.error(error);
       container.dataset.pinchLidarSunFeatureCount = '0';
     }
+
+    const gorgeLayerId = 'rrg-lidar-sun';
+    const gorgeLayer = L.layerGroup();
+    const gorgeSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset'; strength: number; hard: boolean }> = [];
+    const loadedGorgeSectorIds = new Set<string>();
+    let gorgeManifest: any = null;
+    let gorgeManifestPromise: Promise<any> | null = null;
+    let gorgeFeatureCount = 0;
+
+    mapLayers.set(gorgeLayerId, gorgeLayer);
+    opacitySetters.set(gorgeLayerId, (value) => {
+      gorgeSunPaths.forEach((item) => item.layer.setStyle(pilotStyle(item.kind, item.strength, item.hard, value)));
+    });
+    syncVisibility(gorgeLayerId);
+
+    const loadGorgeManifest = async () => {
+      if (gorgeManifest) return gorgeManifest;
+      if (!gorgeManifestPromise) {
+        gorgeManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-manifest.json', {
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        }).then(async (response) => {
+          if (!response.ok) throw new Error('Gorge LiDAR manifest HTTP ' + response.status);
+          gorgeManifest = await response.json();
+          container.dataset.rrgLidarSunSectorCount = String(Array.isArray(gorgeManifest?.sectors) ? gorgeManifest.sectors.length : 0);
+          return gorgeManifest;
+        });
+      }
+      return gorgeManifestPromise;
+    };
+
+    const loadVisibleGorgeSectors = async () => {
+      if (!checked(gorgeLayerId)) return;
+      try {
+        const manifest = await loadGorgeManifest();
+        const view = map.getBounds().pad(0.35);
+        const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
+        for (const sector of sectors) {
+          const id = String(sector?.id ?? '');
+          const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
+          const file = String(sector?.file ?? '');
+          if (!id || bounds.length !== 4 || !file || loadedGorgeSectorIds.has(id)) continue;
+          const [west, south, east, north] = bounds.map(Number);
+          const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
+          if (!view.intersects(sectorBounds)) continue;
+
+          loadedGorgeSectorIds.add(id);
+          try {
+            const response = await fetch(import.meta.env.BASE_URL + file, {
+              credentials: 'same-origin',
+              cache: 'no-cache'
+            });
+            if (!response.ok) throw new Error('Gorge LiDAR sector ' + id + ' HTTP ' + response.status);
+            const data = await response.json();
+            const sectorLayer = L.geoJSON(data, {
+              pane: 'lidarSun',
+              interactive: false,
+              style: (feature: any) => {
+                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                const strength = Number(feature?.properties?.strength ?? 0);
+                const hard = feature?.properties?.hard === true;
+                return pilotStyle(kind, strength, hard, opacity(gorgeLayerId));
+              },
+              onEachFeature: (feature: any, layer: any) => {
+                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                const strength = Number(feature?.properties?.strength ?? 0);
+                const hard = feature?.properties?.hard === true;
+                gorgeSunPaths.push({ layer, kind, strength, hard });
+              }
+            });
+            sectorLayer.addTo(gorgeLayer);
+            gorgeFeatureCount += Array.isArray(data?.features) ? data.features.length : 0;
+          } catch (error) {
+            loadedGorgeSectorIds.delete(id);
+            throw error;
+          }
+        }
+        container.dataset.rrgLidarSunLoadedSectors = String(loadedGorgeSectorIds.size);
+        container.dataset.rrgLidarSunFeatureCount = String(gorgeFeatureCount);
+        syncVisibility(gorgeLayerId);
+      } catch (error) {
+        console.error(error);
+        container.dataset.rrgLidarSunLoadError = 'true';
+      }
+    };
+
+    void loadGorgeManifest().then(() => {
+      if (checked(gorgeLayerId)) return loadVisibleGorgeSectors();
+    }).catch((error) => {
+      console.error(error);
+      container.dataset.rrgLidarSunLoadError = 'true';
+    });
+    map.on('moveend', () => {
+      if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
+    });
 
     const routeGroup = L.layerGroup();
     const routeStartGroup = L.layerGroup();
@@ -1866,6 +1970,7 @@ const enabledSources = enabledBrowserMapSources;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
       syncVisibility(id);
       if (opacityValue !== undefined) syncOpacity(id);
+      if (id === gorgeLayerId && enabled) void loadVisibleGorgeSectors();
     };
 
     const clearPresetState = () => {
@@ -1927,7 +2032,10 @@ const enabledSources = enabledBrowserMapSources;
           setLayerControl('kyaerial-phase3', false);
         }
 
-        if (checkbox.checked && id === 'osm-informal-trails') {
+        if (checkbox.checked && id === gorgeLayerId) {
+          syncVisibility(id);
+          await loadVisibleGorgeSectors();
+        } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
         } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
           await loadLandContext(id);

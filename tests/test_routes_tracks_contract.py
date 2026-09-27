@@ -30,6 +30,9 @@ GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='
 LIDAR_SUN_GEO = ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.geojson'
 LIDAR_SUN_META = json.loads((ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.meta.json').read_text(encoding='utf-8'))
 LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_text(encoding='utf-8')
+RRG_LIDAR_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-manifest.json'
+RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-8'))
+RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
 
 
 def sha256(path):
@@ -70,6 +73,45 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('terrain at or above 1,100 ft only', MAP)
         self.assertIn('No aerial or vegetation data is used.', MAP)
         self.assertIn('.swatch-lidar-sun-pilot::before', ROUTES_CSS)
+
+    def test_gorge_lidar_expansion_reuses_locked_terrain_only_method(self):
+        self.assertEqual(RRG_LIDAR_MANIFEST['version'], 'lidar-only-gorge-v1')
+        self.assertEqual(RRG_LIDAR_MANIFEST['minimumElevationFeet'], 1100.0)
+        self.assertEqual(RRG_LIDAR_MANIFEST['boundsWgs84'], [-83.7, 37.77, -83.52, 37.89])
+        self.assertTrue(RRG_LIDAR_MANIFEST['processingEnvelopeNotLegalBoundary'])
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['rows'], 3)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['cols'], 4)
+        self.assertEqual(RRG_LIDAR_MANIFEST['counts']['sectors'], 12)
+        self.assertGreater(RRG_LIDAR_MANIFEST['counts']['features'], 0)
+        inputs = RRG_LIDAR_MANIFEST['generationInputs']
+        self.assertTrue(inputs['usesOnlyLidarDerivedBareEarthTerrain'])
+        self.assertFalse(inputs['usesAerial'])
+        self.assertFalse(inputs['usesCanopy'])
+        self.assertFalse(inputs['usesTrails'])
+        self.assertFalse(inputs['usesMarkedReviewPoints'])
+        self.assertIn('MIN_ELEVATION_FT = 1100.0', RRG_LIDAR_GENERATOR)
+        self.assertIn('hard line at directional cliff lip; fade inward/uphill to local crest', RRG_LIDAR_GENERATOR)
+        self.assertNotIn('ImageServices/', RRG_LIDAR_GENERATOR)
+        self.assertNotIn('ortho', RRG_LIDAR_GENERATOR.lower())
+        for sector in RRG_LIDAR_MANIFEST['sectors']:
+            path = ROOT / 'public' / sector['file']
+            self.assertTrue(path.is_file(), sector['file'])
+            self.assertEqual(sha256(path), sector['geojsonSha256'])
+            self.assertEqual(len(sector['demArraySha256']), 64)
+
+    def test_gorge_lidar_expansion_is_off_by_default_and_sector_loaded(self):
+        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
+        self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
+        self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
+        self.assertIn("data/map/rrg-lidar-sun-manifest.json", MAP)
+        self.assertIn("loadedGorgeSectorIds", MAP)
+        self.assertIn("map.getBounds().pad(0.35)", MAP)
+        self.assertIn("container.dataset.rrgLidarSunLoadedSectors", MAP)
+        self.assertIn("container.dataset.rrgLidarSunFeatureCount", MAP)
+        self.assertIn('same locked terrain-only method', MAP)
+        self.assertIn('Only terrain at or above 1,100 ft is eligible.', MAP)
+        self.assertIn('No aerial, canopy, trail, or marked-review-point input is used.', MAP)
 
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
