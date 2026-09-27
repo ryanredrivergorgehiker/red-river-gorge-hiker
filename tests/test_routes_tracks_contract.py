@@ -211,6 +211,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-map-status{\n    display:none!important;', ROUTES_CSS)
         self.assertIn('.route-map-mobile-bar{\n    position:static;', ROUTES_CSS)
         self.assertIn('height:72svh;', ROUTES_CSS)
+        mobile_scroll_gutter_css = ROUTES_CSS.split('.route-map-mobile-scroll-gutter{', 1)[1].split('}', 1)[0]
+        self.assertIn('position:absolute;', mobile_scroll_gutter_css)
+        self.assertIn('width:24px;', mobile_scroll_gutter_css)
+        self.assertIn('touch-action:pan-y;', mobile_scroll_gutter_css)
+        self.assertIn('.route-map-mobile-scroll-gutter-left{left:0}', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-scroll-gutter-right{right:0}', ROUTES_CSS)
         mobile_scale_css = ROUTES_CSS.split('.route-map .leaflet-top.leaflet-left .leaflet-control-scale{', 2)[-1].split('}', 1)[0]
         self.assertIn('margin-top:.55rem!important;', mobile_scale_css)
         self.assertIn('margin-left:.55rem!important;', mobile_scale_css)
@@ -419,6 +425,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('route-map-mobile-bar', MAP)
         self.assertIn('route-map-mobile-topbar', MAP)
         self.assertIn('data-map-mobile-status', MAP)
+        self.assertIn('data-map-scroll-gutter="left"', MAP)
+        self.assertIn('data-map-scroll-gutter="right"', MAP)
         mobile_topbar = MAP.split('<div class="route-map-mobile-topbar"', 1)[1].split('</div>', 1)[0]
         self.assertIn('data-map-action="locate"', mobile_topbar)
         self.assertIn('data-map-action="home"', mobile_topbar)
