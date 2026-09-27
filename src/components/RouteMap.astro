@@ -71,6 +71,12 @@ const enabledSources = enabledBrowserMapSources;
     </div>
   )}
 
+  <div class="route-map-mobile-topbar" role="toolbar" aria-label="Mobile map utilities">
+    <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
+    <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
+    <button type="button" data-sheet-open="layers" aria-label="Open map layers">Layers</button>
+  </div>
+
   <div class="route-map-stage">
     <div
       id={mapId}
@@ -102,13 +108,6 @@ const enabledSources = enabledBrowserMapSources;
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
       <button type="button" data-sheet-open="explore" disabled>Explore</button>
-      <button type="button" data-sheet-open="plan" disabled>Plan</button>
-      <button type="button" data-map-action="share">Share</button>
-    </div>
-
-    <div class="route-map-mobile-bar" aria-label="Mobile map controls">
-      <button type="button" data-sheet-open="search">Search</button>
-      <button type="button" data-sheet-open="layers">Layers</button>
       <button type="button" data-sheet-open="plan" disabled>Plan</button>
       <button type="button" data-map-action="share">Share</button>
     </div>
@@ -325,6 +324,15 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
   </div>
 
+  <div class="route-map-mobile-status" data-map-mobile-status aria-live="polite">Loading map data…</div>
+
+  <div class="route-map-mobile-bar" role="toolbar" aria-label="Mobile map controls">
+    <button type="button" data-sheet-open="search">Search</button>
+    <button type="button" data-sheet-open="explore" disabled>Explore</button>
+    <button type="button" data-sheet-open="plan" disabled>Plan</button>
+    <button type="button" data-map-action="share">Share</button>
+  </div>
+
   <div class="route-map-context-strip">
     <p><strong>Map data:</strong> Kentucky GIS · USGS · USDA Forest Service · OpenStreetMap.</p>
     <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
@@ -483,6 +491,7 @@ const enabledSources = enabledBrowserMapSources;
     const mode = container.dataset.mode ?? 'embedded';
     const routeConfigs = JSON.parse(container.dataset.routes ?? '[]');
     const status = shell.querySelector<HTMLElement>('[data-map-status]');
+    const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]');
     const stage = shell.querySelector<HTMLElement>('.route-map-stage');
     const planButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="plan"]'));
     const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
@@ -528,9 +537,14 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.trailPlanningReady = 'false';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
-      if (!status) return;
-      status.textContent = message;
-      status.dataset.kind = kind;
+      if (status) {
+        status.textContent = message;
+        status.dataset.kind = kind;
+      }
+      if (mobileStatus) {
+        mobileStatus.textContent = message;
+        mobileStatus.dataset.kind = kind;
+      }
     };
 
     const map = L.map(container, {
@@ -2026,9 +2040,9 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
       } else if (name === 'terrain') {
-        setLayerControl('kytopo', true, 72);
-        setLayerControl('usgs-topo', true, 72);
-        setLayerControl('ky-hillshade', true, 75);
+        setLayerControl('kytopo', true, 25);
+        setLayerControl('usgs-topo', true, 75);
+        setLayerControl('ky-hillshade', true, 100);
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
@@ -2570,6 +2584,57 @@ const enabledSources = enabledBrowserMapSources;
     }, { passive: true });
 
     container.addEventListener('touchcancel', clearLongPress, { passive: true });
+
+    let mobilePageScrollGesture: { startX: number; startY: number; lastY: number; active: boolean; restoreDragging: boolean } | null = null;
+    const resetMobilePageScrollGesture = () => {
+      if (mobilePageScrollGesture?.active && mobilePageScrollGesture.restoreDragging) map.dragging.enable();
+      mobilePageScrollGesture = null;
+      delete container.dataset.mobilePageScrollEscape;
+    };
+
+    container.addEventListener('touchstart', (event) => {
+      if (mode !== 'full' || activeTool !== null || event.touches.length !== 1 || window.matchMedia('(min-width: 701px)').matches) {
+        resetMobilePageScrollGesture();
+        return;
+      }
+      const touch = event.touches[0]!;
+      mobilePageScrollGesture = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        lastY: touch.clientY,
+        active: false,
+        restoreDragging: map.dragging.enabled()
+      };
+    }, { passive: true, capture: true });
+
+    container.addEventListener('touchmove', (event) => {
+      if (!mobilePageScrollGesture || event.touches.length !== 1 || activeTool !== null) return;
+      const touch = event.touches[0]!;
+      const dx = touch.clientX - mobilePageScrollGesture.startX;
+      const dy = touch.clientY - mobilePageScrollGesture.startY;
+      if (!mobilePageScrollGesture.active && Math.abs(dy) > 28 && Math.abs(dy) > Math.abs(dx) * 1.35) {
+        mobilePageScrollGesture.active = true;
+        container.dataset.mobilePageScrollEscape = 'true';
+        clearLongPress();
+        if (mobilePageScrollGesture.restoreDragging) map.dragging.disable();
+      }
+      if (!mobilePageScrollGesture.active) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.scrollBy(0, mobilePageScrollGesture.lastY - touch.clientY);
+      mobilePageScrollGesture.lastY = touch.clientY;
+    }, { passive: false, capture: true });
+
+    container.addEventListener('touchcancel', resetMobilePageScrollGesture, { passive: true, capture: true });
+    container.addEventListener('touchend', (event) => {
+      const escaped = Boolean(mobilePageScrollGesture?.active);
+      resetMobilePageScrollGesture();
+      if (escaped) {
+        lastTapAt = 0;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }, { passive: false, capture: true });
 
     container.addEventListener('touchend', (event) => {
       window.clearTimeout(longPressTimer);
