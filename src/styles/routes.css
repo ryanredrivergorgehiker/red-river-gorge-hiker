@@ -1382,3 +1382,14 @@
 
 @media(max-width:800px){.route-library-controls{grid-template-columns:1fr}.route-library-category-options{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:520px){.route-library-category-options{grid-template-columns:1fr}}
+
+
+/* Desktop command bar: lock Map View and RRGH route controls to the same rendered height. */
+@media(min-width:981px){
+  .route-map-preset-buttons button,
+  .route-map-trip-options label{
+    box-sizing:border-box;
+    height:67px;
+    min-height:67px;
+  }
+}
