@@ -39,7 +39,7 @@ jobs:
           route_geo_blob="$(git rev-parse HEAD:public/data/routes/skybridge-arch-v1.geojson)"
           route_gpx_blob="$(git rev-parse HEAD:public/downloads/routes/Skybridge_Arch_APPROVED_v1.gpx)"
 
-          if [ "$route_json_blob" != "e266e780e578edf2d2f93134f01a571e08057f59" ] \
+          if [ "$route_json_blob" != "61e2c76339799420df38bb86442c774e8d3d1cab" ] \
             || [ "$route_geo_blob" != "7845938e72579cde013178f9eaceb7dba9fb8234" ] \
             || [ "$route_gpx_blob" != "0e9575f0d5567f70ccc1701ab72c40992afc4628" ]; then
             echo "Route inputs changed; refusing to reuse cached elevation data." >&2

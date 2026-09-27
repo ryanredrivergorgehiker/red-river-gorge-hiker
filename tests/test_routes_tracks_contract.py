@@ -298,7 +298,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             self.assertIn('data-map-preset="' + preset + '"', MAP)
         for route_category in ('day-hike', 'backpacking', 'off-trail'):
             self.assertIn('data-route-category-filter="' + route_category + '"', MAP)
-        self.assertEqual(MAP.count('data-route-category-filter="'), 3)
+        self.assertEqual(MAP.count('type="checkbox" data-route-category-filter="'), 3)
         self.assertNotIn('data-route-trip-filter', MAP)
         self.assertNotIn('data-route-status-filter', MAP)
         for layer in (
@@ -430,7 +430,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('routePopup', MAP)
         self.assertIn("route.distanceMi.toFixed(2)", MAP)
         self.assertIn("route.physicalDifficulty", MAP)
-        self.assertIn("route.internalTrailContext", MAP)
+        self.assertIn("route.routeCategory", MAP)
         self.assertIn('View route guide', MAP)
         self.assertIn('Download GPX', MAP)
         self.assertIn('Parking / trailhead', MAP)
