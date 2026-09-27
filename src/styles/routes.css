@@ -1393,3 +1393,110 @@
     min-height:67px;
   }
 }
+
+
+/* Layers header + mobile map flow refinement — 2026-09-27 */
+.route-layer-panel>summary{
+  position:sticky;
+  top:0;
+  z-index:4;
+  background:rgba(251,250,246,.98);
+  backdrop-filter:blur(10px);
+}
+.route-map-mobile-topbar,
+.route-map-mobile-status{
+  display:none;
+}
+
+@media(max-width:700px){
+  .route-map-shell-full .route-map{
+    height:72svh;
+    min-height:500px;
+    max-height:720px;
+  }
+
+  .route-map-mobile-topbar{
+    display:grid;
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.8fr);
+    gap:.4rem;
+    margin:0 0 .5rem;
+  }
+  .route-map-mobile-topbar button,
+  .route-map-mobile-bar button{
+    min-height:44px;
+    padding:.52rem .62rem;
+    border:1px solid rgba(255,255,255,.28);
+    border-radius:11px;
+    background:#17372d;
+    color:#fff;
+    font:inherit;
+    font-size:.82rem;
+    font-weight:780;
+    box-shadow:0 .14rem .45rem rgba(20,29,24,.16);
+    cursor:pointer;
+  }
+  .route-map-mobile-topbar button[aria-pressed="true"],
+  .route-map-mobile-bar button[aria-pressed="true"]{
+    background:#b86b43;
+  }
+  .route-map-mobile-topbar button:disabled,
+  .route-map-mobile-bar button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+
+  .route-map-utility-tools{
+    display:none!important;
+  }
+
+  .route-map-mobile-status{
+    display:block;
+    margin:.55rem 0 0;
+    padding:.62rem .72rem;
+    border-radius:10px;
+    background:#26312b;
+    color:#fff;
+    font-size:.8rem;
+    line-height:1.42;
+    box-shadow:0 .15rem .5rem rgba(20,29,24,.16);
+  }
+  .route-map-mobile-status[data-kind="warning"]{
+    background:#79481b;
+  }
+  .route-map-status{
+    display:none!important;
+  }
+
+  .route-map-mobile-bar{
+    position:static;
+    z-index:auto;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:.4rem;
+    margin:.5rem 0 0;
+  }
+
+  .route-layer-panel[open]{
+    top:.5rem;
+    bottom:.5rem;
+    left:.5rem;
+    right:.5rem;
+    width:auto;
+    max-height:none;
+    overflow:auto;
+    border-radius:13px;
+  }
+  .route-layer-panel>summary{
+    min-height:44px;
+  }
+  .route-search-panel,
+  .route-explore-panel,
+  .route-plan-panel,
+  .route-share-panel{
+    bottom:.5rem;
+  }
+
+  .route-map .leaflet-control-scale{
+    margin-bottom:10px!important;
+  }
+}
