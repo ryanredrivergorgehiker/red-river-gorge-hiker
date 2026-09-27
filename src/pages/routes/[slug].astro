@@ -24,6 +24,11 @@ const geometryUrl = base + data.webGeometry.publicPath.replace(/^\//, '');
 const gpxUrl = base + data.approvedPublicationGpx.publicPath.replace(/^\//, '');
 const titleTag = data.title + ' — Hike & Route Guide | Red River Gorge Hiker';
 const description = data.title + ' route guide: ' + data.distanceMi.toFixed(2) + '-mile ' + data.shape + ' with downloadable GPX, interactive map, elevation profile, access notes, hazards, and land-manager resources.';
+const routeCategoryLabel = ({
+  'day-hike': 'Day hike',
+  backpacking: 'Backpacking',
+  'off-trail': 'Off-trail'
+} as const)[data.routeCategory];
 const absolute = (path: string) => new URL(path, Astro.site ?? Astro.url.origin).href;
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
@@ -59,7 +64,7 @@ const datasetSchema = {
     </nav>
 
     <header class="route-hero">
-      <p class="eyebrow">{data.tripType.replace('-', ' ')} · {data.trailStatusDisplay}</p>
+      <p class="eyebrow">{routeCategoryLabel} · {data.internalTrailContext}</p>
       <h1>{data.title}</h1>
       <p class="route-lede">
         A mapped {data.distanceMi.toFixed(2)}-mile {data.shape} with a downloadable GPX, interactive planning map,
@@ -72,8 +77,8 @@ const datasetSchema = {
       <div><span>Ascent</span><strong>{elevation.stats.ascentFt.toLocaleString()} ft</strong></div>
       <div><span>Descent</span><strong>{elevation.stats.descentFt.toLocaleString()} ft</strong></div>
       <div><span>Elevation</span><strong>{elevation.stats.minElevationFt.toLocaleString()}–{elevation.stats.maxElevationFt.toLocaleString()} ft</strong></div>
-      <div><span>Trip type</span><strong>{data.tripType.replace('-', ' ')}</strong></div>
-      <div><span>Trail status</span><strong>{data.trailStatusDisplay}</strong></div>
+      <div><span>Route category</span><strong>{routeCategoryLabel}</strong></div>
+      <div><span>Trail context</span><strong>{data.internalTrailContext}</strong></div>
       <div><span>Route shape</span><strong>{data.shape}</strong></div>
       <div><span>Duration</span><strong>{data.estimatedDuration ?? 'Not listed'}</strong></div>
       <div><span>Physical difficulty</span><strong>{data.physicalDifficulty}</strong></div>
@@ -89,9 +94,8 @@ const datasetSchema = {
         routeId: data.routeId,
         slug,
         title: data.title,
-        tripType: data.tripType,
-        trailStatus: data.trailStatus,
-        trailStatusDisplay: data.trailStatusDisplay,
+        routeCategory: data.routeCategory,
+        internalTrailContext: data.internalTrailContext,
         publicationClass: data.publicationClass,
         distanceMi: data.distanceMi,
         physicalDifficulty: data.physicalDifficulty,
@@ -119,7 +123,7 @@ const datasetSchema = {
       <section>
         <h2>Route &amp; terrain</h2>
         <p>
-          This route is a {data.shape} on {data.trailStatusDisplay.toLowerCase()} terrain. Use the mapped line and GPX
+          This route is a {data.shape}. Trail context: {data.internalTrailContext}. Use the mapped line and GPX
           together with current trail signs, conditions, closures, and land-manager information.
         </p>
       </section>

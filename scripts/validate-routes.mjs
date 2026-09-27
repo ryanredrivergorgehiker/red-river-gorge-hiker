@@ -26,7 +26,12 @@ for (const filename of routeFiles) {
   const slug = filename.replace(/\.json$/, '');
   const route = JSON.parse(fs.readFileSync(path.join(ROUTES_DIR, filename), 'utf8'));
   if (route.publicationStatus !== 'Approved — Publication Ready') fail(`${slug}: public route is not publication-ready`);
-  if (!['A','B','C'].includes(route.publicationClass)) fail(`${slug}: invalid public class`);
+  if (!['A','B','C'].includes(route.publicationClass)) fail(`${slug}: invalid internal publication class`);
+  if (!['day-hike','backpacking','off-trail'].includes(route.routeCategory)) fail(`${slug}: invalid or missing public routeCategory`);
+  if (Object.prototype.hasOwnProperty.call(route, 'tripType') || Object.prototype.hasOwnProperty.call(route, 'trailStatus')) {
+    fail(`${slug}: retired tripType/trailStatus browse fields must not appear in public route data`);
+  }
+  if (typeof route.internalTrailContext !== 'string' || !route.internalTrailContext.trim()) fail(`${slug}: internalTrailContext is required`);
   if (!Array.isArray(route.publicWaypoints)) fail(`${slug}: publicWaypoints must be an array`);
 
   const gpxPath = path.join(PUBLIC_DIR, route.approvedPublicationGpx.publicPath.replace(/^\//, ''));
@@ -77,4 +82,4 @@ for (const filename of routeFiles) {
   }
 }
 
-console.log(`Route data contract PASS: ${routeFiles.length} approved route(s); GPX/GeoJSON/elevation hashes and public waypoint inventory verified.`);
+console.log(`Route data contract PASS: ${routeFiles.length} approved route(s); one routeCategory each; internal Publication Class/trail context preserved; GPX/GeoJSON/elevation hashes and public waypoint inventory verified.`);

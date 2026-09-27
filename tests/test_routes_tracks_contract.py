@@ -183,6 +183,34 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("publicWaypoints: z.array(waypointSchema)", CONTENT_CONFIG)
         self.assertIn("publicationClass: z.enum(['A', 'B', 'C'])", CONTENT_CONFIG)
         self.assertNotIn("publicationClass: z.enum(['A', 'B', 'C', 'D'])", CONTENT_CONFIG)
+        self.assertIn("routeCategory: z.enum(['day-hike', 'backpacking', 'off-trail'])", CONTENT_CONFIG)
+        self.assertIn("internalTrailContext: z.string().min(1)", CONTENT_CONFIG)
+        self.assertNotIn("tripType:", CONTENT_CONFIG)
+        self.assertNotIn("trailStatus:", CONTENT_CONFIG)
+        self.assertNotIn("'multi-day'", CONTENT_CONFIG)
+
+    def test_public_route_taxonomy_is_exactly_three_categories(self):
+        self.assertEqual(ROUTE['routeCategory'], 'day-hike')
+        self.assertEqual(ROUTE['internalTrailContext'], 'Mostly official trail')
+        self.assertNotIn('tripType', ROUTE)
+        self.assertNotIn('trailStatus', ROUTE)
+        self.assertNotIn('trailStatusDisplay', ROUTE)
+        self.assertIn('data-route-category-filter="day-hike"', MAP)
+        self.assertIn('data-route-category-filter="backpacking"', MAP)
+        self.assertIn('data-route-category-filter="off-trail"', MAP)
+        self.assertNotIn('data-route-trip-filter', MAP)
+        self.assertNotIn('data-route-status-filter', MAP)
+        self.assertNotIn('> Multi-day<', MAP)
+        self.assertNotIn('> Official<', MAP)
+        self.assertNotIn('> Mixed<', MAP)
+        self.assertIn('data-route-category-filter="day-hike"', LIBRARY)
+        self.assertIn('data-route-category-filter="backpacking"', LIBRARY)
+        self.assertIn('data-route-category-filter="off-trail"', LIBRARY)
+        self.assertNotIn('data-route-trip', LIBRARY)
+        self.assertNotIn('data-route-status', LIBRARY)
+        self.assertIn('Route category', DETAIL)
+        self.assertIn('Trail context', DETAIL)
+        self.assertIn('RouteNotice publicationClass={data.publicationClass}', DETAIL)
 
     def test_map_source_registry_includes_real_planning_context(self):
         for source in (
@@ -268,10 +296,11 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('Load interactive map', MAP)
         for preset in ('hiking', 'terrain', 'aerial'):
             self.assertIn('data-map-preset="' + preset + '"', MAP)
-        for trip_type in ('day-hike', 'backpacking', 'multi-day'):
-            self.assertIn('data-route-trip-filter="' + trip_type + '"', MAP)
-        for trail_status in ('official', 'mixed', 'off-trail'):
-            self.assertIn('data-route-status-filter="' + trail_status + '"', MAP)
+        for route_category in ('day-hike', 'backpacking', 'off-trail'):
+            self.assertIn('data-route-category-filter="' + route_category + '"', MAP)
+        self.assertEqual(MAP.count('data-route-category-filter="'), 3)
+        self.assertNotIn('data-route-trip-filter', MAP)
+        self.assertNotIn('data-route-status-filter', MAP)
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
             'usfs-trails', 'usfs-roads', 'osm-informal-trails',
@@ -387,8 +416,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("typeof navigator.share === 'function'", MAP)
         self.assertIn("navigator.share({ title, text, url })", MAP)
         self.assertIn("navigator.clipboard.writeText(url)", MAP)
-        for param in ('rrghMap', 'rrghPreset', 'rrghLayers', 'rrghTrips', 'rrghStatus', 'rrghRoute'):
+        for param in ('rrghMap', 'rrghPreset', 'rrghLayers', 'rrghCategories', 'rrghRoute'):
             self.assertIn(param, MAP)
+        self.assertNotIn("rrghTrips", MAP)
+        self.assertNotIn("rrghStatus", MAP)
         self.assertIn('const buildShareUrl = () =>', MAP)
         self.assertIn('const applySharedMapState = () =>', MAP)
         self.assertIn("line.on('click', () => { selectedRouteId = route.routeId; })", MAP)
@@ -399,7 +430,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('routePopup', MAP)
         self.assertIn("route.distanceMi.toFixed(2)", MAP)
         self.assertIn("route.physicalDifficulty", MAP)
-        self.assertIn("route.trailStatusDisplay", MAP)
+        self.assertIn("route.internalTrailContext", MAP)
         self.assertIn('View route guide', MAP)
         self.assertIn('Download GPX', MAP)
         self.assertIn('Parking / trailhead', MAP)

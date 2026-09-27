@@ -7,9 +7,8 @@ interface PublicRouteMapItem {
   routeId: string;
   slug: string;
   title: string;
-  tripType: 'day-hike' | 'backpacking' | 'multi-day';
-  trailStatus: 'official' | 'mixed' | 'off-trail';
-  trailStatusDisplay: string;
+  routeCategory: 'day-hike' | 'backpacking' | 'off-trail';
+  internalTrailContext: string;
   publicationClass: 'A' | 'B' | 'C';
   distanceMi: number;
   physicalDifficulty: string;
@@ -63,15 +62,10 @@ const enabledSources = enabledBrowserMapSources;
 
       <fieldset class="route-map-trip-group">
         <legend>Show RRGH routes</legend>
-        <div class="route-map-trip-options">
-          <label><input type="checkbox" data-route-trip-filter="day-hike" checked /> Day hikes</label>
-          <label><input type="checkbox" data-route-trip-filter="backpacking" checked /> Backpacking</label>
-          <label><input type="checkbox" data-route-trip-filter="multi-day" checked /> Multi-day</label>
-        </div>
-        <div class="route-map-status-options" aria-label="Route navigation style">
-          <label><input type="checkbox" data-route-status-filter="official" checked /> Official</label>
-          <label><input type="checkbox" data-route-status-filter="mixed" checked /> Mixed</label>
-          <label><input type="checkbox" data-route-status-filter="off-trail" checked /> Off-trail</label>
+        <div class="route-map-trip-options" aria-label="Public route categories">
+          <label><input type="checkbox" data-route-category-filter="day-hike" checked /> Day hikes</label>
+          <label><input type="checkbox" data-route-category-filter="backpacking" checked /> Backpacking</label>
+          <label><input type="checkbox" data-route-category-filter="off-trail" checked /> Off-trail</label>
         </div>
       </fieldset>
     </div>
@@ -827,9 +821,9 @@ const enabledSources = enabledBrowserMapSources;
     const routeStartMarkers: any[] = [];
     const landmarkMarkers: any[] = [];
     const recreationMarkers: any[] = [];
-    const routeRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
-    const routeStartRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
-    const landmarkRecords: Array<{ layer: any; tripType: string; trailStatus: string }> = [];
+    const routeRecords: Array<{ layer: any; routeCategory: string }> = [];
+    const routeStartRecords: Array<{ layer: any; routeCategory: string }> = [];
+    const landmarkRecords: Array<{ layer: any; routeCategory: string }> = [];
     const trailPaths: any[] = [];
     const trailCasingPaths: any[] = [];
     const roadPaths: any[] = [];
@@ -1041,7 +1035,7 @@ const enabledSources = enabledBrowserMapSources;
 
       const meta = document.createElement('p');
       meta.className = 'route-map-route-card-meta';
-      meta.textContent = route.distanceMi.toFixed(2) + ' mi · ' + route.physicalDifficulty + ' · ' + route.trailStatusDisplay;
+      meta.textContent = route.distanceMi.toFixed(2) + ' mi · ' + routeCategoryLabel(route.routeCategory) + ' · ' + route.physicalDifficulty;
       popup.append(meta);
 
       const actions = document.createElement('div');
@@ -1084,7 +1078,7 @@ const enabledSources = enabledBrowserMapSources;
             line.on('click', () => { selectedRouteId = route.routeId; });
             line.addTo(routeGroup);
             routePaths.push(line);
-            routeRecords.push({ layer: line, tripType: route.tripType, trailStatus: route.trailStatus });
+            routeRecords.push({ layer: line, routeCategory: route.routeCategory });
             const exploreEntry = routeExploreEntries.get(route.routeId) ?? {
               route,
               color: routeColor,
@@ -1145,7 +1139,7 @@ const enabledSources = enabledBrowserMapSources;
                 marker.on('click', () => { selectedRouteId = route.routeId; });
                 marker.addTo(routeStartGroup);
                 routeStartMarkers.push(marker);
-                routeStartRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
+                routeStartRecords.push({ layer: marker, routeCategory: route.routeCategory });
                 searchItems.push({
                   label: route.title + ' route start',
                   detail: 'RRGH route start',
@@ -1227,7 +1221,7 @@ const enabledSources = enabledBrowserMapSources;
             marker.bindPopup(popup);
             marker.addTo(landmarkGroup);
             landmarkMarkers.push(marker);
-            landmarkRecords.push({ layer: marker, tripType: route.tripType, trailStatus: route.trailStatus });
+            landmarkRecords.push({ layer: marker, routeCategory: route.routeCategory });
             routeBounds.extend([lat, lng]);
             searchItems.push({
               label: name,
@@ -1893,13 +1887,16 @@ const enabledSources = enabledBrowserMapSources;
     bridgeNearbyNetworkNodes();
     container.dataset.plannerNodeCount = String(graph.size);
 
-    const tripTypeEnabled = (tripType: string) =>
-      shell.querySelector<HTMLInputElement>('[data-route-trip-filter="' + tripType + '"]')?.checked ?? true;
-    const trailStatusEnabled = (trailStatus: string) =>
-      shell.querySelector<HTMLInputElement>('[data-route-status-filter="' + trailStatus + '"]')?.checked ?? true;
+    const routeCategoryLabel = (category: string) => ({
+      'day-hike': 'Day hike',
+      backpacking: 'Backpacking',
+      'off-trail': 'Off-trail'
+    }[category] ?? category);
+    const routeCategoryEnabled = (routeCategory: string) =>
+      shell.querySelector<HTMLInputElement>('[data-route-category-filter="' + routeCategory + '"]')?.checked ?? true;
 
-    const routeRecordEnabled = (record: { tripType: string; trailStatus: string }) =>
-      tripTypeEnabled(record.tripType) && trailStatusEnabled(record.trailStatus);
+    const routeRecordEnabled = (record: { routeCategory: string }) =>
+      routeCategoryEnabled(record.routeCategory);
 
     const syncRouteFilters = () => {
       let visibleRoutes = 0;
@@ -1946,7 +1943,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!exploreList) return;
       exploreList.replaceChildren();
       const entries = Array.from(routeExploreEntries.values())
-        .filter((entry) => tripTypeEnabled(entry.route.tripType) && trailStatusEnabled(entry.route.trailStatus))
+        .filter((entry) => routeCategoryEnabled(entry.route.routeCategory))
         .sort((a, b) => a.route.title.localeCompare(b.route.title));
 
       for (const entry of entries) {
@@ -1963,7 +1960,7 @@ const enabledSources = enabledBrowserMapSources;
         const title = document.createElement('strong');
         title.textContent = entry.route.title;
         const meta = document.createElement('small');
-        meta.textContent = entry.route.distanceMi.toFixed(2) + ' mi · ' + entry.route.physicalDifficulty + ' · ' + entry.route.trailStatusDisplay;
+        meta.textContent = entry.route.distanceMi.toFixed(2) + ' mi · ' + routeCategoryLabel(entry.route.routeCategory) + ' · ' + entry.route.physicalDifficulty;
         copy.append(title, meta);
         button.append(swatch, copy);
 
@@ -2142,16 +2139,16 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
-    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter], [data-route-status-filter]')) {
+    for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-category-filter]')) {
       checkbox.addEventListener('change', syncRouteFilters);
     }
     syncRouteFilters();
 
-    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghTrips', 'rrghStatus', 'rrghRoute'];
+    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghCategories', 'rrghRoute'];
     const buildShareUrl = () => {
       const url = new URL(window.location.href);
       for (const key of Array.from(url.searchParams.keys())) {
-        if (key.startsWith('utm_') || key === 'gclid' || key === 'fbclid' || shareParamNames.includes(key)) {
+        if (key.startsWith('utm_') || key === 'gclid' || key === 'fbclid' || key.startsWith('rrgh')) {
           url.searchParams.delete(key);
         }
       }
@@ -2175,18 +2172,12 @@ const enabledSources = enabledBrowserMapSources;
       const sunKinds = (['sunrise', 'sunset'] as const).filter((kind) => sunKindEnabled(kind)).join(',');
       url.searchParams.set('rrghSun', sunKinds);
 
-      const trips = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]'))
+      const categories = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-category-filter]'))
         .filter((input) => input.checked)
-        .map((input) => input.dataset.routeTripFilter)
+        .map((input) => input.dataset.routeCategoryFilter)
         .filter(Boolean)
         .join(',');
-      const statuses = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]'))
-        .filter((input) => input.checked)
-        .map((input) => input.dataset.routeStatusFilter)
-        .filter(Boolean)
-        .join(',');
-      url.searchParams.set('rrghTrips', trips);
-      url.searchParams.set('rrghStatus', statuses);
+      url.searchParams.set('rrghCategories', categories);
 
       if (selectedRouteId) url.searchParams.set('rrghRoute', selectedRouteId);
       url.hash = '';
@@ -2226,7 +2217,7 @@ const enabledSources = enabledBrowserMapSources;
       const selectedEntry = selectedRouteId ? routeExploreEntries.get(selectedRouteId) : null;
       const title = selectedEntry ? selectedEntry.route.title + ' — Red River Gorge Hiker' : 'Red River Gorge Hiker Interactive Map';
       const text = selectedEntry
-        ? selectedEntry.route.title + ' · ' + selectedEntry.route.distanceMi.toFixed(2) + ' mi · ' + selectedEntry.route.physicalDifficulty + ' · ' + selectedEntry.route.trailStatusDisplay
+        ? selectedEntry.route.title + ' · ' + routeCategoryLabel(selectedEntry.route.routeCategory) + ' · ' + selectedEntry.route.distanceMi.toFixed(2) + ' mi · ' + selectedEntry.route.physicalDifficulty
         : 'Shared map view from Red River Gorge Hiker';
 
       if (shareDescription) {
@@ -2282,18 +2273,11 @@ const enabledSources = enabledBrowserMapSources;
         syncSunPotentialControls();
       }
 
-      const tripParam = params.get('rrghTrips');
-      if (tripParam !== null) {
-        const selectedTrips = new Set(tripParam.split(',').filter(Boolean));
-        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]')) {
-          input.checked = Boolean(input.dataset.routeTripFilter && selectedTrips.has(input.dataset.routeTripFilter));
-        }
-      }
-      const statusParam = params.get('rrghStatus');
-      if (statusParam !== null) {
-        const selectedStatuses = new Set(statusParam.split(',').filter(Boolean));
-        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-status-filter]')) {
-          input.checked = Boolean(input.dataset.routeStatusFilter && selectedStatuses.has(input.dataset.routeStatusFilter));
+      const categoryParam = params.get('rrghCategories');
+      if (categoryParam !== null) {
+        const selectedCategories = new Set(categoryParam.split(',').filter(Boolean));
+        for (const input of shell.querySelectorAll<HTMLInputElement>('[data-route-category-filter]')) {
+          input.checked = Boolean(input.dataset.routeCategoryFilter && selectedCategories.has(input.dataset.routeCategoryFilter));
         }
       }
       syncRouteFilters();
