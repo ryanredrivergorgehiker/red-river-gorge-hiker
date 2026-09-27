@@ -2585,57 +2585,6 @@ const enabledSources = enabledBrowserMapSources;
 
     container.addEventListener('touchcancel', clearLongPress, { passive: true });
 
-    let mobilePageScrollGesture: { startX: number; startY: number; lastY: number; active: boolean; restoreDragging: boolean } | null = null;
-    const resetMobilePageScrollGesture = () => {
-      if (mobilePageScrollGesture?.active && mobilePageScrollGesture.restoreDragging) map.dragging.enable();
-      mobilePageScrollGesture = null;
-      delete container.dataset.mobilePageScrollEscape;
-    };
-
-    container.addEventListener('touchstart', (event) => {
-      if (mode !== 'full' || activeTool !== null || event.touches.length !== 1 || window.matchMedia('(min-width: 701px)').matches) {
-        resetMobilePageScrollGesture();
-        return;
-      }
-      const touch = event.touches[0]!;
-      mobilePageScrollGesture = {
-        startX: touch.clientX,
-        startY: touch.clientY,
-        lastY: touch.clientY,
-        active: false,
-        restoreDragging: map.dragging.enabled()
-      };
-    }, { passive: true, capture: true });
-
-    container.addEventListener('touchmove', (event) => {
-      if (!mobilePageScrollGesture || event.touches.length !== 1 || activeTool !== null) return;
-      const touch = event.touches[0]!;
-      const dx = touch.clientX - mobilePageScrollGesture.startX;
-      const dy = touch.clientY - mobilePageScrollGesture.startY;
-      if (!mobilePageScrollGesture.active && Math.abs(dy) > 28 && Math.abs(dy) > Math.abs(dx) * 1.35) {
-        mobilePageScrollGesture.active = true;
-        container.dataset.mobilePageScrollEscape = 'true';
-        clearLongPress();
-        if (mobilePageScrollGesture.restoreDragging) map.dragging.disable();
-      }
-      if (!mobilePageScrollGesture.active) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      window.scrollBy(0, mobilePageScrollGesture.lastY - touch.clientY);
-      mobilePageScrollGesture.lastY = touch.clientY;
-    }, { passive: false, capture: true });
-
-    container.addEventListener('touchcancel', resetMobilePageScrollGesture, { passive: true, capture: true });
-    container.addEventListener('touchend', (event) => {
-      const escaped = Boolean(mobilePageScrollGesture?.active);
-      resetMobilePageScrollGesture();
-      if (escaped) {
-        lastTapAt = 0;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
-    }, { passive: false, capture: true });
-
     container.addEventListener('touchend', (event) => {
       window.clearTimeout(longPressTimer);
       longPressTimer = 0;
