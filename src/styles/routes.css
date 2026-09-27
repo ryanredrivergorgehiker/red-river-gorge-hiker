@@ -126,8 +126,8 @@
   display:flex;
   align-items:center;
   gap:.42rem;
-  min-height:42px;
-  padding:.52rem .58rem;
+  min-height:58px;
+  padding:.58rem .58rem;
   border:1px solid rgba(23,55,45,.14);
   border-radius:8px;
   background:#fff;
