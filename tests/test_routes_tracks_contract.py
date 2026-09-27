@@ -67,8 +67,15 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('LiDAR sunrise / sunset pilot', MAP)
         self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
         self.assertIn('Sunrise / Sunset Potential', base_markup)
-        self.assertIn('<strong>Potential:</strong>', base_markup)
+        self.assertIn('Sunrise Potential', base_markup)
+        self.assertIn('Sunset Potential', base_markup)
+        self.assertNotIn('<strong>Potential:</strong>', base_markup)
+        self.assertIn('data-sun-potential-master', base_markup)
+        self.assertIn('data-sun-kind-toggle="sunrise"', base_markup)
+        self.assertIn('data-sun-kind-toggle="sunset"', base_markup)
         self.assertIn('.swatch-sun-potential::before', ROUTES_CSS)
+        self.assertIn('.swatch-sunrise-potential::before', ROUTES_CSS)
+        self.assertIn('.swatch-sunset-potential::before', ROUTES_CSS)
         self.assertIn("kind === 'sunset' ? '#4640b0' : '#f2685c'", MAP)
 
     def test_gorge_lidar_expansion_reuses_locked_terrain_only_method(self):
@@ -116,7 +123,14 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("map.getBounds().pad(0.35)", MAP)
         self.assertIn("container.dataset.rrgLidarSunLoadedSectors", MAP)
         self.assertIn("container.dataset.rrgLidarSunFeatureCount", MAP)
-        self.assertIn('Potential does not guarantee standing room', MAP)
+        self.assertNotIn('Potential does not guarantee standing room', MAP)
+        self.assertIn("const aerialLayerIds = new Set(['kyaerial-phase3', 'kyaerial-phase2-leafoff'])", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', true, 75)", MAP)
+        self.assertIn("Number(terrainSlider.value) < 75", MAP)
+        self.assertIn("data-fine-tune-layer=\"rrg-lidar-sun\"", MAP)
+        self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunrise\"", MAP)
+        self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunset\"", MAP)
+        self.assertIn("rrghSun", MAP)
 
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
@@ -174,6 +188,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         for source in (
             'Ky_KyTopo_Map_Series_WGS84WM',
             'Ky_Imagery_Phase3_3IN_WGS84WM',
+            'Ky_Imagery_Phase2_6IN_WGS84WM',
             'Ky_MultiDirectional_Hillshade_WGS84WM',
             'USGSTopo',
             'EDW_TrailNFSPublishWithDataStatus_01',
@@ -186,6 +201,10 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_NFSLandUnit_01',
         ):
             self.assertIn(source, LAYERS)
+        self.assertIn("id: 'kyaerial-phase3'", LAYERS)
+        self.assertIn("label: 'Leaf-on aerial imagery'", LAYERS)
+        self.assertIn("id: 'kyaerial-phase2-leafoff'", LAYERS)
+        self.assertIn("label: 'Leaf-off aerial imagery'", LAYERS)
         self.assertIn("id: 'usfs-trails'", LAYERS)
         self.assertIn("id: 'usfs-roads'", LAYERS)
         self.assertIn("id: 'ky-counties'", LAYERS)

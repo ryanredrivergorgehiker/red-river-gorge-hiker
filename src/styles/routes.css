@@ -469,6 +469,8 @@
   margin:0;
   accent-color:#17372d;
 }
+.route-layer-toggle-master{font-weight:700}
+.route-layer-toggle-child{padding-left:1.35rem}
 .route-layer-swatch{
   position:relative;
   display:block;
@@ -519,7 +521,7 @@
   transform:translateY(-50%);border-radius:4px;background:#fff;color:#17372d;border:2px solid #17372d;
   font-size:.6rem;font-weight:900;
 }
-.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,.swatch-sun-potential::before,
+.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,.swatch-aerial-leafoff::before,.swatch-sun-potential::before,.swatch-sunrise-potential::before,.swatch-sunset-potential::before,
 .swatch-wilderness::before,.swatch-management::before,.swatch-land-unit::before{
   left:.08rem;right:.08rem;height:.72rem;border-radius:3px;
 }
@@ -527,7 +529,10 @@
 .swatch-topo-usgs::before{background:repeating-linear-gradient(0deg,#f1ecd8 0 3px,#897056 3px 4px)}
 .swatch-relief::before{background:linear-gradient(135deg,#e5e7df,#7d847c)}
 .swatch-sun-potential::before{background:linear-gradient(90deg,#f2685c 0 42%,#f7f2e7 49% 51%,#4640b0 58% 100%);border:1px solid #6a6258}
+.swatch-sunrise-potential::before{background:linear-gradient(90deg,#f2685c,#f8b0a7);border:1px solid #b74d43}
+.swatch-sunset-potential::before{background:linear-gradient(90deg,#4640b0,#9894df);border:1px solid #38338d}
 .swatch-aerial::before{background:linear-gradient(135deg,#526a47,#8f7756,#39586b)}
+.swatch-aerial-leafoff::before{background:linear-gradient(135deg,#8d8b78,#b9aa8c,#6f786f)}
 .swatch-wilderness::before{border:2px dashed #356b4a;background:rgba(117,168,109,.12)}
 .swatch-management::before{border:2px dashed #a57c34;background:rgba(216,184,108,.12)}
 .swatch-land-unit::before{border:2px solid #55715b;background:rgba(148,173,141,.12)}

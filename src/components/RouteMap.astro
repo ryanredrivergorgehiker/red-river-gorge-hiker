@@ -195,16 +195,30 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
             <span>Terrain relief (LiDAR)</span>
           </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="rrg-lidar-sun" />
+          <label class="route-layer-toggle-row route-layer-toggle-master">
+            <input type="checkbox" data-map-layer="rrg-lidar-sun" data-sun-potential-master />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
             <span>Sunrise / Sunset Potential</span>
           </label>
-          <p class="route-layer-help"><strong>Potential:</strong> LiDAR-only estimate above 1,100 ft. Coral marks likely sunrise exposure and indigo likely sunset exposure, fading from the exposed rim toward the ridge crest. Potential does not guarantee standing room, legal access, safety, vegetation clearance, or a usable viewpoint.</p>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-sun-kind-toggle="sunrise" />
+            <span class="route-layer-swatch swatch-sunrise-potential" aria-hidden="true"></span>
+            <span>Sunrise Potential</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-sun-kind-toggle="sunset" />
+            <span class="route-layer-swatch swatch-sunset-potential" aria-hidden="true"></span>
+            <span>Sunset Potential</span>
+          </label>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
-            <span>Aerial imagery</span>
+            <span>Leaf-on aerial imagery</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kyaerial-phase2-leafoff" />
+            <span class="route-layer-swatch swatch-aerial-leafoff" aria-hidden="true"></span>
+            <span>Leaf-off aerial imagery</span>
           </label>
         </div>
 
@@ -236,9 +250,10 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Forest Service roads</span><input type="checkbox" data-fine-tune-layer="usfs-roads" checked aria-label="Toggle Forest Service roads" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" /></label>
             <label><span>Kentucky Topo</span><input type="checkbox" data-fine-tune-layer="kytopo" aria-label="Toggle Kentucky Topo" /><input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" disabled /></label>
             <label><span>USGS Topo</span><input type="checkbox" data-fine-tune-layer="usgs-topo" checked aria-label="Toggle USGS Topo" /><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" aria-label="USGS Topo opacity" /></label>
-            <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
+            <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="75" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
             <label><span>Sunrise / Sunset Potential</span><input type="checkbox" data-fine-tune-layer="rrg-lidar-sun" aria-label="Toggle Sunrise / Sunset Potential" /><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" aria-label="Sunrise / Sunset Potential opacity" disabled /></label>
-            <label><span>Aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Aerial imagery opacity" disabled /></label>
+            <label><span>Leaf-on aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Leaf-on aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Leaf-on aerial imagery opacity" disabled /></label>
+            <label><span>Leaf-off aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase2-leafoff" aria-label="Toggle Leaf-off aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase2-leafoff" aria-label="Leaf-off aerial imagery opacity" disabled /></label>
             <label><span>Special management</span><input type="checkbox" data-fine-tune-layer="usfs-special-management" checked aria-label="Toggle Special management" /><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" aria-label="Special management opacity" /></label>
             <label><span>National Forest land units</span><input type="checkbox" data-fine-tune-layer="usfs-land-units" checked aria-label="Toggle National Forest land units" /><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" aria-label="National Forest land units opacity" /></label>
           </div>
@@ -598,12 +613,17 @@ const enabledSources = enabledBrowserMapSources;
       return Math.max(0, Math.min(1, Number(input?.value ?? 100) / 100));
     };
     const aerialExclusiveIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade']);
+    const aerialLayerIds = new Set(['kyaerial-phase3', 'kyaerial-phase2-leafoff']);
+    const aerialActive = () => Array.from(aerialLayerIds).some((id) => checked(id));
     const syncFineTuneControl = (id: string) => {
       const enabled = checked(id);
       const fineToggle = shell.querySelector<HTMLInputElement>('[data-fine-tune-layer="' + id + '"]');
       const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
-      const blockedByAerial = aerialExclusiveIds.has(id) && checked('kyaerial-phase3');
-      if (fineToggle) fineToggle.checked = enabled;
+      const blockedByAerial = aerialExclusiveIds.has(id) && aerialActive();
+      if (fineToggle) {
+        fineToggle.checked = enabled;
+        if (id !== 'rrg-lidar-sun') fineToggle.indeterminate = false;
+      }
       if (slider) {
         slider.disabled = !enabled || blockedByAerial;
         slider.title = blockedByAerial ? 'Unavailable while aerial imagery is active.' : (!enabled ? 'Turn this layer on to adjust opacity.' : '');
@@ -630,6 +650,7 @@ const enabledSources = enabledBrowserMapSources;
     const tilePane: Record<string, string> = {
       kytopo: 'baseTopo',
       'kyaerial-phase3': 'baseAerial',
+      'kyaerial-phase2-leafoff': 'baseAerial',
       'usgs-topo': 'baseUsTopo',
       'ky-hillshade': 'hillshade'
     };
@@ -670,10 +691,49 @@ const enabledSources = enabledBrowserMapSources;
     let gorgeManifestPromise: Promise<any> | null = null;
     let gorgeFeatureCount = 0;
 
+    const sunKindToggle = (kind: 'sunrise' | 'sunset') =>
+      shell.querySelector<HTMLInputElement>('[data-sun-kind-toggle="' + kind + '"]');
+    const sunKindEnabled = (kind: 'sunrise' | 'sunset') => sunKindToggle(kind)?.checked ?? false;
+    const syncSunPotentialStyles = (value = opacity(gorgeLayerId)) => {
+      gorgeSunPaths.forEach((item) => {
+        const multiplier = sunKindEnabled(item.kind) ? value : 0;
+        item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, multiplier));
+      });
+    };
+    const syncSunPotentialControls = () => {
+      const sunrise = sunKindEnabled('sunrise');
+      const sunset = sunKindEnabled('sunset');
+      const any = sunrise || sunset;
+      const mixed = sunrise !== sunset;
+      const master = shell.querySelector<HTMLInputElement>('[data-sun-potential-master]');
+      const fineToggle = shell.querySelector<HTMLInputElement>('[data-fine-tune-layer="' + gorgeLayerId + '"]');
+      const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
+      if (master) {
+        master.checked = any;
+        master.indeterminate = mixed;
+      }
+      if (fineToggle) {
+        fineToggle.checked = any;
+        fineToggle.indeterminate = mixed;
+      }
+      if (slider) {
+        slider.disabled = !any;
+        slider.title = any ? '' : 'Turn Sunrise / Sunset Potential on to adjust opacity.';
+      }
+      syncVisibility(gorgeLayerId);
+      syncSunPotentialStyles();
+      if (any) void loadVisibleGorgeSectors();
+    };
+    const setSunKinds = (enabled: boolean) => {
+      const sunrise = sunKindToggle('sunrise');
+      const sunset = sunKindToggle('sunset');
+      if (sunrise) sunrise.checked = enabled;
+      if (sunset) sunset.checked = enabled;
+      syncSunPotentialControls();
+    };
+
     mapLayers.set(gorgeLayerId, gorgeLayer);
-    opacitySetters.set(gorgeLayerId, (value) => {
-      gorgeSunPaths.forEach((item) => item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, value)));
-    });
+    opacitySetters.set(gorgeLayerId, (value) => syncSunPotentialStyles(value));
     syncVisibility(gorgeLayerId);
 
     const loadGorgeManifest = async () => {
@@ -722,7 +782,7 @@ const enabledSources = enabledBrowserMapSources;
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
                 const strength = Number(feature?.properties?.strength ?? 0);
                 const hard = feature?.properties?.hard === true;
-                return sunPotentialStyle(kind, strength, hard, opacity(gorgeLayerId));
+                return sunPotentialStyle(kind, strength, hard, sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0);
               },
               onEachFeature: (feature: any, layer: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
@@ -810,7 +870,7 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncAerialControlState = () => {
-      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3']) syncFineTuneControl(id);
+      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff']) syncFineTuneControl(id);
       syncLandContextStyles();
     };
 
@@ -1933,12 +1993,22 @@ const enabledSources = enabledBrowserMapSources;
     const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
       const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+      if (id === gorgeLayerId) {
+        if (checkbox) {
+          checkbox.checked = enabled;
+          checkbox.indeterminate = false;
+        }
+        if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
+        setSunKinds(enabled);
+        if (opacityValue !== undefined) syncOpacity(id);
+        return;
+      }
       if (checkbox) checkbox.checked = enabled;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
+      if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
       syncVisibility(id);
       syncFineTuneControl(id);
-      if (opacityValue !== undefined) syncOpacity(id);
-      if (id === gorgeLayerId && enabled) void loadVisibleGorgeSectors();
+      if (opacityValue !== undefined || (id === 'ky-hillshade' && enabled)) syncOpacity(id);
     };
 
     const clearPresetState = () => {
@@ -1954,19 +2024,22 @@ const enabledSources = enabledBrowserMapSources;
       if (name === 'hiking') {
         setLayerControl('kytopo', false, 88);
         setLayerControl('usgs-topo', true, 100);
-        setLayerControl('ky-hillshade', false, 18);
+        setLayerControl('ky-hillshade', false, 75);
         setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 72);
         setLayerControl('usgs-topo', true, 72);
-        setLayerControl('ky-hillshade', true, 72);
+        setLayerControl('ky-hillshade', true, 75);
         setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
         setLayerControl('usgs-topo', false, 70);
-        setLayerControl('ky-hillshade', false, 0);
+        setLayerControl('ky-hillshade', false, 75);
+        setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
       }
       syncAerialControlState();
@@ -1983,7 +2056,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
 
-    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3']);
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff']);
     const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
 
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
@@ -1992,17 +2065,26 @@ const enabledSources = enabledBrowserMapSources;
         if (!id) return;
         if (presetLayerIds.has(id)) clearPresetState();
 
-        if (id === 'kyaerial-phase3' && checkbox.checked) {
+        if (aerialLayerIds.has(id) && checkbox.checked) {
+          for (const otherAerialId of aerialLayerIds) {
+            if (otherAerialId !== id) setLayerControl(otherAerialId, false);
+          }
           setLayerControl('kytopo', false);
           setLayerControl('usgs-topo', false);
           setLayerControl('ky-hillshade', false);
-        } else if ((id === 'kytopo' || id === 'usgs-topo' || id === 'ky-hillshade') && checkbox.checked) {
-          setLayerControl('kyaerial-phase3', false);
+        } else if (aerialExclusiveIds.has(id) && checkbox.checked) {
+          for (const aerialId of aerialLayerIds) setLayerControl(aerialId, false);
         }
 
-        if (checkbox.checked && id === gorgeLayerId) {
-          syncVisibility(id);
-          await loadVisibleGorgeSectors();
+        if (id === 'ky-hillshade' && checkbox.checked) {
+          const terrainSlider = shell.querySelector<HTMLInputElement>('[data-opacity="ky-hillshade"]');
+          if (terrainSlider && Number(terrainSlider.value) < 75) terrainSlider.value = '75';
+          syncOpacity('ky-hillshade');
+        }
+
+        if (id === gorgeLayerId) {
+          setSunKinds(checkbox.checked);
+        } else if (checkbox.checked && id === 'osm-informal-trails') {
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
         } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
@@ -2016,11 +2098,24 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
+    for (const kindToggle of shell.querySelectorAll<HTMLInputElement>('[data-sun-kind-toggle]')) {
+      kindToggle.addEventListener('change', () => {
+        clearPresetState();
+        syncSunPotentialControls();
+      });
+    }
+
     for (const fineToggle of shell.querySelectorAll<HTMLInputElement>('[data-fine-tune-layer]')) {
       fineToggle.addEventListener('change', () => {
         const id = fineToggle.dataset.fineTuneLayer;
         if (!id) return;
         const mainToggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+        if (id === gorgeLayerId && mainToggle) {
+          mainToggle.checked = fineToggle.checked;
+          mainToggle.indeterminate = false;
+          mainToggle.dispatchEvent(new Event('change', { bubbles: true }));
+          return;
+        }
         if (!mainToggle || mainToggle.checked === fineToggle.checked) {
           syncFineTuneControl(id);
           return;
@@ -2052,7 +2147,7 @@ const enabledSources = enabledBrowserMapSources;
     }
     syncRouteFilters();
 
-    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghTrips', 'rrghStatus', 'rrghRoute'];
+    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghTrips', 'rrghStatus', 'rrghRoute'];
     const buildShareUrl = () => {
       const url = new URL(window.location.href);
       for (const key of Array.from(url.searchParams.keys())) {
@@ -2077,6 +2172,8 @@ const enabledSources = enabledBrowserMapSources;
         .filter(Boolean)
         .join(',');
       url.searchParams.set('rrghLayers', layerState);
+      const sunKinds = (['sunrise', 'sunset'] as const).filter((kind) => sunKindEnabled(kind)).join(',');
+      url.searchParams.set('rrghSun', sunKinds);
 
       const trips = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-trip-filter]'))
         .filter((input) => input.checked)
@@ -2175,6 +2272,15 @@ const enabledSources = enabledBrowserMapSources;
           setLayerControl(id, enabledValue === '1', safeOpacity);
         }
       }
+      const sunParam = params.get('rrghSun');
+      if (sunParam !== null) {
+        const selectedSunKinds = new Set(sunParam.split(',').filter(Boolean));
+        const sunrise = sunKindToggle('sunrise');
+        const sunset = sunKindToggle('sunset');
+        if (sunrise) sunrise.checked = selectedSunKinds.has('sunrise');
+        if (sunset) sunset.checked = selectedSunKinds.has('sunset');
+        syncSunPotentialControls();
+      }
 
       const tripParam = params.get('rrghTrips');
       if (tripParam !== null) {
@@ -2222,6 +2328,7 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       syncAllFineTuneControls();
+      syncSunPotentialControls();
       syncAerialControlState();
       syncContextLabels();
       syncViewportDiagnostics();

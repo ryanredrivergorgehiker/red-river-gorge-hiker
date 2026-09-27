@@ -63,7 +63,7 @@ export const mapSources: readonly MapSource[] = [
   },
   {
     id: 'kyaerial-phase3',
-    label: 'Aerial imagery',
+    label: 'Leaf-on aerial imagery',
     kind: 'tile',
     enabled: true,
     browserLoaded: true,
@@ -71,9 +71,25 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase3_3IN_WGS84WM/MapServer',
     attribution: 'KyFromAbove / Commonwealth of Kentucky',
     termsUrl: 'https://kyfromabove.ky.gov/',
-    privacyNote: 'Imagery tiles are requested directly from the Kentucky Division of Geographic Information.',
+    privacyNote: 'Leaf-on imagery tiles are requested directly from the Kentucky Division of Geographic Information.',
     minZoom: 5,
     maxZoom: 20,
+    opacity: 0.7
+  },
+  {
+    id: 'kyaerial-phase2-leafoff',
+    label: 'Leaf-off aerial imagery',
+    kind: 'tile',
+    enabled: true,
+    browserLoaded: true,
+    url: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase2_6IN_WGS84WM/MapServer/tile/{z}/{y}/{x}',
+    serviceUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase2_6IN_WGS84WM/MapServer',
+    attribution: 'KyFromAbove / Commonwealth of Kentucky',
+    termsUrl: 'https://kyfromabove.ky.gov/',
+    privacyNote: 'Leaf-off imagery tiles are requested directly from the Kentucky Division of Geographic Information.',
+    minZoom: 5,
+    maxZoom: 20,
+    maxNativeZoom: 20,
     opacity: 0.7
   },
   {
