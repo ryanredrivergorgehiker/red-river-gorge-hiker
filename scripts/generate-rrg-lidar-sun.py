@@ -41,11 +41,17 @@ DEM_SERVICE = (
     "ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer"
 )
 
-# Broad working envelope around the Red River Gorge Geological Area and adjoining
-# high-ridge country. This is a processing envelope, not a legal/ownership boundary.
-GORGE_BOUNDS_WGS84 = (-83.7000, 37.7700, -83.5200, 37.8900)
-SECTOR_COLS = 4
-SECTOR_ROWS = 3
+# The accepted Gorge grid is preserved exactly and extended by one equal-size
+# sector ring so Sunrise / Sunset Potential covers the full default/Home map view.
+# This is a processing envelope, not a legal/ownership boundary.
+CORE_BOUNDS_WGS84 = (-83.7000, 37.7700, -83.5200, 37.8900)
+HOME_BOUNDS_WGS84 = (-83.7450, 37.7300, -83.4750, 37.9300)
+CORE_SECTOR_COLS = 4
+CORE_SECTOR_ROWS = 3
+HOME_SECTOR_COLS = 6
+HOME_SECTOR_ROWS = 5
+SECTOR_LON_DEG = 0.045
+SECTOR_LAT_DEG = 0.040
 SECTOR_OVERLAP_M = 180.0
 TARGET_PIXEL_M = 2.5
 
@@ -105,21 +111,30 @@ def load_existing_hashes() -> dict[str, str]:
 
 
 def sector_grid() -> list[dict]:
-    west, south, east, north = GORGE_BOUNDS_WGS84
-    lon_step = (east - west) / SECTOR_COLS
-    lat_step = (north - south) / SECTOR_ROWS
+    west, south, east, north = HOME_BOUNDS_WGS84
     result = []
-    for row in range(SECTOR_ROWS):
-        sector_north = north - row * lat_step
-        sector_south = north - (row + 1) * lat_step
-        for col in range(SECTOR_COLS):
-            sector_west = west + col * lon_step
-            sector_east = west + (col + 1) * lon_step
+    for row in range(HOME_SECTOR_ROWS):
+        sector_north = north - row * SECTOR_LAT_DEG
+        sector_south = north - (row + 1) * SECTOR_LAT_DEG
+        for col in range(HOME_SECTOR_COLS):
+            sector_west = west + col * SECTOR_LON_DEG
+            sector_east = west + (col + 1) * SECTOR_LON_DEG
+
+            # Preserve the original 3x4 sector IDs and exact bounds so the accepted
+            # source-array fingerprints remain authoritative in the inner grid.
+            if 1 <= row <= CORE_SECTOR_ROWS and 1 <= col <= CORE_SECTOR_COLS:
+                sector_id = f"r{row}c{col}"
+                core = True
+            else:
+                sector_id = f"ring-r{row+1}c{col+1}"
+                core = False
+
             result.append(
                 {
-                    "id": f"r{row+1}c{col+1}",
+                    "id": sector_id,
                     "row": row + 1,
                     "col": col + 1,
+                    "core": core,
                     "boundsWgs84": [sector_west, sector_south, sector_east, sector_north],
                 }
             )
@@ -297,12 +312,17 @@ def core_polygon_web(bounds_wgs84: list[float]):
 
 
 def vectorize(alpha, hard_mask, transform, kind, core_clip, sector_id):
+    # Keep the accepted hard-lip geometry and 0.15 outer cutoff unchanged.
+    # Six intermediate bands replace the former four-band fade so the same
+    # placement reads more smoothly without changing the terrain model.
     categories = np.zeros(alpha.shape, dtype="uint8")
     categories[alpha >= 0.15] = 1
-    categories[alpha >= 0.40] = 2
-    categories[alpha >= 0.65] = 3
-    categories[alpha >= 0.85] = 4
-    strengths = {1: 0.25, 2: 0.50, 3: 0.75, 4: 1.00}
+    categories[alpha >= 0.29] = 2
+    categories[alpha >= 0.43] = 3
+    categories[alpha >= 0.57] = 4
+    categories[alpha >= 0.71] = 5
+    categories[alpha >= 0.85] = 6
+    strengths = {1: 0.20, 2: 0.36, 3: 0.52, 4: 0.68, 5: 0.84, 6: 1.00}
     features = []
 
     for value, strength in strengths.items():
@@ -410,13 +430,13 @@ def main() -> None:
         total_sunset_hard += result["sunsetHardCells"]
 
     manifest = {
-        "version": "lidar-only-gorge-v1",
+        "version": "lidar-only-home-extent-v2",
         "status": "staging-expansion",
-        "area": "Red River Gorge broad working envelope",
-        "boundsWgs84": list(GORGE_BOUNDS_WGS84),
+        "area": "Red River Gorge default/Home map extent",
+        "boundsWgs84": list(HOME_BOUNDS_WGS84),
         "processingEnvelopeNotLegalBoundary": True,
         "minimumElevationFeet": MIN_ELEVATION_FT,
-        "sectorGrid": {"rows": SECTOR_ROWS, "cols": SECTOR_COLS, "overlapMeters": SECTOR_OVERLAP_M},
+        "sectorGrid": {"rows": HOME_SECTOR_ROWS, "cols": HOME_SECTOR_COLS, "coreRows": CORE_SECTOR_ROWS, "coreCols": CORE_SECTOR_COLS, "ring": 1, "overlapMeters": SECTOR_OVERLAP_M},
         "targetPixelMeters": TARGET_PIXEL_M,
         "source": {
             "name": "KyFromAbove Phase 2 2-foot LiDAR-derived bare-earth DEM",
@@ -439,7 +459,7 @@ def main() -> None:
             "traceMaxMeters": TRACE_MAX_METERS,
             "traceFlatStopAfterMeters": TRACE_FLAT_STOP_AFTER_METERS,
             "traceTpiMinMeters": TRACE_TPI_MIN_METERS,
-            "gradient": "hard line at directional cliff lip; fade inward/uphill to local crest",
+            "gradient": "hard line at directional cliff lip; six-band smooth fade inward/uphill to local crest",
         },
         "counts": {
             "sectors": len(sectors),

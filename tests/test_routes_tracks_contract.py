@@ -61,27 +61,27 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('ImageServices/', LIDAR_SUN_GENERATOR)
         self.assertNotIn('ortho', LIDAR_SUN_GENERATOR.lower())
 
-    def test_pinch_lidar_sun_pilot_is_off_by_default_and_map_local(self):
+    def test_historical_pilot_is_removed_from_public_map_ui(self):
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
-        self.assertIn('data-map-layer="pinch-lidar-sun-pilot" />', base_markup)
-        self.assertIn('data-opacity="pinch-lidar-sun-pilot"', MAP)
-        self.assertIn("const pilotLayerId = 'pinch-lidar-sun-pilot'", MAP)
-        self.assertIn("pane: 'lidarSun'", MAP)
-        self.assertIn("data/map/pinch-em-tight-lidar-sun-pilot.geojson", MAP)
-        self.assertIn("container.dataset.pinchLidarSunFeatureCount", MAP)
+        self.assertNotIn('pinch-lidar-sun-pilot', MAP)
+        self.assertNotIn('LiDAR sunrise / sunset pilot', MAP)
+        self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
+        self.assertIn('Sunrise / Sunset Potential', base_markup)
+        self.assertIn('<strong>Potential:</strong>', base_markup)
+        self.assertIn('.swatch-sun-potential::before', ROUTES_CSS)
         self.assertIn("kind === 'sunset' ? '#4640b0' : '#f2685c'", MAP)
-        self.assertIn('terrain at or above 1,100 ft only', MAP)
-        self.assertIn('No aerial or vegetation data is used.', MAP)
-        self.assertIn('.swatch-lidar-sun-pilot::before', ROUTES_CSS)
 
     def test_gorge_lidar_expansion_reuses_locked_terrain_only_method(self):
-        self.assertEqual(RRG_LIDAR_MANIFEST['version'], 'lidar-only-gorge-v1')
+        self.assertEqual(RRG_LIDAR_MANIFEST['version'], 'lidar-only-home-extent-v2')
         self.assertEqual(RRG_LIDAR_MANIFEST['minimumElevationFeet'], 1100.0)
-        self.assertEqual(RRG_LIDAR_MANIFEST['boundsWgs84'], [-83.7, 37.77, -83.52, 37.89])
+        self.assertEqual(RRG_LIDAR_MANIFEST['boundsWgs84'], [-83.745, 37.73, -83.475, 37.93])
         self.assertTrue(RRG_LIDAR_MANIFEST['processingEnvelopeNotLegalBoundary'])
-        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['rows'], 3)
-        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['cols'], 4)
-        self.assertEqual(RRG_LIDAR_MANIFEST['counts']['sectors'], 12)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['rows'], 5)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['cols'], 6)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['coreRows'], 3)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['coreCols'], 4)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['ring'], 1)
+        self.assertEqual(RRG_LIDAR_MANIFEST['counts']['sectors'], 30)
         self.assertGreater(RRG_LIDAR_MANIFEST['counts']['features'], 0)
         inputs = RRG_LIDAR_MANIFEST['generationInputs']
         self.assertTrue(inputs['usesOnlyLidarDerivedBareEarthTerrain'])
@@ -90,28 +90,33 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertFalse(inputs['usesTrails'])
         self.assertFalse(inputs['usesMarkedReviewPoints'])
         self.assertIn('MIN_ELEVATION_FT = 1100.0', RRG_LIDAR_GENERATOR)
-        self.assertIn('hard line at directional cliff lip; fade inward/uphill to local crest', RRG_LIDAR_GENERATOR)
+        self.assertIn('six-band smooth fade inward/uphill to local crest', RRG_LIDAR_GENERATOR)
+        self.assertIn('categories[alpha >= 0.15] = 1', RRG_LIDAR_GENERATOR)
+        self.assertIn('categories[alpha >= 0.85] = 6', RRG_LIDAR_GENERATOR)
         self.assertNotIn('ImageServices/', RRG_LIDAR_GENERATOR)
         self.assertNotIn('ortho', RRG_LIDAR_GENERATOR.lower())
+        core_ids = {f'r{row}c{col}' for row in range(1, 4) for col in range(1, 5)}
+        self.assertTrue(core_ids.issubset({sector['id'] for sector in RRG_LIDAR_MANIFEST['sectors']}))
+        self.assertEqual(sum(1 for sector in RRG_LIDAR_MANIFEST['sectors'] if sector.get('core')), 12)
         for sector in RRG_LIDAR_MANIFEST['sectors']:
             path = ROOT / 'public' / sector['file']
             self.assertTrue(path.is_file(), sector['file'])
             self.assertEqual(sha256(path), sector['geojsonSha256'])
             self.assertEqual(len(sector['demArraySha256']), 64)
 
-    def test_gorge_lidar_expansion_is_off_by_default_and_sector_loaded(self):
+    def test_sunrise_sunset_potential_is_off_by_default_and_sector_loaded(self):
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
         self.assertIn('data-map-layer="rrg-lidar-sun" />', base_markup)
+        self.assertIn('Sunrise / Sunset Potential', base_markup)
         self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
+        self.assertIn('data-fine-tune-layer="rrg-lidar-sun"', MAP)
         self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
         self.assertIn("data/map/rrg-lidar-sun-manifest.json", MAP)
         self.assertIn("loadedGorgeSectorIds", MAP)
         self.assertIn("map.getBounds().pad(0.35)", MAP)
         self.assertIn("container.dataset.rrgLidarSunLoadedSectors", MAP)
         self.assertIn("container.dataset.rrgLidarSunFeatureCount", MAP)
-        self.assertIn('same locked terrain-only method', MAP)
-        self.assertIn('Only terrain at or above 1,100 ft is eligible.', MAP)
-        self.assertIn('No aerial, canopy, trail, or marked-review-point input is used.', MAP)
+        self.assertIn('Potential does not guarantee standing room', MAP)
 
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
@@ -273,6 +278,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('value="100" data-opacity="usfs-trails"', MAP)
         self.assertIn('value="100" data-opacity="osm-informal-trails"', MAP)
         self.assertIn('value="100" data-opacity="usfs-roads"', MAP)
+        for layer in (
+            'usfs-trails', 'osm-informal-trails', 'usfs-roads', 'kytopo', 'usgs-topo',
+            'ky-hillshade', 'rrg-lidar-sun', 'kyaerial-phase3', 'usfs-special-management', 'usfs-land-units'
+        ):
+            self.assertIn('data-fine-tune-layer="' + layer + '"', MAP)
+        self.assertNotIn('data-fine-tune-layer="pinch-lidar-sun-pilot"', MAP)
+        self.assertIn("syncAllFineTuneControls", MAP)
         self.assertIn("scrollWheelZoom: false", MAP)
         self.assertIn("minZoom: 8", MAP)
         self.assertIn("maxZoom: 20", MAP)
@@ -494,8 +506,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
         self.assertNotIn('Wilderness full opacity (100%)', MAP)
         self.assertNotIn('data-opacity="usfs-wilderness"', MAP)
-        self.assertIn("slider.disabled = aerialActive", MAP)
-        self.assertIn("for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade'])", MAP)
+        self.assertIn("const syncFineTuneControl = (id: string)", MAP)
+        self.assertIn("slider.disabled = !enabled || blockedByAerial", MAP)
+        self.assertIn("data-fine-tune-layer=\"ky-hillshade\"", MAP)
+        self.assertIn("mainToggle.dispatchEvent(new Event('change', { bubbles: true }))", MAP)
         self.assertIn("aerialContextStyles", MAP)
         self.assertIn("color: '#ff4fd8'", MAP)
         self.assertIn("color: '#ffe14a'", MAP)

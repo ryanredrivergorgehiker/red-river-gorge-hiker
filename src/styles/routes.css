@@ -519,14 +519,14 @@
   transform:translateY(-50%);border-radius:4px;background:#fff;color:#17372d;border:2px solid #17372d;
   font-size:.6rem;font-weight:900;
 }
-.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,.swatch-lidar-sun-pilot::before,
+.swatch-topo::before,.swatch-topo-usgs::before,.swatch-relief::before,.swatch-aerial::before,.swatch-sun-potential::before,
 .swatch-wilderness::before,.swatch-management::before,.swatch-land-unit::before{
   left:.08rem;right:.08rem;height:.72rem;border-radius:3px;
 }
 .swatch-topo::before{background:repeating-linear-gradient(0deg,#e8e5d6 0 3px,#a98762 3px 4px)}
 .swatch-topo-usgs::before{background:repeating-linear-gradient(0deg,#f1ecd8 0 3px,#897056 3px 4px)}
 .swatch-relief::before{background:linear-gradient(135deg,#e5e7df,#7d847c)}
-.swatch-lidar-sun-pilot::before{background:linear-gradient(90deg,#f2685c 0 42%,#f7f2e7 49% 51%,#4640b0 58% 100%);border:1px solid #6a6258}
+.swatch-sun-potential::before{background:linear-gradient(90deg,#f2685c 0 42%,#f7f2e7 49% 51%,#4640b0 58% 100%);border:1px solid #6a6258}
 .swatch-aerial::before{background:linear-gradient(135deg,#526a47,#8f7756,#39586b)}
 .swatch-wilderness::before{border:2px dashed #356b4a;background:rgba(117,168,109,.12)}
 .swatch-management::before{border:2px dashed #a57c34;background:rgba(216,184,108,.12)}
@@ -547,12 +547,20 @@
 .route-layer-opacity-grid{display:grid;gap:.42rem}
 .route-layer-opacity-grid label{
   display:grid;
-  grid-template-columns:minmax(8.5rem,1fr) minmax(5rem,.8fr);
+  grid-template-columns:minmax(8.5rem,1fr) auto minmax(5rem,.8fr);
   gap:.55rem;
   align-items:center;
   font-size:.75rem;
 }
-.route-layer-opacity-grid input{width:100%;accent-color:#b86b43}
+.route-layer-opacity-grid input[type="checkbox"]{
+  width:auto;
+  margin:0;
+  accent-color:#17372d;
+}
+.route-layer-opacity-grid input[type="range"]{
+  width:100%;
+  accent-color:#b86b43;
+}
 
 .route-plan-panel{
   position:absolute;
@@ -767,7 +775,7 @@
   .route-map-preset-buttons{grid-template-columns:repeat(3,minmax(0,1fr))}
   .route-map-trip-options,.route-map-status-options{grid-template-columns:1fr 1fr 1fr}
   .route-layer-toggle-row{font-size:.78rem}
-  .route-layer-opacity-grid label{grid-template-columns:minmax(7.5rem,1fr) minmax(4.5rem,.75fr)}
+  .route-layer-opacity-grid label{grid-template-columns:minmax(7.5rem,1fr) auto minmax(4.5rem,.75fr)}
 }
 
 

@@ -196,17 +196,11 @@ const enabledSources = enabledBrowserMapSources;
             <span>Terrain relief (LiDAR)</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="pinch-lidar-sun-pilot" />
-            <span class="route-layer-swatch swatch-lidar-sun-pilot" aria-hidden="true"></span>
-            <span>LiDAR sunrise / sunset pilot</span>
-          </label>
-          <p class="route-layer-help"><strong>Pinch-Em-Tight pilot:</strong> terrain at or above 1,100 ft only. Coral marks east-facing sunrise rims; indigo marks west-facing sunset rims. Color is hardest at the LiDAR cliff lip and fades inward/uphill toward the local crest. No aerial or vegetation data is used.</p>
-          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="rrg-lidar-sun" />
-            <span class="route-layer-swatch swatch-lidar-sun-pilot" aria-hidden="true"></span>
-            <span>LiDAR sunrise / sunset — Gorge expansion</span>
+            <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
+            <span>Sunrise / Sunset Potential</span>
           </label>
-          <p class="route-layer-help"><strong>Gorge expansion:</strong> the same locked terrain-only method is applied across a broad Red River Gorge working envelope. Only terrain at or above 1,100 ft is eligible. Coral starts hard at east-facing LiDAR cliff/rim lips and fades inward/uphill to the same-ridge crest; indigo does the opposite from west-facing lips. No aerial, canopy, trail, or marked-review-point input is used.</p>
+          <p class="route-layer-help"><strong>Potential:</strong> LiDAR-only estimate above 1,100 ft. Coral marks likely sunrise exposure and indigo likely sunset exposure, fading from the exposed rim toward the ridge crest. Potential does not guarantee standing room, legal access, safety, vegetation clearance, or a usable viewpoint.</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -235,19 +229,18 @@ const enabledSources = enabledBrowserMapSources;
 
         <details class="route-layer-fine-tune">
           <summary>Fine tune layers</summary>
-          <p>Opacity changes appearance only. Hiking, Terrain, and Aerial presets reset the base-map and terrain values without changing your hiking/context layers.</p>
+          <p>Use each checkbox to turn that layer on or off; its slider is enabled only while the layer is visible. These controls stay synced with the matching layer above.</p>
           <div class="route-layer-opacity-grid">
-            <label><span>Forest Service trails</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" /></label>
-            <label><span>Community / Informal trails</span><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" /></label>
-            <label><span>Forest Service roads</span><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" /></label>
-            <label><span>Kentucky Topo</span><input type="range" min="0" max="100" value="88" data-opacity="kytopo" /></label>
-            <label><span>USGS Topo</span><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" /></label>
-            <label><span>Terrain relief (LiDAR)</span><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" /></label>
-            <label><span>LiDAR sunrise / sunset pilot</span><input type="range" min="0" max="100" value="100" data-opacity="pinch-lidar-sun-pilot" /></label>
-            <label><span>LiDAR sunrise / sunset — Gorge expansion</span><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" /></label>
-            <label><span>Aerial imagery</span><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" /></label>
-            <label><span>Special management</span><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" /></label>
-            <label><span>National Forest land units</span><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" /></label>
+            <label><span>Forest Service trails</span><input type="checkbox" data-fine-tune-layer="usfs-trails" checked aria-label="Toggle Forest Service trails" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" /></label>
+            <label><span>Community / Informal trails</span><input type="checkbox" data-fine-tune-layer="osm-informal-trails" checked aria-label="Toggle Community / Informal trails" /><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" aria-label="Community / Informal trails opacity" /></label>
+            <label><span>Forest Service roads</span><input type="checkbox" data-fine-tune-layer="usfs-roads" checked aria-label="Toggle Forest Service roads" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" /></label>
+            <label><span>Kentucky Topo</span><input type="checkbox" data-fine-tune-layer="kytopo" aria-label="Toggle Kentucky Topo" /><input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" disabled /></label>
+            <label><span>USGS Topo</span><input type="checkbox" data-fine-tune-layer="usgs-topo" checked aria-label="Toggle USGS Topo" /><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" aria-label="USGS Topo opacity" /></label>
+            <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="18" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
+            <label><span>Sunrise / Sunset Potential</span><input type="checkbox" data-fine-tune-layer="rrg-lidar-sun" aria-label="Toggle Sunrise / Sunset Potential" /><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" aria-label="Sunrise / Sunset Potential opacity" disabled /></label>
+            <label><span>Aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Aerial imagery opacity" disabled /></label>
+            <label><span>Special management</span><input type="checkbox" data-fine-tune-layer="usfs-special-management" checked aria-label="Toggle Special management" /><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" aria-label="Special management opacity" /></label>
+            <label><span>National Forest land units</span><input type="checkbox" data-fine-tune-layer="usfs-land-units" checked aria-label="Toggle National Forest land units" /><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" aria-label="National Forest land units opacity" /></label>
           </div>
         </details>
       </div>
@@ -335,8 +328,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>LiDAR sunrise / sunset pilot:</strong> Pinch-Em-Tight terrain-only experiment above 1,100 ft. Coral begins at east-facing cliff lips and fades back to the local crest; indigo does the opposite from west-facing cliff lips.</p>
-      <p><strong>Gorge LiDAR expansion:</strong> the accepted Pinch-Em-Tight rule is repeated sector by sector across the wider Gorge working envelope, still using bare-earth LiDAR terrain only and the same 1,100 ft floor.</p>
+      <p><strong>Sunrise / Sunset Potential:</strong> terrain-only estimate above 1,100 ft. Solid coral/indigo starts at directional exposed rims and fades toward the local ridge crest. “Potential” means likely exposure, not guaranteed access, safety, standing room, vegetation clearance, or a usable viewpoint.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -365,8 +357,7 @@ const enabledSources = enabledBrowserMapSources;
         </li>
       ))}
     </ul>
-    <p class="route-small"><strong>Pinch-Em-Tight LiDAR sunrise/sunset pilot:</strong> generated locally from the pinned KyFromAbove Phase 2 two-foot bare-earth DEM. The pilot makes no browser request to aerial imagery and uses no aerial, canopy, trail, or marked-review-point input. It is a terrain-exposure heuristic, not a guarantee of standing room, legal access, safety, vegetation clearance, or a photographic viewpoint.</p>
-    <p class="route-small"><strong>Gorge LiDAR sunrise/sunset expansion:</strong> generated locally in overlapping sectors from the KyFromAbove Phase 2 two-foot bare-earth DEM, with each sector source array fingerprinted and later regeneration set to fail closed if the source changes. The processing envelope is not a legal or ownership boundary. The layer uses no aerial, canopy, trail, or marked-review-point input and remains a terrain-exposure heuristic rather than a guarantee of standing room, access, safety, vegetation clearance, or a photographic viewpoint.</p>
+    <p class="route-small"><strong>Sunrise / Sunset Potential:</strong> generated locally in overlapping sectors from the KyFromAbove Phase 2 two-foot bare-earth DEM. Each sector source is fingerprinted; generation uses no aerial, canopy, trail, or marked-review-point input. The layer is a terrain-exposure heuristic, not a legal/property boundary or a guarantee of standing room, access, safety, vegetation clearance, or a usable viewpoint.</p>
     <p class="route-small">Parcel/private-property boundaries are not displayed.</p>
   </details>
 </section>
@@ -606,6 +597,24 @@ const enabledSources = enabledBrowserMapSources;
       const input = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
       return Math.max(0, Math.min(1, Number(input?.value ?? 100) / 100));
     };
+    const aerialExclusiveIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade']);
+    const syncFineTuneControl = (id: string) => {
+      const enabled = checked(id);
+      const fineToggle = shell.querySelector<HTMLInputElement>('[data-fine-tune-layer="' + id + '"]');
+      const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+      const blockedByAerial = aerialExclusiveIds.has(id) && checked('kyaerial-phase3');
+      if (fineToggle) fineToggle.checked = enabled;
+      if (slider) {
+        slider.disabled = !enabled || blockedByAerial;
+        slider.title = blockedByAerial ? 'Unavailable while aerial imagery is active.' : (!enabled ? 'Turn this layer on to adjust opacity.' : '');
+      }
+    };
+    const syncAllFineTuneControls = () => {
+      for (const control of shell.querySelectorAll<HTMLInputElement>('[data-fine-tune-layer]')) {
+        const id = control.dataset.fineTuneLayer;
+        if (id) syncFineTuneControl(id);
+      }
+    };
 
     const syncVisibility = (id: string) => {
       const layer = mapLayers.get(id);
@@ -640,9 +649,7 @@ const enabledSources = enabledBrowserMapSources;
       syncVisibility(source.id);
     }
 
-    const pilotLayerId = 'pinch-lidar-sun-pilot';
-    const pilotSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset'; strength: number; hard: boolean }> = [];
-    const pilotStyle = (kind: 'sunrise' | 'sunset', strength: number, hard: boolean, multiplier: number) => {
+    const sunPotentialStyle = (kind: 'sunrise' | 'sunset', strength: number, hard: boolean, multiplier: number) => {
       const color = kind === 'sunset' ? '#4640b0' : '#f2685c';
       const boundedStrength = Math.max(0, Math.min(1, strength));
       return {
@@ -654,39 +661,6 @@ const enabledSources = enabledBrowserMapSources;
         lineJoin: 'round'
       };
     };
-    try {
-      const response = await fetch(import.meta.env.BASE_URL + 'data/map/pinch-em-tight-lidar-sun-pilot.geojson', {
-        credentials: 'same-origin',
-        cache: 'no-cache'
-      });
-      if (!response.ok) throw new Error('Pinch-Em-Tight LiDAR pilot HTTP ' + response.status);
-      const pilot = await response.json();
-      const pilotLayer = L.geoJSON(pilot, {
-        pane: 'lidarSun',
-        interactive: false,
-        style: (feature: any) => {
-          const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-          const strength = Number(feature?.properties?.strength ?? 0);
-          const hard = feature?.properties?.hard === true;
-          return pilotStyle(kind, strength, hard, opacity(pilotLayerId));
-        },
-        onEachFeature: (feature: any, layer: any) => {
-          const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-          const strength = Number(feature?.properties?.strength ?? 0);
-          const hard = feature?.properties?.hard === true;
-          pilotSunPaths.push({ layer, kind, strength, hard });
-        }
-      });
-      mapLayers.set(pilotLayerId, pilotLayer);
-      opacitySetters.set(pilotLayerId, (value) => {
-        pilotSunPaths.forEach((item) => item.layer.setStyle(pilotStyle(item.kind, item.strength, item.hard, value)));
-      });
-      container.dataset.pinchLidarSunFeatureCount = String(Array.isArray(pilot?.features) ? pilot.features.length : 0);
-      syncVisibility(pilotLayerId);
-    } catch (error) {
-      console.error(error);
-      container.dataset.pinchLidarSunFeatureCount = '0';
-    }
 
     const gorgeLayerId = 'rrg-lidar-sun';
     const gorgeLayer = L.layerGroup();
@@ -698,7 +672,7 @@ const enabledSources = enabledBrowserMapSources;
 
     mapLayers.set(gorgeLayerId, gorgeLayer);
     opacitySetters.set(gorgeLayerId, (value) => {
-      gorgeSunPaths.forEach((item) => item.layer.setStyle(pilotStyle(item.kind, item.strength, item.hard, value)));
+      gorgeSunPaths.forEach((item) => item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, value)));
     });
     syncVisibility(gorgeLayerId);
 
@@ -748,7 +722,7 @@ const enabledSources = enabledBrowserMapSources;
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
                 const strength = Number(feature?.properties?.strength ?? 0);
                 const hard = feature?.properties?.hard === true;
-                return pilotStyle(kind, strength, hard, opacity(gorgeLayerId));
+                return sunPotentialStyle(kind, strength, hard, opacity(gorgeLayerId));
               },
               onEachFeature: (feature: any, layer: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
@@ -836,14 +810,7 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncAerialControlState = () => {
-      const aerialActive = checked('kyaerial-phase3');
-      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade']) {
-        const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
-        if (slider) {
-          slider.disabled = aerialActive;
-          slider.title = aerialActive ? 'Unavailable while aerial imagery is active.' : '';
-        }
-      }
+      for (const id of ['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3']) syncFineTuneControl(id);
       syncLandContextStyles();
     };
 
@@ -1969,6 +1936,7 @@ const enabledSources = enabledBrowserMapSources;
       if (checkbox) checkbox.checked = enabled;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
       syncVisibility(id);
+      syncFineTuneControl(id);
       if (opacityValue !== undefined) syncOpacity(id);
       if (id === gorgeLayerId && enabled) void loadVisibleGorgeSectors();
     };
@@ -2042,8 +2010,23 @@ const enabledSources = enabledBrowserMapSources;
         } else {
           syncVisibility(id);
         }
+        syncFineTuneControl(id);
         syncAerialControlState();
         syncContextLabels();
+      });
+    }
+
+    for (const fineToggle of shell.querySelectorAll<HTMLInputElement>('[data-fine-tune-layer]')) {
+      fineToggle.addEventListener('change', () => {
+        const id = fineToggle.dataset.fineTuneLayer;
+        if (!id) return;
+        const mainToggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+        if (!mainToggle || mainToggle.checked === fineToggle.checked) {
+          syncFineTuneControl(id);
+          return;
+        }
+        mainToggle.checked = fineToggle.checked;
+        mainToggle.dispatchEvent(new Event('change', { bubbles: true }));
       });
     }
 
@@ -2238,6 +2221,7 @@ const enabledSources = enabledBrowserMapSources;
         }, 80);
       }
 
+      syncAllFineTuneControls();
       syncAerialControlState();
       syncContextLabels();
       syncViewportDiagnostics();
@@ -3332,6 +3316,7 @@ const enabledSources = enabledBrowserMapSources;
       informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
     });
 
+    syncAllFineTuneControls();
     syncAerialControlState();
     syncContextLabels();
     container.dataset.currentZoom = String(map.getZoom());
