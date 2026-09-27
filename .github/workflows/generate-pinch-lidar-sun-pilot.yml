@@ -1,0 +1,51 @@
+name: Generate Pinch-Em-Tight LiDAR sun pilot
+
+on:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - scripts/generate-pinch-lidar-sun-pilot.py
+      - .github/workflows/generate-pinch-lidar-sun-pilot.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pinch-lidar-sun-pilot
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v6
+        with:
+          ref: staging/routes-tracks-interactive-map
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install terrain-only generator dependencies
+        run: pip install numpy==2.3.5 scipy==1.17.0 rasterio==1.5.1 pyproj==3.8.0 shapely==2.1.2 Pillow==12.3.0 requests==2.34.2
+
+      - name: Generate locked Pinch-Em-Tight pilot
+        run: python scripts/generate-pinch-lidar-sun-pilot.py
+
+      - name: Commit deterministic outputs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add             public/data/map/pinch-em-tight-lidar-sun-pilot.geojson             public/data/map/pinch-em-tight-lidar-sun-pilot.meta.json             docs/lidar-pilot/pinch-em-tight-lidar-review.png
+          if git diff --cached --quiet; then
+            echo "Generated pilot already current."
+          else
+            git commit -m "Generate locked Pinch-Em-Tight LiDAR-only sun pilot"
+            git push
+          fi
