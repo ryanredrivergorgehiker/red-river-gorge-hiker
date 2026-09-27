@@ -125,7 +125,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("container.dataset.rrgLidarSunFeatureCount", MAP)
         self.assertNotIn('Potential does not guarantee standing room', MAP)
         self.assertIn("const aerialLayerIds = new Set(['kyaerial-phase3', 'kyaerial-phase2-leafoff'])", MAP)
-        self.assertIn("setLayerControl('ky-hillshade', true, 75)", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', true, 100)", MAP)
         self.assertIn("Number(terrainSlider.value) < 75", MAP)
         self.assertIn("data-fine-tune-layer=\"rrg-lidar-sun\"", MAP)
         self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunrise\"", MAP)
