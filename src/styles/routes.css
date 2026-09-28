@@ -1956,3 +1956,70 @@
     font-size:1.2rem;
   }
 }
+
+
+/* Owner refinement — compact Map Point sunlight, selected point visibility, minimized live Plan — 2026-09-28 */
+.route-map-point-icon{background:transparent!important;border:0!important}
+.route-map-point-symbol{
+  width:24px;height:24px;box-sizing:border-box;display:inline-grid;place-items:center;flex:0 0 auto;
+  border-radius:50%;background:#d96d32;border:3px solid #fff;
+  box-shadow:0 0 0 3px #17372d,0 .15rem .45rem rgba(20,29,24,.35);vertical-align:middle;
+}
+.route-map-point-icon .route-map-point-symbol{width:30px;height:30px}
+.route-map-point-symbol>span{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #17372d}
+
+.route-coordinate-card{
+  width:min(39rem,calc(100% - 1.5rem));max-width:min(39rem,calc(100% - 1.5rem));
+  padding:.4rem .48rem;gap:.22rem;
+}
+.route-coordinate-toolbar{
+  grid-template-columns:auto minmax(10rem,1fr) minmax(9.5rem,.72fr) auto!important;
+  gap:.5rem!important;align-items:start!important;
+}
+.route-coordinate-heading{align-self:start!important}
+.route-coordinate-title{flex-wrap:nowrap!important;min-height:24px}
+.route-coordinate-title strong,.route-coordinate-title .route-coordinate-elevation{line-height:1.2}
+.route-coordinate-today{
+  min-width:0;display:grid;grid-template-columns:1fr;gap:.04rem;padding:.08rem 0;
+  font-size:.66rem;line-height:1.14;
+}
+.route-coordinate-today>strong{margin-bottom:.08rem;font-size:.69rem!important;letter-spacing:.035em!important}
+.route-coordinate-today>span{min-width:0;display:grid;grid-template-columns:minmax(5.2rem,auto) auto;gap:.28rem;align-items:baseline}
+.route-coordinate-today small{color:#657168;font-size:.61rem;line-height:1.1;white-space:normal}
+.route-coordinate-today b{color:#28372f;font-size:.64rem;font-weight:780;white-space:nowrap}
+.route-coordinate-sunlight{gap:.22rem!important;margin-top:.08rem!important;padding-top:.28rem!important}
+.route-coordinate-sun-table-wrap{max-width:100%;overflow:auto;margin-top:.22rem!important}
+.route-coordinate-sun-table{width:auto!important;min-width:0!important;max-width:100%;table-layout:fixed;font-size:.65rem!important}
+.route-coordinate-sun-table th,.route-coordinate-sun-table td{padding:.2rem .3rem!important}
+.route-coordinate-sun-table thead th{white-space:normal!important;line-height:1.05;overflow-wrap:anywhere}
+.route-coordinate-sun-table tbody th,.route-coordinate-sun-table tbody td{white-space:nowrap!important}
+.route-coordinate-sun-table th:nth-child(1),.route-coordinate-sun-table td:nth-child(1){width:5.5rem}
+.route-coordinate-sun-table th:nth-child(2),.route-coordinate-sun-table td:nth-child(2),
+.route-coordinate-sun-table th:nth-child(5),.route-coordinate-sun-table td:nth-child(5){width:4.6rem}
+.route-coordinate-sun-table th:nth-child(3),.route-coordinate-sun-table td:nth-child(3),
+.route-coordinate-sun-table th:nth-child(4),.route-coordinate-sun-table td:nth-child(4){width:5.8rem}
+.route-coordinate-sunlight small{max-width:31rem;white-space:normal!important;overflow-wrap:anywhere}
+.route-coordinate-copy{width:76px!important;min-width:76px!important;height:58px!important}
+.route-coordinate-card .route-coordinate-close{margin:0!important}
+
+.route-plan-panel[data-minimized="true"]{width:min(24rem,calc(100% - 1.5rem));padding-bottom:.45rem}
+.route-plan-panel[data-minimized="true"] .route-plan-mode-buttons,
+.route-plan-panel[data-minimized="true"] .route-plan-help,
+.route-plan-panel[data-minimized="true"] .route-plan-actions{display:none!important}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats{display:block!important;margin-top:.45rem}
+.route-plan-panel [data-plan-minimize]{font-size:1.15rem;font-weight:900}
+
+@media(max-width:700px){
+  .route-coordinate-card{width:calc(100% - .75rem);max-width:calc(100% - .75rem);right:.375rem}
+  .route-coordinate-toolbar{grid-template-columns:72px minmax(0,1fr) auto!important}
+  .route-coordinate-today{grid-column:2 / 4;margin-top:.18rem;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:.5rem;row-gap:.12rem}
+  .route-coordinate-today>strong{grid-column:1 / -1}
+  .route-coordinate-today>span{grid-template-columns:1fr auto}
+  .route-coordinate-sun-table{width:100%!important}
+  .route-coordinate-sun-table th:nth-child(1),.route-coordinate-sun-table td:nth-child(1){width:22%}
+  .route-coordinate-sun-table th:nth-child(2),.route-coordinate-sun-table td:nth-child(2),
+  .route-coordinate-sun-table th:nth-child(5),.route-coordinate-sun-table td:nth-child(5){width:17%}
+  .route-coordinate-sun-table th:nth-child(3),.route-coordinate-sun-table td:nth-child(3),
+  .route-coordinate-sun-table th:nth-child(4),.route-coordinate-sun-table td:nth-child(4){width:22%}
+  .route-plan-panel[data-minimized="true"]{width:calc(100% - 1rem);left:.5rem}
+}

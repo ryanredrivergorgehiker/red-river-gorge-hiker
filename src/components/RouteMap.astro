@@ -95,7 +95,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-mobile-scroll-gutter route-map-mobile-scroll-gutter-right" data-map-scroll-gutter="right" aria-hidden="true"></div>
 
     <div class="route-map-utility-tools" role="toolbar" aria-label="Map utilities">
-      <button type="button" data-sheet-open="search" data-ready-group="routes" aria-label="Search map" disabled>Search</button>
+      <button type="button" data-sheet-open="search" data-ready-group="core" aria-label="Search map" disabled>Search</button>
       <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
       <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
       <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-out" data-ready-group="core" aria-label="Zoom out" disabled>−</button>
@@ -113,7 +113,7 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
-      <button type="button" data-sheet-open="explore" data-ready-group="routes" disabled>Explore</button>
+      <button type="button" data-sheet-open="explore" data-ready-group="core" disabled>Explore</button>
       <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
       <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
     </div>
@@ -271,8 +271,8 @@ const enabledSources = enabledBrowserMapSources;
 
     <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
       <div class="route-map-sheet-header">
-        <strong>Plan</strong>
-        <button type="button" data-sheet-close aria-label="Close planning controls">×</button>
+        <strong data-plan-panel-title>Plan</strong>
+        <button type="button" data-plan-minimize aria-label="Minimize planning controls">−</button>
       </div>
       <div class="route-plan-mode-buttons">
         <button type="button" data-map-tool="measure" data-ready-group="core" aria-pressed="false" disabled>Measure distance</button>
@@ -324,6 +324,7 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" class="route-coordinate-copy" data-coordinate-copy><span>Copy</span><span>coordinates</span></button>
         <div class="route-coordinate-heading">
           <div class="route-coordinate-title">
+            <span class="route-map-point-symbol" aria-hidden="true"><span></span></span>
             <strong>Map point</strong>
             <span aria-hidden="true">—</span>
             <span class="route-coordinate-elevation" data-coordinate-elevation>Elevation calculating…</span>
@@ -331,13 +332,16 @@ const enabledSources = enabledBrowserMapSources;
           <span data-coordinate-dd></span>
           <span data-coordinate-utm></span>
         </div>
+        <div class="route-coordinate-today" data-coordinate-sun-today>
+          <strong>Sunlight today</strong>
+          <span><small>Sunrise</small><b data-coordinate-sunrise-today>Calculating…</b></span>
+          <span><small>First direct sun</small><b data-coordinate-first-direct-today>Calculating…</b></span>
+          <span><small>Last direct sun</small><b data-coordinate-last-direct-today>Calculating…</b></span>
+          <span><small>Sunset</small><b data-coordinate-sunset-today>Calculating…</b></span>
+        </div>
         <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
       </div>
       <div class="route-coordinate-sunlight" data-coordinate-sunlight>
-        <div class="route-coordinate-sunlight-summary">
-          <strong>Sunlight today</strong>
-          <span data-coordinate-sun-today>Calculating…</span>
-        </div>
         <details data-coordinate-sun-details>
           <summary>Next 10 days</summary>
           <div class="route-coordinate-sun-table-wrap" data-coordinate-sun-table></div>
@@ -353,8 +357,8 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-status" data-map-mobile-status aria-live="polite">Loading map data…</div>
 
   <div class="route-map-mobile-bar" role="toolbar" aria-label="Mobile map controls">
-    <button type="button" data-sheet-open="search" data-ready-group="routes" disabled>Search</button>
-    <button type="button" data-sheet-open="explore" data-ready-group="routes" disabled>Explore</button>
+    <button type="button" data-sheet-open="search" data-ready-group="core" disabled>Search</button>
+    <button type="button" data-sheet-open="explore" data-ready-group="core" disabled>Explore</button>
     <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
     <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
   </div>
@@ -538,6 +542,9 @@ const enabledSources = enabledBrowserMapSources;
     const explorePanel = shell.querySelector<HTMLElement>('[data-map-sheet="explore"]');
     const exploreList = shell.querySelector<HTMLElement>('[data-explore-route-list]');
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
+    const planPanelTitle = shell.querySelector<HTMLElement>('[data-plan-panel-title]');
+    const planMinimize = shell.querySelector<HTMLButtonElement>('[data-plan-minimize]');
+    let activeTool: 'measure' | 'plan' | null = null;
     const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
     const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
     const shareDescription = shell.querySelector<HTMLElement>('[data-share-description]');
@@ -563,6 +570,10 @@ const enabledSources = enabledBrowserMapSources;
     const planStatsRange = shell.querySelector<HTMLElement>('[data-plan-stats-range]');
     const planHelp = shell.querySelector<HTMLElement>('[data-plan-help]');
     const coordinateSunToday = shell.querySelector<HTMLElement>('[data-coordinate-sun-today]');
+    const coordinateSunriseToday = shell.querySelector<HTMLElement>('[data-coordinate-sunrise-today]');
+    const coordinateFirstDirectToday = shell.querySelector<HTMLElement>('[data-coordinate-first-direct-today]');
+    const coordinateLastDirectToday = shell.querySelector<HTMLElement>('[data-coordinate-last-direct-today]');
+    const coordinateSunsetToday = shell.querySelector<HTMLElement>('[data-coordinate-sunset-today]');
     const coordinateSunTable = shell.querySelector<HTMLElement>('[data-coordinate-sun-table]');
     const coordinateSunSource = shell.querySelector<HTMLElement>('[data-coordinate-sun-source]');
     const coordinateSunDetails = shell.querySelector<HTMLDetailsElement>('[data-coordinate-sun-details]');
@@ -639,6 +650,7 @@ const enabledSources = enabledBrowserMapSources;
       recreation: 450,
       routeStarts: 460,
       landmarks: 470,
+      mapPoint: 485,
       planning: 490
     };
     for (const [name, zIndex] of Object.entries(panes)) {
@@ -734,6 +746,7 @@ const enabledSources = enabledBrowserMapSources;
     const opacitySetters = new Map<string, (value: number) => void>();
     let homeBounds: any = null;
     let locationLayer: any = null;
+    let coordinatePointLayer: any = null;
     let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
     let sunlightRequestRevision = 0;
     let sunlightController: AbortController | null = null;
@@ -2490,6 +2503,37 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
+    const syncPlanMinimizeUi = () => {
+      if (!planPanel || !planMinimize) return;
+      const minimized = planPanel.dataset.minimized === 'true';
+      planMinimize.textContent = minimized ? '+' : '−';
+      planMinimize.setAttribute('aria-label', minimized ? 'Expand planning controls' : 'Minimize planning controls');
+      if (planPanelTitle) {
+        planPanelTitle.textContent = activeTool === 'plan'
+          ? 'Build trail route'
+          : activeTool === 'measure'
+            ? 'Measure distance'
+            : 'Plan';
+      }
+    };
+
+    const minimizePlanPanel = () => {
+      if (!planPanel) return;
+      planPanel.hidden = false;
+      planPanel.dataset.minimized = 'true';
+      if (planLiveStats) planLiveStats.hidden = activeTool === null;
+      syncPlanMinimizeUi();
+      syncSheetButtons();
+    };
+
+    const expandPlanPanel = () => {
+      if (!planPanel) return;
+      planPanel.hidden = false;
+      delete planPanel.dataset.minimized;
+      syncPlanMinimizeUi();
+      syncSheetButtons();
+    };
+
     const openSheet = (name: string) => {
       if (name === 'layers') {
         if (layerPanel) {
@@ -2503,17 +2547,32 @@ const enabledSources = enabledBrowserMapSources;
       const panel = shell.querySelector<HTMLElement>('[data-map-sheet="' + name + '"]');
       const shouldClose = Boolean(panel && !panel.hidden);
 
+      if (name === 'plan' && planPanel && !planPanel.hidden) {
+        if (planPanel.dataset.minimized === 'true') {
+          expandPlanPanel();
+        } else if (activeTool !== null) {
+          minimizePlanPanel();
+        } else {
+          planPanel.hidden = true;
+          syncSheetButtons();
+        }
+        return;
+      }
+
       for (const item of shell.querySelectorAll<HTMLElement>('[data-map-sheet="search"], [data-map-sheet="explore"], [data-map-sheet="plan"], [data-map-sheet="share"]')) {
         item.hidden = true;
       }
 
       if (shouldClose) {
-        if (name === 'explore' || name === 'plan') setTool(null);
+        if (name === 'explore') setTool(null);
         syncSheetButtons();
         return;
       }
 
-      if (panel) panel.hidden = false;
+      if (panel) {
+        panel.hidden = false;
+        if (name === 'plan') delete panel.dataset.minimized;
+      }
       if (name === 'explore') {
         setTool(null);
         renderExploreRoutes();
@@ -2536,6 +2595,13 @@ const enabledSources = enabledBrowserMapSources;
         syncSheetButtons();
       });
     }
+
+    planMinimize?.addEventListener('click', () => {
+      if (!planPanel) return;
+      if (planPanel.dataset.minimized === 'true') expandPlanPanel();
+      else minimizePlanPanel();
+    });
+    syncPlanMinimizeUi();
 
     layerPanel?.addEventListener('toggle', () => {
       if (!readiness.core && layerPanel.open) {
@@ -2789,6 +2855,47 @@ const enabledSources = enabledBrowserMapSources;
       coordinateSunTable.append(table);
     };
 
+    const setTodaySunlight = (
+      sunrise: string,
+      firstDirect: string,
+      lastDirect: string,
+      sunset: string
+    ) => {
+      if (coordinateSunriseToday) coordinateSunriseToday.textContent = sunrise;
+      if (coordinateFirstDirectToday) coordinateFirstDirectToday.textContent = firstDirect;
+      if (coordinateLastDirectToday) coordinateLastDirectToday.textContent = lastDirect;
+      if (coordinateSunsetToday) coordinateSunsetToday.textContent = sunset;
+    };
+
+    const positionCoordinatePoint = (latlng: any) => {
+      if (coordinatePointLayer) map.removeLayer(coordinatePointLayer);
+      coordinatePointLayer = L.marker(latlng, {
+        pane: 'mapPoint',
+        interactive: false,
+        keyboard: false,
+        icon: L.divIcon({
+          className: 'route-map-point-icon',
+          html: '<span class="route-map-point-symbol"><span></span></span>',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        })
+      }).addTo(map);
+      container.dataset.coordinatePointVisible = 'true';
+
+      window.requestAnimationFrame(() => {
+        const size = map.getSize();
+        const desired = L.point(size.x * 0.5, Math.max(90, size.y * 0.28));
+        const current = map.latLngToContainerPoint(latlng);
+        const offset = current.subtract(desired);
+        if (Math.abs(offset.x) > 8 || Math.abs(offset.y) > 8) {
+          map.panBy([offset.x, offset.y], { animate: true, duration: 0.25 });
+          container.dataset.coordinatePointAutoPan = 'true';
+        } else {
+          container.dataset.coordinatePointAutoPan = 'false';
+        }
+      });
+    };
+
     const showCoordinate = (latlng: any) => {
       const lat = Number(latlng.lat);
       const lng = Number(latlng.lng);
@@ -2802,18 +2909,19 @@ const enabledSources = enabledBrowserMapSources;
       const days = Array.from({ length: 10 }, (_, index) =>
         getAstronomicalSunDay(lat, lng, addLocalDays(today, index))
       );
-      if (coordinateSunToday) {
-        coordinateSunToday.textContent = 'Sunrise ' + formatRrgTime(days[0]?.sunrise ?? null)
-          + ' · First direct sun calculating…'
-          + ' · Last direct sun calculating…'
-          + ' · Sunset ' + formatRrgTime(days[0]?.sunset ?? null);
-      }
+      setTodaySunlight(
+        formatRrgTime(days[0]?.sunrise ?? null),
+        'Calculating…',
+        'Calculating…',
+        formatRrgTime(days[0]?.sunset ?? null)
+      );
       if (coordinateSunSource) coordinateSunSource.textContent = 'Calculating terrain-adjusted first and last direct sun…';
       if (coordinateSunDetails) {
         coordinateSunDetails.open = stage?.dataset.sunlightMode === 'true';
       }
       renderSunlightRows(days, null);
       if (coordinateCard) coordinateCard.hidden = false;
+      positionCoordinatePoint(L.latLng(lat, lng));
 
       const revision = ++sunlightRequestRevision;
       sunlightController?.abort();
@@ -2824,12 +2932,12 @@ const enabledSources = enabledBrowserMapSources;
         const directTimes = days.map((day) => getTerrainDirectTimes(lat, lng, day, profile));
         renderSunlightRows(days, directTimes);
         const todayDirect = directTimes[0];
-        if (coordinateSunToday) {
-          coordinateSunToday.textContent = 'Sunrise ' + formatRrgTime(days[0]?.sunrise ?? null)
-            + ' · First direct sun ' + formatRrgTime(todayDirect?.firstDirectSun ?? null)
-            + ' · Last direct sun ' + formatRrgTime(todayDirect?.lastDirectSun ?? null)
-            + ' · Sunset ' + formatRrgTime(days[0]?.sunset ?? null);
-        }
+        setTodaySunlight(
+          formatRrgTime(days[0]?.sunrise ?? null),
+          formatRrgTime(todayDirect?.firstDirectSun ?? null),
+          formatRrgTime(todayDirect?.lastDirectSun ?? null),
+          formatRrgTime(days[0]?.sunset ?? null)
+        );
         if (coordinateElevation) {
           const feet = Math.round(originElevationMeters * 3.280839895);
           coordinateElevation.textContent = 'Elevation ' + feet.toLocaleString() + ' ft · ' + Math.round(originElevationMeters).toLocaleString() + ' m';
@@ -2843,6 +2951,8 @@ const enabledSources = enabledBrowserMapSources;
         if (controller.signal.aborted || revision !== sunlightRequestRevision) return;
         console.error(error);
         if (coordinateElevation) coordinateElevation.textContent = 'Elevation temporarily unavailable.';
+        if (coordinateFirstDirectToday) coordinateFirstDirectToday.textContent = 'Unavailable';
+        if (coordinateLastDirectToday) coordinateLastDirectToday.textContent = 'Unavailable';
         if (coordinateSunSource) {
           coordinateSunSource.textContent = 'Astronomical times shown; terrain-adjusted timing is temporarily unavailable.';
         }
@@ -2852,6 +2962,12 @@ const enabledSources = enabledBrowserMapSources;
 
     coordinateClose?.addEventListener('click', () => {
       if (coordinateCard) coordinateCard.hidden = true;
+      if (coordinatePointLayer) {
+        map.removeLayer(coordinatePointLayer);
+        coordinatePointLayer = null;
+      }
+      delete container.dataset.coordinatePointVisible;
+      delete container.dataset.coordinatePointAutoPan;
       coordinatePoint = null;
       sunlightRequestRevision += 1;
       sunlightController?.abort();
@@ -2938,7 +3054,6 @@ const enabledSources = enabledBrowserMapSources;
     const planningRenderer = L.svg({ pane: 'planning' });
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
-    let activeTool: 'measure' | 'plan' | null = null;
     let measurePoints: any[] = [];
 
     type PlanPoint = { lat: number; lng: number; nodeKey?: string };
@@ -3243,6 +3358,7 @@ const enabledSources = enabledBrowserMapSources;
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
       renderPlanHelp(tool);
+      syncPlanMinimizeUi();
       stage?.setAttribute('data-active-tool', tool ?? 'explore');
       if (planPanPad) planPanPad.hidden = tool !== 'plan';
 
