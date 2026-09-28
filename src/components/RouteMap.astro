@@ -332,14 +332,14 @@ const enabledSources = enabledBrowserMapSources;
           <span data-coordinate-dd></span>
           <span data-coordinate-utm></span>
         </div>
-        <div class="route-coordinate-today" data-coordinate-sun-today>
-          <strong>Sunlight today</strong>
-          <span><small>Sunrise</small><b data-coordinate-sunrise-today>Calculating…</b></span>
-          <span><small>First direct sun</small><b data-coordinate-first-direct-today>Calculating…</b></span>
-          <span><small>Last direct sun</small><b data-coordinate-last-direct-today>Calculating…</b></span>
-          <span><small>Sunset</small><b data-coordinate-sunset-today>Calculating…</b></span>
-        </div>
         <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
+      </div>
+      <div class="route-coordinate-today" data-coordinate-sun-today>
+        <strong>Sunlight today</strong>
+        <span><small>Sunrise</small><b data-coordinate-sunrise-today>Calculating…</b></span>
+        <span><small>First direct sun</small><b data-coordinate-first-direct-today>Calculating…</b></span>
+        <span><small>Last direct sun</small><b data-coordinate-last-direct-today>Calculating…</b></span>
+        <span><small>Sunset</small><b data-coordinate-sunset-today>Calculating…</b></span>
       </div>
       <div class="route-coordinate-sunlight" data-coordinate-sunlight>
         <details data-coordinate-sun-details>
@@ -351,9 +351,9 @@ const enabledSources = enabledBrowserMapSources;
       </div>
     </div>
 
-    <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
   </div>
 
+  <div class="route-map-status" data-map-status aria-live="polite">Loading map data…</div>
   <div class="route-map-mobile-status" data-map-mobile-status aria-live="polite">Loading map data…</div>
 
   <div class="route-map-mobile-bar" role="toolbar" aria-label="Mobile map controls">
@@ -663,9 +663,9 @@ const enabledSources = enabledBrowserMapSources;
 
     const areaLabelGroup = L.layerGroup().addTo(map);
     const areaLabels = [
-      { fullHtml: 'NATURAL<br>BRIDGE', short: 'NB', lat: 37.775, lng: -83.687, fullSize: [150, 76] },
-      { fullHtml: 'RED<br>RIVER<br>GORGE', short: 'RRG', lat: 37.836, lng: -83.638, fullSize: [150, 94] },
-      { fullHtml: 'CLIFTY<br>WILDERNESS', short: 'CW', lat: 37.837, lng: -83.565, fullSize: [170, 76] }
+      { fullHtml: 'NATURAL<br>BRIDGE', short: 'NB', lat: 37.775, lng: -83.687, fullSize: [150, 76], mobileFullSize: [118, 70] },
+      { fullHtml: 'RED<br>RIVER<br>GORGE', short: 'RRG', lat: 37.823, lng: -83.638, fullSize: [150, 94], mobileFullSize: [116, 86] },
+      { fullHtml: 'CLIFTY<br>WILDERNESS', short: 'CW', lat: 37.837, lng: -83.565, fullSize: [170, 76], mobileFullSize: [128, 70] }
     ];
     const isMobileFullMap = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
     const areaLabelModeForZoom = (zoom: number) => {
@@ -688,7 +688,9 @@ const enabledSources = enabledBrowserMapSources;
       if (labelMode === 'hidden') return;
       const full = labelMode === 'full';
       for (const label of areaLabels) {
-        const iconSize: [number, number] = full ? label.fullSize as [number, number] : [64, 48];
+        const iconSize: [number, number] = full
+          ? (isMobileFullMap() ? label.mobileFullSize as [number, number] : label.fullSize as [number, number])
+          : [64, 48];
         const html = full
           ? '<span class="rrgh-area-label-text">' + label.fullHtml + '</span>'
           : '<span class="rrgh-area-label-text">' + label.short + '</span>';
@@ -708,11 +710,12 @@ const enabledSources = enabledBrowserMapSources;
     map.on('zoomend', syncAreaLabels);
 
     const homeCenter = L.latLng(37.8196836, -83.6396027);
+    const mobileHomeCenter = L.latLng(37.8196836, -83.6240);
     const homeZoom = 13;
     const mobileHomeZoom = 11;
     const setHomeView = () => {
       if (isMobileFullMap()) {
-        map.setView(homeCenter, mobileHomeZoom, { animate: false });
+        map.setView(mobileHomeCenter, mobileHomeZoom, { animate: false });
         container.dataset.homeView = 'gorge-overview';
       } else {
         map.setView(homeCenter, homeZoom, { animate: false });
@@ -2823,10 +2826,27 @@ const enabledSources = enabledBrowserMapSources;
       table.className = 'route-coordinate-sun-table';
       const thead = document.createElement('thead');
       const header = document.createElement('tr');
-      for (const value of ['Date', 'Sunrise', 'First direct sun', 'Last direct sun', 'Sunset']) {
+      const headerLabels = [
+        { full: 'Date' },
+        { full: 'Sunrise' },
+        { full: 'First direct sun', compact: 'First sun' },
+        { full: 'Last direct sun', compact: 'Last sun' },
+        { full: 'Sunset' }
+      ];
+      for (const label of headerLabels) {
         const th = document.createElement('th');
         th.scope = 'col';
-        th.textContent = value;
+        if (label.compact) {
+          const fullLabel = document.createElement('span');
+          fullLabel.className = 'route-sun-header-full';
+          fullLabel.textContent = label.full;
+          const compactLabel = document.createElement('span');
+          compactLabel.className = 'route-sun-header-compact';
+          compactLabel.textContent = label.compact;
+          th.append(fullLabel, compactLabel);
+        } else {
+          th.textContent = label.full;
+        }
         header.append(th);
       }
       thead.append(header);
@@ -2836,7 +2856,13 @@ const enabledSources = enabledBrowserMapSources;
         const row = document.createElement('tr');
         const dateCell = document.createElement('th');
         dateCell.scope = 'row';
-        dateCell.textContent = formatRrgDate(day.start);
+        dateCell.append(document.createTextNode(formatRrgDate(day.start)));
+        if (index === 0) {
+          const todayTag = document.createElement('span');
+          todayTag.className = 'route-coordinate-today-tag';
+          todayTag.textContent = 'Today';
+          dateCell.append(document.createTextNode(' · '), todayTag);
+        }
         row.append(dateCell);
         const values = [
           formatRrgTime(day.sunrise),
@@ -2876,8 +2902,8 @@ const enabledSources = enabledBrowserMapSources;
         icon: L.divIcon({
           className: 'route-map-point-icon',
           html: '<span class="route-map-point-symbol"><span></span></span>',
-          iconSize: [36, 36],
-          iconAnchor: [18, 18]
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
         })
       }).addTo(map);
       container.dataset.coordinatePointVisible = 'true';
