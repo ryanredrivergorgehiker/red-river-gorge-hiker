@@ -388,7 +388,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("resultRecordCount: String(oilGasMaxRecords)", MAP)
         self.assertIn("wellReport.asp?id=", MAP)
         self.assertIn("data transformed for web display", MAP)
-        self.assertIn("oilGas: 435", MAP)
+        self.assertIn("oilGas: 495", MAP)
         self.assertIn("route-oil-gas-popup", ROUTES_CSS)
         self.assertIn("swatch-oil-gas", ROUTES_CSS)
 
