@@ -391,6 +391,76 @@
   font-size:1.35rem;
   cursor:pointer;
 }
+.route-plan-header-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:.08rem;
+  flex:0 0 auto;
+}
+.route-plan-header-actions button:focus-visible{
+  outline:2px solid #b86b43;
+  outline-offset:2px;
+}
+
+.route-plan-confirm{
+  box-sizing:border-box;
+  width:min(26rem,calc(100% - 2rem));
+  margin:auto;
+  padding:0;
+  border:1px solid rgba(23,55,45,.28);
+  border-radius:12px;
+  background:#fbfaf6;
+  color:#26372f;
+  box-shadow:0 .8rem 2.5rem rgba(20,29,24,.32);
+}
+.route-plan-confirm::backdrop{
+  background:rgba(15,25,20,.46);
+}
+.route-plan-confirm form{
+  display:grid;
+  gap:.7rem;
+  padding:1rem;
+}
+.route-plan-confirm h2{
+  margin:0;
+  color:#17372d;
+  font-size:1.05rem;
+  line-height:1.2;
+}
+.route-plan-confirm p{
+  margin:0;
+  color:#4f5d55;
+  font-size:.9rem;
+  line-height:1.45;
+}
+.route-plan-confirm-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:.55rem;
+  margin-top:.15rem;
+}
+.route-plan-confirm-actions button{
+  min-width:5.25rem;
+  min-height:2.4rem;
+  padding:.45rem .8rem;
+  border:1px solid rgba(23,55,45,.25);
+  border-radius:8px;
+  background:#fff;
+  color:#17372d;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+.route-plan-confirm-actions [data-plan-confirm-ok]{
+  border-color:#17372d;
+  background:#17372d;
+  color:#fff;
+}
+.route-plan-confirm-actions button:focus-visible{
+  outline:3px solid rgba(184,107,67,.45);
+  outline-offset:2px;
+}
 
 .route-search-panel{
   position:absolute;
@@ -2678,7 +2748,8 @@
 .route-plan-panel[data-minimized="true"] [data-plan-panel-title]{
   display:none!important;
 }
-.route-plan-panel[data-minimized="true"] [data-plan-minimize]{
+.route-plan-panel[data-minimized="true"] [data-plan-minimize],
+.route-plan-panel[data-minimized="true"] [data-plan-close]{
   width:28px;
   height:28px;
   min-height:28px;
@@ -2726,7 +2797,8 @@
     min-height:24px;
     padding:.08rem .25rem!important;
   }
-  .route-plan-panel[data-minimized="true"] [data-plan-minimize]{
+  .route-plan-panel[data-minimized="true"] [data-plan-minimize],
+  .route-plan-panel[data-minimized="true"] [data-plan-close]{
     width:24px;
     height:24px;
     min-height:24px;
