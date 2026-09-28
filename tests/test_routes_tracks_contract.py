@@ -334,7 +334,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
             'usfs-trails', 'usfs-roads', 'osm-informal-trails',
-            'usfs-special-management', 'usfs-land-units'
+            'usfs-special-management', 'usfs-land-units', 'kgs-oil-gas-wells'
         ):
             self.assertIn('data-map-layer="' + layer + '"', MAP)
             self.assertIn('data-opacity="' + layer + '"', MAP)
@@ -358,7 +358,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('value="100" data-opacity="usfs-roads"', MAP)
         for layer in (
             'usfs-trails', 'osm-informal-trails', 'usfs-roads', 'kytopo', 'usgs-topo',
-            'ky-hillshade', 'rrg-lidar-sun', 'kyaerial-phase3', 'usfs-special-management', 'usfs-land-units'
+            'ky-hillshade', 'rrg-lidar-sun', 'kyaerial-phase3', 'usfs-special-management', 'usfs-land-units',
+            'kgs-oil-gas-wells'
         ):
             self.assertIn('data-fine-tune-layer="' + layer + '"', MAP)
         self.assertNotIn('data-fine-tune-layer="pinch-lidar-sun-pilot"', MAP)
@@ -366,6 +367,22 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("scrollWheelZoom: false", MAP)
         self.assertIn("minZoom: 8", MAP)
         self.assertIn("maxZoom: 20", MAP)
+        self.assertIn('aria-label="Oil and gas layers"', MAP)
+        self.assertIn('Oil &amp; Gas Wells', MAP)
+        self.assertIn('data-map-layer="kgs-oil-gas-wells"', MAP)
+        self.assertIn('value="90" data-opacity="kgs-oil-gas-wells"', MAP)
+        self.assertIn('data-fine-tune-layer="kgs-oil-gas-wells"', MAP)
+        self.assertIn("const oilGasServiceUrl = 'https://kgs.uky.edu/arcgis/rest/services/KYOilGas/KYOilGasWells_static_WGS84/MapServer/1/query'", MAP)
+        self.assertIn("const oilGasMaxRecords = 1500", MAP)
+        self.assertIn("const oilGasMinZoom = 10", MAP)
+        self.assertIn("mode: 'cors'", MAP)
+        self.assertIn("credentials: 'omit'", MAP)
+        self.assertIn("resultRecordCount: String(oilGasMaxRecords)", MAP)
+        self.assertIn("wellReport.asp?id=", MAP)
+        self.assertIn("data transformed for web display", MAP)
+        self.assertIn("oilGas: 435", MAP)
+        self.assertIn("route-oil-gas-popup", ROUTES_CSS)
+        self.assertIn("swatch-oil-gas", ROUTES_CSS)
 
     def test_map_visual_legend_matches_cartography(self):
         for swatch in (
