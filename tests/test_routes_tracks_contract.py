@@ -395,6 +395,19 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn("const marker = L.circleMarker([lat, lng]", MAP)
         self.assertIn(".rrgh-oil-gas-marker{", ROUTES_CSS)
         self.assertIn("swatch-oil-gas", ROUTES_CSS)
+        self.assertIn('data-oil-gas-master', MAP)
+        for kind in ('oil', 'gas', 'oil-gas', 'dry', 'service', 'cbm', 'other'):
+            self.assertIn('data-oil-gas-kind="' + kind + '"', MAP)
+        for label in ('Oil wells', 'Gas wells', 'Oil &amp; gas wells', 'Dry &amp; abandoned', 'Service / recovery', 'Coal-bed methane', 'Locations / other wells'):
+            self.assertIn(label, MAP)
+        self.assertIn("const oilGasKinds = ['oil', 'gas', 'oil-gas', 'dry', 'service', 'cbm', 'other'] as const", MAP)
+        self.assertIn("oilGasKindFor", MAP)
+        self.assertIn("marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360, autoPan: false })", MAP)
+        self.assertIn("cacheKey !== oilGasLastCacheKey", MAP)
+        self.assertIn("url.searchParams.set('rrghOil', oilKinds)", MAP)
+        self.assertIn("params.get('rrghOil')", MAP)
+        for swatch in ('swatch-oil-gas-oil', 'swatch-oil-gas-gas', 'swatch-oil-gas-combined', 'swatch-oil-gas-dry', 'swatch-oil-gas-service', 'swatch-oil-gas-cbm', 'swatch-oil-gas-other'):
+            self.assertIn(swatch, ROUTES_CSS)
 
     def test_map_visual_legend_matches_cartography(self):
         for swatch in (
@@ -598,6 +611,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("point.distanceTo(other) <= 12", MAP)
         self.assertIn("fetchPagedGeoJson('ky-road-centerlines')", MAP)
         self.assertIn("container.dataset.planningRoadFeatureCount", MAP)
+        self.assertIn("const snapEndpointsByTag = new Map<string, Set<string>>()", MAP)
+        self.assertIn("const connectNamedRoadEndpointGaps = (maxGapMeters = 160)", MAP)
+        self.assertIn("roadName.toLowerCase().replace(/[^a-z0-9]+/g, '')", MAP)
+        self.assertIn("addSnapLine(line, roadTag)", MAP)
+        self.assertIn("container.dataset.namedRoadGapBridgeCount", MAP)
+        self.assertIn("directMeters <= 600 && snappedMeters > Math.max(900, directMeters * 6)", MAP)
+        self.assertIn("container.dataset.planDetourGuardCount", MAP)
         self.assertIn("excludedRoadClass = /interstate|freeway|expressway|limited\\s*access|ramp|parkway/i", MAP)
         self.assertIn("addSnapLine(line)", MAP)
 
@@ -783,9 +803,19 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("pane: 'mapPoint'", MAP)
         self.assertIn('positionCoordinatePoint', MAP)
         self.assertIn('map.panBy([offset.x, offset.y]', MAP)
+        self.assertIn("const detailZoom = isMobileFullMap() ? 14 : 15", MAP)
+        self.assertIn("map.getZoom() <= detailZoom - 2", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'zoom'", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'visibility'", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'false'", MAP)
         self.assertIn('data-plan-minimize', MAP)
         self.assertIn("planPanel.dataset.minimized = 'true'", MAP)
         self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
+        self.assertIn('.route-plan-panel[data-minimized="true"] [data-plan-panel-title]', ROUTES_CSS)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))!important;', ROUTES_CSS)
+        self.assertIn('grid-template-columns:28px 28px 28px!important;', ROUTES_CSS)
+        self.assertIn('.route-map-left-stack{', ROUTES_CSS)
+        self.assertIn('top:3.4rem!important;', ROUTES_CSS)
         self.assertIn('table-layout:fixed;', ROUTES_CSS)
         self.assertIn('.route-coordinate-close{grid-column:3;grid-row:1;justify-self:end}', ROUTES_CSS)
         self.assertIn('.route-coordinate-today{grid-column:2 / 4;grid-row:2', ROUTES_CSS)
