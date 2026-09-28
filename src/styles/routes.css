@@ -2451,14 +2451,16 @@
     padding:.18rem .1rem .25rem;
   }
   .route-coordinate-sun-table{
-    width:100%!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:100%!important;
     table-layout:auto!important;
     font-size:.57rem!important;
   }
   .route-coordinate-sun-table th,
   .route-coordinate-sun-table td{
     width:auto!important;
-    padding:.18rem .2rem!important;
+    padding:.16rem .16rem!important;
   }
   .route-coordinate-sun-table thead th{
     font-size:.53rem!important;
