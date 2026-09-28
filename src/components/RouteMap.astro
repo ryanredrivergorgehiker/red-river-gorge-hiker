@@ -321,26 +321,29 @@ const enabledSources = enabledBrowserMapSources;
 
     <div class="route-coordinate-card" data-coordinate-card hidden>
       <div class="route-coordinate-toolbar">
-        <button type="button" data-coordinate-copy>Copy coordinates</button>
+        <button type="button" class="route-coordinate-copy" data-coordinate-copy><span>Copy</span><span>coordinates</span></button>
+        <div class="route-coordinate-heading">
+          <div class="route-coordinate-title">
+            <strong>Map point</strong>
+            <span aria-hidden="true">—</span>
+            <span class="route-coordinate-elevation" data-coordinate-elevation>Elevation calculating…</span>
+          </div>
+          <span data-coordinate-dd></span>
+          <span data-coordinate-utm></span>
+        </div>
         <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
       </div>
-      <div class="route-coordinate-main">
-        <strong>Map point</strong>
-        <span data-coordinate-dd></span>
-        <span data-coordinate-utm></span>
-        <span class="route-coordinate-elevation" data-coordinate-elevation>Elevation calculating…</span>
-        <div class="route-coordinate-sunlight" data-coordinate-sunlight>
-          <div class="route-coordinate-sunlight-summary">
-            <strong>Sunlight today</strong>
-            <span data-coordinate-sun-today>Calculating…</span>
-          </div>
-          <details data-coordinate-sun-details>
-            <summary>Next 10 days</summary>
-            <div class="route-coordinate-sun-table-wrap" data-coordinate-sun-table></div>
-          </details>
-          <small data-coordinate-sun-source>Terrain-aware timing uses bare-earth elevation where available.</small>
-          <small>Terrain-adjusted estimate; trees, cliffs/overhangs, clouds and local obstructions may change actual direct light.</small>
+      <div class="route-coordinate-sunlight" data-coordinate-sunlight>
+        <div class="route-coordinate-sunlight-summary">
+          <strong>Sunlight today</strong>
+          <span data-coordinate-sun-today>Calculating…</span>
         </div>
+        <details data-coordinate-sun-details>
+          <summary>Next 10 days</summary>
+          <div class="route-coordinate-sun-table-wrap" data-coordinate-sun-table></div>
+        </details>
+        <small data-coordinate-sun-source>Terrain-aware timing uses bare-earth elevation where available.</small>
+        <small>Terrain-adjusted estimate; trees, cliffs/overhangs, clouds and local obstructions may change actual direct light.</small>
       </div>
     </div>
 
@@ -648,36 +651,41 @@ const enabledSources = enabledBrowserMapSources;
 
     const areaLabelGroup = L.layerGroup().addTo(map);
     const areaLabels = [
-      { full: 'Natural Bridge', short: 'NB', lat: 37.775, lng: -83.687 },
-      { full: 'Red River Gorge', short: 'RRG', lat: 37.836, lng: -83.638 },
-      { full: 'Clifty Wilderness', short: 'CW', lat: 37.837, lng: -83.565 }
+      { fullHtml: 'NATURAL<br>BRIDGE', short: 'NB', lat: 37.775, lng: -83.687, fullSize: [150, 76] },
+      { fullHtml: 'RED<br>RIVER<br>GORGE', short: 'RRG', lat: 37.836, lng: -83.638, fullSize: [150, 94] },
+      { fullHtml: 'CLIFTY<br>WILDERNESS', short: 'CW', lat: 37.837, lng: -83.565, fullSize: [170, 76] }
     ];
     const isMobileFullMap = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
+    const areaLabelModeForZoom = (zoom: number) => {
+      if (zoom >= 16) return 'hidden';
+      if (zoom >= 11 && zoom <= 13) return 'full';
+      if (zoom >= 14) return 'initials-near';
+      return 'initials-broad';
+    };
     const syncAreaLabels = () => {
       areaLabelGroup.clearLayers();
       const zoom = map.getZoom();
-      const fullLabelZoom = isMobileFullMap() ? 11 : 13;
-      if (zoom < fullLabelZoom || zoom > fullLabelZoom + 1) {
-        container.dataset.areaLabelMode = 'hidden';
-        return;
-      }
-      const initials = zoom === fullLabelZoom + 1;
+      const labelMode = areaLabelModeForZoom(zoom);
+      container.dataset.areaLabelMode = labelMode;
+      if (labelMode === 'hidden') return;
+      const full = labelMode === 'full';
       for (const label of areaLabels) {
-        const textValue = initials ? label.short : label.full;
-        const iconSize: [number, number] = initials ? [48, 28] : [166, 30];
+        const iconSize: [number, number] = full ? label.fullSize as [number, number] : [64, 48];
+        const html = full
+          ? '<span class="rrgh-area-label-text">' + label.fullHtml + '</span>'
+          : '<span class="rrgh-area-label-text">' + label.short + '</span>';
         L.marker([label.lat, label.lng], {
           pane: 'areaLabels',
           interactive: false,
           keyboard: false,
           icon: L.divIcon({
-            className: 'rrgh-area-label ' + (initials ? 'is-initials' : 'is-full'),
-            html: '<span>' + textValue + '</span>',
+            className: 'rrgh-area-label ' + (full ? 'is-full' : 'is-initials ') + (labelMode === 'initials-broad' ? 'is-broad' : labelMode === 'initials-near' ? 'is-near' : ''),
+            html,
             iconSize,
             iconAnchor: [iconSize[0] / 2, iconSize[1] / 2]
           })
         }).addTo(areaLabelGroup);
       }
-      container.dataset.areaLabelMode = initials ? 'initials' : 'full';
     };
     map.on('zoomend', syncAreaLabels);
 
