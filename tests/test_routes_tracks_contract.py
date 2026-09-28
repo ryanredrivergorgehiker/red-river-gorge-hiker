@@ -653,7 +653,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("directMeters <= 600 && snappedMeters > Math.max(900, directMeters * 6)", MAP)
         self.assertIn("container.dataset.planDetourGuardCount", MAP)
         self.assertIn("excludedRoadClass = /interstate|freeway|expressway|limited\\s*access|ramp|parkway/i", MAP)
-        self.assertIn("addSnapLine(line)", MAP)
+        self.assertIn("addSnapLine(line, '', 'usfs-road')", MAP)
 
     def test_map_layer_logic_matches_outdoor_planning_behavior(self):
         self.assertIn("hillshade: 180", MAP)
