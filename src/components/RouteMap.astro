@@ -666,7 +666,6 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.trailPlanningReady = 'false';
     container.dataset.planDetourGuardCount = '0';
     container.dataset.namedRoadGapBridgeCount = '0';
-    container.dataset.kyRoadEndpointBridgeCount = '0';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (status) {
@@ -1478,8 +1477,6 @@ const enabledSources = enabledBrowserMapSources;
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
     const snapEndpointsByTag = new Map<string, Set<string>>();
-    const kyRoadEndpoints: Array<{ key: string; roadTag: string; segmentId: number; axisDegrees: number }> = [];
-    let kyRoadSegmentId = 0;
     const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
 
     const ensureNode = (lat: number, lng: number) => {
@@ -1571,20 +1568,6 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
-    const axisDegreesBetween = (a: any, b: any) => {
-      const meanLat = ((a.lat + b.lat) / 2) * Math.PI / 180;
-      const x = (b.lng - a.lng) * Math.cos(meanLat);
-      const y = b.lat - a.lat;
-      let degrees = Math.atan2(y, x) * 180 / Math.PI;
-      degrees = ((degrees % 180) + 180) % 180;
-      return degrees;
-    };
-
-    const axisDifference = (a: number, b: number) => {
-      const delta = Math.abs(a - b) % 180;
-      return Math.min(delta, 180 - delta);
-    };
-
     const normalizeKentuckyRoadTag = (roadName: string, roadClass: string) => {
       const raw = (roadName + ' ' + roadClass).toUpperCase();
       const routeNumber = raw.match(/(?:KY|KENTUCKY|STATE(?:\s+ROUTE|\s+HIGHWAY)?)[\s-]*(\d{1,4}[A-Z]?)/)?.[1]
@@ -1615,107 +1598,6 @@ const enabledSources = enabledBrowserMapSources;
         }
       }
       container.dataset.namedRoadGapBridgeCount = String(connected);
-      return connected;
-    };
-
-    const connectNearbyKyRoadEndpointGaps = (maxGapMeters = 110) => {
-      let connected = 0;
-      for (let i = 0; i < kyRoadEndpoints.length; i += 1) {
-        const a = kyRoadEndpoints[i]!;
-        const pointA = nodeCoords.get(a.key);
-        if (!pointA) continue;
-        for (let j = i + 1; j < kyRoadEndpoints.length; j += 1) {
-          const b = kyRoadEndpoints[j]!;
-          if (a.segmentId === b.segmentId) continue;
-          const pointB = nodeCoords.get(b.key);
-          if (!pointB) continue;
-          const distance = pointA.distanceTo(pointB);
-          if (distance > maxGapMeters || graph.get(a.key)?.has(b.key)) continue;
-          const sameRoad = Boolean(a.roadTag && a.roadTag === b.roadTag);
-          const gapAxis = axisDegreesBetween(pointA, pointB);
-          const aligned = axisDifference(a.axisDegrees, gapAxis) <= 32
-            && axisDifference(b.axisDegrees, gapAxis) <= 32;
-          if (sameRoad || aligned) {
-            connect(a.key, b.key);
-            connected += 1;
-          }
-        }
-      }
-      container.dataset.kyRoadEndpointBridgeCount = String(connected);
-      return connected;
-    };
-
-    const nearestKyRoadEndpointCandidate = (
-      origin: { key: string; roadTag: string; segmentId: number; axisDegrees: number },
-      maxGapMeters: number
-    ) => {
-      const originPoint = nodeCoords.get(origin.key);
-      if (!originPoint) return null;
-
-      let nearest: { endpoint: typeof origin; distance: number } | null = null;
-      let secondNearestDistance = Infinity;
-
-      for (const candidate of kyRoadEndpoints) {
-        if (candidate.key === origin.key || candidate.segmentId === origin.segmentId) continue;
-        if (graph.get(origin.key)?.has(candidate.key)) continue;
-        const candidatePoint = nodeCoords.get(candidate.key);
-        if (!candidatePoint) continue;
-        const distance = originPoint.distanceTo(candidatePoint);
-        if (distance > maxGapMeters) continue;
-
-        if (!nearest || distance < nearest.distance) {
-          if (nearest) secondNearestDistance = nearest.distance;
-          nearest = { endpoint: candidate, distance };
-        } else if (distance < secondNearestDistance) {
-          secondNearestDistance = distance;
-        }
-      }
-
-      return nearest ? { ...nearest, secondNearestDistance } : null;
-    };
-
-    const connectMutualNearestKyRoadEndpointGaps = (
-      maxGapMeters = 90,
-      minimumAlternativeSeparationMeters = 18,
-      minimumAlternativeRatio = 1.35
-    ) => {
-      let connected = 0;
-      const consumed = new Set<string>();
-
-      for (const a of kyRoadEndpoints) {
-        if (consumed.has(a.key)) continue;
-        const nearestA = nearestKyRoadEndpointCandidate(a, maxGapMeters);
-        if (!nearestA) continue;
-
-        const b = nearestA.endpoint;
-        if (consumed.has(b.key)) continue;
-        const nearestB = nearestKyRoadEndpointCandidate(b, maxGapMeters);
-        if (!nearestB || nearestB.endpoint.key !== a.key) continue;
-
-        const ambiguousA = Number.isFinite(nearestA.secondNearestDistance)
-          && nearestA.secondNearestDistance < nearestA.distance + minimumAlternativeSeparationMeters
-          && nearestA.secondNearestDistance < nearestA.distance * minimumAlternativeRatio;
-        const ambiguousB = Number.isFinite(nearestB.secondNearestDistance)
-          && nearestB.secondNearestDistance < nearestB.distance + minimumAlternativeSeparationMeters
-          && nearestB.secondNearestDistance < nearestB.distance * minimumAlternativeRatio;
-        if (ambiguousA || ambiguousB) continue;
-
-        const pointA = nodeCoords.get(a.key);
-        const pointB = nodeCoords.get(b.key);
-        if (!pointA || !pointB) continue;
-
-        const gapAxis = axisDegreesBetween(pointA, pointB);
-        const approachAligned = axisDifference(a.axisDegrees, gapAxis) <= 40
-          || axisDifference(b.axisDegrees, gapAxis) <= 40;
-        if (!approachAligned) continue;
-
-        connect(a.key, b.key);
-        consumed.add(a.key);
-        consumed.add(b.key);
-        connected += 1;
-      }
-
-      container.dataset.kyRoadMutualEndpointBridgeCount = String(connected);
       return connected;
     };
 
@@ -2214,28 +2096,13 @@ const enabledSources = enabledBrowserMapSources;
           if (line.length < 2) continue;
           const roadTag = normalizeKentuckyRoadTag(roadName, roadClass);
           const keys = addSnapLine(line, roadTag);
-          if (keys.length > 1) {
-            const segmentId = ++kyRoadSegmentId;
-            const first = nodeCoords.get(keys[0]!);
-            const second = nodeCoords.get(keys[1]!);
-            const penultimate = nodeCoords.get(keys[keys.length - 2]!);
-            const last = nodeCoords.get(keys[keys.length - 1]!);
-            if (first && second) kyRoadEndpoints.push({
-              key: keys[0]!, roadTag, segmentId, axisDegrees: axisDegreesBetween(first, second)
-            });
-            if (penultimate && last) kyRoadEndpoints.push({
-              key: keys[keys.length - 1]!, roadTag, segmentId, axisDegrees: axisDegreesBetween(penultimate, last)
-            });
-            indexed = true;
-          }
+          if (keys.length > 1) indexed = true;
         }
         if (indexed) planningRoadFeatures += 1;
       }
 
       container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
       connectNamedRoadEndpointGaps();
-      connectNearbyKyRoadEndpointGaps();
-      connectMutualNearestKyRoadEndpointGaps();
     } catch (error) {
       console.error(error);
       container.dataset.planningRoadFeatureCount = '0';
