@@ -2227,3 +2227,240 @@
     font-size:.52rem;
   }
 }
+
+
+/* Final Map Point interaction and layout correction — 2026-09-28 */
+.route-map,
+.route-map *{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+}
+
+.route-coordinate-card{
+  box-sizing:border-box;
+  width:fit-content;
+  max-width:min(31rem,calc(100% - 1.5rem));
+  padding:.55rem .65rem .6rem;
+  gap:.38rem;
+}
+.route-coordinate-card:has([data-coordinate-sun-details][open]){
+  width:fit-content;
+  max-width:min(35rem,calc(100% - 1.5rem));
+}
+.route-coordinate-toolbar{
+  grid-template-columns:76px minmax(14rem,max-content) 32px!important;
+  column-gap:.7rem!important;
+  row-gap:.2rem!important;
+  align-items:start!important;
+}
+.route-coordinate-heading{
+  align-self:start!important;
+  padding-top:.08rem!important;
+}
+.route-coordinate-title{
+  flex-wrap:wrap!important;
+  gap:.2rem .3rem!important;
+  min-height:0!important;
+}
+.route-coordinate-heading>[data-coordinate-dd],
+.route-coordinate-heading>[data-coordinate-utm]{
+  font-size:.69rem!important;
+  line-height:1.25!important;
+}
+.route-coordinate-today{
+  grid-template-columns:max-content repeat(4,max-content)!important;
+  column-gap:1rem!important;
+  row-gap:.08rem!important;
+  align-items:start!important;
+  margin-top:.18rem!important;
+  padding:.52rem .45rem .34rem!important;
+  border-top:1px solid rgba(23,55,45,.14);
+}
+.route-coordinate-today>strong{
+  align-self:start!important;
+  margin:0 .35rem 0 0!important;
+  padding-top:.05rem;
+  white-space:nowrap;
+}
+.route-coordinate-today>span{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:.08rem!important;
+  align-items:start!important;
+}
+.route-coordinate-today small{
+  white-space:nowrap!important;
+  font-size:.59rem!important;
+  line-height:1.05!important;
+}
+.route-coordinate-today b{
+  font-size:.65rem!important;
+  line-height:1.1!important;
+}
+
+.route-map-stage[data-sunlight-mode="true"] .route-coordinate-sunlight{
+  margin:.12rem 0 0!important;
+  padding:.42rem 0 0!important;
+  border:0!important;
+  border-top:1px solid rgba(23,55,45,.14)!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.route-coordinate-sunlight{
+  gap:.28rem!important;
+}
+.route-coordinate-sunlight summary{
+  padding:.2rem .15rem .28rem;
+}
+.route-coordinate-sun-table-wrap{
+  width:auto!important;
+  max-width:100%;
+  overflow-x:auto;
+  margin-top:.16rem!important;
+}
+.route-coordinate-sun-table{
+  width:auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  table-layout:auto!important;
+  margin:0;
+  font-size:.65rem!important;
+}
+.route-coordinate-sun-table th,
+.route-coordinate-sun-table td{
+  width:auto!important;
+  padding:.24rem .55rem!important;
+}
+.route-coordinate-sun-table thead th{
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  line-height:1!important;
+  text-align:center;
+  vertical-align:bottom;
+}
+.route-coordinate-sun-table thead th:first-child{
+  text-align:left;
+}
+.route-coordinate-sun-table tbody th,
+.route-coordinate-sun-table tbody td{
+  white-space:nowrap!important;
+}
+.route-sun-header-stack{
+  display:inline-grid!important;
+  grid-auto-flow:row;
+  justify-items:center;
+  gap:0;
+  line-height:.95!important;
+}
+.route-sun-header-stack>span{
+  display:block!important;
+  font-size:inherit!important;
+  line-height:.95!important;
+}
+.route-coordinate-today-tag{
+  white-space:nowrap;
+}
+.route-coordinate-sunlight small{
+  max-width:29rem!important;
+  font-size:.61rem!important;
+  line-height:1.28!important;
+}
+
+@media(max-width:700px){
+  .route-coordinate-card,
+  .route-coordinate-card:has([data-coordinate-sun-details][open]){
+    left:.5rem!important;
+    right:.5rem!important;
+    bottom:.55rem!important;
+    width:auto!important;
+    max-width:none!important;
+    max-height:calc(100% - 1.1rem)!important;
+    padding:.5rem .55rem .55rem!important;
+    gap:.34rem!important;
+  }
+  .route-coordinate-toolbar{
+    grid-template-columns:68px minmax(0,1fr) 32px!important;
+    column-gap:.48rem!important;
+  }
+  .route-coordinate-copy{
+    width:68px!important;
+    min-width:68px!important;
+    height:54px!important;
+    min-height:54px!important;
+  }
+  .route-coordinate-title{
+    flex-wrap:wrap!important;
+    gap:.12rem .22rem!important;
+    line-height:1.08!important;
+  }
+  .route-coordinate-title>span[aria-hidden="true"]:not(.route-map-point-symbol){
+    display:none!important;
+  }
+  .route-coordinate-title .route-coordinate-elevation{
+    flex-basis:100%;
+    display:block;
+    white-space:normal!important;
+    font-size:.68rem!important;
+    line-height:1.15!important;
+  }
+  .route-coordinate-heading>[data-coordinate-dd],
+  .route-coordinate-heading>[data-coordinate-utm]{
+    font-size:.65rem!important;
+    line-height:1.2!important;
+    overflow-wrap:anywhere;
+  }
+  .route-coordinate-today{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    column-gap:.85rem!important;
+    row-gap:.42rem!important;
+    margin-top:.12rem!important;
+    padding:.48rem .28rem .34rem!important;
+  }
+  .route-coordinate-today>strong{
+    grid-column:1 / -1!important;
+    margin:0 0 .04rem!important;
+    padding:0!important;
+  }
+  .route-coordinate-today>span{
+    grid-template-columns:1fr!important;
+    gap:.08rem!important;
+  }
+  .route-coordinate-today small{
+    white-space:normal!important;
+    font-size:.57rem!important;
+    line-height:1.05!important;
+  }
+  .route-coordinate-today b{
+    font-size:.64rem!important;
+  }
+  .route-coordinate-sunlight summary{
+    padding:.18rem .1rem .25rem;
+  }
+  .route-coordinate-sun-table{
+    width:100%!important;
+    table-layout:auto!important;
+    font-size:.57rem!important;
+  }
+  .route-coordinate-sun-table th,
+  .route-coordinate-sun-table td{
+    width:auto!important;
+    padding:.18rem .2rem!important;
+  }
+  .route-coordinate-sun-table thead th{
+    font-size:.53rem!important;
+    letter-spacing:.01em!important;
+  }
+  .route-coordinate-sun-table tbody th,
+  .route-coordinate-sun-table tbody td{
+    font-size:.57rem!important;
+  }
+  .route-coordinate-today-tag{
+    font-size:.48rem!important;
+  }
+  .route-coordinate-sunlight small{
+    font-size:.57rem!important;
+    line-height:1.24!important;
+  }
+}
