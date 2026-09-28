@@ -2026,3 +2026,203 @@
   .route-coordinate-sun-table th:nth-child(4),.route-coordinate-sun-table td:nth-child(4){width:22%}
   .route-plan-panel[data-minimized="true"]{width:calc(100% - 1rem);left:.5rem}
 }
+
+
+/* Owner UAT correction — label readability, below-map instructions, compact Map Point, responsive sunlight table — 2026-09-28 */
+.route-map-status{
+  position:static;
+  left:auto;
+  bottom:auto;
+  z-index:auto;
+  box-sizing:border-box;
+  width:100%;
+  max-width:none;
+  margin:.5rem 0 0;
+  min-height:3.05rem;
+  padding:.58rem .72rem;
+  display:flex;
+  align-items:center;
+  border-radius:10px;
+  background:#26312b;
+  color:#fff;
+  font-size:.8rem;
+  line-height:1.38;
+  box-shadow:0 .15rem .5rem rgba(20,29,24,.16);
+}
+.route-map-status[data-kind="warning"]{background:#79481b}
+.route-map-shell-full>.route-map-status{
+  height:3.05rem;
+  overflow:hidden;
+}
+.route-map-shell-full .route-map-tools-desktop{bottom:.75rem}
+
+.rrgh-area-label .rrgh-area-label-text{
+  color:rgba(54,58,57,.76);
+  text-shadow:
+    0 1px 1px rgba(255,255,255,.92),
+    0 0 4px rgba(255,255,255,.72);
+}
+.rrgh-area-label.is-initials .rrgh-area-label-text{
+  color:rgba(54,58,57,.74);
+}
+.rrgh-area-label.is-initials.is-broad .rrgh-area-label-text{
+  color:rgba(54,58,57,.64);
+}
+.rrgh-area-label.is-initials.is-near .rrgh-area-label-text{
+  color:rgba(54,58,57,.76);
+}
+
+.route-map-point-symbol{
+  width:15px;
+  height:15px;
+  border:2px solid #fff;
+  box-shadow:0 0 0 2px #17372d,0 .1rem .25rem rgba(20,29,24,.3);
+}
+.route-map-point-icon .route-map-point-symbol{
+  width:18px;
+  height:18px;
+}
+.route-map-point-symbol>span{
+  width:4px;
+  height:4px;
+  box-shadow:0 0 0 1px #17372d;
+}
+
+.route-coordinate-card{
+  width:min(34rem,calc(100% - 1.5rem));
+  max-width:min(34rem,calc(100% - 1.5rem));
+}
+.route-coordinate-card:has([data-coordinate-sun-details][open]){
+  width:min(44rem,calc(100% - 1.5rem));
+  max-width:min(44rem,calc(100% - 1.5rem));
+}
+.route-coordinate-toolbar{
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+  gap:.52rem!important;
+}
+.route-coordinate-title{
+  gap:.28rem!important;
+}
+.route-coordinate-today{
+  grid-column:auto;
+  grid-row:auto;
+  min-width:0;
+  display:grid;
+  grid-template-columns:auto repeat(4,minmax(0,1fr));
+  gap:.28rem .5rem;
+  align-items:center;
+  margin-top:.16rem;
+  padding:.34rem .1rem .14rem;
+  border-top:1px solid rgba(23,55,45,.12);
+  font-size:.66rem;
+  line-height:1.18;
+}
+.route-coordinate-today>strong{
+  margin:0;
+  align-self:center;
+  font-size:.69rem!important;
+  letter-spacing:.035em!important;
+  white-space:nowrap;
+}
+.route-coordinate-today>span{
+  min-width:0;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:.05rem;
+  align-items:baseline;
+}
+.route-coordinate-today small{
+  font-size:.59rem;
+  line-height:1.08;
+  white-space:nowrap;
+}
+.route-coordinate-today b{
+  font-size:.64rem;
+  line-height:1.1;
+  white-space:nowrap;
+}
+
+.route-coordinate-sun-table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+}
+.route-coordinate-sun-table{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none;
+  table-layout:fixed;
+}
+.route-coordinate-sun-table th,
+.route-coordinate-sun-table td{
+  padding:.22rem .34rem!important;
+}
+.route-coordinate-sun-table thead th{
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  white-space:nowrap!important;
+  line-height:1.12;
+}
+.route-coordinate-sun-table tbody th,
+.route-coordinate-sun-table tbody td{
+  white-space:nowrap!important;
+}
+.route-coordinate-sun-table th:nth-child(1),
+.route-coordinate-sun-table td:nth-child(1){width:28%}
+.route-coordinate-sun-table th:nth-child(n+2),
+.route-coordinate-sun-table td:nth-child(n+2){width:18%}
+.route-sun-header-compact{display:none}
+.route-coordinate-today-tag{
+  font-size:.58rem;
+  font-weight:850;
+  letter-spacing:.02em;
+  color:#8c4f2d;
+  text-transform:uppercase;
+}
+
+@media(max-width:700px){
+  .route-coordinate-card,
+  .route-coordinate-card:has([data-coordinate-sun-details][open]){
+    width:calc(100% - .75rem);
+    max-width:calc(100% - .75rem);
+  }
+  .route-coordinate-today{
+    grid-column:auto;
+    grid-row:auto;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.18rem .5rem;
+    margin-top:.18rem;
+  }
+  .route-coordinate-today>strong{
+    grid-column:1 / -1;
+  }
+  .route-coordinate-today>span{
+    display:grid;
+    grid-template-columns:minmax(4.8rem,auto) auto;
+    gap:.24rem;
+  }
+  .route-coordinate-today small{
+    white-space:normal;
+  }
+  .route-coordinate-sun-table{
+    font-size:.61rem!important;
+  }
+  .route-coordinate-sun-table th,
+  .route-coordinate-sun-table td{
+    padding:.2rem .16rem!important;
+  }
+  .route-coordinate-sun-table th:nth-child(1),
+  .route-coordinate-sun-table td:nth-child(1){width:32%}
+  .route-coordinate-sun-table th:nth-child(n+2),
+  .route-coordinate-sun-table td:nth-child(n+2){width:17%}
+  .route-sun-header-full{display:none}
+  .route-sun-header-compact{display:inline}
+  .route-coordinate-sun-table thead th{
+    font-size:.56rem!important;
+    letter-spacing:.015em;
+  }
+  .route-coordinate-today-tag{
+    display:inline;
+    font-size:.52rem;
+  }
+}
