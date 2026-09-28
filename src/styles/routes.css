@@ -2012,7 +2012,10 @@
 @media(max-width:700px){
   .route-coordinate-card{width:calc(100% - .75rem);max-width:calc(100% - .75rem);right:.375rem}
   .route-coordinate-toolbar{grid-template-columns:72px minmax(0,1fr) auto!important}
-  .route-coordinate-today{grid-column:2 / 4;margin-top:.18rem;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:.5rem;row-gap:.12rem}
+  .route-coordinate-copy{grid-column:1;grid-row:1}
+  .route-coordinate-heading{grid-column:2;grid-row:1}
+  .route-coordinate-close{grid-column:3;grid-row:1;justify-self:end}
+  .route-coordinate-today{grid-column:2 / 4;grid-row:2;margin-top:.18rem;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:.5rem;row-gap:.12rem}
   .route-coordinate-today>strong{grid-column:1 / -1}
   .route-coordinate-today>span{grid-template-columns:1fr auto}
   .route-coordinate-sun-table{width:100%!important}

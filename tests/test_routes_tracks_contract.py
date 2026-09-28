@@ -750,6 +750,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("planPanel.dataset.minimized = 'true'", MAP)
         self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
         self.assertIn('table-layout:fixed;', ROUTES_CSS)
+        self.assertIn('.route-coordinate-close{grid-column:3;grid-row:1;justify-self:end}', ROUTES_CSS)
+        self.assertIn('.route-coordinate-today{grid-column:2 / 4;grid-row:2', ROUTES_CSS)
         self.assertIn("setTodaySunlight(", MAP)
         self.assertIn("formatRrgTime(todayDirect?.firstDirectSun ?? null)", MAP)
         self.assertIn("formatRrgTime(todayDirect?.lastDirectSun ?? null)", MAP)
