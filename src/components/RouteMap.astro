@@ -221,6 +221,18 @@ const enabledSources = enabledBrowserMapSources;
           </label>
         </div>
 
+        <div class="route-layer-group" aria-label="Oil and gas layers">
+          <p class="route-layer-group-title">Oil &amp; gas</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kgs-oil-gas-wells" />
+            <span class="route-layer-swatch swatch-oil-gas" aria-hidden="true"></span>
+            <span>Oil &amp; Gas Wells</span>
+          </label>
+          <p class="route-layer-source-note" data-oil-gas-status>
+            Off by default. Enabling loads live statewide well records from Kentucky Geological Survey / University of Kentucky.
+          </p>
+        </div>
+
         <div class="route-layer-group" aria-label="Land management and context">
           <p class="route-layer-group-title">Land management &amp; context</p>
           <label class="route-layer-toggle-row">
@@ -253,6 +265,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Sunrise / Sunset Potential</span><input type="checkbox" data-fine-tune-layer="rrg-lidar-sun" aria-label="Toggle Sunrise / Sunset Potential" /><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" aria-label="Sunrise / Sunset Potential opacity" disabled /></label>
             <label><span>Leaf-on aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Leaf-on aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Leaf-on aerial imagery opacity" disabled /></label>
             <label><span>Leaf-off aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase2-leafoff" aria-label="Toggle Leaf-off aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase2-leafoff" aria-label="Leaf-off aerial imagery opacity" disabled /></label>
+            <label><span>Oil &amp; Gas Wells</span><input type="checkbox" data-fine-tune-layer="kgs-oil-gas-wells" aria-label="Toggle Oil &amp; Gas Wells" /><input type="range" min="0" max="100" value="90" data-opacity="kgs-oil-gas-wells" aria-label="Oil &amp; Gas Wells opacity" disabled /></label>
             <label><span>Special management</span><input type="checkbox" data-fine-tune-layer="usfs-special-management" checked aria-label="Toggle Special management" /><input type="range" min="0" max="100" value="66" data-opacity="usfs-special-management" aria-label="Special management opacity" /></label>
             <label><span>National Forest land units</span><input type="checkbox" data-fine-tune-layer="usfs-land-units" checked aria-label="Toggle National Forest land units" /><input type="range" min="0" max="100" value="45" data-opacity="usfs-land-units" aria-label="National Forest land units opacity" /></label>
           </div>
@@ -645,6 +658,7 @@ const enabledSources = enabledBrowserMapSources;
       trails: 390,
       counties: 415,
       lidarSun: 425,
+      oilGas: 435,
       areaLabels: 500,
       routes: 440,
       recreation: 450,
@@ -966,6 +980,327 @@ const enabledSources = enabledBrowserMapSources;
     });
     map.on('moveend', () => {
       if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
+    });
+
+
+    const oilGasLayerId = 'kgs-oil-gas-wells';
+    const oilGasServiceUrl = 'https://kgs.uky.edu/arcgis/rest/services/KYOilGas/KYOilGasWells_static_WGS84/MapServer/1/query';
+    const oilGasWellReportBase = 'https://kgs.uky.edu/kygeode/services/oilgas/wellReport.asp?id=';
+    const oilGasLayer = L.layerGroup();
+    const oilGasMarkers: any[] = [];
+    const oilGasMaxRecords = 1500;
+    const oilGasMinZoom = 10;
+    const oilGasStatus = shell.querySelector<HTMLElement>('[data-oil-gas-status]');
+    const oilGasQueryCache = new Map<string, any>();
+    let oilGasController: AbortController | null = null;
+    let oilGasRequestRevision = 0;
+    let oilGasMoveTimer = 0;
+    let oilGasAttributionVisible = false;
+    const oilGasAttribution = 'Oil &amp; gas wells © <a href="https://kgs.uky.edu/data/oilgas/" target="_blank" rel="noopener">Kentucky Geological Survey / University of Kentucky</a> · transformed for web display';
+
+    const setOilGasStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
+      if (oilGasStatus) {
+        oilGasStatus.textContent = message;
+        oilGasStatus.dataset.kind = kind;
+      }
+    };
+
+    const oilGasType = (properties: any) => {
+      const code = String(properties?.original_result_symbol || properties?.original_result || '').trim().toUpperCase();
+      return ({
+        OIL: 'Oil well',
+        GAS: 'Gas well',
+        'O&G': 'Oil and gas well',
+        DRY: 'Dry and abandoned well',
+        'D&A': 'Dry and abandoned well',
+        SRV: 'Service / secondary recovery well',
+        SRI: 'Service / secondary recovery well',
+        CBM: 'Coal bed methane gas well',
+        LOC: 'Well location'
+      } as Record<string, string>)[code] ?? 'Oil / gas well record';
+    };
+
+    const oilGasColor = (properties: any) => {
+      if (map.getZoom() < 12) return '#a94f3d';
+      const code = String(properties?.original_result_symbol || properties?.original_result || '').trim().toUpperCase();
+      return ({
+        OIL: '#a86322',
+        GAS: '#2e78aa',
+        'O&G': '#7a4d9f',
+        DRY: '#777777',
+        'D&A': '#777777',
+        SRV: '#004da8',
+        SRI: '#004da8',
+        CBM: '#247f72',
+        LOC: '#b24d3a'
+      } as Record<string, string>)[code] ?? '#666666';
+    };
+
+    const formatOilGasDate = (value: unknown) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || numeric <= 0) return '';
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC'
+      }).format(new Date(numeric));
+    };
+
+    const oilGasValue = (value: unknown) => {
+      if (value === null || value === undefined) return '';
+      const text = String(value).trim();
+      return text === '' || text.toLowerCase() === 'null' ? '' : text;
+    };
+
+    const oilGasBoreLabel = (value: unknown) => ({
+      V: 'Vertical',
+      D: 'Deviated',
+      H: 'Horizontal'
+    } as Record<string, string>)[String(value ?? '').trim().toUpperCase()] ?? oilGasValue(value);
+
+    const createOilGasPopup = (properties: any) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'route-oil-gas-popup';
+
+      const eyebrow = document.createElement('small');
+      eyebrow.className = 'route-oil-gas-eyebrow';
+      eyebrow.textContent = 'KENTUCKY GEOLOGICAL SURVEY';
+
+      const title = document.createElement('strong');
+      title.className = 'route-oil-gas-title';
+      title.textContent = oilGasType(properties);
+
+      const rows = document.createElement('dl');
+      rows.className = 'route-oil-gas-facts';
+      const add = (label: string, value: unknown) => {
+        const text = oilGasValue(value);
+        if (!text) return;
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = text;
+        rows.append(dt, dd);
+      };
+
+      add('KGS record', properties?.record_number);
+      add('Permit', properties?.permit || properties?.justified_permit);
+      add('API', properties?.API_Number);
+      add('Completed', formatOilGasDate(properties?.date_completed));
+      add('Original operator', properties?.operator);
+      add('Most recent operator', properties?.most_recent_operator);
+      add('Farm / lease', properties?.farm_name);
+      add('Well number', properties?.well_number);
+      add('Total depth', Number.isFinite(Number(properties?.total_depth)) ? Number(properties.total_depth).toLocaleString('en-US') + ' ft' : '');
+      add('Surface elevation', Number.isFinite(Number(properties?.surface_elevation)) ? Math.round(Number(properties.surface_elevation)).toLocaleString('en-US') + ' ft' : '');
+      add('Total-depth formation', properties?.tdfm_name);
+      add('Deepest producing formation', properties?.deepest_pay_name);
+      add('Bore', oilGasBoreLabel(properties?.bore_type));
+      add('County', properties?.county_name);
+      add('USGS quadrangle', properties?.quadrangle_name);
+      add('Purpose', properties?.purpose);
+      if (Number(properties?.plugged) === 1 || oilGasValue(properties?.date_plugged)) {
+        add('Plugged', formatOilGasDate(properties?.date_plugged) || 'Reported plugged');
+      }
+
+      wrapper.append(eyebrow, title, rows);
+
+      const recordNumber = Number(properties?.record_number);
+      if (Number.isFinite(recordNumber) && recordNumber > 0) {
+        const link = document.createElement('a');
+        link.href = oilGasWellReportBase + encodeURIComponent(String(recordNumber));
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'View full KGS well report →';
+        wrapper.append(link);
+      }
+
+      const note = document.createElement('p');
+      note.className = 'route-oil-gas-note';
+      note.textContent = 'Source: Kentucky Geological Survey / University of Kentucky. Live public records transformed for web display. Locations, status, operator and historic lease information may be incomplete, approximate or outdated; this layer does not establish property access or ownership.';
+      wrapper.append(note);
+      return wrapper;
+    };
+
+    const syncOilGasOpacity = (value = opacity(oilGasLayerId)) => {
+      for (const marker of oilGasMarkers) {
+        marker.setStyle?.({
+          opacity: value,
+          fillOpacity: Math.min(1, value * 0.9)
+        });
+      }
+    };
+
+    const syncOilGasAttribution = () => {
+      const enabled = checked(oilGasLayerId);
+      if (enabled && !oilGasAttributionVisible) {
+        map.attributionControl?.addAttribution(oilGasAttribution);
+        oilGasAttributionVisible = true;
+      } else if (!enabled && oilGasAttributionVisible) {
+        map.attributionControl?.removeAttribution(oilGasAttribution);
+        oilGasAttributionVisible = false;
+      }
+    };
+
+    const oilGasCacheKey = () => {
+      const bounds = map.getBounds().pad(0.08);
+      const round = (value: number) => value.toFixed(3);
+      return [
+        map.getZoom(),
+        round(bounds.getWest()), round(bounds.getSouth()),
+        round(bounds.getEast()), round(bounds.getNorth())
+      ].join(':');
+    };
+
+    const oilGasQueryUrl = () => {
+      const bounds = map.getBounds().pad(0.08);
+      const params = new URLSearchParams({
+        where: '1=1',
+        geometry: JSON.stringify({
+          xmin: bounds.getWest(),
+          ymin: bounds.getSouth(),
+          xmax: bounds.getEast(),
+          ymax: bounds.getNorth(),
+          spatialReference: { wkid: 4326 }
+        }),
+        geometryType: 'esriGeometryEnvelope',
+        inSR: '4326',
+        spatialRel: 'esriSpatialRelIntersects',
+        outFields: [
+          'OBJECTID','record_number','original_result','original_result_symbol','justified_permit','permit',
+          'API_Number','operator','most_recent_operator','well_number','farm_name','date_completed',
+          'surface_elevation','total_depth','tdfm_name','deepest_pay_name','plugged','date_plugged',
+          'bore_type','county_name','quadrangle_name','purpose','oil_production','gas_production'
+        ].join(','),
+        returnGeometry: 'true',
+        outSR: '4326',
+        geometryPrecision: '6',
+        resultRecordCount: String(oilGasMaxRecords),
+        orderByFields: 'OBJECTID ASC',
+        f: 'json'
+      });
+      return oilGasServiceUrl + '?' + params.toString();
+    };
+
+    const renderOilGasRecords = (data: any) => {
+      oilGasLayer.clearLayers();
+      oilGasMarkers.length = 0;
+      const features = Array.isArray(data?.features) ? data.features : [];
+      const broad = map.getZoom() < 12;
+      const layerOpacity = opacity(oilGasLayerId);
+      for (const feature of features) {
+        const lat = Number(feature?.geometry?.y);
+        const lng = Number(feature?.geometry?.x);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+        const properties = feature?.attributes ?? {};
+        const color = oilGasColor(properties);
+        const marker = L.circleMarker([lat, lng], {
+          pane: 'oilGas',
+          radius: broad ? 3.2 : 5,
+          color: broad ? '#ffffff' : '#ffffff',
+          weight: broad ? 0.8 : 1.2,
+          opacity: layerOpacity,
+          fillColor: color,
+          fillOpacity: layerOpacity * (broad ? 0.78 : 0.9),
+          interactive: true
+        });
+        marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360 });
+        marker.addTo(oilGasLayer);
+        oilGasMarkers.push(marker);
+      }
+      container.dataset.oilGasWellCount = String(oilGasMarkers.length);
+      container.dataset.oilGasTruncated = String(Boolean(data?.exceededTransferLimit));
+      syncOilGasOpacity();
+      if (data?.exceededTransferLimit) {
+        setOilGasStatus('Showing the first ' + oilGasMarkers.length.toLocaleString('en-US') + ' KGS wells in this broad view. Zoom in for complete detail.', 'warning');
+      } else {
+        setOilGasStatus(oilGasMarkers.length.toLocaleString('en-US') + ' live KGS well record' + (oilGasMarkers.length === 1 ? '' : 's') + ' in this view.');
+      }
+    };
+
+    const loadVisibleOilGasWells = async () => {
+      if (!checked(oilGasLayerId)) return;
+      syncOilGasAttribution();
+      if (map.getZoom() < oilGasMinZoom) {
+        oilGasController?.abort();
+        oilGasLayer.clearLayers();
+        oilGasMarkers.length = 0;
+        container.dataset.oilGasWellCount = '0';
+        container.dataset.oilGasLoadState = 'zoom-in';
+        setOilGasStatus('Oil & Gas Wells is on. Zoom in to display individual KGS well records.');
+        return;
+      }
+
+      const revision = ++oilGasRequestRevision;
+      const cacheKey = oilGasCacheKey();
+      const cached = oilGasQueryCache.get(cacheKey);
+      if (cached) {
+        renderOilGasRecords(cached);
+        container.dataset.oilGasLoadState = 'loaded';
+        delete container.dataset.oilGasLoadError;
+        return;
+      }
+
+      oilGasController?.abort();
+      oilGasController = new AbortController();
+      container.dataset.oilGasLoadState = 'loading';
+      delete container.dataset.oilGasLoadError;
+      setOilGasStatus('Loading live KGS oil & gas well records…');
+
+      try {
+        const startedAt = performance.now();
+        const response = await fetch(oilGasQueryUrl(), {
+          signal: oilGasController.signal,
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-store'
+        });
+        if (!response.ok) throw new Error('KGS oil & gas wells HTTP ' + response.status);
+        const data = await response.json();
+        if (data?.error) throw new Error('KGS oil & gas wells: ' + (data.error.message || 'query error'));
+        if (revision !== oilGasRequestRevision || !checked(oilGasLayerId)) return;
+
+        oilGasQueryCache.set(cacheKey, data);
+        while (oilGasQueryCache.size > 10) {
+          const firstKey = oilGasQueryCache.keys().next().value;
+          if (firstKey === undefined) break;
+          oilGasQueryCache.delete(firstKey);
+        }
+        renderOilGasRecords(data);
+        container.dataset.oilGasLoadState = 'loaded';
+        container.dataset.oilGasLoadMs = String(Math.round(performance.now() - startedAt));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.error(error);
+        oilGasLayer.clearLayers();
+        oilGasMarkers.length = 0;
+        container.dataset.oilGasWellCount = '0';
+        container.dataset.oilGasLoadState = 'error';
+        container.dataset.oilGasLoadError = 'true';
+        setOilGasStatus('KGS oil & gas well service is temporarily unavailable. The rest of the map is unaffected; move the map or toggle this layer to retry.', 'warning');
+      }
+    };
+
+    const queueOilGasLoad = (delay = 220) => {
+      window.clearTimeout(oilGasMoveTimer);
+      oilGasMoveTimer = window.setTimeout(() => { void loadVisibleOilGasWells(); }, delay);
+    };
+
+    const syncOilGasLayer = () => {
+      syncVisibility(oilGasLayerId);
+      syncFineTuneControl(oilGasLayerId);
+      syncOilGasAttribution();
+      if (checked(oilGasLayerId)) {
+        queueOilGasLoad(0);
+      } else {
+        oilGasController?.abort();
+        container.dataset.oilGasLoadState = 'off';
+        setOilGasStatus('Off by default. Enabling loads live statewide well records from Kentucky Geological Survey / University of Kentucky.');
+      }
+    };
+
+    mapLayers.set(oilGasLayerId, oilGasLayer);
+    opacitySetters.set(oilGasLayerId, (value) => syncOilGasOpacity(value));
+    syncOilGasLayer();
+    map.on('moveend', () => {
+      if (checked(oilGasLayerId)) queueOilGasLoad();
     });
 
     const routeGroup = L.layerGroup();
@@ -2162,8 +2497,12 @@ const enabledSources = enabledBrowserMapSources;
       if (checkbox) checkbox.checked = enabled;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
       if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
-      syncVisibility(id);
-      syncFineTuneControl(id);
+      if (id === oilGasLayerId) {
+        syncOilGasLayer();
+      } else {
+        syncVisibility(id);
+        syncFineTuneControl(id);
+      }
       if (opacityValue !== undefined || (id === 'ky-hillshade' && enabled)) syncOpacity(id);
     };
 
@@ -2255,6 +2594,8 @@ const enabledSources = enabledBrowserMapSources;
 
         if (id === gorgeLayerId) {
           setSunKinds(checkbox.checked);
+        } else if (id === oilGasLayerId) {
+          syncOilGasLayer();
         } else if (checkbox.checked && id === 'osm-informal-trails') {
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
