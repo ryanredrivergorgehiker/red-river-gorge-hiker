@@ -1693,13 +1693,25 @@
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
   .route-map-preset-buttons button{
-    min-height:58px;
+    box-sizing:border-box;
+    height:64px;
+    min-height:64px;
+    padding:.42rem .5rem;
+    align-content:center;
+    gap:.12rem;
   }
-  .route-map-preset-buttons button span{display:none}
+  .route-map-preset-buttons button strong{
+    font-size:.82rem;
+    line-height:1.05;
+  }
+  .route-map-preset-buttons button span,
   .route-map-preset-buttons button[data-map-preset="sunlight"] span{
     display:block;
-    font-size:.62rem;
-    line-height:1.2;
+    font-size:.56rem;
+    line-height:1.12;
+    color:#68736d;
+    overflow-wrap:normal;
+    word-break:normal;
   }
   .route-coordinate-card{
     max-height:70%;
