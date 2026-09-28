@@ -701,7 +701,7 @@
     position:absolute;
     z-index:980;
     left:.55rem;
-    right:.55rem;
+    right:.4rem;
     bottom:.5rem;
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -2258,7 +2258,7 @@
 .route-coordinate-close{
   position:absolute!important;
   top:.55rem;
-  right:.65rem;
+  right:.35rem;
   z-index:2;
 }
 .route-coordinate-heading{
