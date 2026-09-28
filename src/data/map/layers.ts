@@ -252,6 +252,17 @@ export const mapSources: readonly MapSource[] = [
     privacyNote: 'Disabled. No authorized parcel/private-property source is currently approved for this map.'
   },
   {
+    id: 'kyaped-phase2-dem',
+    label: 'Kentucky KyFromAbove Phase 2 Bare Earth DEM',
+    kind: 'elevation',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: 'https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer',
+    attribution: 'KyFromAbove / Commonwealth of Kentucky',
+    termsUrl: 'https://kyfromabove.ky.gov/',
+    privacyNote: 'When a visitor opens Map Point sunlight timing, surrounding terrain sample coordinates are sent directly from the browser to Kentucky GIS to estimate the bare-earth terrain horizon. The result models terrain only, not vegetation, clouds, overhangs, legal access, safety, or photographic quality.'
+  },
+  {
     id: 'usgs-3dep-bare-earth-dem',
     label: 'USGS 3DEP Bare Earth DEM',
     kind: 'elevation',
@@ -260,7 +271,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
     attribution: 'USGS National Map 3D Elevation Program (3DEP)',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback.'
+    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback. USGS 3DEP is also the fallback terrain source for Map Point sunlight timing if the Kentucky bare-earth service is unavailable.'
   }
 ] as const;
 

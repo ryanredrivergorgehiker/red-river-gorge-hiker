@@ -48,14 +48,17 @@ const enabledSources = enabledBrowserMapSources;
       <fieldset class="route-map-preset-group">
         <legend>Map view</legend>
         <div class="route-map-preset-buttons">
-          <button type="button" data-map-preset="hiking" aria-pressed="true">
+          <button type="button" data-map-preset="hiking" data-ready-group="core" aria-pressed="true" disabled>
             <strong>Hiking</strong><span>USGS topo · hiking context</span>
           </button>
-          <button type="button" data-map-preset="terrain" aria-pressed="false">
+          <button type="button" data-map-preset="terrain" data-ready-group="core" aria-pressed="false" disabled>
             <strong>Terrain</strong><span>Kentucky + USGS topo · stronger terrain relief</span>
           </button>
-          <button type="button" data-map-preset="aerial" aria-pressed="false">
+          <button type="button" data-map-preset="aerial" data-ready-group="core" aria-pressed="false" disabled>
             <strong>Aerial</strong><span>Imagery + hiking context</span>
+          </button>
+          <button type="button" data-map-preset="sunlight" data-ready-group="core" aria-pressed="false" disabled>
+            <strong>Sunlight</strong><span data-sunlight-preset-times>Today · calculating sunrise / sunset…</span>
           </button>
         </div>
       </fieldset>
@@ -63,18 +66,18 @@ const enabledSources = enabledBrowserMapSources;
       <fieldset class="route-map-trip-group">
         <legend>Show RRGH routes</legend>
         <div class="route-map-trip-options" aria-label="Public route categories">
-          <label><input type="checkbox" data-route-category-filter="day-hike" checked /> Day hikes</label>
-          <label><input type="checkbox" data-route-category-filter="backpacking" checked /> Backpacking</label>
-          <label><input type="checkbox" data-route-category-filter="off-trail" checked /> Off-trail</label>
+          <label><input type="checkbox" data-route-category-filter="day-hike" data-ready-group="routes" checked disabled /> Day hikes</label>
+          <label><input type="checkbox" data-route-category-filter="backpacking" data-ready-group="routes" checked disabled /> Backpacking</label>
+          <label><input type="checkbox" data-route-category-filter="off-trail" data-ready-group="routes" checked disabled /> Off-trail</label>
         </div>
       </fieldset>
     </div>
   )}
 
   <div class="route-map-mobile-topbar" role="toolbar" aria-label="Mobile map utilities">
-    <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
-    <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
-    <button type="button" data-sheet-open="layers" aria-label="Open map layers">Layers</button>
+    <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
+    <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
+    <button type="button" data-sheet-open="layers" data-ready-group="core" aria-label="Open map layers" disabled>Layers</button>
   </div>
 
   <div class="route-map-stage">
@@ -92,11 +95,11 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-mobile-scroll-gutter route-map-mobile-scroll-gutter-right" data-map-scroll-gutter="right" aria-hidden="true"></div>
 
     <div class="route-map-utility-tools" role="toolbar" aria-label="Map utilities">
-      <button type="button" data-sheet-open="search" aria-label="Search map">Search</button>
-      <button type="button" data-map-action="locate" aria-label="Show my location">My location</button>
-      <button type="button" data-map-action="home" aria-label="Reset map view">Home</button>
-      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-out" aria-label="Zoom out">−</button>
-      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-in" aria-label="Zoom in">+</button>
+      <button type="button" data-sheet-open="search" data-ready-group="routes" aria-label="Search map" disabled>Search</button>
+      <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
+      <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-out" data-ready-group="core" aria-label="Zoom out" disabled>−</button>
+      <button type="button" class="route-map-desktop-zoom" data-map-action="zoom-in" data-ready-group="core" aria-label="Zoom in" disabled>+</button>
     </div>
 
     <div class="route-map-left-stack">
@@ -110,9 +113,9 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
-      <button type="button" data-sheet-open="explore" disabled>Explore</button>
-      <button type="button" data-sheet-open="plan" disabled>Plan</button>
-      <button type="button" data-map-action="share">Share</button>
+      <button type="button" data-sheet-open="explore" data-ready-group="routes" disabled>Explore</button>
+      <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
+      <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
     </div>
 
     <div class="route-search-panel route-map-sheet" data-map-sheet="search" hidden>
@@ -128,7 +131,7 @@ const enabledSources = enabledBrowserMapSources;
       <div class="route-search-results" data-map-search-results aria-live="polite"></div>
     </div>
 
-    <details class="route-layer-panel route-map-sheet" data-map-sheet="layers">
+    <details class="route-layer-panel route-map-sheet" data-map-sheet="layers" data-ready-group="core" data-ready="false">
       <summary>Layers</summary>
       <div class="route-layer-panel-body">
         <p class="route-layer-help">Symbols in this panel match the map. Turn layers on or off first; open <strong>Fine tune layers</strong> only when you want opacity controls.</p>
@@ -272,10 +275,10 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-sheet-close aria-label="Close planning controls">×</button>
       </div>
       <div class="route-plan-mode-buttons">
-        <button type="button" data-map-tool="measure" aria-pressed="false">Measure distance</button>
-        <button type="button" data-map-tool="plan" aria-pressed="false" disabled>Build trail route</button>
+        <button type="button" data-map-tool="measure" data-ready-group="core" aria-pressed="false" disabled>Measure distance</button>
+        <button type="button" data-map-tool="plan" data-ready-group="planning" aria-pressed="false" disabled>Build trail route</button>
       </div>
-      <p data-plan-help>Measure uses straight point-to-point segments. Build trail route chooses automatically: click near an official trail, community/informal trail, or mapped road to snap to the connected network; click clearly away from the mapped network for a dashed straight segment. Use the arrow pad under the map scale to move the map while continuing the route. Drag a planned segment to move or resnap it. Right-click a planned segment to delete it.</p>
+      <div class="route-plan-help" data-plan-help><p>Choose a planning tool.</p></div>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
         <div class="route-plan-live-stats-head">
           <strong data-plan-stats-title>Planning totals</strong>
@@ -289,10 +292,14 @@ const enabledSources = enabledBrowserMapSources;
         </div>
       </div>
       <div class="route-plan-actions">
-        <button type="button" data-plan-action="undo" disabled>Undo</button>
-        <button type="button" data-plan-action="redo" disabled>Redo</button>
+        <button type="button" class="route-plan-history-button" data-plan-action="undo" data-tooltip="Undo" aria-label="Undo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        </button>
+        <button type="button" class="route-plan-history-button" data-plan-action="redo" data-tooltip="Redo" aria-label="Redo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
+        </button>
         <button type="button" data-map-tool="save" disabled>Export GPX</button>
-        <button type="button" data-map-tool="clear">Clear</button>
+        <button type="button" data-map-tool="clear" data-ready-group="core" disabled>Clear</button>
       </div>
     </div>
 
@@ -313,10 +320,22 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-coordinate-card" data-coordinate-card hidden>
-      <div>
+      <div class="route-coordinate-main">
         <strong>Map point</strong>
         <span data-coordinate-dd></span>
         <span data-coordinate-utm></span>
+        <div class="route-coordinate-sunlight" data-coordinate-sunlight>
+          <div class="route-coordinate-sunlight-summary">
+            <strong>Sunlight today</strong>
+            <span data-coordinate-sun-today>Calculating…</span>
+          </div>
+          <details data-coordinate-sun-details>
+            <summary>Next 10 days</summary>
+            <div class="route-coordinate-sun-table-wrap" data-coordinate-sun-table></div>
+          </details>
+          <small data-coordinate-sun-source>Terrain-aware timing uses bare-earth elevation where available.</small>
+          <small>Terrain-adjusted estimate; trees, cliffs/overhangs, clouds and local obstructions may change actual direct light.</small>
+        </div>
       </div>
       <div class="route-coordinate-actions">
         <button type="button" data-coordinate-copy>Copy coordinates</button>
@@ -330,10 +349,10 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-status" data-map-mobile-status aria-live="polite">Loading map data…</div>
 
   <div class="route-map-mobile-bar" role="toolbar" aria-label="Mobile map controls">
-    <button type="button" data-sheet-open="search">Search</button>
-    <button type="button" data-sheet-open="explore" disabled>Explore</button>
-    <button type="button" data-sheet-open="plan" disabled>Plan</button>
-    <button type="button" data-map-action="share">Share</button>
+    <button type="button" data-sheet-open="search" data-ready-group="routes" disabled>Search</button>
+    <button type="button" data-sheet-open="explore" data-ready-group="routes" disabled>Explore</button>
+    <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
+    <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
   </div>
 
   <div class="route-map-context-strip">
@@ -365,8 +384,8 @@ const enabledSources = enabledBrowserMapSources;
   <details class="route-map-sources">
     <summary>Map data, attribution &amp; privacy</summary>
     <p>
-      Search, location, Home, Layers, zoom and pan are available while map context loads. Explore and Plan unlock after Community / Informal trail data loads successfully.
-      External map and GIS requests are separate from RRGH Analytics.
+      Search and Explore unlock when RRGH route geometry is ready. Map View, location, Home, Layers, zoom and Measure unlock when core map context is ready; Build trail route unlocks when its trail/road graph is ready; Share unlocks after initial map state is restored.
+      External map and GIS requests, including terrain samples used for Map Point sunlight timing, are separate from RRGH Analytics.
     </p>
     <ul>
       {enabledSources.map((source) => (
@@ -385,6 +404,16 @@ const enabledSources = enabledBrowserMapSources;
 <script>
   import L from 'leaflet';
   import { mapSources } from '../data/map/layers';
+  import {
+    addLocalDays,
+    buildTerrainHorizonProfile,
+    buildTerrainSamplePoints,
+    formatRrgDate,
+    formatRrgTime,
+    getAstronomicalSunDay,
+    getTerrainDirectTimes,
+    redRiverDateParts
+  } from '../lib/sunlight';
 
   const formatDistance = (meters: number) => {
     const miles = meters / 1609.344;
@@ -527,14 +556,35 @@ const enabledSources = enabledBrowserMapSources;
     const planStatsGain = shell.querySelector<HTMLElement>('[data-plan-stats-gain]');
     const planStatsLoss = shell.querySelector<HTMLElement>('[data-plan-stats-loss]');
     const planStatsRange = shell.querySelector<HTMLElement>('[data-plan-stats-range]');
+    const planHelp = shell.querySelector<HTMLElement>('[data-plan-help]');
+    const coordinateSunToday = shell.querySelector<HTMLElement>('[data-coordinate-sun-today]');
+    const coordinateSunTable = shell.querySelector<HTMLElement>('[data-coordinate-sun-table]');
+    const coordinateSunSource = shell.querySelector<HTMLElement>('[data-coordinate-sun-source]');
+    const coordinateSunDetails = shell.querySelector<HTMLDetailsElement>('[data-coordinate-sun-details]');
+    const sunlightPresetTimes = shell.querySelector<HTMLElement>('[data-sunlight-preset-times]');
 
     if (layerPanel) layerPanel.open = false;
 
-    const setExplorePlanReady = (ready: boolean) => {
+    type ReadyGroup = 'core' | 'routes' | 'planning' | 'share';
+    const readiness: Record<ReadyGroup, boolean> = { core: false, routes: false, planning: false, share: false };
+    const syncReadyGroup = (group: ReadyGroup) => {
+      for (const element of shell.querySelectorAll<HTMLElement>('[data-ready-group="' + group + '"]')) {
+        element.dataset.ready = String(readiness[group]);
+        if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
+          element.disabled = !readiness[group];
+        }
+      }
+    };
+    const setReadiness = (group: ReadyGroup, ready: boolean) => {
+      readiness[group] = ready;
+      syncReadyGroup(group);
+    };
+    for (const group of ['core', 'routes', 'planning', 'share'] as ReadyGroup[]) syncReadyGroup(group);
+
+    const setPlanningGraphReady = (ready: boolean) => {
       informalTrailsReady = ready;
-      for (const button of explorePlanOpenButtons) button.disabled = !ready;
-      for (const button of planButtons) button.disabled = !ready || graph.size <= 1;
-      container.dataset.trailPlanningReady = String(ready);
+      setReadiness('planning', ready && graph.size > 1);
+      container.dataset.trailPlanningReady = String(ready && graph.size > 1);
     };
 
     container.dataset.trailPlanningReady = 'false';
@@ -579,6 +629,7 @@ const enabledSources = enabledBrowserMapSources;
       trails: 390,
       counties: 415,
       lidarSun: 425,
+      areaLabels: 430,
       routes: 440,
       recreation: 450,
       routeStarts: 460,
@@ -593,9 +644,57 @@ const enabledSources = enabledBrowserMapSources;
       }
     }
 
+    const areaLabelGroup = L.layerGroup().addTo(map);
+    const areaLabels = [
+      { full: 'NATURAL BRIDGE', short: 'NATURAL BRIDGE', lat: 37.775, lng: -83.687 },
+      { full: 'RED RIVER GORGE', short: 'RED RIVER', lat: 37.836, lng: -83.638 },
+      { full: 'CLIFTY WILDERNESS', short: 'CLIFTY', lat: 37.837, lng: -83.565 }
+    ];
+    const syncAreaLabels = () => {
+      areaLabelGroup.clearLayers();
+      const zoom = map.getZoom();
+      if (zoom >= 13) return;
+      const broad = zoom <= 10;
+      const medium = zoom === 11;
+      for (const label of areaLabels) {
+        const textValue = broad || medium ? label.full : label.short;
+        L.marker([label.lat, label.lng], {
+          pane: 'areaLabels',
+          interactive: false,
+          keyboard: false,
+          icon: L.divIcon({
+            className: 'rrgh-area-label ' + (broad ? 'is-broad' : medium ? 'is-medium' : 'is-near'),
+            html: '<span>' + textValue + '</span>',
+            iconSize: [1, 1],
+            iconAnchor: [0, 0]
+          })
+        }).addTo(areaLabelGroup);
+      }
+      container.dataset.areaLabelMode = broad ? 'full-broad' : medium ? 'full-medium' : 'short';
+    };
+    map.on('zoomend', syncAreaLabels);
+
     const homeCenter = L.latLng(37.8196836, -83.6396027);
     const homeZoom = 13;
-    const setHomeView = () => map.setView(homeCenter, homeZoom, { animate: false });
+    const mobileOverviewBounds = L.latLngBounds([[37.73, -83.745], [37.93, -83.475]]);
+    const useMobileOverview = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
+    const setHomeView = () => {
+      if (useMobileOverview()) {
+        map.fitBounds(mobileOverviewBounds, { padding: [8, 8], maxZoom: 11, animate: false });
+        container.dataset.homeView = 'gorge-overview';
+      } else {
+        map.setView(homeCenter, homeZoom, { animate: false });
+        container.dataset.homeView = 'detail';
+      }
+    };
+    const updateSunlightPresetTimes = () => {
+      if (!sunlightPresetTimes) return;
+      const today = redRiverDateParts();
+      const sun = getAstronomicalSunDay(homeCenter.lat, homeCenter.lng, today);
+      sunlightPresetTimes.textContent = 'Today · Sunrise ' + formatRrgTime(sun.sunrise) + ' · Sunset ' + formatRrgTime(sun.sunset);
+    };
+    updateSunlightPresetTimes();
+
     const syncViewportDiagnostics = () => {
       const center = map.getCenter();
       const northWest = map.getBounds().getNorthWest();
@@ -608,12 +707,16 @@ const enabledSources = enabledBrowserMapSources;
     } else {
       map.setView([37.8185, -83.5795], 14);
     }
+    syncAreaLabels();
 
     const mapLayers = new Map<string, any>();
     const opacitySetters = new Map<string, (value: number) => void>();
     let homeBounds: any = null;
     let locationLayer: any = null;
     let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
+    let sunlightRequestRevision = 0;
+    let sunlightController: AbortController | null = null;
+    const sunlightHorizonCache = new Map<string, { profile: any; sourceLabel: string }>();
     let sharedViewApplied = false;
     const searchItems: Array<{ label: string; detail: string; bounds?: any; latlng?: any; open?: () => void }> = [];
     const sourceById = (id: string) => mapSources.find((source) => source.id === id);
@@ -1258,6 +1361,8 @@ const enabledSources = enabledBrowserMapSources;
         setStatus('The route line could not be loaded. Other map layers are still available.', 'warning');
       }
     }
+    setReadiness('routes', routeConfigs.length === 0 || routeExploreEntries.size > 0);
+    container.dataset.routeDataReady = String(readiness.routes);
 
     if (mode !== 'full' && routeBounds.isValid()) {
       map.fitBounds(routeBounds.pad(0.28), { maxZoom: 16 });
@@ -1709,14 +1814,14 @@ const enabledSources = enabledBrowserMapSources;
     const loadInformalTrails = async () => {
       if (mapLayers.has('osm-informal-trails')) {
         syncVisibility('osm-informal-trails');
-        setExplorePlanReady(true);
+        setPlanningGraphReady(true);
         return;
       }
 
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="osm-informal-trails"]');
       if (checkbox) checkbox.disabled = true;
-      setExplorePlanReady(false);
-      setStatus('Loading Community / Informal trails… Explore and Plan will unlock when trail data is ready.');
+      setPlanningGraphReady(false);
+      setStatus('Loading Community / Informal trails… Build trail route will unlock when the planning graph is ready.');
 
       const cachedUrl = import.meta.env.BASE_URL + 'data/map/osm-informal-trails.geojson';
       const query = '[out:json][timeout:45];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom qt;';
@@ -1884,23 +1989,23 @@ const enabledSources = enabledBrowserMapSources;
 
         bridgeNearbyNetworkNodes();
         container.dataset.plannerNodeCount = String(graph.size);
-        setExplorePlanReady(true);
+        setPlanningGraphReady(true);
 
         setStatus(
           informalPaths.length
             ? 'Trail and road planning network loaded.'
-            : 'OpenStreetMap trail data loaded. Explore and Plan are ready.'
+            : 'OpenStreetMap trail data loaded. Build trail route is ready.'
         );
         window.setTimeout(() => {
-          if (informalTrailsReady && activeTool === null) {
-            setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+          if (readiness.core && activeTool === null) {
+            setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for Map Point coordinates and sunlight. Use Explore to browse routes or Plan to measure and build a route.');
           }
         }, 1600);
       } catch (error) {
         console.error(error);
         if (checkbox) checkbox.checked = false;
-        setExplorePlanReady(false);
-        setStatus('Community / Informal trails are temporarily unavailable. Explore and Plan remain disabled until trail data loads successfully.', 'warning');
+        setPlanningGraphReady(false);
+        setStatus('Community / Informal trails are temporarily unavailable. Measure remains available; Build trail route stays disabled until the planning graph loads.', 'warning');
       } finally {
         if (checkbox) checkbox.disabled = false;
       }
@@ -2029,11 +2134,13 @@ const enabledSources = enabledBrowserMapSources;
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
         button.setAttribute('aria-pressed', 'false');
       }
+      if (stage) delete stage.dataset.sunlightMode;
     };
 
     const applyPreset = (name: string) => {
       clearPresetState();
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
+      if (stage && name === 'sunlight') stage.dataset.sunlightMode = 'true';
 
       if (name === 'hiking') {
         setLayerControl('kytopo', false, 88);
@@ -2042,6 +2149,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
+        setSunKinds(false);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 25);
         setLayerControl('usgs-topo', true, 75);
@@ -2049,12 +2157,24 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
+        setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
         setLayerControl('usgs-topo', false, 70);
         setLayerControl('ky-hillshade', false, 75);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
+        setSunKinds(false);
+      } else if (name === 'sunlight') {
+        setLayerControl('kytopo', true, 25);
+        setLayerControl('usgs-topo', true, 75);
+        setLayerControl('ky-hillshade', true, 100);
+        setLayerControl('kyaerial-phase3', false, 100);
+        setLayerControl('kyaerial-phase2-leafoff', false, 100);
+        setLayerControl('usfs-wilderness', true);
+        const sunOpacity = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
+        if (sunOpacity) sunOpacity.value = '100';
+        setSunKinds(true);
       }
       syncAerialControlState();
       syncContextLabels();
@@ -2264,7 +2384,7 @@ const enabledSources = enabledBrowserMapSources;
       const sharedMap = params.get('rrghMap');
       const sharedPreset = params.get('rrghPreset');
 
-      if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial'].includes(sharedPreset)) {
+      if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial', 'sunlight'].includes(sharedPreset)) {
         applyPreset(sharedPreset);
       }
 
@@ -2335,6 +2455,10 @@ const enabledSources = enabledBrowserMapSources;
       syncViewportDiagnostics();
     };
     applySharedMapState();
+    setReadiness('core', true);
+    setReadiness('share', true);
+    container.dataset.mapCoreReady = 'true';
+    container.dataset.shareReady = 'true';
 
     const syncSheetButtons = () => {
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open]')) {
@@ -2393,12 +2517,16 @@ const enabledSources = enabledBrowserMapSources;
     }
 
     layerPanel?.addEventListener('toggle', () => {
+      if (!readiness.core && layerPanel.open) {
+        layerPanel.open = false;
+        return;
+      }
       if (!layerPanel.open) delete layerPanel.dataset.mobileOpen;
     });
 
     const goHome = () => {
       setHomeView();
-      setStatus('Core Red River Gorge hiking view restored.');
+      setStatus(useMobileOverview() ? 'Red River Gorge overview restored.' : 'Core Red River Gorge hiking view restored.');
     };
 
     const showMyLocation = () => {
@@ -2523,6 +2651,121 @@ const enabledSources = enabledBrowserMapSources;
     };
     searchInput?.addEventListener('input', renderSearchResults);
 
+    const fetchTerrainElevations = async (
+      sourceId: string,
+      points: Array<{ lat: number; lng: number }>,
+      signal: AbortSignal
+    ) => {
+      const source = sourceById(sourceId);
+      if (!source?.serviceUrl) throw new Error('Terrain elevation source is unavailable: ' + sourceId);
+      const values: Array<number | null> = [];
+      const chunkSize = 180;
+      for (let offset = 0; offset < points.length; offset += chunkSize) {
+        const chunk = points.slice(offset, offset + chunkSize);
+        const params = new URLSearchParams({
+          f: 'json',
+          geometry: JSON.stringify({
+            points: chunk.map((point) => [point.lng, point.lat]),
+            spatialReference: { wkid: 4326 }
+          }),
+          geometryType: 'esriGeometryMultipoint',
+          returnFirstValueOnly: 'true',
+          interpolation: 'RSP_BilinearInterpolation',
+          outSR: '4326'
+        });
+        const response = await fetch(source.serviceUrl + '/getSamples', {
+          method: 'POST',
+          credentials: 'omit',
+          mode: 'cors',
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: params.toString(),
+          signal
+        });
+        if (!response.ok) throw new Error(source.label + ' terrain request failed with ' + response.status);
+        const payload = await response.json();
+        if (payload?.error || !Array.isArray(payload?.samples) || payload.samples.length !== chunk.length) {
+          throw new Error(source.label + ' returned incomplete terrain samples.');
+        }
+        for (const sample of payload.samples) {
+          const raw = Array.isArray(sample?.value) ? sample.value[0] : String(sample?.value ?? '').trim().split(/\s+/)[0];
+          const meters = Number(raw);
+          values.push(Number.isFinite(meters) ? meters : null);
+        }
+      }
+      return values;
+    };
+
+    const terrainHorizonForPoint = async (lat: number, lng: number, signal: AbortSignal) => {
+      const cacheKey = lat.toFixed(5) + ',' + lng.toFixed(5);
+      const cached = sunlightHorizonCache.get(cacheKey);
+      if (cached) return cached;
+
+      const samples = buildTerrainSamplePoints(lat, lng);
+      const points = [{ lat, lng }, ...samples.map((sample) => ({ lat: sample.lat, lng: sample.lng }))];
+      const sourceIds = ['kyaped-phase2-dem', 'usgs-3dep-bare-earth-dem'];
+      let lastError: unknown = null;
+
+      for (const sourceId of sourceIds) {
+        try {
+          const elevations = await fetchTerrainElevations(sourceId, points, signal);
+          const profile = buildTerrainHorizonProfile(samples, elevations);
+          const sourceLabel = sourceById(sourceId)?.label ?? sourceId;
+          const result = { profile, sourceLabel };
+          sunlightHorizonCache.set(cacheKey, result);
+          container.dataset.sunlightTerrainSource = sourceId;
+          return result;
+        } catch (error) {
+          if (signal.aborted) throw error;
+          lastError = error;
+          console.error(error);
+        }
+      }
+      throw lastError ?? new Error('Terrain-aware sunlight data is unavailable.');
+    };
+
+    const renderSunlightRows = (
+      days: any[],
+      directTimes: Array<{ firstDirectSun: Date | null; lastDirectSun: Date | null }> | null
+    ) => {
+      if (!coordinateSunTable) return;
+      coordinateSunTable.replaceChildren();
+      const table = document.createElement('table');
+      table.className = 'route-coordinate-sun-table';
+      const thead = document.createElement('thead');
+      const header = document.createElement('tr');
+      for (const value of ['Date', 'Sunrise', 'First direct sun', 'Last direct sun', 'Sunset']) {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = value;
+        header.append(th);
+      }
+      thead.append(header);
+      table.append(thead);
+      const tbody = document.createElement('tbody');
+      days.forEach((day, index) => {
+        const row = document.createElement('tr');
+        const dateCell = document.createElement('th');
+        dateCell.scope = 'row';
+        dateCell.textContent = formatRrgDate(day.start);
+        row.append(dateCell);
+        const values = [
+          formatRrgTime(day.sunrise),
+          directTimes ? formatRrgTime(directTimes[index]?.firstDirectSun ?? null) : '…',
+          directTimes ? formatRrgTime(directTimes[index]?.lastDirectSun ?? null) : '…',
+          formatRrgTime(day.sunset)
+        ];
+        for (const value of values) {
+          const td = document.createElement('td');
+          td.textContent = value;
+          row.append(td);
+        }
+        tbody.append(row);
+      });
+      table.append(tbody);
+      coordinateSunTable.append(table);
+    };
+
     const showCoordinate = (latlng: any) => {
       const lat = Number(latlng.lat);
       const lng = Number(latlng.lng);
@@ -2530,12 +2773,51 @@ const enabledSources = enabledBrowserMapSources;
       coordinatePoint = { lat, lng, utm };
       if (coordinateDd) coordinateDd.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
       if (coordinateUtm) coordinateUtm.textContent = 'UTM ' + utm;
+
+      const today = redRiverDateParts();
+      const days = Array.from({ length: 10 }, (_, index) =>
+        getAstronomicalSunDay(lat, lng, addLocalDays(today, index))
+      );
+      if (coordinateSunToday) {
+        coordinateSunToday.textContent = 'Sunrise ' + formatRrgTime(days[0]?.sunrise ?? null)
+          + ' · Sunset ' + formatRrgTime(days[0]?.sunset ?? null);
+      }
+      if (coordinateSunSource) coordinateSunSource.textContent = 'Calculating terrain-adjusted first and last direct sun…';
+      if (coordinateSunDetails) {
+        coordinateSunDetails.open = stage?.dataset.sunlightMode === 'true';
+      }
+      renderSunlightRows(days, null);
       if (coordinateCard) coordinateCard.hidden = false;
+
+      const revision = ++sunlightRequestRevision;
+      sunlightController?.abort();
+      const controller = new AbortController();
+      sunlightController = controller;
+      void terrainHorizonForPoint(lat, lng, controller.signal).then(({ profile, sourceLabel }) => {
+        if (controller.signal.aborted || revision !== sunlightRequestRevision) return;
+        const directTimes = days.map((day) => getTerrainDirectTimes(lat, lng, day, profile));
+        renderSunlightRows(days, directTimes);
+        if (coordinateSunSource) {
+          coordinateSunSource.textContent = 'Terrain model: ' + sourceLabel + ' bare-earth elevation.';
+        }
+        container.dataset.sunlightDayCount = '10';
+        container.dataset.sunlightTerrainReady = 'true';
+      }).catch((error) => {
+        if (controller.signal.aborted || revision !== sunlightRequestRevision) return;
+        console.error(error);
+        if (coordinateSunSource) {
+          coordinateSunSource.textContent = 'Astronomical times shown; terrain-adjusted timing is temporarily unavailable.';
+        }
+        container.dataset.sunlightTerrainReady = 'false';
+      });
     };
 
     coordinateClose?.addEventListener('click', () => {
       if (coordinateCard) coordinateCard.hidden = true;
       coordinatePoint = null;
+      sunlightRequestRevision += 1;
+      sunlightController?.abort();
+      sunlightController = null;
     });
 
     coordinateCopy?.addEventListener('click', async () => {
@@ -2892,8 +3174,37 @@ const enabledSources = enabledBrowserMapSources;
       planSegments = rebuiltSegments;
     };
 
+    const renderPlanHelp = (tool: 'measure' | 'plan' | null) => {
+      if (!planHelp) return;
+      planHelp.replaceChildren();
+      if (tool === null) {
+        const p = document.createElement('p');
+        p.textContent = 'Choose a planning tool.';
+        planHelp.append(p);
+        return;
+      }
+      if (tool === 'measure') {
+        const p = document.createElement('p');
+        p.textContent = 'Click or tap points to measure straight-line distance.';
+        planHelp.append(p);
+        return;
+      }
+      const list = document.createElement('ul');
+      for (const item of [
+        'Click near a mapped trail or road to snap to the network; click away from it for a straight segment.',
+        'Drag a planned segment to adjust or resnap it.',
+        'Right-click or press and hold a planned segment to delete it.'
+      ]) {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.append(li);
+      }
+      planHelp.append(list);
+    };
+
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
+      renderPlanHelp(tool);
       stage?.setAttribute('data-active-tool', tool ?? 'explore');
       if (planPanPad) planPanPad.hidden = tool !== 'plan';
 
@@ -2912,7 +3223,7 @@ const enabledSources = enabledBrowserMapSources;
         if (planPanel) planPanel.hidden = false;
         redrawPlan(false);
         setStatus('Build route: click near an official trail, community/informal trail, or mapped road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
-      } else if (!vectorFailures.length && informalTrailsReady) {
+      } else if (!vectorFailures.length && readiness.core) {
         if (planLiveStats) planLiveStats.hidden = true;
         setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
       }
@@ -3440,9 +3751,9 @@ const enabledSources = enabledBrowserMapSources;
       setTool(null);
     }
 
-    // Optional land context can load in the background. Community / Informal trail data is the
-    // planning-readiness gate: Search, location, Home, Layers, zoom and pan remain available while
-    // trail data loads, but Explore and Plan stay disabled until the trail graph is ready.
+    // Optional land context can load in the background. Search/Explore are already route-ready,
+    // core controls are enabled only after initial map context/state restoration, and Community /
+    // Informal trail data is the separate Build trail route readiness gate.
     window.setTimeout(() => {
       void loadLandContext('usfs-wilderness');
       void loadLandContext('usfs-special-management');

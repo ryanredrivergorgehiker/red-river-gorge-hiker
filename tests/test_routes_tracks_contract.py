@@ -33,6 +33,7 @@ LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_
 RRG_LIDAR_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-manifest.json'
 RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-8'))
 RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
+SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
 
 
 def sha256(path):
@@ -404,7 +405,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-map-action="zoom-in"', MAP)
         self.assertIn("const homeCenter = L.latLng(37.8196836, -83.6396027)", MAP)
         self.assertIn("const homeZoom = 13", MAP)
-        self.assertIn("const setHomeView = () => map.setView(homeCenter, homeZoom", MAP)
+        self.assertIn("const mobileOverviewBounds = L.latLngBounds([[37.73, -83.745], [37.93, -83.475]])", MAP)
+        self.assertIn("map.fitBounds(mobileOverviewBounds, { padding: [8, 8], maxZoom: 11, animate: false })", MAP)
         self.assertIn("const syncViewportDiagnostics = () =>", MAP)
         self.assertIn("container.dataset.mapCenter", MAP)
         self.assertIn("container.dataset.mapNorthWest", MAP)
@@ -625,7 +627,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertGreaterEqual(MAP.count('data-sheet-open="plan" disabled'), 2)
         self.assertIn('setExplorePlanReady(false)', MAP)
         self.assertIn('setExplorePlanReady(true)', MAP)
-        self.assertIn('Explore and Plan will unlock when trail data is ready.', MAP)
+        self.assertIn('Build trail route will unlock when the planning graph is ready.', MAP)
         self.assertIn('["informal"="yes"]', MAP)
         self.assertIn("data/map/osm-informal-trails.geojson", MAP)
         self.assertIn('https://overpass.maprva.org/api/interpreter', MAP)
@@ -717,6 +719,59 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('CalTopo', GUIDE)
         self.assertIn('does not publish or redistribute Gaia proprietary/Premium overlays', GUIDE)
         self.assertIn('Do not copy or rehost CalTopo proprietary map tiles', GUIDE)
+
+
+    def test_owner_approved_six_change_map_refinement_contract(self):
+        self.assertIn('data-map-preset="sunlight"', MAP)
+        self.assertIn('<strong>Sunlight</strong>', MAP)
+        self.assertIn('data-sunlight-preset-times', MAP)
+        self.assertIn("['hiking', 'terrain', 'aerial', 'sunlight']", MAP)
+        self.assertIn("setLayerControl('kytopo', true, 25)", MAP)
+        self.assertIn("setLayerControl('usgs-topo', true, 75)", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', true, 100)", MAP)
+        self.assertIn("setSunKinds(true)", MAP)
+        self.assertIn('data-coordinate-sun-today', MAP)
+        self.assertIn('Next 10 days', MAP)
+        self.assertIn('First direct sun', MAP)
+        self.assertIn('Last direct sun', MAP)
+        self.assertIn('kyaped-phase2-dem', MAP)
+        self.assertIn('Kentucky KyFromAbove Phase 2 Bare Earth DEM', LAYERS)
+        self.assertIn('Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer', LAYERS)
+        self.assertIn('buildTerrainSamplePoints', SUNLIGHT)
+        self.assertIn('buildTerrainHorizonProfile', SUNLIGHT)
+        self.assertIn('getTerrainDirectTimes', SUNLIGHT)
+        self.assertIn("RRG_TIME_ZONE = 'America/New_York'", SUNLIGHT)
+
+        self.assertIn('data-ready-group="routes"', MAP)
+        self.assertIn('data-ready-group="core"', MAP)
+        self.assertIn('data-ready-group="planning"', MAP)
+        self.assertIn('data-ready-group="share"', MAP)
+        self.assertIn("setReadiness('routes'", MAP)
+        self.assertIn("setReadiness('core', true)", MAP)
+        self.assertIn("setReadiness('share', true)", MAP)
+        self.assertIn("setReadiness('planning'", MAP)
+
+        self.assertIn('class="route-plan-history-button"', MAP)
+        self.assertIn('data-tooltip="Undo"', MAP)
+        self.assertIn('data-tooltip="Redo"', MAP)
+        self.assertIn('aria-label="Undo"', MAP)
+        self.assertIn('aria-label="Redo"', MAP)
+        self.assertIn('<p>Choose a planning tool.</p>', MAP)
+        self.assertIn('Click or tap points to measure straight-line distance.', MAP)
+        self.assertIn('Drag a planned segment to adjust or resnap it.', MAP)
+
+        self.assertIn("'NATURAL BRIDGE'", MAP)
+        self.assertIn("'RED RIVER GORGE'", MAP)
+        self.assertIn("'CLIFTY WILDERNESS'", MAP)
+        self.assertIn("if (zoom >= 13) return;", MAP)
+        self.assertIn("areaLabels: 430", MAP)
+        self.assertIn('.rrgh-area-label', ROUTES_CSS)
+
+        self.assertIn("mobileOverviewBounds", MAP)
+        self.assertIn("maxZoom: 11", MAP)
+        self.assertIn("container.dataset.homeView = 'gorge-overview'", MAP)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr));', ROUTES_CSS)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr));', ROUTES_CSS)
 
 
 if __name__ == '__main__':
