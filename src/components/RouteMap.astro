@@ -656,7 +656,7 @@ const enabledSources = enabledBrowserMapSources;
     const syncAreaLabels = () => {
       areaLabelGroup.clearLayers();
       const zoom = map.getZoom();
-      const fullLabelZoom = isMobileFullMap() ? 10 : 13;
+      const fullLabelZoom = isMobileFullMap() ? 11 : 13;
       if (zoom < fullLabelZoom || zoom > fullLabelZoom + 1) {
         container.dataset.areaLabelMode = 'hidden';
         return;
@@ -683,7 +683,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const homeCenter = L.latLng(37.8196836, -83.6396027);
     const homeZoom = 13;
-    const mobileHomeZoom = 10;
+    const mobileHomeZoom = 11;
     const setHomeView = () => {
       if (isMobileFullMap()) {
         map.setView(homeCenter, mobileHomeZoom, { animate: false });
