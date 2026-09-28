@@ -2509,3 +2509,82 @@
     margin-bottom:.3rem!important;
   }
 }
+
+
+/* Optional KGS Oil & Gas Wells layer — staging POC — 2026-09-28 */
+.route-layer-source-note{
+  margin:.35rem 0 0;
+  padding:0 .15rem;
+  color:#68736d;
+  font-size:.66rem;
+  line-height:1.35;
+}
+.route-layer-source-note[data-kind="warning"]{color:#8b4e20}
+.route-layer-swatch.swatch-oil-gas{
+  position:relative;
+  width:18px;
+  height:18px;
+  border:0;
+  background:transparent;
+}
+.route-layer-swatch.swatch-oil-gas::before{
+  content:'';
+  position:absolute;
+  inset:3px;
+  border:2px solid #fff;
+  border-radius:999px;
+  background:#a94f3d;
+  box-shadow:0 0 0 1px #17372d;
+}
+.route-oil-gas-popup{
+  min-width:min(17rem,70vw);
+  color:#26312b;
+  font-size:.76rem;
+  line-height:1.35;
+}
+.route-oil-gas-eyebrow{
+  display:block;
+  margin-bottom:.15rem;
+  color:#68736d;
+  font-size:.58rem;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.route-oil-gas-title{
+  display:block;
+  margin-bottom:.45rem;
+  color:#17372d;
+  font-size:.93rem;
+}
+.route-oil-gas-facts{
+  display:grid;
+  grid-template-columns:max-content minmax(0,1fr);
+  gap:.18rem .55rem;
+  margin:0 0 .55rem;
+}
+.route-oil-gas-facts dt{
+  color:#68736d;
+  font-size:.65rem;
+  font-weight:700;
+}
+.route-oil-gas-facts dd{
+  min-width:0;
+  margin:0;
+  overflow-wrap:anywhere;
+  font-weight:650;
+}
+.route-oil-gas-popup>a{
+  display:inline-block;
+  margin:.05rem 0 .45rem;
+  font-weight:800;
+}
+.route-oil-gas-note{
+  margin:.15rem 0 0;
+  color:#68736d;
+  font-size:.61rem;
+  line-height:1.35;
+}
+@media(max-width:700px){
+  .route-oil-gas-popup{min-width:0;font-size:.7rem}
+  .route-oil-gas-facts{grid-template-columns:7.1rem minmax(0,1fr);gap:.15rem .4rem}
+}
