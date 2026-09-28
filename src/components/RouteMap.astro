@@ -3018,22 +3018,19 @@ const enabledSources = enabledBrowserMapSources;
     let longPressTimer = 0;
     let longPressStart: { x: number; y: number } | null = null;
     let longPressTriggered = false;
-    let longPressPointerId: number | null = null;
 
     const clearLongPress = () => {
       window.clearTimeout(longPressTimer);
       longPressTimer = 0;
       longPressStart = null;
-      longPressPointerId = null;
     };
 
-    const scheduleLongPress = (clientX: number, clientY: number, pointerId: number | null = null) => {
+    const scheduleLongPress = (clientX: number, clientY: number) => {
       if (activeTool !== null) {
         clearLongPress();
         return;
       }
       longPressStart = { x: clientX, y: clientY };
-      longPressPointerId = pointerId;
       longPressTriggered = false;
       window.clearTimeout(longPressTimer);
       longPressTimer = window.setTimeout(() => {
@@ -3045,51 +3042,37 @@ const enabledSources = enabledBrowserMapSources;
         setStatus('Map coordinates shown. Close the coordinate card when finished.');
         longPressTriggered = true;
         lastTapAt = 0;
-      }, 550);
+        container.dataset.longPressActivated = 'true';
+      }, 500);
     };
-
-    container.addEventListener('pointerdown', (event) => {
-      if (event.pointerType !== 'touch' || !event.isPrimary || activeTool !== null) return;
-      scheduleLongPress(event.clientX, event.clientY, event.pointerId);
-    });
-
-    container.addEventListener('pointermove', (event) => {
-      if (event.pointerType !== 'touch' || longPressPointerId !== event.pointerId || !longPressStart) return;
-      if (Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 14) clearLongPress();
-    });
-
-    container.addEventListener('pointerup', (event) => {
-      if (event.pointerType !== 'touch' || longPressPointerId !== event.pointerId) return;
-      window.clearTimeout(longPressTimer);
-      longPressTimer = 0;
-      longPressStart = null;
-      longPressPointerId = null;
-    });
-
-    container.addEventListener('pointercancel', (event) => {
-      if (event.pointerType === 'touch' && (longPressPointerId === null || longPressPointerId === event.pointerId)) clearLongPress();
-    });
 
     container.addEventListener('touchstart', (event) => {
       if (activeTool !== null || event.touches.length !== 1) {
         clearLongPress();
         return;
       }
-      if (!('PointerEvent' in window)) {
-        const touch = event.touches[0]!;
-        scheduleLongPress(touch.clientX, touch.clientY);
-      }
+      const touch = event.touches[0]!;
+      scheduleLongPress(touch.clientX, touch.clientY);
     }, { passive: true });
 
     container.addEventListener('touchmove', (event) => {
-      if ('PointerEvent' in window || !longPressStart || event.touches.length !== 1) return;
+      if (!longPressStart || event.touches.length !== 1) return;
       const touch = event.touches[0]!;
-      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 14) clearLongPress();
+      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 14) {
+        clearLongPress();
+        delete container.dataset.longPressActivated;
+      }
     }, { passive: true });
 
+    // Some mobile browsers emit touchcancel during a stationary long hold while
+    // deciding whether to show native selection/callout UI. The map explicitly
+    // suppresses that UI in CSS, so do not cancel a still-stationary hold here.
+    // Movement and multi-touch already cancel the timer above.
     container.addEventListener('touchcancel', () => {
-      clearLongPress();
-      longPressTriggered = false;
+      if (longPressTriggered) {
+        longPressTriggered = false;
+        clearLongPress();
+      }
     }, { passive: true });
 
     container.addEventListener('selectstart', (event) => {
@@ -3104,7 +3087,6 @@ const enabledSources = enabledBrowserMapSources;
       window.clearTimeout(longPressTimer);
       longPressTimer = 0;
       longPressStart = null;
-      longPressPointerId = null;
 
       if (longPressTriggered) {
         longPressTriggered = false;
@@ -3113,6 +3095,7 @@ const enabledSources = enabledBrowserMapSources;
         return;
       }
 
+      delete container.dataset.longPressActivated;
       if (activeTool !== null || event.changedTouches.length !== 1 || event.touches.length !== 0) return;
       const now = Date.now();
       if (now - lastTapAt < 320) {
