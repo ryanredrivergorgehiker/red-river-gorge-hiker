@@ -2249,7 +2249,7 @@
   max-width:min(35rem,calc(100% - 1.5rem));
 }
 .route-coordinate-toolbar{
-  grid-template-columns:76px minmax(14rem,max-content) 32px!important;
+  grid-template-columns:76px minmax(14rem,1fr) 32px!important;
   column-gap:.7rem!important;
   row-gap:.2rem!important;
   align-items:start!important;
