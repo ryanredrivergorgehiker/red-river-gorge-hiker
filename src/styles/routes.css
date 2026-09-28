@@ -2478,3 +2478,22 @@
     line-height:1.24!important;
   }
 }
+
+
+/* Map Point micro-polish — Copy Coordinates and title spacing — 2026-09-28 */
+.route-coordinate-copy span{
+  font-size:.63rem!important;
+  line-height:1.04!important;
+  letter-spacing:-.01em;
+}
+.route-coordinate-title{
+  margin-bottom:.26rem!important;
+}
+@media(max-width:700px){
+  .route-coordinate-copy span{
+    font-size:.56rem!important;
+  }
+  .route-coordinate-title{
+    margin-bottom:.3rem!important;
+  }
+}
