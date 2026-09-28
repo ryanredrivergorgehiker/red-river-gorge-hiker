@@ -413,7 +413,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("map.on('moveend', syncViewportDiagnostics)", MAP)
         self.assertIn("L.control.scale({ position: 'topleft'", MAP)
         self.assertIn('data-coordinate-card', MAP)
-        self.assertIn('Copy coordinates', MAP)
+        self.assertIn('<span>Copy</span><span>coordinates</span>', MAP)
         self.assertIn('data-coordinate-close', MAP)
         self.assertIn('display:flex!important;', ROUTES_CSS)
         self.assertIn('justify-content:flex-start;', ROUTES_CSS)
