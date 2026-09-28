@@ -338,6 +338,16 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="measure" data-ready-group="core" aria-pressed="false" disabled>Measure distance</button>
         <button type="button" data-map-tool="plan" data-ready-group="planning" aria-pressed="false" disabled>Build trail route</button>
       </div>
+      <div class="route-plan-actions">
+        <button type="button" class="route-plan-history-button" data-plan-action="undo" data-tooltip="Undo" aria-label="Undo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+        </button>
+        <button type="button" class="route-plan-history-button" data-plan-action="redo" data-tooltip="Redo" aria-label="Redo" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
+        </button>
+        <button type="button" data-map-tool="save" disabled>Export GPX</button>
+        <button type="button" data-map-tool="clear" data-ready-group="core" disabled>Clear</button>
+      </div>
       <div class="route-plan-help" data-plan-help><p>Choose a planning tool.</p></div>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
         <div class="route-plan-live-stats-head">
@@ -350,16 +360,6 @@ const enabledSources = enabledBrowserMapSources;
           <span><small>Loss</small><strong data-plan-stats-loss>—</strong></span>
           <span><small>Elevation</small><strong data-plan-stats-range>—</strong></span>
         </div>
-      </div>
-      <div class="route-plan-actions">
-        <button type="button" class="route-plan-history-button" data-plan-action="undo" data-tooltip="Undo" aria-label="Undo" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-        </button>
-        <button type="button" class="route-plan-history-button" data-plan-action="redo" data-tooltip="Redo" aria-label="Redo" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
-        </button>
-        <button type="button" data-map-tool="save" disabled>Export GPX</button>
-        <button type="button" data-map-tool="clear" data-ready-group="core" disabled>Clear</button>
       </div>
     </div>
 
@@ -1645,6 +1645,80 @@ const enabledSources = enabledBrowserMapSources;
       return connected;
     };
 
+    const nearestKyRoadEndpointCandidate = (
+      origin: { key: string; roadTag: string; segmentId: number; axisDegrees: number },
+      maxGapMeters: number
+    ) => {
+      const originPoint = nodeCoords.get(origin.key);
+      if (!originPoint) return null;
+
+      let nearest: { endpoint: typeof origin; distance: number } | null = null;
+      let secondNearestDistance = Infinity;
+
+      for (const candidate of kyRoadEndpoints) {
+        if (candidate.key === origin.key || candidate.segmentId === origin.segmentId) continue;
+        if (graph.get(origin.key)?.has(candidate.key)) continue;
+        const candidatePoint = nodeCoords.get(candidate.key);
+        if (!candidatePoint) continue;
+        const distance = originPoint.distanceTo(candidatePoint);
+        if (distance > maxGapMeters) continue;
+
+        if (!nearest || distance < nearest.distance) {
+          if (nearest) secondNearestDistance = nearest.distance;
+          nearest = { endpoint: candidate, distance };
+        } else if (distance < secondNearestDistance) {
+          secondNearestDistance = distance;
+        }
+      }
+
+      return nearest ? { ...nearest, secondNearestDistance } : null;
+    };
+
+    const connectMutualNearestKyRoadEndpointGaps = (
+      maxGapMeters = 90,
+      minimumAlternativeSeparationMeters = 18,
+      minimumAlternativeRatio = 1.35
+    ) => {
+      let connected = 0;
+      const consumed = new Set<string>();
+
+      for (const a of kyRoadEndpoints) {
+        if (consumed.has(a.key)) continue;
+        const nearestA = nearestKyRoadEndpointCandidate(a, maxGapMeters);
+        if (!nearestA) continue;
+
+        const b = nearestA.endpoint;
+        if (consumed.has(b.key)) continue;
+        const nearestB = nearestKyRoadEndpointCandidate(b, maxGapMeters);
+        if (!nearestB || nearestB.endpoint.key !== a.key) continue;
+
+        const ambiguousA = Number.isFinite(nearestA.secondNearestDistance)
+          && nearestA.secondNearestDistance < nearestA.distance + minimumAlternativeSeparationMeters
+          && nearestA.secondNearestDistance < nearestA.distance * minimumAlternativeRatio;
+        const ambiguousB = Number.isFinite(nearestB.secondNearestDistance)
+          && nearestB.secondNearestDistance < nearestB.distance + minimumAlternativeSeparationMeters
+          && nearestB.secondNearestDistance < nearestB.distance * minimumAlternativeRatio;
+        if (ambiguousA || ambiguousB) continue;
+
+        const pointA = nodeCoords.get(a.key);
+        const pointB = nodeCoords.get(b.key);
+        if (!pointA || !pointB) continue;
+
+        const gapAxis = axisDegreesBetween(pointA, pointB);
+        const approachAligned = axisDifference(a.axisDegrees, gapAxis) <= 40
+          || axisDifference(b.axisDegrees, gapAxis) <= 40;
+        if (!approachAligned) continue;
+
+        connect(a.key, b.key);
+        consumed.add(a.key);
+        consumed.add(b.key);
+        connected += 1;
+      }
+
+      container.dataset.kyRoadMutualEndpointBridgeCount = String(connected);
+      return connected;
+    };
+
     const planSnapToleranceMeters = 90;
 
     const nearestNode = (latlng: any) => {
@@ -2161,6 +2235,7 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
       connectNamedRoadEndpointGaps();
       connectNearbyKyRoadEndpointGaps();
+      connectMutualNearestKyRoadEndpointGaps();
     } catch (error) {
       console.error(error);
       container.dataset.planningRoadFeatureCount = '0';
