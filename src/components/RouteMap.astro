@@ -667,8 +667,6 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.planDetourGuardCount = '0';
     container.dataset.namedRoadGapBridgeCount = '0';
     container.dataset.kyRoadEndpointBridgeCount = '0';
-    container.dataset.kyRoadMutualEndpointBridgeCount = '0';
-    container.dataset.trailheadAccessBridgeCount = '0';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (status) {
@@ -1416,7 +1414,6 @@ const enabledSources = enabledBrowserMapSources;
     const routeStartMarkers: any[] = [];
     const landmarkMarkers: any[] = [];
     const recreationMarkers: any[] = [];
-    const recreationTrailheadPoints: any[] = [];
     const routeRecords: Array<{ layer: any; routeCategory: string }> = [];
     const routeStartRecords: Array<{ layer: any; routeCategory: string }> = [];
     const landmarkRecords: Array<{ layer: any; routeCategory: string }> = [];
@@ -1480,9 +1477,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
-    const nodeSources = new Map<string, Set<string>>();
     const snapEndpointsByTag = new Map<string, Set<string>>();
-    const snapEndpointsBySource = new Map<string, Set<string>>();
     const kyRoadEndpoints: Array<{ key: string; roadTag: string; segmentId: number; axisDegrees: number }> = [];
     let kyRoadSegmentId = 0;
     const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
@@ -1507,7 +1502,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!fromB.has(a) || distance < (fromB.get(a) ?? Infinity)) fromB.set(a, distance);
     };
 
-    const addSnapLine = (coordinates: number[][], endpointTag = '', sourceKind = '') => {
+    const addSnapLine = (coordinates: number[][], endpointTag = '') => {
       if (coordinates.length < 2) return [] as string[];
       const valid = coordinates
         .map((pair) => ({ lng: Number(pair[0]), lat: Number(pair[1]) }))
@@ -1530,19 +1525,6 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1]!, keys[i]!);
-      if (sourceKind) {
-        for (const key of keys) {
-          const sources = nodeSources.get(key) ?? new Set<string>();
-          sources.add(sourceKind);
-          nodeSources.set(key, sources);
-        }
-        if (keys.length > 1) {
-          const endpoints = snapEndpointsBySource.get(sourceKind) ?? new Set<string>();
-          endpoints.add(keys[0]!);
-          endpoints.add(keys[keys.length - 1]!);
-          snapEndpointsBySource.set(sourceKind, endpoints);
-        }
-      }
       if (endpointTag && keys.length > 1) {
         const endpoints = snapEndpointsByTag.get(endpointTag) ?? new Set<string>();
         endpoints.add(keys[0]!);
@@ -1552,9 +1534,9 @@ const enabledSources = enabledBrowserMapSources;
       return keys;
     };
 
-    const indexGeometry = (geojson: any, sourceKind = '') => {
+    const indexGeometry = (geojson: any) => {
       for (const feature of geojson?.features ?? []) {
-        for (const line of geometryLines(feature.geometry)) addSnapLine(line, '', sourceKind);
+        for (const line of geometryLines(feature.geometry)) addSnapLine(line);
       }
     };
 
@@ -1587,43 +1569,6 @@ const enabledSources = enabledBrowserMapSources;
           }
         }
       }
-    };
-
-    const connectTrailheadAccessNetworkGaps = (maxGapMeters = 45, trailheadRadiusMeters = 90) => {
-      const roadNodes = Array.from(nodeSources.entries())
-        .filter(([, sources]) => sources.has('ky-road') || sources.has('usfs-road'))
-        .map(([key]) => key);
-      const trailEndpoints = new Set<string>([
-        ...(snapEndpointsBySource.get('usfs-trail') ?? []),
-        ...(snapEndpointsBySource.get('informal-trail') ?? [])
-      ]);
-      let connected = 0;
-
-      for (const trailhead of recreationTrailheadPoints) {
-        let best: { roadKey: string; trailKey: string; distance: number } | null = null;
-
-        for (const trailKey of trailEndpoints) {
-          const trailPoint = nodeCoords.get(trailKey);
-          if (!trailPoint || trailhead.distanceTo(trailPoint) > trailheadRadiusMeters) continue;
-
-          for (const roadKey of roadNodes) {
-            if (roadKey === trailKey || graph.get(roadKey)?.has(trailKey)) continue;
-            const roadPoint = nodeCoords.get(roadKey);
-            if (!roadPoint || trailhead.distanceTo(roadPoint) > trailheadRadiusMeters) continue;
-            const distance = roadPoint.distanceTo(trailPoint);
-            if (distance > maxGapMeters) continue;
-            if (!best || distance < best.distance) best = { roadKey, trailKey, distance };
-          }
-        }
-
-        if (best) {
-          connect(best.roadKey, best.trailKey);
-          connected += 1;
-        }
-      }
-
-      container.dataset.trailheadAccessBridgeCount = String(connected);
-      return connected;
     };
 
     const axisDegreesBetween = (a: any, b: any) => {
@@ -2099,7 +2044,7 @@ const enabledSources = enabledBrowserMapSources;
 
     try {
       const trails = await fetchGeoJson('usfs-trails');
-      indexGeometry(trails, 'usfs-trail');
+      indexGeometry(trails);
       const seenLabels = new Set<string>();
       const trailCasingLayer = L.geoJSON(trails, {
         pane: 'trails',
@@ -2230,7 +2175,7 @@ const enabledSources = enabledBrowserMapSources;
           popup.append(meta);
           layer.bindPopup(popup, { maxWidth: 320 });
           roadPaths.push(layer);
-          for (const line of geometryLines(feature.geometry)) addSnapLine(line, '', 'usfs-road');
+          for (const line of geometryLines(feature.geometry)) addSnapLine(line);
 
           if (layer.getBounds) {
             searchItems.push({
@@ -2268,7 +2213,7 @@ const enabledSources = enabledBrowserMapSources;
         for (const line of geometryLines(feature.geometry)) {
           if (line.length < 2) continue;
           const roadTag = normalizeKentuckyRoadTag(roadName, roadClass);
-          const keys = addSnapLine(line, roadTag, 'ky-road');
+          const keys = addSnapLine(line, roadTag);
           if (keys.length > 1) {
             const segmentId = ++kyRoadSegmentId;
             const first = nodeCoords.get(keys[0]!);
@@ -2321,7 +2266,6 @@ const enabledSources = enabledBrowserMapSources;
         const seasonalStatus = featureValue(feature.properties, ['seasonal_operational_status', 'SEASONAL_OPERATIONAL_STATUS']);
         const portalUrl = featureValue(feature.properties, ['usda_portal_url', 'USDA_PORTAL_URL']);
         const isTrailhead = /TRAILHEAD/i.test(type);
-        if (isTrailhead) recreationTrailheadPoints.push(L.latLng(lat, lng));
         const icon = L.divIcon({
           className: isTrailhead ? 'route-trailhead-icon' : 'route-facility-icon',
           html: isTrailhead ? '<span aria-hidden="true">▲</span>' : '<span aria-hidden="true">i</span>',
@@ -2667,7 +2611,7 @@ const enabledSources = enabledBrowserMapSources;
             informalPaths.push(featureLayer);
 
             if (!restricted) {
-              for (const line of geometryLines(feature.geometry)) addSnapLine(line, '', 'informal-trail');
+              for (const line of geometryLines(feature.geometry)) addSnapLine(line);
             }
 
             if (featureLayer.getBounds) {
@@ -2692,7 +2636,6 @@ const enabledSources = enabledBrowserMapSources;
         syncVisibility('osm-informal-trails');
 
         bridgeNearbyNetworkNodes();
-        connectTrailheadAccessNetworkGaps();
         container.dataset.plannerNodeCount = String(graph.size);
         setPlanningGraphReady(true);
 
