@@ -223,46 +223,58 @@ const enabledSources = enabledBrowserMapSources;
 
         <div class="route-layer-group" aria-label="Oil and gas layers">
           <p class="route-layer-group-title">Oil &amp; gas</p>
-          <label class="route-layer-toggle-row route-layer-toggle-master">
-            <input type="checkbox" data-map-layer="kgs-oil-gas-wells" data-oil-gas-master />
-            <span class="route-layer-swatch swatch-oil-gas" aria-hidden="true"></span>
-            <span>Oil &amp; Gas Wells</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="oil" />
-            <span class="route-layer-swatch swatch-oil-gas-oil" aria-hidden="true"></span>
-            <span>Oil wells</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="gas" />
-            <span class="route-layer-swatch swatch-oil-gas-gas" aria-hidden="true"></span>
-            <span>Gas wells</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="oil-gas" />
-            <span class="route-layer-swatch swatch-oil-gas-combined" aria-hidden="true"></span>
-            <span>Oil &amp; gas wells</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="dry" />
-            <span class="route-layer-swatch swatch-oil-gas-dry" aria-hidden="true"></span>
-            <span>Dry &amp; abandoned</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="service" />
-            <span class="route-layer-swatch swatch-oil-gas-service" aria-hidden="true"></span>
-            <span>Service / recovery</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="cbm" />
-            <span class="route-layer-swatch swatch-oil-gas-cbm" aria-hidden="true"></span>
-            <span>Coal-bed methane</span>
-          </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child">
-            <input type="checkbox" data-oil-gas-kind="other" />
-            <span class="route-layer-swatch swatch-oil-gas-other" aria-hidden="true"></span>
-            <span>Locations / other wells</span>
-          </label>
+          <div class="route-oil-gas-master-row">
+            <label class="route-layer-toggle-row route-layer-toggle-master">
+              <input type="checkbox" data-map-layer="kgs-oil-gas-wells" data-oil-gas-master />
+              <span class="route-layer-swatch swatch-oil-gas" aria-hidden="true"></span>
+              <span>Oil &amp; Gas Wells</span>
+            </label>
+            <button
+              type="button"
+              class="route-oil-gas-options-toggle"
+              data-oil-gas-options-toggle
+              aria-expanded="false"
+              aria-controls="route-oil-gas-options"
+              aria-label="Expand Oil & Gas well types"
+            >⌄</button>
+          </div>
+          <div class="route-oil-gas-options" id="route-oil-gas-options" data-oil-gas-options hidden>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="oil" />
+              <span class="route-layer-swatch swatch-oil-gas-oil" aria-hidden="true"></span>
+              <span>Oil wells</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="gas" />
+              <span class="route-layer-swatch swatch-oil-gas-gas" aria-hidden="true"></span>
+              <span>Gas wells</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="oil-gas" />
+              <span class="route-layer-swatch swatch-oil-gas-combined" aria-hidden="true"></span>
+              <span>Oil &amp; gas wells</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="dry" />
+              <span class="route-layer-swatch swatch-oil-gas-dry" aria-hidden="true"></span>
+              <span>Dry &amp; abandoned</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="service" />
+              <span class="route-layer-swatch swatch-oil-gas-service" aria-hidden="true"></span>
+              <span>Service / recovery</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="cbm" />
+              <span class="route-layer-swatch swatch-oil-gas-cbm" aria-hidden="true"></span>
+              <span>Coal-bed methane</span>
+            </label>
+            <label class="route-layer-toggle-row route-layer-toggle-child">
+              <input type="checkbox" data-oil-gas-kind="other" />
+              <span class="route-layer-swatch swatch-oil-gas-other" aria-hidden="true"></span>
+              <span>Locations / other wells</span>
+            </label>
+          </div>
           <p class="route-layer-source-note" data-oil-gas-status>
             Off by default. Enabling loads live statewide well records from Kentucky Geological Survey / University of Kentucky.
           </p>
@@ -654,6 +666,7 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.trailPlanningReady = 'false';
     container.dataset.planDetourGuardCount = '0';
     container.dataset.namedRoadGapBridgeCount = '0';
+    container.dataset.kyRoadEndpointBridgeCount = '0';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (status) {
@@ -1142,7 +1155,6 @@ const enabledSources = enabledBrowserMapSources;
       add('Completed', formatOilGasDate(properties?.date_completed));
       add('Original operator', properties?.operator);
       add('Most recent operator', properties?.most_recent_operator);
-      add('Farm / lease', properties?.farm_name);
       add('Well number', properties?.well_number);
       add('Total depth', Number.isFinite(Number(properties?.total_depth)) ? Number(properties.total_depth).toLocaleString('en-US') + ' ft' : '');
       add('Surface elevation', Number.isFinite(Number(properties?.surface_elevation)) ? Math.round(Number(properties.surface_elevation)).toLocaleString('en-US') + ' ft' : '');
@@ -1170,7 +1182,7 @@ const enabledSources = enabledBrowserMapSources;
 
       const note = document.createElement('p');
       note.className = 'route-oil-gas-note';
-      note.textContent = 'Source: Kentucky Geological Survey / University of Kentucky. Live public records transformed for web display. Locations, status, operator and historic lease information may be incomplete, approximate or outdated; this layer does not establish property access or ownership.';
+      note.textContent = 'Source: Kentucky Geological Survey / University of Kentucky. Live public records transformed for web display. Locations, status, operator and other historical record information may be incomplete, approximate or outdated; this layer does not establish property access or ownership.';
       wrapper.append(note);
       return wrapper;
     };
@@ -1216,7 +1228,7 @@ const enabledSources = enabledBrowserMapSources;
         spatialRel: 'esriSpatialRelIntersects',
         outFields: [
           'OBJECTID','record_number','original_result','original_result_symbol','justified_permit','permit',
-          'API_Number','operator','most_recent_operator','well_number','farm_name','date_completed',
+          'API_Number','operator','most_recent_operator','well_number','date_completed',
           'surface_elevation','total_depth','tdfm_name','deepest_pay_name','plugged','date_plugged',
           'bore_type','county_name','quadrangle_name','purpose','oil_production','gas_production'
         ].join(','),
@@ -1466,6 +1478,8 @@ const enabledSources = enabledBrowserMapSources;
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
     const snapEndpointsByTag = new Map<string, Set<string>>();
+    const kyRoadEndpoints: Array<{ key: string; roadTag: string; segmentId: number; axisDegrees: number }> = [];
+    let kyRoadSegmentId = 0;
     const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
 
     const ensureNode = (lat: number, lng: number) => {
@@ -1489,11 +1503,11 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const addSnapLine = (coordinates: number[][], endpointTag = '') => {
-      if (coordinates.length < 2) return;
+      if (coordinates.length < 2) return [] as string[];
       const valid = coordinates
         .map((pair) => ({ lng: Number(pair[0]), lat: Number(pair[1]) }))
         .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
-      if (valid.length < 2) return;
+      if (valid.length < 2) return [] as string[];
 
       const keys: string[] = [ensureNode(valid[0]!.lat, valid[0]!.lng)];
       for (let i = 1; i < valid.length; i += 1) {
@@ -1517,6 +1531,7 @@ const enabledSources = enabledBrowserMapSources;
         endpoints.add(keys[keys.length - 1]!);
         snapEndpointsByTag.set(endpointTag, endpoints);
       }
+      return keys;
     };
 
     const indexGeometry = (geojson: any) => {
@@ -1556,6 +1571,29 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
+    const axisDegreesBetween = (a: any, b: any) => {
+      const meanLat = ((a.lat + b.lat) / 2) * Math.PI / 180;
+      const x = (b.lng - a.lng) * Math.cos(meanLat);
+      const y = b.lat - a.lat;
+      let degrees = Math.atan2(y, x) * 180 / Math.PI;
+      degrees = ((degrees % 180) + 180) % 180;
+      return degrees;
+    };
+
+    const axisDifference = (a: number, b: number) => {
+      const delta = Math.abs(a - b) % 180;
+      return Math.min(delta, 180 - delta);
+    };
+
+    const normalizeKentuckyRoadTag = (roadName: string, roadClass: string) => {
+      const raw = (roadName + ' ' + roadClass).toUpperCase();
+      const routeNumber = raw.match(/(?:KY|KENTUCKY|STATE(?:\s+ROUTE|\s+HIGHWAY)?)[\s-]*(\d{1,4}[A-Z]?)/)?.[1]
+        ?? (/(?:STATE\s+ROUTE|STATE\s+HIGHWAY)/.test(raw) ? roadName.match(/\b(\d{1,4}[A-Za-z]?)\b/)?.[1] : undefined);
+      if (routeNumber) return 'ky-route:' + routeNumber.toLowerCase();
+      const normalized = roadName.toLowerCase().replace(/\b(kentucky|state|route|highway|hwy|road|rd)\b/g, '').replace(/[^a-z0-9]+/g, '');
+      return normalized ? 'ky-road:' + normalized : '';
+    };
+
     const connectNamedRoadEndpointGaps = (maxGapMeters = 160) => {
       let connected = 0;
       for (const endpoints of snapEndpointsByTag.values()) {
@@ -1577,6 +1615,33 @@ const enabledSources = enabledBrowserMapSources;
         }
       }
       container.dataset.namedRoadGapBridgeCount = String(connected);
+      return connected;
+    };
+
+    const connectNearbyKyRoadEndpointGaps = (maxGapMeters = 110) => {
+      let connected = 0;
+      for (let i = 0; i < kyRoadEndpoints.length; i += 1) {
+        const a = kyRoadEndpoints[i]!;
+        const pointA = nodeCoords.get(a.key);
+        if (!pointA) continue;
+        for (let j = i + 1; j < kyRoadEndpoints.length; j += 1) {
+          const b = kyRoadEndpoints[j]!;
+          if (a.segmentId === b.segmentId) continue;
+          const pointB = nodeCoords.get(b.key);
+          if (!pointB) continue;
+          const distance = pointA.distanceTo(pointB);
+          if (distance > maxGapMeters || graph.get(a.key)?.has(b.key)) continue;
+          const sameRoad = Boolean(a.roadTag && a.roadTag === b.roadTag);
+          const gapAxis = axisDegreesBetween(pointA, pointB);
+          const aligned = axisDifference(a.axisDegrees, gapAxis) <= 32
+            && axisDifference(b.axisDegrees, gapAxis) <= 32;
+          if (sameRoad || aligned) {
+            connect(a.key, b.key);
+            connected += 1;
+          }
+        }
+      }
+      container.dataset.kyRoadEndpointBridgeCount = String(connected);
       return connected;
     };
 
@@ -2073,15 +2138,29 @@ const enabledSources = enabledBrowserMapSources;
         let indexed = false;
         for (const line of geometryLines(feature.geometry)) {
           if (line.length < 2) continue;
-          const roadTag = roadName ? 'ky-road:' + roadName.toLowerCase().replace(/[^a-z0-9]+/g, '') : '';
-          addSnapLine(line, roadTag);
-          indexed = true;
+          const roadTag = normalizeKentuckyRoadTag(roadName, roadClass);
+          const keys = addSnapLine(line, roadTag);
+          if (keys.length > 1) {
+            const segmentId = ++kyRoadSegmentId;
+            const first = nodeCoords.get(keys[0]!);
+            const second = nodeCoords.get(keys[1]!);
+            const penultimate = nodeCoords.get(keys[keys.length - 2]!);
+            const last = nodeCoords.get(keys[keys.length - 1]!);
+            if (first && second) kyRoadEndpoints.push({
+              key: keys[0]!, roadTag, segmentId, axisDegrees: axisDegreesBetween(first, second)
+            });
+            if (penultimate && last) kyRoadEndpoints.push({
+              key: keys[keys.length - 1]!, roadTag, segmentId, axisDegrees: axisDegreesBetween(penultimate, last)
+            });
+            indexed = true;
+          }
         }
         if (indexed) planningRoadFeatures += 1;
       }
 
       container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
       connectNamedRoadEndpointGaps();
+      connectNearbyKyRoadEndpointGaps();
     } catch (error) {
       console.error(error);
       container.dataset.planningRoadFeatureCount = '0';
@@ -2738,6 +2817,17 @@ const enabledSources = enabledBrowserMapSources;
         syncSunPotentialControls();
       });
     }
+
+    const oilGasOptionsToggle = shell.querySelector<HTMLButtonElement>('[data-oil-gas-options-toggle]');
+    const oilGasOptions = shell.querySelector<HTMLElement>('[data-oil-gas-options]');
+    oilGasOptionsToggle?.addEventListener('click', () => {
+      if (!oilGasOptions) return;
+      const expanded = oilGasOptionsToggle.getAttribute('aria-expanded') === 'true';
+      oilGasOptions.hidden = expanded;
+      oilGasOptionsToggle.setAttribute('aria-expanded', String(!expanded));
+      oilGasOptionsToggle.setAttribute('aria-label', (expanded ? 'Expand' : 'Collapse') + ' Oil & Gas well types');
+      oilGasOptionsToggle.textContent = expanded ? '⌄' : '⌃';
+    });
 
     for (const kindToggle of shell.querySelectorAll<HTMLInputElement>('[data-oil-gas-kind]')) {
       kindToggle.addEventListener('change', () => {
@@ -3959,10 +4049,12 @@ const enabledSources = enabledBrowserMapSources;
         if (planPanel) planPanel.hidden = false;
         redrawMeasure(false);
         setStatus('Measure distance: click points anywhere on the map. Segment distances appear on the map; elevation updates from USGS 3DEP after two points.');
+        minimizePlanPanel();
       } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
         redrawPlan(false);
         setStatus('Build route: click near an official trail, community/informal trail, or mapped road to snap automatically; click clearly away from the mapped network for a dashed straight segment. Distances appear on each segment and route elevation updates as you edit.');
+        minimizePlanPanel();
       } else if (!vectorFailures.length && readiness.core) {
         if (planLiveStats) planLiveStats.hidden = true;
         setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
