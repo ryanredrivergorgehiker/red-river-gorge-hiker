@@ -633,9 +633,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("planConfirm.returnValue === 'confirm'", MAP)
         self.assertIn("target.closest('input, textarea, select, [contenteditable=\"true\"]')", MAP)
         self.assertNotIn("key === 'r'", MAP)
-        self.assertIn('.route-plan-confirm', CSS)
-        self.assertIn('.route-plan-header-actions', CSS)
-        self.assertIn('[data-plan-close]', CSS)
+        self.assertIn('.route-plan-confirm', ROUTES_CSS)
+        self.assertIn('.route-plan-header-actions', ROUTES_CSS)
+        self.assertIn('[data-plan-close]', ROUTES_CSS)
 
     def test_planner_uses_official_roads_and_loaded_informal_paths(self):
         self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
