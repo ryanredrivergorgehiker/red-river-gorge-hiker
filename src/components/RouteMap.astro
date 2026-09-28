@@ -223,10 +223,45 @@ const enabledSources = enabledBrowserMapSources;
 
         <div class="route-layer-group" aria-label="Oil and gas layers">
           <p class="route-layer-group-title">Oil &amp; gas</p>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="kgs-oil-gas-wells" />
+          <label class="route-layer-toggle-row route-layer-toggle-master">
+            <input type="checkbox" data-map-layer="kgs-oil-gas-wells" data-oil-gas-master />
             <span class="route-layer-swatch swatch-oil-gas" aria-hidden="true"></span>
             <span>Oil &amp; Gas Wells</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="oil" />
+            <span class="route-layer-swatch swatch-oil-gas-oil" aria-hidden="true"></span>
+            <span>Oil wells</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="gas" />
+            <span class="route-layer-swatch swatch-oil-gas-gas" aria-hidden="true"></span>
+            <span>Gas wells</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="oil-gas" />
+            <span class="route-layer-swatch swatch-oil-gas-combined" aria-hidden="true"></span>
+            <span>Oil &amp; gas wells</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="dry" />
+            <span class="route-layer-swatch swatch-oil-gas-dry" aria-hidden="true"></span>
+            <span>Dry &amp; abandoned</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="service" />
+            <span class="route-layer-swatch swatch-oil-gas-service" aria-hidden="true"></span>
+            <span>Service / recovery</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="cbm" />
+            <span class="route-layer-swatch swatch-oil-gas-cbm" aria-hidden="true"></span>
+            <span>Coal-bed methane</span>
+          </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-oil-gas-kind="other" />
+            <span class="route-layer-swatch swatch-oil-gas-other" aria-hidden="true"></span>
+            <span>Locations / other wells</span>
           </label>
           <p class="route-layer-source-note" data-oil-gas-status>
             Off by default. Enabling loads live statewide well records from Kentucky Geological Survey / University of Kentucky.
@@ -617,6 +652,8 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     container.dataset.trailPlanningReady = 'false';
+    container.dataset.planDetourGuardCount = '0';
+    container.dataset.namedRoadGapBridgeCount = '0';
 
     const setStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (status) {
@@ -787,7 +824,7 @@ const enabledSources = enabledBrowserMapSources;
       const blockedByAerial = aerialExclusiveIds.has(id) && aerialActive();
       if (fineToggle) {
         fineToggle.checked = enabled;
-        if (id !== 'rrg-lidar-sun') fineToggle.indeterminate = false;
+        if (id !== 'rrg-lidar-sun' && id !== oilGasLayerId) fineToggle.indeterminate = false;
       }
       if (slider) {
         slider.disabled = !enabled || blockedByAerial;
@@ -992,10 +1029,14 @@ const enabledSources = enabledBrowserMapSources;
     const oilGasMinZoom = 10;
     const oilGasStatus = shell.querySelector<HTMLElement>('[data-oil-gas-status]');
     const oilGasQueryCache = new Map<string, any>();
+    const oilGasKinds = ['oil', 'gas', 'oil-gas', 'dry', 'service', 'cbm', 'other'] as const;
+    type OilGasKind = typeof oilGasKinds[number];
     let oilGasController: AbortController | null = null;
     let oilGasRequestRevision = 0;
     let oilGasMoveTimer = 0;
     let oilGasAttributionVisible = false;
+    let oilGasLastData: any = null;
+    let oilGasLastCacheKey = '';
     const oilGasAttribution = 'Oil &amp; gas wells © <a href="https://kgs.uky.edu/data/oilgas/" target="_blank" rel="noopener">Kentucky Geological Survey / University of Kentucky</a> · data transformed for web display';
 
     const setOilGasStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
@@ -1005,8 +1046,22 @@ const enabledSources = enabledBrowserMapSources;
       }
     };
 
+    const oilGasCode = (properties: any) =>
+      String(properties?.original_result_symbol || properties?.original_result || '').trim().toUpperCase();
+
+    const oilGasKindFor = (properties: any): OilGasKind => {
+      const code = oilGasCode(properties);
+      if (code === 'OIL') return 'oil';
+      if (code === 'GAS') return 'gas';
+      if (code === 'O&G') return 'oil-gas';
+      if (code === 'DRY' || code === 'D&A') return 'dry';
+      if (code === 'SRV' || code === 'SRI') return 'service';
+      if (code === 'CBM') return 'cbm';
+      return 'other';
+    };
+
     const oilGasType = (properties: any) => {
-      const code = String(properties?.original_result_symbol || properties?.original_result || '').trim().toUpperCase();
+      const code = oilGasCode(properties);
       return ({
         OIL: 'Oil well',
         GAS: 'Gas well',
@@ -1017,24 +1072,25 @@ const enabledSources = enabledBrowserMapSources;
         SRI: 'Service / secondary recovery well',
         CBM: 'Coal bed methane gas well',
         LOC: 'Well location'
-      } as Record<string, string>)[code] ?? 'Oil / gas well record';
+      } as Record<string, string>)[code] ?? 'Other well';
     };
 
-    const oilGasColor = (properties: any) => {
-      if (map.getZoom() < 12) return '#a94f3d';
-      const code = String(properties?.original_result_symbol || properties?.original_result || '').trim().toUpperCase();
-      return ({
-        OIL: '#a86322',
-        GAS: '#2e78aa',
-        'O&G': '#7a4d9f',
-        DRY: '#777777',
-        'D&A': '#777777',
-        SRV: '#004da8',
-        SRI: '#004da8',
-        CBM: '#247f72',
-        LOC: '#b24d3a'
-      } as Record<string, string>)[code] ?? '#666666';
-    };
+    const oilGasColorForKind = (kind: OilGasKind) => ({
+      oil: '#b56a2b',
+      gas: '#2f78b7',
+      'oil-gas': '#7a4d9f',
+      dry: '#7a7d7b',
+      service: '#004da8',
+      cbm: '#247f72',
+      other: '#b24d3a'
+    } as Record<OilGasKind, string>)[kind];
+
+    const oilGasColor = (properties: any) => oilGasColorForKind(oilGasKindFor(properties));
+
+    const oilGasKindToggle = (kind: OilGasKind) =>
+      shell.querySelector<HTMLInputElement>('[data-oil-gas-kind="' + kind + '"]');
+    const oilGasKindEnabled = (kind: OilGasKind) => oilGasKindToggle(kind)?.checked ?? false;
+    const oilGasAnyKindEnabled = () => oilGasKinds.some((kind) => oilGasKindEnabled(kind));
 
     const formatOilGasDate = (value: unknown) => {
       const numeric = Number(value);
@@ -1174,7 +1230,9 @@ const enabledSources = enabledBrowserMapSources;
       return oilGasServiceUrl + '?' + params.toString();
     };
 
-    const renderOilGasRecords = (data: any) => {
+    const renderOilGasRecords = (data: any, cacheKey = oilGasLastCacheKey) => {
+      oilGasLastData = data;
+      oilGasLastCacheKey = cacheKey;
       oilGasLayer.clearLayers();
       oilGasMarkers.length = 0;
       const features = Array.isArray(data?.features) ? data.features : [];
@@ -1185,8 +1243,10 @@ const enabledSources = enabledBrowserMapSources;
         const lng = Number(feature?.geometry?.x);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
         const properties = feature?.attributes ?? {};
+        const kind = oilGasKindFor(properties);
+        if (!oilGasKindEnabled(kind)) continue;
         const color = oilGasColor(properties);
-        const size = broad ? 9 : 13;
+        const size = broad ? 7 : 11;
         const marker = L.marker([lat, lng], {
           pane: 'oilGas',
           interactive: true,
@@ -1201,7 +1261,7 @@ const enabledSources = enabledBrowserMapSources;
             popupAnchor: [0, -(size / 2 + 2)]
           })
         });
-        marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360 });
+        marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360, autoPan: false });
         marker.addTo(oilGasLayer);
         oilGasMarkers.push(marker);
       }
@@ -1209,9 +1269,9 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.oilGasTruncated = String(Boolean(data?.exceededTransferLimit));
       syncOilGasOpacity();
       if (data?.exceededTransferLimit) {
-        setOilGasStatus('Showing the first ' + oilGasMarkers.length.toLocaleString('en-US') + ' KGS wells in this broad view. Zoom in for complete detail.', 'warning');
+        setOilGasStatus('Showing ' + oilGasMarkers.length.toLocaleString('en-US') + ' selected wells from the first ' + Math.min(oilGasMaxRecords, features.length).toLocaleString('en-US') + ' KGS records in this broad view. Zoom in for complete detail.', 'warning');
       } else {
-        setOilGasStatus(oilGasMarkers.length.toLocaleString('en-US') + ' live KGS well record' + (oilGasMarkers.length === 1 ? '' : 's') + ' in this view.');
+        setOilGasStatus(oilGasMarkers.length.toLocaleString('en-US') + ' selected live KGS well record' + (oilGasMarkers.length === 1 ? '' : 's') + ' in this view.');
       }
     };
 
@@ -1232,7 +1292,7 @@ const enabledSources = enabledBrowserMapSources;
       const cacheKey = oilGasCacheKey();
       const cached = oilGasQueryCache.get(cacheKey);
       if (cached) {
-        renderOilGasRecords(cached);
+        if (cacheKey !== oilGasLastCacheKey || cached !== oilGasLastData) renderOilGasRecords(cached, cacheKey);
         container.dataset.oilGasLoadState = 'loaded';
         delete container.dataset.oilGasLoadError;
         return;
@@ -1263,7 +1323,7 @@ const enabledSources = enabledBrowserMapSources;
           if (firstKey === undefined) break;
           oilGasQueryCache.delete(firstKey);
         }
-        renderOilGasRecords(data);
+        renderOilGasRecords(data, cacheKey);
         container.dataset.oilGasLoadState = 'loaded';
         container.dataset.oilGasLoadMs = String(Math.round(performance.now() - startedAt));
       } catch (error) {
@@ -1284,16 +1344,45 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncOilGasLayer = () => {
+      const selectedCount = oilGasKinds.filter((kind) => oilGasKindEnabled(kind)).length;
+      const any = selectedCount > 0;
+      const mixed = selectedCount > 0 && selectedCount < oilGasKinds.length;
+      const master = shell.querySelector<HTMLInputElement>('[data-oil-gas-master]');
+      const fineToggle = shell.querySelector<HTMLInputElement>('[data-fine-tune-layer="' + oilGasLayerId + '"]');
+      const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + oilGasLayerId + '"]');
+      if (master) {
+        master.checked = any;
+        master.indeterminate = mixed;
+      }
+      if (fineToggle) {
+        fineToggle.checked = any;
+        fineToggle.indeterminate = mixed;
+      }
+      if (slider) {
+        slider.disabled = !any;
+        slider.title = any ? '' : 'Turn Oil & Gas Wells on to adjust opacity.';
+      }
       syncVisibility(oilGasLayerId);
-      syncFineTuneControl(oilGasLayerId);
       syncOilGasAttribution();
-      if (checked(oilGasLayerId)) {
+      if (any) {
+        if (oilGasLastData) renderOilGasRecords(oilGasLastData, oilGasLastCacheKey);
         queueOilGasLoad(0);
       } else {
         oilGasController?.abort();
+        oilGasLayer.clearLayers();
+        oilGasMarkers.length = 0;
+        container.dataset.oilGasWellCount = '0';
         container.dataset.oilGasLoadState = 'off';
         setOilGasStatus('Off by default. Enabling loads live statewide well records from Kentucky Geological Survey / University of Kentucky.');
       }
+    };
+
+    const setOilGasKinds = (enabled: boolean) => {
+      for (const kind of oilGasKinds) {
+        const toggle = oilGasKindToggle(kind);
+        if (toggle) toggle.checked = enabled;
+      }
+      syncOilGasLayer();
     };
 
     mapLayers.set(oilGasLayerId, oilGasLayer);
@@ -1376,6 +1465,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const graph = new Map<string, Map<string, number>>();
     const nodeCoords = new Map<string, any>();
+    const snapEndpointsByTag = new Map<string, Set<string>>();
     const nodeKey = (lat: number, lng: number) => lat.toFixed(5) + ',' + lng.toFixed(5);
 
     const ensureNode = (lat: number, lng: number) => {
@@ -1398,7 +1488,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!fromB.has(a) || distance < (fromB.get(a) ?? Infinity)) fromB.set(a, distance);
     };
 
-    const addSnapLine = (coordinates: number[][]) => {
+    const addSnapLine = (coordinates: number[][], endpointTag = '') => {
       if (coordinates.length < 2) return;
       const valid = coordinates
         .map((pair) => ({ lng: Number(pair[0]), lat: Number(pair[1]) }))
@@ -1421,6 +1511,12 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       for (let i = 1; i < keys.length; i += 1) connect(keys[i - 1]!, keys[i]!);
+      if (endpointTag && keys.length > 1) {
+        const endpoints = snapEndpointsByTag.get(endpointTag) ?? new Set<string>();
+        endpoints.add(keys[0]!);
+        endpoints.add(keys[keys.length - 1]!);
+        snapEndpointsByTag.set(endpointTag, endpoints);
+      }
     };
 
     const indexGeometry = (geojson: any) => {
@@ -1458,6 +1554,30 @@ const enabledSources = enabledBrowserMapSources;
           }
         }
       }
+    };
+
+    const connectNamedRoadEndpointGaps = (maxGapMeters = 160) => {
+      let connected = 0;
+      for (const endpoints of snapEndpointsByTag.values()) {
+        const keys = Array.from(endpoints);
+        for (let i = 0; i < keys.length; i += 1) {
+          const a = keys[i]!;
+          const pointA = nodeCoords.get(a);
+          if (!pointA) continue;
+          for (let j = i + 1; j < keys.length; j += 1) {
+            const b = keys[j]!;
+            const pointB = nodeCoords.get(b);
+            if (!pointB) continue;
+            const distance = pointA.distanceTo(pointB);
+            if (distance <= maxGapMeters && !(graph.get(a)?.has(b))) {
+              connect(a, b);
+              connected += 1;
+            }
+          }
+        }
+      }
+      container.dataset.namedRoadGapBridgeCount = String(connected);
+      return connected;
     };
 
     const planSnapToleranceMeters = 90;
@@ -1953,13 +2073,15 @@ const enabledSources = enabledBrowserMapSources;
         let indexed = false;
         for (const line of geometryLines(feature.geometry)) {
           if (line.length < 2) continue;
-          addSnapLine(line);
+          const roadTag = roadName ? 'ky-road:' + roadName.toLowerCase().replace(/[^a-z0-9]+/g, '') : '';
+          addSnapLine(line, roadTag);
           indexed = true;
         }
         if (indexed) planningRoadFeatures += 1;
       }
 
       container.dataset.planningRoadFeatureCount = String(planningRoadFeatures);
+      connectNamedRoadEndpointGaps();
     } catch (error) {
       console.error(error);
       container.dataset.planningRoadFeatureCount = '0';
@@ -2498,7 +2620,7 @@ const enabledSources = enabledBrowserMapSources;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
       if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
       if (id === oilGasLayerId) {
-        syncOilGasLayer();
+        setOilGasKinds(enabled);
       } else {
         syncVisibility(id);
         syncFineTuneControl(id);
@@ -2595,7 +2717,7 @@ const enabledSources = enabledBrowserMapSources;
         if (id === gorgeLayerId) {
           setSunKinds(checkbox.checked);
         } else if (id === oilGasLayerId) {
-          syncOilGasLayer();
+          setOilGasKinds(checkbox.checked);
         } else if (checkbox.checked && id === 'osm-informal-trails') {
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
@@ -2617,12 +2739,18 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
+    for (const kindToggle of shell.querySelectorAll<HTMLInputElement>('[data-oil-gas-kind]')) {
+      kindToggle.addEventListener('change', () => {
+        syncOilGasLayer();
+      });
+    }
+
     for (const fineToggle of shell.querySelectorAll<HTMLInputElement>('[data-fine-tune-layer]')) {
       fineToggle.addEventListener('change', () => {
         const id = fineToggle.dataset.fineTuneLayer;
         if (!id) return;
         const mainToggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
-        if (id === gorgeLayerId && mainToggle) {
+        if ((id === gorgeLayerId || id === oilGasLayerId) && mainToggle) {
           mainToggle.checked = fineToggle.checked;
           mainToggle.indeterminate = false;
           mainToggle.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2659,7 +2787,7 @@ const enabledSources = enabledBrowserMapSources;
     }
     syncRouteFilters();
 
-    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghCategories', 'rrghRoute'];
+    const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghOil', 'rrghCategories', 'rrghRoute'];
     const buildShareUrl = () => {
       const url = new URL(window.location.href);
       for (const key of Array.from(url.searchParams.keys())) {
@@ -2686,6 +2814,8 @@ const enabledSources = enabledBrowserMapSources;
       url.searchParams.set('rrghLayers', layerState);
       const sunKinds = (['sunrise', 'sunset'] as const).filter((kind) => sunKindEnabled(kind)).join(',');
       url.searchParams.set('rrghSun', sunKinds);
+      const oilKinds = oilGasKinds.filter((kind) => oilGasKindEnabled(kind)).join(',');
+      url.searchParams.set('rrghOil', oilKinds);
 
       const categories = Array.from(shell.querySelectorAll<HTMLInputElement>('[data-route-category-filter]'))
         .filter((input) => input.checked)
@@ -2788,6 +2918,16 @@ const enabledSources = enabledBrowserMapSources;
         syncSunPotentialControls();
       }
 
+      const oilParam = params.get('rrghOil');
+      if (oilParam !== null) {
+        const selectedOilKinds = new Set(oilParam.split(',').filter(Boolean));
+        for (const kind of oilGasKinds) {
+          const toggle = oilGasKindToggle(kind);
+          if (toggle) toggle.checked = selectedOilKinds.has(kind);
+        }
+        syncOilGasLayer();
+      }
+
       const categoryParam = params.get('rrghCategories');
       if (categoryParam !== null) {
         const selectedCategories = new Set(categoryParam.split(',').filter(Boolean));
@@ -2853,11 +2993,13 @@ const enabledSources = enabledBrowserMapSources;
       planMinimize.textContent = minimized ? '+' : '−';
       planMinimize.setAttribute('aria-label', minimized ? 'Expand planning controls' : 'Minimize planning controls');
       if (planPanelTitle) {
-        planPanelTitle.textContent = activeTool === 'plan'
-          ? 'Build trail route'
-          : activeTool === 'measure'
-            ? 'Measure distance'
-            : 'Plan';
+        planPanelTitle.textContent = minimized
+          ? ''
+          : activeTool === 'plan'
+            ? 'Build trail route'
+            : activeTool === 'measure'
+              ? 'Measure distance'
+              : 'Plan';
       }
     };
 
@@ -3252,14 +3394,51 @@ const enabledSources = enabledBrowserMapSources;
       }).addTo(map);
       container.dataset.coordinatePointVisible = 'true';
 
+      const detailZoom = isMobileFullMap() ? 14 : 15;
+      if (map.getZoom() <= detailZoom - 2) {
+        map.setView(latlng, detailZoom, { animate: true });
+        container.dataset.coordinatePointAutoPan = 'zoom';
+        return;
+      }
+
       window.requestAnimationFrame(() => {
-        const size = map.getSize();
-        const desired = L.point(size.x * 0.5, Math.max(90, size.y * 0.28));
+        const mapRect = container.getBoundingClientRect();
         const current = map.latLngToContainerPoint(latlng);
+        const clientX = mapRect.left + current.x;
+        const clientY = mapRect.top + current.y;
+        const edge = 28;
+        const outsideSafeArea =
+          clientX < mapRect.left + edge ||
+          clientX > mapRect.right - edge ||
+          clientY < mapRect.top + edge ||
+          clientY > mapRect.bottom - edge;
+        const cardRect = coordinateCard && !coordinateCard.hidden ? coordinateCard.getBoundingClientRect() : null;
+        const underCard = Boolean(cardRect
+          && clientX >= cardRect.left - 16
+          && clientX <= cardRect.right + 16
+          && clientY >= cardRect.top - 16
+          && clientY <= cardRect.bottom + 16);
+
+        if (!outsideSafeArea && !underCard) {
+          container.dataset.coordinatePointAutoPan = 'false';
+          return;
+        }
+
+        const size = map.getSize();
+        const cardTopInMap = cardRect ? Math.max(80, cardRect.top - mapRect.top - 22) : size.y - edge;
+        const desired = underCard
+          ? L.point(
+              isMobileFullMap() ? size.x * 0.5 : Math.min(size.x * 0.62, Math.max(edge, current.x)),
+              Math.max(90, Math.min(size.y * 0.45, cardTopInMap))
+            )
+          : L.point(
+              Math.max(edge, Math.min(size.x - edge, current.x)),
+              Math.max(edge, Math.min(size.y - edge, current.y))
+            );
         const offset = current.subtract(desired);
-        if (Math.abs(offset.x) > 8 || Math.abs(offset.y) > 8) {
-          map.panBy([offset.x, offset.y], { animate: true, duration: 0.25 });
-          container.dataset.coordinatePointAutoPan = 'true';
+        if (Math.abs(offset.x) > 4 || Math.abs(offset.y) > 4) {
+          map.panBy([offset.x, offset.y], { animate: true, duration: 0.2 });
+          container.dataset.coordinatePointAutoPan = 'visibility';
         } else {
           container.dataset.coordinatePointAutoPan = 'false';
         }
@@ -3696,7 +3875,13 @@ const enabledSources = enabledBrowserMapSources;
             const point = nodeCoords.get(key);
             if (point) points.push({ lat: point.lat, lng: point.lng, nodeKey: key });
           }
-          if (points.length > 1) return { segment: { mode: 'snap', points }, target: snappedTarget };
+          if (points.length > 1) {
+            const directMeters = L.latLng(previous.lat, previous.lng).distanceTo(L.latLng(snappedTarget.lat, snappedTarget.lng));
+            const snappedMeters = pathDistanceMeters(points.map((point) => L.latLng(point.lat, point.lng)));
+            const unreasonableShortDetour = directMeters <= 600 && snappedMeters > Math.max(900, directMeters * 6);
+            if (!unreasonableShortDetour) return { segment: { mode: 'snap', points }, target: snappedTarget };
+            container.dataset.planDetourGuardCount = String(Number(container.dataset.planDetourGuardCount || '0') + 1);
+          }
         }
       }
 
