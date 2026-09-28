@@ -435,8 +435,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-sheet-open="layers"', mobile_topbar)
         mobile_bottom_bar = MAP.split('<div class="route-map-mobile-bar"', 1)[1].split('</div>', 1)[0]
         self.assertIn('data-sheet-open="search"', mobile_bottom_bar)
-        self.assertIn('data-sheet-open="explore" disabled', mobile_bottom_bar)
-        self.assertIn('data-sheet-open="plan" disabled', mobile_bottom_bar)
+        self.assertIn('data-sheet-open="explore" data-ready-group="routes" disabled', mobile_bottom_bar)
+        self.assertIn('data-sheet-open="plan" data-ready-group="core" disabled', mobile_bottom_bar)
         self.assertIn('data-map-action="share"', mobile_bottom_bar)
         self.assertNotIn('data-sheet-open="layers"', mobile_bottom_bar)
         self.assertIn("const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]')", MAP)
@@ -459,7 +459,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('Explore RRGH routes', MAP)
 
     def test_map_share_builds_and_restores_stateful_permalinks(self):
-        self.assertEqual(MAP.count('<button type="button" data-map-action="share">Share</button>'), 2)
+        self.assertEqual(MAP.count('data-map-action="share" data-ready-group="share" disabled>Share</button>'), 2)
         self.assertIn('data-map-sheet="share"', MAP)
         self.assertIn('data-share-url', MAP)
         self.assertIn('data-share-copy', MAP)
@@ -623,10 +623,10 @@ class RoutesTracksContractTests(unittest.TestCase):
 
     def test_informal_trails_have_public_overpass_failover_and_default_on(self):
         self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
-        self.assertIn('data-sheet-open="explore" disabled', MAP)
-        self.assertGreaterEqual(MAP.count('data-sheet-open="plan" disabled'), 2)
-        self.assertIn('setExplorePlanReady(false)', MAP)
-        self.assertIn('setExplorePlanReady(true)', MAP)
+        self.assertIn('data-sheet-open="explore" data-ready-group="routes" disabled', MAP)
+        self.assertGreaterEqual(MAP.count('data-sheet-open="plan" data-ready-group="core" disabled'), 2)
+        self.assertIn('setPlanningGraphReady(false)', MAP)
+        self.assertIn('setPlanningGraphReady(true)', MAP)
         self.assertIn('Build trail route will unlock when the planning graph is ready.', MAP)
         self.assertIn('["informal"="yes"]', MAP)
         self.assertIn("data/map/osm-informal-trails.geojson", MAP)
