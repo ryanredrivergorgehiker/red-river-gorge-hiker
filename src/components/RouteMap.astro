@@ -1120,12 +1120,7 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncOilGasOpacity = (value = opacity(oilGasLayerId)) => {
-      for (const marker of oilGasMarkers) {
-        marker.setStyle?.({
-          opacity: value,
-          fillOpacity: Math.min(1, value * 0.9)
-        });
-      }
+      for (const marker of oilGasMarkers) marker.setOpacity?.(value);
     };
 
     const syncOilGasAttribution = () => {
@@ -1191,15 +1186,20 @@ const enabledSources = enabledBrowserMapSources;
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
         const properties = feature?.attributes ?? {};
         const color = oilGasColor(properties);
-        const marker = L.circleMarker([lat, lng], {
+        const size = broad ? 9 : 13;
+        const marker = L.marker([lat, lng], {
           pane: 'oilGas',
-          radius: broad ? 3.2 : 5,
-          color: broad ? '#ffffff' : '#ffffff',
-          weight: broad ? 0.8 : 1.2,
+          interactive: true,
+          keyboard: true,
+          title: oilGasType(properties),
           opacity: layerOpacity,
-          fillColor: color,
-          fillOpacity: layerOpacity * (broad ? 0.78 : 0.9),
-          interactive: true
+          icon: L.divIcon({
+            className: 'rrgh-oil-gas-marker-host',
+            html: '<span class="rrgh-oil-gas-marker ' + (broad ? 'is-broad' : 'is-detail') + '" style="--oil-gas-color:' + color + '"></span>',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+            popupAnchor: [0, -(size / 2 + 2)]
+          })
         });
         marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360 });
         marker.addTo(oilGasLayer);
