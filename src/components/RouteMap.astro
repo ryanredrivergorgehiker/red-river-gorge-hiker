@@ -2827,25 +2827,28 @@ const enabledSources = enabledBrowserMapSources;
       const thead = document.createElement('thead');
       const header = document.createElement('tr');
       const headerLabels = [
-        { full: 'Date' },
-        { full: 'Sunrise' },
-        { full: 'First direct sun', compact: 'First sun' },
-        { full: 'Last direct sun', compact: 'Last sun' },
-        { full: 'Sunset' }
+        { label: 'Date' },
+        { label: 'Sunrise' },
+        { label: 'First direct sun', stack: ['First', 'direct', 'sun'] },
+        { label: 'Last direct sun', stack: ['Last', 'direct', 'sun'] },
+        { label: 'Sunset' }
       ];
       for (const label of headerLabels) {
         const th = document.createElement('th');
         th.scope = 'col';
-        if (label.compact) {
-          const fullLabel = document.createElement('span');
-          fullLabel.className = 'route-sun-header-full';
-          fullLabel.textContent = label.full;
-          const compactLabel = document.createElement('span');
-          compactLabel.className = 'route-sun-header-compact';
-          compactLabel.textContent = label.compact;
-          th.append(fullLabel, compactLabel);
+        if (label.stack) {
+          th.setAttribute('aria-label', label.label);
+          const stack = document.createElement('span');
+          stack.className = 'route-sun-header-stack';
+          for (const word of label.stack) {
+            const line = document.createElement('span');
+            line.setAttribute('aria-hidden', 'true');
+            line.textContent = word;
+            stack.append(line);
+          }
+          th.append(stack);
         } else {
-          th.textContent = label.full;
+          th.textContent = label.label;
         }
         header.append(th);
       }
@@ -3015,45 +3018,93 @@ const enabledSources = enabledBrowserMapSources;
     let longPressTimer = 0;
     let longPressStart: { x: number; y: number } | null = null;
     let longPressTriggered = false;
+    let longPressPointerId: number | null = null;
 
     const clearLongPress = () => {
       window.clearTimeout(longPressTimer);
       longPressTimer = 0;
       longPressStart = null;
+      longPressPointerId = null;
     };
 
-    container.addEventListener('touchstart', (event) => {
-      if (activeTool !== null || event.touches.length !== 1) {
+    const scheduleLongPress = (clientX: number, clientY: number, pointerId: number | null = null) => {
+      if (activeTool !== null) {
         clearLongPress();
         return;
       }
-      const touch = event.touches[0]!;
-      longPressStart = { x: touch.clientX, y: touch.clientY };
+      longPressStart = { x: clientX, y: clientY };
+      longPressPointerId = pointerId;
       longPressTriggered = false;
       window.clearTimeout(longPressTimer);
       longPressTimer = window.setTimeout(() => {
         if (!longPressStart || activeTool !== null) return;
         const rect = container.getBoundingClientRect();
         const point = L.point(longPressStart.x - rect.left, longPressStart.y - rect.top);
+        window.getSelection()?.removeAllRanges();
         showCoordinate(map.containerPointToLatLng(point));
         setStatus('Map coordinates shown. Close the coordinate card when finished.');
         longPressTriggered = true;
         lastTapAt = 0;
-      }, 600);
+      }, 550);
+    };
+
+    container.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'touch' || !event.isPrimary || activeTool !== null) return;
+      scheduleLongPress(event.clientX, event.clientY, event.pointerId);
+    });
+
+    container.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'touch' || longPressPointerId !== event.pointerId || !longPressStart) return;
+      if (Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 14) clearLongPress();
+    });
+
+    container.addEventListener('pointerup', (event) => {
+      if (event.pointerType !== 'touch' || longPressPointerId !== event.pointerId) return;
+      window.clearTimeout(longPressTimer);
+      longPressTimer = 0;
+      longPressStart = null;
+      longPressPointerId = null;
+    });
+
+    container.addEventListener('pointercancel', (event) => {
+      if (event.pointerType === 'touch' && (longPressPointerId === null || longPressPointerId === event.pointerId)) clearLongPress();
+    });
+
+    container.addEventListener('touchstart', (event) => {
+      if (activeTool !== null || event.touches.length !== 1) {
+        clearLongPress();
+        return;
+      }
+      if (!('PointerEvent' in window)) {
+        const touch = event.touches[0]!;
+        scheduleLongPress(touch.clientX, touch.clientY);
+      }
     }, { passive: true });
 
     container.addEventListener('touchmove', (event) => {
-      if (!longPressStart || event.touches.length !== 1) return;
+      if ('PointerEvent' in window || !longPressStart || event.touches.length !== 1) return;
       const touch = event.touches[0]!;
-      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 12) clearLongPress();
+      if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > 14) clearLongPress();
     }, { passive: true });
 
-    container.addEventListener('touchcancel', clearLongPress, { passive: true });
+    container.addEventListener('touchcancel', () => {
+      clearLongPress();
+      longPressTriggered = false;
+    }, { passive: true });
+
+    container.addEventListener('selectstart', (event) => {
+      event.preventDefault();
+    });
+
+    container.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+    });
 
     container.addEventListener('touchend', (event) => {
       window.clearTimeout(longPressTimer);
       longPressTimer = 0;
       longPressStart = null;
+      longPressPointerId = null;
 
       if (longPressTriggered) {
         longPressTriggered = false;
