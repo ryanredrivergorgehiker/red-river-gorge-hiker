@@ -332,7 +332,10 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
       <div class="route-map-sheet-header">
         <strong data-plan-panel-title>Plan</strong>
-        <button type="button" data-plan-minimize aria-label="Minimize planning controls">−</button>
+        <div class="route-plan-header-actions">
+          <button type="button" data-plan-minimize aria-label="Minimize planning controls">−</button>
+          <button type="button" data-plan-close aria-label="Close planning controls">×</button>
+        </div>
       </div>
       <div class="route-plan-mode-buttons">
         <button type="button" data-map-tool="measure" data-ready-group="core" aria-pressed="false" disabled>Measure distance</button>
@@ -362,6 +365,17 @@ const enabledSources = enabledBrowserMapSources;
         </div>
       </div>
     </div>
+
+    <dialog class="route-plan-confirm" data-plan-confirm aria-labelledby="route-plan-confirm-title">
+      <form method="dialog">
+        <h2 id="route-plan-confirm-title">Clear planning work?</h2>
+        <p data-plan-confirm-message>Are you sure you want to delete your built path?</p>
+        <div class="route-plan-confirm-actions">
+          <button type="submit" value="cancel" data-plan-confirm-cancel>Cancel</button>
+          <button type="submit" value="confirm" data-plan-confirm-ok>OK</button>
+        </div>
+      </form>
+    </dialog>
 
     <div class="route-share-panel route-map-sheet" data-map-sheet="share" hidden>
       <div class="route-map-sheet-header">
@@ -604,6 +618,10 @@ const enabledSources = enabledBrowserMapSources;
     const planPanel = shell.querySelector<HTMLElement>('[data-map-sheet="plan"]');
     const planPanelTitle = shell.querySelector<HTMLElement>('[data-plan-panel-title]');
     const planMinimize = shell.querySelector<HTMLButtonElement>('[data-plan-minimize]');
+    const planClose = shell.querySelector<HTMLButtonElement>('[data-plan-close]');
+    const planConfirm = shell.querySelector<HTMLDialogElement>('[data-plan-confirm]');
+    const planConfirmMessage = shell.querySelector<HTMLElement>('[data-plan-confirm-message]');
+    const planConfirmOk = shell.querySelector<HTMLButtonElement>('[data-plan-confirm-ok]');
     let activeTool: 'measure' | 'plan' | null = null;
     const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
     const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
@@ -3667,6 +3685,10 @@ const enabledSources = enabledBrowserMapSources;
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let measurePoints: any[] = [];
+    type MeasurePointSnapshot = { lat: number; lng: number };
+    type MeasureSnapshot = MeasurePointSnapshot[];
+    let measureHistory: MeasureSnapshot[] = [[]];
+    let measureHistoryIndex = 0;
 
     type PlanPoint = { lat: number; lng: number; nodeKey?: string };
     type PlanSegment = { mode: 'snap' | 'straight'; points: PlanPoint[] };
@@ -3854,6 +3876,9 @@ const enabledSources = enabledBrowserMapSources;
 
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
 
+    const cloneMeasure = (): MeasureSnapshot =>
+      measurePoints.map((point) => ({ lat: point.lat, lng: point.lng }));
+
     const clonePlan = (): PlanSnapshot => ({
       stops: planStops.map((point) => ({ ...point })),
       segments: planSegments.map((segment) => ({
@@ -3863,8 +3888,34 @@ const enabledSources = enabledBrowserMapSources;
     });
 
     const updateHistoryButtons = () => {
-      if (undoButton) undoButton.disabled = planHistoryIndex <= 0;
-      if (redoButton) redoButton.disabled = planHistoryIndex >= planHistory.length - 1;
+      const undoDisabled = activeTool === 'measure'
+        ? measureHistoryIndex <= 0
+        : activeTool === 'plan'
+          ? planHistoryIndex <= 0
+          : true;
+      const redoDisabled = activeTool === 'measure'
+        ? measureHistoryIndex >= measureHistory.length - 1
+        : activeTool === 'plan'
+          ? planHistoryIndex >= planHistory.length - 1
+          : true;
+      if (undoButton) undoButton.disabled = undoDisabled;
+      if (redoButton) redoButton.disabled = redoDisabled;
+    };
+
+    const commitMeasureHistory = () => {
+      measureHistory = measureHistory.slice(0, measureHistoryIndex + 1);
+      measureHistory.push(cloneMeasure());
+      measureHistoryIndex = measureHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restoreMeasureHistory = (index: number) => {
+      const snapshot = measureHistory[index];
+      if (!snapshot) return;
+      measurePoints = snapshot.map((point) => L.latLng(point.lat, point.lng));
+      measureHistoryIndex = index;
+      redrawMeasure();
+      updateHistoryButtons();
     };
 
     const commitPlanHistory = () => {
@@ -3885,6 +3936,22 @@ const enabledSources = enabledBrowserMapSources;
       planHistoryIndex = index;
       redrawPlan();
       updateHistoryButtons();
+    };
+
+    const undoCurrentTool = () => {
+      if (activeTool === 'measure' && measureHistoryIndex > 0) {
+        restoreMeasureHistory(measureHistoryIndex - 1);
+      } else if (activeTool === 'plan' && planHistoryIndex > 0) {
+        restorePlanHistory(planHistoryIndex - 1);
+      }
+    };
+
+    const redoCurrentTool = () => {
+      if (activeTool === 'measure' && measureHistoryIndex < measureHistory.length - 1) {
+        restoreMeasureHistory(measureHistoryIndex + 1);
+      } else if (activeTool === 'plan' && planHistoryIndex < planHistory.length - 1) {
+        restorePlanHistory(planHistoryIndex + 1);
+      }
     };
 
     const snappedPlanPoint = (latlng: any): PlanPoint => {
@@ -3976,6 +4043,7 @@ const enabledSources = enabledBrowserMapSources;
     const setTool = (tool: 'measure' | 'plan' | null) => {
       activeTool = tool;
       renderPlanHelp(tool);
+      updateHistoryButtons();
       syncPlanMinimizeUi();
       stage?.setAttribute('data-active-tool', tool ?? 'explore');
       if (planPanPad) planPanPad.hidden = tool !== 'plan';
@@ -4019,6 +4087,8 @@ const enabledSources = enabledBrowserMapSources;
       planElevationController?.abort();
       measureElevationController = null;
       planElevationController = null;
+      measureHistory = [[]];
+      measureHistoryIndex = 0;
       planHistory = [{ stops: [], segments: [] }];
       planHistoryIndex = 0;
       for (const button of saveButtons) button.disabled = true;
@@ -4034,6 +4104,97 @@ const enabledSources = enabledBrowserMapSources;
         setStatus('Map cleared.');
       }
     };
+
+    type PlanConfirmAction = 'clear' | 'exit';
+    let pendingPlanConfirmAction: PlanConfirmAction | null = null;
+
+    const hasPlanningWork = () =>
+      measurePoints.length > 0 || planStops.length > 0 || planSegments.length > 0;
+
+    const planningDeleteMessage = () => {
+      const hasMeasure = measurePoints.length > 0;
+      const hasRoute = planStops.length > 0 || planSegments.length > 0;
+      if (hasMeasure && hasRoute) return 'Are you sure you want to delete your measurement and built path?';
+      if (hasMeasure) return 'Are you sure you want to delete your measurement?';
+      return 'Are you sure you want to delete your built path?';
+    };
+
+    const closePlanPanel = () => {
+      setTool(null);
+      if (planPanel) {
+        planPanel.hidden = true;
+        delete planPanel.dataset.minimized;
+      }
+      syncPlanMinimizeUi();
+      syncSheetButtons();
+    };
+
+    const performPlanConfirmAction = (action: PlanConfirmAction) => {
+      clearTools();
+      if (action === 'exit') closePlanPanel();
+    };
+
+    const requestPlanConfirmAction = (action: PlanConfirmAction) => {
+      if (!hasPlanningWork()) {
+        if (action === 'clear') clearTools();
+        else closePlanPanel();
+        return;
+      }
+
+      const message = planningDeleteMessage();
+      if (!planConfirm || typeof planConfirm.showModal !== 'function') {
+        if (window.confirm(message)) performPlanConfirmAction(action);
+        return;
+      }
+
+      pendingPlanConfirmAction = action;
+      planConfirm.returnValue = '';
+      if (planConfirmMessage) planConfirmMessage.textContent = message;
+      planConfirm.showModal();
+      window.setTimeout(() => planConfirmOk?.focus(), 0);
+    };
+
+    planConfirm?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.altKey) return;
+      event.preventDefault();
+      planConfirmOk?.click();
+    });
+
+    planConfirm?.addEventListener('close', () => {
+      const action = pendingPlanConfirmAction;
+      const confirmed = planConfirm.returnValue === 'confirm';
+      pendingPlanConfirmAction = null;
+      if (confirmed && action) performPlanConfirmAction(action);
+    });
+
+    planClose?.addEventListener('click', () => requestPlanConfirmAction('exit'));
+
+    const isEditablePlanShortcutTarget = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return false;
+      return Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
+    };
+
+    window.addEventListener('keydown', (event) => {
+      if (!planPanel || planPanel.hidden || planConfirm?.open || isEditablePlanShortcutTarget(event.target)) return;
+
+      const modifier = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+      if (activeTool !== null && modifier && !event.altKey && key === 'z') {
+        event.preventDefault();
+        if (event.shiftKey) redoCurrentTool();
+        else undoCurrentTool();
+        return;
+      }
+      if (activeTool !== null && modifier && !event.altKey && !event.shiftKey && key === 'y') {
+        event.preventDefault();
+        redoCurrentTool();
+        return;
+      }
+      if (event.key === 'Escape' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        requestPlanConfirmAction('exit');
+      }
+    });
 
     const xmlEscape = (value: string) =>
       value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
@@ -4084,7 +4245,7 @@ const enabledSources = enabledBrowserMapSources;
       button.addEventListener('click', () => {
         const tool = button.dataset.mapTool;
         if (tool === 'clear') {
-          clearTools();
+          requestPlanConfirmAction('clear');
           return;
         }
         if (tool === 'save') {
@@ -4095,12 +4256,8 @@ const enabledSources = enabledBrowserMapSources;
       });
     }
 
-    undoButton?.addEventListener('click', () => {
-      if (planHistoryIndex > 0) restorePlanHistory(planHistoryIndex - 1);
-    });
-    redoButton?.addEventListener('click', () => {
-      if (planHistoryIndex < planHistory.length - 1) restorePlanHistory(planHistoryIndex + 1);
-    });
+    undoButton?.addEventListener('click', undoCurrentTool);
+    redoButton?.addEventListener('click', redoCurrentTool);
 
     const scheduleMeasureElevation = () => {
       const revision = ++measureElevationRevision;
@@ -4474,6 +4631,7 @@ const enabledSources = enabledBrowserMapSources;
       if (activeTool === null) return;
       if (activeTool === 'measure') {
         measurePoints.push(event.latlng);
+        commitMeasureHistory();
         redrawMeasure();
         return;
       }
