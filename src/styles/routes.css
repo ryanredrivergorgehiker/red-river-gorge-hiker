@@ -2608,3 +2608,151 @@
 .rrgh-oil-gas-marker.is-broad{
   border-width:1px;
 }
+
+
+/* Owner UAT corrections — planner compactness, pan pad, and KGS well legend — 2026-09-28 */
+.route-layer-swatch.swatch-oil-gas{
+  width:2.15rem;
+  height:1rem;
+  background:
+    radial-gradient(circle at 20% 50%,#b56a2b 0 3px,#fff 3.2px 4px,transparent 4.2px),
+    radial-gradient(circle at 50% 50%,#2f78b7 0 3px,#fff 3.2px 4px,transparent 4.2px),
+    radial-gradient(circle at 80% 50%,#7a7d7b 0 3px,#fff 3.2px 4px,transparent 4.2px);
+  border:0;
+}
+.route-layer-swatch.swatch-oil-gas::before{display:none!important}
+.route-layer-swatch.swatch-oil-gas-oil,
+.route-layer-swatch.swatch-oil-gas-gas,
+.route-layer-swatch.swatch-oil-gas-combined,
+.route-layer-swatch.swatch-oil-gas-dry,
+.route-layer-swatch.swatch-oil-gas-service,
+.route-layer-swatch.swatch-oil-gas-cbm,
+.route-layer-swatch.swatch-oil-gas-other{
+  position:relative;
+  width:1.1rem;
+  height:1.1rem;
+  border:0;
+  background:transparent;
+}
+.route-layer-swatch.swatch-oil-gas-oil::before,
+.route-layer-swatch.swatch-oil-gas-gas::before,
+.route-layer-swatch.swatch-oil-gas-combined::before,
+.route-layer-swatch.swatch-oil-gas-dry::before,
+.route-layer-swatch.swatch-oil-gas-service::before,
+.route-layer-swatch.swatch-oil-gas-cbm::before,
+.route-layer-swatch.swatch-oil-gas-other::before{
+  content:'';
+  position:absolute;
+  inset:3px;
+  border:1px solid #fff;
+  border-radius:999px;
+  box-shadow:0 0 0 1px #17372d;
+}
+.route-layer-swatch.swatch-oil-gas-oil::before{background:#b56a2b}
+.route-layer-swatch.swatch-oil-gas-gas::before{background:#2f78b7}
+.route-layer-swatch.swatch-oil-gas-combined::before{background:#7a4d9f}
+.route-layer-swatch.swatch-oil-gas-dry::before{background:#7a7d7b}
+.route-layer-swatch.swatch-oil-gas-service::before{background:#004da8}
+.route-layer-swatch.swatch-oil-gas-cbm::before{background:#247f72}
+.route-layer-swatch.swatch-oil-gas-other::before{background:#b24d3a}
+.route-layer-group[aria-label="Oil and gas layers"] .route-layer-toggle-child{
+  padding-top:.22rem;
+  padding-bottom:.22rem;
+}
+.route-layer-group[aria-label="Oil and gas layers"] .route-layer-source-note{
+  margin-top:.45rem;
+}
+
+/* A minimized planner is a status strip, not a second panel. */
+.route-plan-panel[data-minimized="true"]{
+  width:min(26rem,calc(100% - 1.5rem));
+  padding:0!important;
+  overflow:hidden!important;
+}
+.route-plan-panel[data-minimized="true"] .route-map-sheet-header{
+  min-height:28px;
+  padding:.12rem .35rem!important;
+  justify-content:flex-end;
+  border-bottom:0;
+}
+.route-plan-panel[data-minimized="true"] [data-plan-panel-title]{
+  display:none!important;
+}
+.route-plan-panel[data-minimized="true"] [data-plan-minimize]{
+  width:28px;
+  height:28px;
+  min-height:28px;
+  padding:0;
+  border-radius:7px;
+  line-height:1;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats{
+  margin:0!important;
+  padding:.28rem .38rem .36rem!important;
+  border:0;
+  border-top:1px solid rgba(23,55,45,.1);
+  border-radius:0;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats-head{
+  display:none!important;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:.22rem!important;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats-grid>span{
+  padding:.24rem .26rem!important;
+  border-radius:6px;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats-grid small{
+  font-size:.52rem!important;
+  line-height:1;
+}
+.route-plan-panel[data-minimized="true"] .route-plan-live-stats-grid strong{
+  font-size:.66rem!important;
+  line-height:1.08;
+  white-space:nowrap;
+}
+
+@media(max-width:700px){
+  .route-plan-panel[data-minimized="true"]{
+    left:.5rem!important;
+    right:auto!important;
+    bottom:.5rem!important;
+    width:calc(100% - 1rem)!important;
+    max-height:none!important;
+  }
+  .route-plan-panel[data-minimized="true"] .route-map-sheet-header{
+    min-height:24px;
+    padding:.08rem .25rem!important;
+  }
+  .route-plan-panel[data-minimized="true"] [data-plan-minimize]{
+    width:24px;
+    height:24px;
+    min-height:24px;
+    font-size:.95rem!important;
+  }
+  .route-plan-panel[data-minimized="true"] .route-plan-live-stats{
+    padding:.22rem .28rem .3rem!important;
+  }
+  .route-map-left-stack{
+    top:3.4rem!important;
+    left:.55rem!important;
+  }
+  .route-plan-pan-pad{
+    grid-template-columns:28px 28px 28px!important;
+    grid-template-rows:28px 28px 28px!important;
+    gap:2px!important;
+    padding:3px!important;
+    border-radius:9px!important;
+  }
+  .route-plan-pan-pad button{
+    width:28px!important;
+    height:28px!important;
+    border-radius:6px!important;
+    font-size:.88rem!important;
+  }
+  .route-plan-pan-pad .route-pan-center{
+    font-size:.68rem!important;
+  }
+}
