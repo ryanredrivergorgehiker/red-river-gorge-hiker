@@ -2051,7 +2051,8 @@
 }
 .route-map-status[data-kind="warning"]{background:#79481b}
 .route-map-shell-full>.route-map-status{
-  height:3.05rem;
+  height:3.7rem;
+  min-height:3.7rem;
   overflow:hidden;
 }
 .route-map-shell-full .route-map-tools-desktop{bottom:.75rem}
