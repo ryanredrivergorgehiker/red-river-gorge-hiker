@@ -390,6 +390,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("data transformed for web display", MAP)
         self.assertIn("oilGas: 495", MAP)
         self.assertIn("route-oil-gas-popup", ROUTES_CSS)
+        self.assertIn("rrgh-oil-gas-marker-host", MAP)
+        self.assertIn("L.divIcon({", MAP)
+        self.assertNotIn("const marker = L.circleMarker([lat, lng]", MAP)
+        self.assertIn(".rrgh-oil-gas-marker{", ROUTES_CSS)
         self.assertIn("swatch-oil-gas", ROUTES_CSS)
 
     def test_map_visual_legend_matches_cartography(self):
