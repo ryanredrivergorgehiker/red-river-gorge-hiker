@@ -657,9 +657,15 @@ const enabledSources = enabledBrowserMapSources;
     ];
     const isMobileFullMap = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
     const areaLabelModeForZoom = (zoom: number) => {
+      if (isMobileFullMap()) {
+        if (zoom >= 14) return 'hidden';
+        if (zoom >= 12) return 'initials-near';
+        if (zoom >= 10) return 'full';
+        return 'initials-broad';
+      }
       if (zoom >= 16) return 'hidden';
-      if (zoom >= 11 && zoom <= 13) return 'full';
       if (zoom >= 14) return 'initials-near';
+      if (zoom >= 11) return 'full';
       return 'initials-broad';
     };
     const syncAreaLabels = () => {
