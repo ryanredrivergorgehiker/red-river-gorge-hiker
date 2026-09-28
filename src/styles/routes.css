@@ -2249,10 +2249,17 @@
   max-width:min(35rem,calc(100% - 1.5rem));
 }
 .route-coordinate-toolbar{
-  grid-template-columns:76px minmax(14rem,1fr) 32px!important;
+  grid-template-columns:76px minmax(14rem,1fr)!important;
   column-gap:.7rem!important;
   row-gap:.2rem!important;
   align-items:start!important;
+  padding-right:2.5rem;
+}
+.route-coordinate-close{
+  position:absolute!important;
+  top:.55rem;
+  right:.65rem;
+  z-index:2;
 }
 .route-coordinate-heading{
   align-self:start!important;
@@ -2381,8 +2388,13 @@
     gap:.34rem!important;
   }
   .route-coordinate-toolbar{
-    grid-template-columns:68px minmax(0,1fr) 32px!important;
+    grid-template-columns:68px minmax(0,1fr)!important;
     column-gap:.48rem!important;
+    padding-right:2.3rem;
+  }
+  .route-coordinate-close{
+    top:.5rem;
+    right:.55rem;
   }
   .route-coordinate-copy{
     width:68px!important;
