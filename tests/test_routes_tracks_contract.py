@@ -611,7 +611,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("redrawPlan(false)", MAP)
 
     def test_planner_uses_official_roads_and_loaded_informal_paths(self):
-        self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
+        self.assertIn("indexGeometry(geojson);", MAP)
         self.assertIn("Not used for route snapping", MAP)
         self.assertIn("Available for route snapping", MAP)
         self.assertIn("accessLower === 'no' || accessLower === 'private'", MAP)
