@@ -320,10 +320,15 @@ const enabledSources = enabledBrowserMapSources;
     </div>
 
     <div class="route-coordinate-card" data-coordinate-card hidden>
+      <div class="route-coordinate-toolbar">
+        <button type="button" data-coordinate-copy>Copy coordinates</button>
+        <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
+      </div>
       <div class="route-coordinate-main">
         <strong>Map point</strong>
         <span data-coordinate-dd></span>
         <span data-coordinate-utm></span>
+        <span class="route-coordinate-elevation" data-coordinate-elevation>Elevation calculating…</span>
         <div class="route-coordinate-sunlight" data-coordinate-sunlight>
           <div class="route-coordinate-sunlight-summary">
             <strong>Sunlight today</strong>
@@ -336,10 +341,6 @@ const enabledSources = enabledBrowserMapSources;
           <small data-coordinate-sun-source>Terrain-aware timing uses bare-earth elevation where available.</small>
           <small>Terrain-adjusted estimate; trees, cliffs/overhangs, clouds and local obstructions may change actual direct light.</small>
         </div>
-      </div>
-      <div class="route-coordinate-actions">
-        <button type="button" data-coordinate-copy>Copy coordinates</button>
-        <button type="button" class="route-coordinate-close" data-coordinate-close aria-label="Close coordinates">×</button>
       </div>
     </div>
 
@@ -547,6 +548,7 @@ const enabledSources = enabledBrowserMapSources;
     const coordinateCard = shell.querySelector<HTMLElement>('[data-coordinate-card]');
     const coordinateDd = shell.querySelector<HTMLElement>('[data-coordinate-dd]');
     const coordinateUtm = shell.querySelector<HTMLElement>('[data-coordinate-utm]');
+    const coordinateElevation = shell.querySelector<HTMLElement>('[data-coordinate-elevation]');
     const coordinateCopy = shell.querySelector<HTMLButtonElement>('[data-coordinate-copy]');
     const coordinateClose = shell.querySelector<HTMLButtonElement>('[data-coordinate-close]');
     const planLiveStats = shell.querySelector<HTMLElement>('[data-plan-live-stats]');
@@ -646,46 +648,51 @@ const enabledSources = enabledBrowserMapSources;
 
     const areaLabelGroup = L.layerGroup().addTo(map);
     const areaLabels = [
-      { full: 'NATURAL BRIDGE', short: 'NATURAL BRIDGE', lat: 37.775, lng: -83.687 },
-      { full: 'RED RIVER GORGE', short: 'RED RIVER', lat: 37.836, lng: -83.638 },
-      { full: 'CLIFTY WILDERNESS', short: 'CLIFTY', lat: 37.837, lng: -83.565 }
+      { full: 'Natural Bridge', short: 'NB', lat: 37.775, lng: -83.687 },
+      { full: 'Red River Gorge', short: 'RRG', lat: 37.836, lng: -83.638 },
+      { full: 'Clifty Wilderness', short: 'CW', lat: 37.837, lng: -83.565 }
     ];
+    const isMobileFullMap = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
     const syncAreaLabels = () => {
       areaLabelGroup.clearLayers();
       const zoom = map.getZoom();
-      if (zoom >= 13) return;
-      const broad = zoom <= 10;
-      const medium = zoom === 11;
+      const fullLabelZoom = isMobileFullMap() ? 10 : 13;
+      if (zoom < fullLabelZoom || zoom > fullLabelZoom + 1) {
+        container.dataset.areaLabelMode = 'hidden';
+        return;
+      }
+      const initials = zoom === fullLabelZoom + 1;
       for (const label of areaLabels) {
-        const textValue = broad || medium ? label.full : label.short;
+        const textValue = initials ? label.short : label.full;
+        const iconSize: [number, number] = initials ? [48, 28] : [166, 30];
         L.marker([label.lat, label.lng], {
           pane: 'areaLabels',
           interactive: false,
           keyboard: false,
           icon: L.divIcon({
-            className: 'rrgh-area-label ' + (broad ? 'is-broad' : medium ? 'is-medium' : 'is-near'),
+            className: 'rrgh-area-label ' + (initials ? 'is-initials' : 'is-full'),
             html: '<span>' + textValue + '</span>',
-            iconSize: [1, 1],
-            iconAnchor: [0, 0]
+            iconSize,
+            iconAnchor: [iconSize[0] / 2, iconSize[1] / 2]
           })
         }).addTo(areaLabelGroup);
       }
-      container.dataset.areaLabelMode = broad ? 'full-broad' : medium ? 'full-medium' : 'short';
+      container.dataset.areaLabelMode = initials ? 'initials' : 'full';
     };
     map.on('zoomend', syncAreaLabels);
 
     const homeCenter = L.latLng(37.8196836, -83.6396027);
     const homeZoom = 13;
-    const mobileOverviewBounds = L.latLngBounds([[37.73, -83.745], [37.93, -83.475]]);
-    const useMobileOverview = () => mode === 'full' && window.matchMedia('(max-width: 700px)').matches;
+    const mobileHomeZoom = 10;
     const setHomeView = () => {
-      if (useMobileOverview()) {
-        map.fitBounds(mobileOverviewBounds, { padding: [8, 8], maxZoom: 11, animate: false });
+      if (isMobileFullMap()) {
+        map.setView(homeCenter, mobileHomeZoom, { animate: false });
         container.dataset.homeView = 'gorge-overview';
       } else {
         map.setView(homeCenter, homeZoom, { animate: false });
         container.dataset.homeView = 'detail';
       }
+      syncAreaLabels();
     };
     const updateSunlightPresetTimes = () => {
       if (!sunlightPresetTimes) return;
@@ -716,7 +723,7 @@ const enabledSources = enabledBrowserMapSources;
     let coordinatePoint: { lat: number; lng: number; utm: string } | null = null;
     let sunlightRequestRevision = 0;
     let sunlightController: AbortController | null = null;
-    const sunlightHorizonCache = new Map<string, { profile: any; sourceLabel: string }>();
+    const sunlightHorizonCache = new Map<string, { profile: any; sourceLabel: string; originElevationMeters: number }>();
     let sharedViewApplied = false;
     const searchItems: Array<{ label: string; detail: string; bounds?: any; latlng?: any; open?: () => void }> = [];
     const sourceById = (id: string) => mapSources.find((source) => source.id === id);
@@ -2526,7 +2533,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const goHome = () => {
       setHomeView();
-      setStatus(useMobileOverview() ? 'Red River Gorge overview restored.' : 'Core Red River Gorge hiking view restored.');
+      setStatus(isMobileFullMap() ? 'Red River Gorge overview restored.' : 'Core Red River Gorge hiking view restored.');
     };
 
     const showMyLocation = () => {
@@ -2710,8 +2717,10 @@ const enabledSources = enabledBrowserMapSources;
         try {
           const elevations = await fetchTerrainElevations(sourceId, points, signal);
           const profile = buildTerrainHorizonProfile(samples, elevations);
+          const originElevationMeters = Number(elevations[0]);
+          if (!Number.isFinite(originElevationMeters)) throw new Error('Map Point elevation is unavailable.');
           const sourceLabel = sourceById(sourceId)?.label ?? sourceId;
-          const result = { profile, sourceLabel };
+          const result = { profile, sourceLabel, originElevationMeters };
           sunlightHorizonCache.set(cacheKey, result);
           container.dataset.sunlightTerrainSource = sourceId;
           return result;
@@ -2773,6 +2782,7 @@ const enabledSources = enabledBrowserMapSources;
       coordinatePoint = { lat, lng, utm };
       if (coordinateDd) coordinateDd.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
       if (coordinateUtm) coordinateUtm.textContent = 'UTM ' + utm;
+      if (coordinateElevation) coordinateElevation.textContent = 'Elevation calculating…';
 
       const today = redRiverDateParts();
       const days = Array.from({ length: 10 }, (_, index) =>
@@ -2780,6 +2790,8 @@ const enabledSources = enabledBrowserMapSources;
       );
       if (coordinateSunToday) {
         coordinateSunToday.textContent = 'Sunrise ' + formatRrgTime(days[0]?.sunrise ?? null)
+          + ' · First direct sun calculating…'
+          + ' · Last direct sun calculating…'
           + ' · Sunset ' + formatRrgTime(days[0]?.sunset ?? null);
       }
       if (coordinateSunSource) coordinateSunSource.textContent = 'Calculating terrain-adjusted first and last direct sun…';
@@ -2793,18 +2805,30 @@ const enabledSources = enabledBrowserMapSources;
       sunlightController?.abort();
       const controller = new AbortController();
       sunlightController = controller;
-      void terrainHorizonForPoint(lat, lng, controller.signal).then(({ profile, sourceLabel }) => {
+      void terrainHorizonForPoint(lat, lng, controller.signal).then(({ profile, sourceLabel, originElevationMeters }) => {
         if (controller.signal.aborted || revision !== sunlightRequestRevision) return;
         const directTimes = days.map((day) => getTerrainDirectTimes(lat, lng, day, profile));
         renderSunlightRows(days, directTimes);
+        const todayDirect = directTimes[0];
+        if (coordinateSunToday) {
+          coordinateSunToday.textContent = 'Sunrise ' + formatRrgTime(days[0]?.sunrise ?? null)
+            + ' · First direct sun ' + formatRrgTime(todayDirect?.firstDirectSun ?? null)
+            + ' · Last direct sun ' + formatRrgTime(todayDirect?.lastDirectSun ?? null)
+            + ' · Sunset ' + formatRrgTime(days[0]?.sunset ?? null);
+        }
+        if (coordinateElevation) {
+          const feet = Math.round(originElevationMeters * 3.280839895);
+          coordinateElevation.textContent = 'Elevation ' + feet.toLocaleString() + ' ft · ' + Math.round(originElevationMeters).toLocaleString() + ' m';
+        }
         if (coordinateSunSource) {
-          coordinateSunSource.textContent = 'Terrain model: ' + sourceLabel + ' bare-earth elevation.';
+          coordinateSunSource.textContent = 'Terrain / elevation source: ' + sourceLabel + '.';
         }
         container.dataset.sunlightDayCount = '10';
         container.dataset.sunlightTerrainReady = 'true';
       }).catch((error) => {
         if (controller.signal.aborted || revision !== sunlightRequestRevision) return;
         console.error(error);
+        if (coordinateElevation) coordinateElevation.textContent = 'Elevation temporarily unavailable.';
         if (coordinateSunSource) {
           coordinateSunSource.textContent = 'Astronomical times shown; terrain-adjusted timing is temporarily unavailable.';
         }
