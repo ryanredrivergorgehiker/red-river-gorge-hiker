@@ -3053,7 +3053,7 @@ const enabledSources = enabledBrowserMapSources;
       }
       const touch = event.touches[0]!;
       scheduleLongPress(touch.clientX, touch.clientY);
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
     container.addEventListener('touchmove', (event) => {
       if (!longPressStart || event.touches.length !== 1) return;
@@ -3062,7 +3062,7 @@ const enabledSources = enabledBrowserMapSources;
         clearLongPress();
         delete container.dataset.longPressActivated;
       }
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
     // Some mobile browsers emit touchcancel during a stationary long hold while
     // deciding whether to show native selection/callout UI. The map explicitly
@@ -3073,15 +3073,15 @@ const enabledSources = enabledBrowserMapSources;
         longPressTriggered = false;
         clearLongPress();
       }
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
     container.addEventListener('selectstart', (event) => {
       event.preventDefault();
-    });
+    }, { capture: true });
 
     container.addEventListener('contextmenu', (event) => {
       event.preventDefault();
-    });
+    }, { capture: true });
 
     container.addEventListener('touchend', (event) => {
       window.clearTimeout(longPressTimer);
@@ -3109,7 +3109,7 @@ const enabledSources = enabledBrowserMapSources;
       } else {
         lastTapAt = now;
       }
-    }, { passive: false });
+    }, { passive: false, capture: true });
 
     const planningRenderer = L.svg({ pane: 'planning' });
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
