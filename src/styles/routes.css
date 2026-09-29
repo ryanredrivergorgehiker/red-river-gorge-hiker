@@ -2631,26 +2631,6 @@
   line-height:1.35;
 }
 .route-layer-source-note[data-kind="warning"]{color:#8b4e20}
-.route-local-road-popup{
-  min-width:min(15rem,68vw);
-  color:#26312b;
-  font-size:.76rem;
-  line-height:1.35;
-}
-.route-local-road-popup>strong{
-  display:block;
-  margin-bottom:.28rem;
-  color:#17372d;
-  font-size:.84rem;
-}
-.route-local-road-note{
-  margin:.45rem 0 0;
-  padding-top:.4rem;
-  border-top:1px solid rgba(23,55,45,.14);
-  color:#657068;
-  font-size:.69rem;
-  line-height:1.35;
-}
 .route-layer-swatch.swatch-oil-gas{
   position:relative;
   width:18px;
