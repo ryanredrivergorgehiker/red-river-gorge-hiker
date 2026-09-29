@@ -411,6 +411,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("const localRoadLayerId = 'ky-local-roads'", MAP)
         self.assertIn('<span>Local / old roads</span>', MAP)
         self.assertIn('data-map-layer="ky-local-roads" title="Available in every Map View."', MAP)
+        self.assertIn('data-fine-tune-layer="ky-local-roads" aria-label="Toggle Local / old roads"', MAP)
+        self.assertNotIn('Available in Terrain or Aerial view.', MAP)
         self.assertNotIn("setLocalRoadPresetAvailability", MAP)
         self.assertNotIn("if (id === localRoadLayerId && enabled && checkbox?.disabled) enabled = false", MAP)
         self.assertEqual(MAP.count("setLayerControl(localRoadLayerId, true);"), 2)

@@ -323,7 +323,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Forest Service trails</span><input type="checkbox" data-fine-tune-layer="usfs-trails" checked aria-label="Toggle Forest Service trails" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" /></label>
             <label><span>Community / Informal trails</span><input type="checkbox" data-fine-tune-layer="osm-informal-trails" checked aria-label="Toggle Community / Informal trails" /><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" aria-label="Community / Informal trails opacity" /></label>
             <label><span>Forest Service roads</span><input type="checkbox" data-fine-tune-layer="usfs-roads" checked aria-label="Toggle Forest Service roads" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" /></label>
-            <label><span>Local / old roads</span><input type="checkbox" data-fine-tune-layer="ky-local-roads" disabled title="Available in Terrain or Aerial view." aria-label="Toggle Local / old roads" /><input type="range" min="0" max="100" value="72" data-opacity="ky-local-roads" aria-label="Local / old roads opacity" disabled /></label>
+            <label><span>Local / old roads</span><input type="checkbox" data-fine-tune-layer="ky-local-roads" aria-label="Toggle Local / old roads" /><input type="range" min="0" max="100" value="72" data-opacity="ky-local-roads" aria-label="Local / old roads opacity" disabled /></label>
             <label><span>Kentucky Topo</span><input type="checkbox" data-fine-tune-layer="kytopo" aria-label="Toggle Kentucky Topo" /><input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" disabled /></label>
             <label><span>USGS Topo</span><input type="checkbox" data-fine-tune-layer="usgs-topo" checked aria-label="Toggle USGS Topo" /><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" aria-label="USGS Topo opacity" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="75" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
@@ -886,13 +886,13 @@ const enabledSources = enabledBrowserMapSources;
       if (fineToggle) {
         fineToggle.checked = enabled;
         fineToggle.disabled = blockedByPreset;
-        fineToggle.title = blockedByPreset ? 'Available in Terrain or Aerial view.' : '';
+        fineToggle.title = blockedByPreset ? 'This layer is temporarily unavailable.' : '';
         if (id !== 'rrg-lidar-sun' && id !== oilGasLayerId) fineToggle.indeterminate = false;
       }
       if (slider) {
         slider.disabled = !enabled || blockedByAerial || blockedByPreset;
         slider.title = blockedByPreset
-          ? 'Available in Terrain or Aerial view.'
+          ? 'This layer is temporarily unavailable.'
           : blockedByAerial
             ? 'Unavailable while aerial imagery is active.'
             : (!enabled ? 'Turn this layer on to adjust opacity.' : '');
