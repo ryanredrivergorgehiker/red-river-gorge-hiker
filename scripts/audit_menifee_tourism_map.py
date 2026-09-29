@@ -58,6 +58,11 @@ for key in ('map','webmap','webMap'):
     val=app_data.get(key)
     if isinstance(val,str) and len(val)>=20:
         webmap_ids.append(val)
+    elif isinstance(val,dict):
+        for candidate_key in ('itemId','itemid','id','webmap','webMap'):
+            candidate=val.get(candidate_key)
+            if isinstance(candidate,str) and len(candidate)>=20:
+                webmap_ids.append(candidate)
 for key in ('mapOptions','values'):
     val=app_data.get(key)
     if isinstance(val,dict):
@@ -74,7 +79,7 @@ for section in ('values',):
 webmap_ids=list(dict.fromkeys(webmap_ids))
 print('WEBMAP IDS',webmap_ids)
 if not webmap_ids:
-    print(json.dumps({'app_data_keys':sorted(app_data.keys()),'values':app_data.get('values')}))
+    print(json.dumps({'app_data_keys':sorted(app_data.keys()),'map':app_data.get('map'),'values':app_data.get('values')}))
     raise SystemExit(0)
 
 for webmap_id in webmap_ids:
