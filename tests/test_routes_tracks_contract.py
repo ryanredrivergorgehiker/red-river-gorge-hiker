@@ -253,7 +253,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_RoadBasic_01',
             'Ky_CountyLines_WGS84WM',
             'Ky_911_Road_Centerlines_WGS84WM',
-            'Ky_TCM_Street_Base_WGS84WM',
+            'Ky_Cartobase_WGS84WM',
             'EDW_RecInfraRecreationSites_02',
             'EDW_Wilderness_01',
             'EDW_SpecialInterestManagementArea_01',
