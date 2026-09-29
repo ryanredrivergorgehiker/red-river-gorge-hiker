@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-import json, pathlib, urllib.parse, urllib.request
+import json, pathlib, shutil, urllib.parse, urllib.request
 from shapely.geometry import LineString, MultiLineString, box
 
 BBOX=(37.45,-83.93,38.05,-83.25)  # south, west, north, east
-CACHE_PATH=pathlib.Path('public/data/map/osm-local-roads.geojson')
+CACHE_DIR=pathlib.Path('public/data/map/osm-local-roads')
+MANIFEST_PATH=pathlib.Path('public/data/map/osm-local-roads-manifest.json')
+LEGACY_CACHE_PATH=pathlib.Path('public/data/map/osm-local-roads.geojson')
+GRID_ROWS=8
+GRID_COLS=8
 TILES=[
   (37.45,-83.93,37.75,-83.59),
   (37.45,-83.59,37.75,-83.25),
@@ -78,17 +82,18 @@ for tile in TILES:
             elements_by_id[element['id']]=element
 
 if successful_tiles != len(TILES):
-    if CACHE_PATH.exists():
-        print(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles); preserving existing cache at {CACHE_PATH}.')
+    if MANIFEST_PATH.exists() and CACHE_DIR.exists():
+        print(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles); preserving existing tiled cache.')
         raise SystemExit(0)
-    raise SystemExit(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles) and no existing cache is available.')
+    raise SystemExit(f'Refresh incomplete ({successful_tiles}/{len(TILES)} tiles) and no existing tiled cache is available.')
 
-clip_box=box(BBOX[1],BBOX[0],BBOX[3],BBOX[2])
-features=[]
+south,west,north,east=BBOX
+clip_box=box(west,south,east,north)
 class_counts={}
 excluded_service=0
 dropped_out_of_bounds=0
 clipped_edge_features=0
+base_parts=[]
 
 for element in elements_by_id.values():
     tags=dict(element.get('tags') or {})
@@ -119,44 +124,113 @@ for element in elements_by_id.values():
         parts=[]
 
     class_counts[highway]=class_counts.get(highway,0)+1
+    base_props={
+      'osm_id':element.get('id'),
+      'highway':tags.get('highway'),
+      'name':tags.get('name'),
+      'alt_name':tags.get('alt_name'),
+      'official_name':tags.get('official_name'),
+      'surface':tags.get('surface'),
+      'tracktype':tags.get('tracktype'),
+      'service':tags.get('service'),
+      'access':tags.get('access'),
+      'motor_vehicle':tags.get('motor_vehicle'),
+      'foot':tags.get('foot'),
+      'tiger_reviewed':tags.get('tiger:reviewed'),
+    }
     for part_index,part in enumerate(parts):
-        props={
-          'osm_id':element.get('id'),
-          'rrgh_part':part_index,
-          'highway':tags.get('highway'),
-          'name':tags.get('name'),
-          'alt_name':tags.get('alt_name'),
-          'official_name':tags.get('official_name'),
-          'surface':tags.get('surface'),
-          'tracktype':tags.get('tracktype'),
-          'service':tags.get('service'),
-          'access':tags.get('access'),
-          'motor_vehicle':tags.get('motor_vehicle'),
-          'foot':tags.get('foot'),
-          'tiger_reviewed':tags.get('tiger:reviewed'),
-        }
-        part_coords=[[float(x),float(y)] for x,y in part.coords]
-        features.append({'type':'Feature','properties':props,'geometry':{'type':'LineString','coordinates':part_coords}})
+        props=dict(base_props)
+        props['rrgh_part']=part_index
+        base_parts.append((props,part))
 
-out={
-  'type':'FeatureCollection',
-  'features':features,
-  'rrgh_cache':{
-    'source':'OpenStreetMap contributors via Overpass API',
-    'source_endpoints':sorted(set(used_sources)),
-    'method':'OSM residential/unclassified/track/service/living_street/road cache; service driveways and parking aisles excluded',
-    'bbox':list(BBOX),
-    'highway_classes':sorted(HIGHWAY_CLASSES),
-    'excluded_service_values':sorted(EXCLUDED_SERVICE),
-    'class_counts':class_counts,
-    'osm_way_count_before_filter':len(elements_by_id),
-    'feature_count':len(features),
-    'excluded_service_count':excluded_service,
-    'bounds_clipped':True,
-    'dropped_out_of_bounds_features':dropped_out_of_bounds,
-    'clipped_edge_features':clipped_edge_features
-  }
+if CACHE_DIR.exists():
+    shutil.rmtree(CACHE_DIR)
+CACHE_DIR.mkdir(parents=True,exist_ok=True)
+MANIFEST_PATH.parent.mkdir(parents=True,exist_ok=True)
+if LEGACY_CACHE_PATH.exists():
+    LEGACY_CACHE_PATH.unlink()
+
+cell_w=(east-west)/GRID_COLS
+cell_h=(north-south)/GRID_ROWS
+tile_features={(r,c):[] for r in range(GRID_ROWS) for c in range(GRID_COLS)}
+tile_bounds={}
+for r in range(GRID_ROWS):
+    y0=south+r*cell_h
+    y1=south+(r+1)*cell_h
+    for c in range(GRID_COLS):
+        x0=west+c*cell_w
+        x1=west+(c+1)*cell_w
+        tile_bounds[(r,c)]=(y0,x0,y1,x1)
+
+for props,line in base_parts:
+    minx,miny,maxx,maxy=line.bounds
+    c0=max(0,min(GRID_COLS-1,int((minx-west)/cell_w)))
+    c1=max(0,min(GRID_COLS-1,int((maxx-west)/cell_w)))
+    r0=max(0,min(GRID_ROWS-1,int((miny-south)/cell_h)))
+    r1=max(0,min(GRID_ROWS-1,int((maxy-south)/cell_h)))
+    for r in range(r0,r1+1):
+        for c in range(c0,c1+1):
+            y0,x0,y1,x1=tile_bounds[(r,c)]
+            piece=line.intersection(box(x0,y0,x1,y1))
+            if piece.is_empty:
+                continue
+            if isinstance(piece,LineString):
+                pieces=[piece]
+            elif isinstance(piece,MultiLineString):
+                pieces=[p for p in piece.geoms if not p.is_empty and len(p.coords)>=2]
+            else:
+                pieces=[]
+            for tile_part,p in enumerate(pieces):
+                tile_props=dict(props)
+                tile_props['rrgh_tile_part']=tile_part
+                coords=[[float(x),float(y)] for x,y in p.coords]
+                tile_features[(r,c)].append({
+                  'type':'Feature',
+                  'properties':tile_props,
+                  'geometry':{'type':'LineString','coordinates':coords}
+                })
+
+manifest_tiles=[]
+sharded_feature_count=0
+for r in range(GRID_ROWS):
+    for c in range(GRID_COLS):
+        y0,x0,y1,x1=tile_bounds[(r,c)]
+        features=tile_features[(r,c)]
+        tile_id=f'r{r+1}c{c+1}'
+        filename=tile_id+'.geojson'
+        payload={
+          'type':'FeatureCollection',
+          'features':features,
+          'rrgh_tile':{'id':tile_id,'bounds':[y0,x0,y1,x1]}
+        }
+        (CACHE_DIR/filename).write_text(json.dumps(payload,separators=(',',':'))+'\n',encoding='utf-8')
+        sharded_feature_count+=len(features)
+        manifest_tiles.append({
+          'id':tile_id,
+          'file':filename,
+          'bounds':[y0,x0,y1,x1],
+          'feature_count':len(features)
+        })
+
+manifest={
+  'version':1,
+  'source':'OpenStreetMap contributors via Overpass API',
+  'source_endpoints':sorted(set(used_sources)),
+  'method':'Viewport-loadable 8x8 shards of OSM residential/unclassified/track/service/living_street/road geometry; service driveways and parking aisles excluded',
+  'bbox':list(BBOX),
+  'rows':GRID_ROWS,
+  'cols':GRID_COLS,
+  'highway_classes':sorted(HIGHWAY_CLASSES),
+  'excluded_service_values':sorted(EXCLUDED_SERVICE),
+  'class_counts':class_counts,
+  'osm_way_count_before_filter':len(elements_by_id),
+  'base_feature_parts':len(base_parts),
+  'sharded_feature_count':sharded_feature_count,
+  'excluded_service_count':excluded_service,
+  'bounds_clipped':True,
+  'dropped_out_of_bounds_features':dropped_out_of_bounds,
+  'clipped_edge_features':clipped_edge_features,
+  'tiles':manifest_tiles
 }
-CACHE_PATH.parent.mkdir(parents=True,exist_ok=True)
-CACHE_PATH.write_text(json.dumps(out,separators=(',',':'))+'\n',encoding='utf-8')
-print(f'Wrote {len(features)} OSM local/other road features from {len(elements_by_id)} candidate ways; classes={class_counts}; excluded service driveways/parking aisles={excluded_service}.')
+MANIFEST_PATH.write_text(json.dumps(manifest,separators=(',',':'))+'\n',encoding='utf-8')
+print(f'Wrote {GRID_ROWS*GRID_COLS} OSM local-road shards with {sharded_feature_count} clipped features from {len(base_parts)} base parts; classes={class_counts}; excluded service driveways/parking aisles={excluded_service}.')
