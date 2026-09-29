@@ -444,7 +444,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('show available road-name labels', PRIVACY)
         self.assertIn('route-planning snap graph', PRIVACY)
         self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
-        self.assertIn('Last updated: September 29, 2026', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
         self.assertIn('Kentucky LiDAR Guide', explore)
