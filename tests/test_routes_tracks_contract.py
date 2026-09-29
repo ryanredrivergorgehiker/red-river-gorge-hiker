@@ -253,6 +253,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_RoadBasic_01',
             'Ky_CountyLines_WGS84WM',
             'Ky_911_Road_Centerlines_WGS84WM',
+            'Ky_TCM_Street_Base_WGS84WM',
             'EDW_RecInfraRecreationSites_02',
             'EDW_Wilderness_01',
             'EDW_SpecialInterestManagementArea_01',
@@ -266,6 +267,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'usfs-trails'", LAYERS)
         self.assertIn("id: 'usfs-roads'", LAYERS)
         self.assertIn("id: 'ky-counties'", LAYERS)
+        self.assertIn("id: 'ky-local-roads'", LAYERS)
+        local_roads = LAYERS.split("id: 'ky-local-roads'", 1)[1].split("}", 1)[0]
+        self.assertIn("MapServer/71", local_roads)
+        self.assertIn("minZoom: 13", local_roads)
+        self.assertIn("viewport-only local-road geometry", local_roads)
+        self.assertIn("does not establish public access, maintenance, or current drivability", local_roads)
         self.assertIn("id: 'ky-road-centerlines'", LAYERS)
         road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
         self.assertIn('Kentucky 911 Services Board & Kentucky PSAPs', road_planning)
@@ -328,6 +335,28 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('sends the current map viewport', PRIVACY)
         self.assertIn('requests and transforms selected public well fields for web display', PRIVACY)
         self.assertIn('does not request or display KGS farm/lease-name fields', PRIVACY)
+        self.assertIn('data-local-roads-status', MAP)
+        self.assertIn('Visible at close zoom. Kentucky/local road centerlines', MAP)
+        self.assertIn("const localRoadLayerId = 'ky-local-roads'", MAP)
+        self.assertIn('const localRoadMinZoom = 13', MAP)
+        self.assertIn('const localRoadMaxFeatures = 800', MAP)
+        self.assertIn("map.getBounds().pad(0.06)", MAP)
+        self.assertIn("resultRecordCount: String(localRoadMaxFeatures + 1)", MAP)
+        self.assertIn("outFields: 'OBJECTID,RD_NAME,SURFTYPE,GOV_LEVEL,STATUS'", MAP)
+        self.assertIn("credentials: 'omit'", MAP)
+        self.assertIn("cache: 'no-store'", MAP)
+        self.assertIn('while (localRoadCache.size > 8)', MAP)
+        self.assertIn("container.dataset.localRoadCliftyFound", MAP)
+        self.assertIn("localRoads: 340", MAP)
+        local_road_section = MAP.split("const localRoadLayerId = 'ky-local-roads'", 1)[1].split("const routeGroup = L.layerGroup()", 1)[0]
+        self.assertNotIn('addSnapLine', local_road_section)
+        self.assertNotIn('connectNamedRoadEndpointGaps', local_road_section)
+        self.assertNotIn('graph.', local_road_section)
+        self.assertIn('Local / other roads', PRIVACY)
+        self.assertIn('current map viewport to the Kentucky Division of Geographic Information service', PRIVACY)
+        self.assertIn('road name, status, government-level, surface and geometry fields', PRIVACY)
+        self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
+        self.assertIn('Last updated: September 29, 2026', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
         self.assertIn('Kentucky LiDAR Guide', explore)
@@ -343,7 +372,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('data-route-status-filter', MAP)
         for layer in (
             'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
-            'usfs-trails', 'usfs-roads', 'osm-informal-trails',
+            'usfs-trails', 'usfs-roads', 'ky-local-roads', 'osm-informal-trails',
             'usfs-special-management', 'usfs-land-units', 'kgs-oil-gas-wells'
         ):
             self.assertIn('data-map-layer="' + layer + '"', MAP)
@@ -366,8 +395,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('value="100" data-opacity="usfs-trails"', MAP)
         self.assertIn('value="100" data-opacity="osm-informal-trails"', MAP)
         self.assertIn('value="100" data-opacity="usfs-roads"', MAP)
+        self.assertIn('value="72" data-opacity="ky-local-roads"', MAP)
         for layer in (
-            'usfs-trails', 'osm-informal-trails', 'usfs-roads', 'kytopo', 'usgs-topo',
+            'usfs-trails', 'osm-informal-trails', 'usfs-roads', 'ky-local-roads', 'kytopo', 'usgs-topo',
             'ky-hillshade', 'rrg-lidar-sun', 'kyaerial-phase3', 'usfs-special-management', 'usfs-land-units',
             'kgs-oil-gas-wells'
         ):
@@ -420,7 +450,7 @@ class RoutesTracksContractTests(unittest.TestCase):
 
     def test_map_visual_legend_matches_cartography(self):
         for swatch in (
-            'swatch-route', 'swatch-usfs-trail', 'swatch-usfs-road', 'swatch-county',
+            'swatch-route', 'swatch-usfs-trail', 'swatch-usfs-road', 'swatch-local-road', 'swatch-county',
             'swatch-landmark', 'swatch-start', 'swatch-trailhead', 'swatch-informal'
         ):
             self.assertIn(swatch, MAP)
@@ -440,6 +470,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("lineCap: 'round'", MAP)
         self.assertIn(".swatch-usfs-trail::after{border-top:3px dashed #00c8ff}", ROUTES_CSS)
         self.assertIn(".swatch-usfs-road::after{border-top:3px dashed #ffcf33}", ROUTES_CSS)
+        self.assertIn(".swatch-local-road::before{border-top:2px solid #776f64}", ROUTES_CSS)
+        self.assertIn("route-local-road-popup", ROUTES_CSS)
         self.assertIn("border-top:6px dashed #22313a", ROUTES_CSS)
         self.assertIn("color: '#22313a'", MAP)
         self.assertIn("color: restricted ? '#b9b9b9' : '#f7f2e7'", MAP)
