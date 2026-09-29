@@ -1650,6 +1650,16 @@
 .route-plan-mobile-history{
   display:none;
 }
+.route-plan-mobile-history:not([hidden]){
+  position:absolute;
+  z-index:956;
+  left:1.15rem;
+  bottom:9.95rem;
+  display:flex;
+  align-items:center;
+  gap:.42rem;
+  pointer-events:auto;
+}
 .route-plan-mobile-history button{
   width:42px;
   height:42px;
@@ -2824,14 +2834,9 @@
     max-height:none!important;
   }
   .route-plan-mobile-history:not([hidden]){
-    position:absolute;
     z-index:1006;
     left:.75rem;
     bottom:5.95rem;
-    display:flex;
-    align-items:center;
-    gap:.42rem;
-    pointer-events:auto;
   }
   .route-plan-panel[data-minimized="true"] .route-map-sheet-header{
     min-height:24px;
