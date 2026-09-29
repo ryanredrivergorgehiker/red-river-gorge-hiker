@@ -748,6 +748,7 @@ const enabledSources = enabledBrowserMapSources;
       specialManagement: 285,
       wilderness: 300,
       localRoads: 340,
+      localRoadLabels: 345,
       roads: 350,
       informalTrails: 370,
       trails: 390,
@@ -1456,9 +1457,15 @@ const enabledSources = enabledBrowserMapSources;
     const localRoadLayer = L.layerGroup();
     const localRoadTigerLayer = L.layerGroup().addTo(localRoadLayer);
     const localRoadOsmLayer = L.layerGroup().addTo(localRoadLayer);
+    const localRoadLabelGroup = L.layerGroup().addTo(localRoadLayer);
     const localRoadPaths: any[] = [];
     const localRoadTigerPaths: any[] = [];
     const localRoadOsmPaths: any[] = [];
+    const localRoadLabelMarkers: any[] = [];
+    const localRoadLabelMinZoom = 14;
+    let localRoadPlanningIndexer: ((tigerFeatures: any[], osmFeatures: any[]) => void) | null = null;
+    let localRoadRenderedTigerFeatures: any[] = [];
+    let localRoadRenderedOsmFeatures: any[] = [];
     const localRoadStatus = shell.querySelector<HTMLElement>('[data-local-roads-status]');
     const localRoadCache = new Map<string, any>();
     const localRoadOsmTileCache = new Map<string, any>();
@@ -1490,6 +1497,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const syncLocalRoadOpacity = (value = opacity(localRoadLayerId)) => {
       for (const path of localRoadPaths) path.setStyle?.({ opacity: value });
+      for (const marker of localRoadLabelMarkers) marker.setOpacity?.(value);
     };
 
     const localRoadCacheKey = () => {
@@ -1556,6 +1564,80 @@ const enabledSources = enabledBrowserMapSources;
 
     const localRoadFeatureName = (feature: any) =>
       String(featureValue(feature?.properties, ['NAME', 'BASENAME', 'name', 'official_name', 'alt_name']) ?? '');
+
+    const localRoadLabelKey = (name: string) =>
+      name.toLowerCase().replace(/\broad\b/g, 'rd').replace(/\s+/g, ' ').trim();
+
+    const localRoadFeatureMidpoint = (feature: any) => {
+      let bestLine: number[][] = [];
+      let bestLength = -1;
+      for (const line of geometryLines(feature?.geometry)) {
+        let length = 0;
+        for (let i = 1; i < line.length; i += 1) {
+          const a = line[i - 1];
+          const b = line[i];
+          if (!Array.isArray(a) || !Array.isArray(b)) continue;
+          length += L.latLng(Number(a[1]), Number(a[0])).distanceTo(L.latLng(Number(b[1]), Number(b[0])));
+        }
+        if (length > bestLength) {
+          bestLength = length;
+          bestLine = line;
+        }
+      }
+      if (bestLine.length < 2 || bestLength <= 0) return null;
+      const target = bestLength / 2;
+      let walked = 0;
+      for (let i = 1; i < bestLine.length; i += 1) {
+        const a = bestLine[i - 1]!;
+        const b = bestLine[i]!;
+        const from = L.latLng(Number(a[1]), Number(a[0]));
+        const to = L.latLng(Number(b[1]), Number(b[0]));
+        const segment = from.distanceTo(to);
+        if (walked + segment >= target) {
+          const ratio = segment > 0 ? (target - walked) / segment : 0;
+          return L.latLng(from.lat + (to.lat - from.lat) * ratio, from.lng + (to.lng - from.lng) * ratio);
+        }
+        walked += segment;
+      }
+      const last = bestLine[bestLine.length - 1]!;
+      return L.latLng(Number(last[1]), Number(last[0]));
+    };
+
+    const renderLocalRoadLabels = (features: any[]) => {
+      localRoadLabelGroup.clearLayers();
+      localRoadLabelMarkers.length = 0;
+      if (map.getZoom() < localRoadLabelMinZoom) {
+        container.dataset.localRoadLabelCount = '0';
+        return;
+      }
+      const seen = new Set<string>();
+      for (const feature of features) {
+        if (localRoadLabelMarkers.length >= 70) break;
+        const name = localRoadFeatureName(feature).trim();
+        if (!name) continue;
+        const key = localRoadLabelKey(name);
+        if (!key || seen.has(key)) continue;
+        const midpoint = localRoadFeatureMidpoint(feature);
+        if (!midpoint) continue;
+        seen.add(key);
+        const safeName = name.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string));
+        const marker = L.marker(midpoint, {
+          pane: 'localRoadLabels',
+          interactive: false,
+          keyboard: false,
+          opacity: opacity(localRoadLayerId),
+          icon: L.divIcon({
+            className: 'rrgh-local-road-label',
+            html: '<span>' + safeName + '</span>',
+            iconSize: [180, 24],
+            iconAnchor: [90, 12]
+          })
+        });
+        localRoadLabelMarkers.push(marker);
+        marker.addTo(localRoadLabelGroup);
+      }
+      container.dataset.localRoadLabelCount = String(localRoadLabelMarkers.length);
+    };
 
     const localRoadKnownCliftyTigerOids = new Set(['110206092766', '110206092933', '110206092934', '110206092773']);
     const localRoadFeatureTigerOid = (feature: any) => String(featureValue(feature?.properties, ['OID']) ?? '');
@@ -1651,6 +1733,11 @@ const enabledSources = enabledBrowserMapSources;
       const tooMany = Boolean(tigerData?.exceededTransferLimit) || totalFeatures > localRoadMaxFeatures;
 
       if (tooMany) {
+        localRoadLabelGroup.clearLayers();
+        localRoadLabelMarkers.length = 0;
+        localRoadRenderedTigerFeatures = [];
+        localRoadRenderedOsmFeatures = [];
+        container.dataset.localRoadLabelCount = '0';
         container.dataset.localRoadFeatureCount = '0';
         container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
@@ -1664,6 +1751,10 @@ const enabledSources = enabledBrowserMapSources;
       delete container.dataset.localRoadTruncated;
       renderLocalRoadCollection(localRoadTigerLayer, localRoadTigerPaths, tigerFeatures);
       renderLocalRoadCollection(localRoadOsmLayer, localRoadOsmPaths, osmFeatures);
+      localRoadRenderedTigerFeatures = tigerFeatures;
+      localRoadRenderedOsmFeatures = osmFeatures;
+      renderLocalRoadLabels([...tigerFeatures, ...osmFeatures]);
+      localRoadPlanningIndexer?.(tigerFeatures, osmFeatures);
 
       const tigerClifty = tigerFeatures.some(localRoadFeatureIsClifty);
       const osmClifty = osmFeatures.some(localRoadFeatureIsClifty);
@@ -1696,9 +1787,14 @@ const enabledSources = enabledBrowserMapSources;
         localRoadController?.abort();
         localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
+        localRoadLabelGroup.clearLayers();
         localRoadPaths.length = 0;
         localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
+        localRoadLabelMarkers.length = 0;
+        localRoadRenderedTigerFeatures = [];
+        localRoadRenderedOsmFeatures = [];
+        container.dataset.localRoadLabelCount = '0';
         container.dataset.localRoadFeatureCount = '0';
         container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
@@ -1774,9 +1870,14 @@ const enabledSources = enabledBrowserMapSources;
         console.error(error);
         localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
+        localRoadLabelGroup.clearLayers();
         localRoadPaths.length = 0;
         localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
+        localRoadLabelMarkers.length = 0;
+        localRoadRenderedTigerFeatures = [];
+        localRoadRenderedOsmFeatures = [];
+        container.dataset.localRoadLabelCount = '0';
         container.dataset.localRoadFeatureCount = '0';
         container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
@@ -1801,9 +1902,14 @@ const enabledSources = enabledBrowserMapSources;
         localRoadController?.abort();
         localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
+        localRoadLabelGroup.clearLayers();
         localRoadPaths.length = 0;
         localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
+        localRoadLabelMarkers.length = 0;
+        localRoadRenderedTigerFeatures = [];
+        localRoadRenderedOsmFeatures = [];
+        container.dataset.localRoadLabelCount = '0';
         container.dataset.localRoadFeatureCount = '0';
         container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
@@ -2017,6 +2123,63 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.namedRoadGapBridgeCount = String(connected);
       return connected;
     };
+
+    const localRoadPlanningKeys = new Set<string>();
+    const localRoadPlanningIndexLimit = 6000;
+    let localRoadPlanningFeatureCount = 0;
+    const localRoadRestrictedForPlanning = (feature: any) => {
+      const access = String(feature?.properties?.access ?? '').toLowerCase();
+      const foot = String(feature?.properties?.foot ?? '').toLowerCase();
+      return access === 'no' || access === 'private' || foot === 'no' || foot === 'private';
+    };
+    const localRoadPlanningLineKey = (source: 'tiger' | 'osm', feature: any, lineIndex: number, line: number[][]) => {
+      const props = feature?.properties ?? {};
+      const sourceId = source === 'tiger'
+        ? featureValue(props, ['OID', 'OBJECTID'])
+        : featureValue(props, ['osm_id']);
+      const first = line[0] ?? [];
+      const last = line[line.length - 1] ?? [];
+      return [source, sourceId || 'unnamed', lineIndex,
+        Number(first[1]).toFixed(5), Number(first[0]).toFixed(5),
+        Number(last[1]).toFixed(5), Number(last[0]).toFixed(5), line.length].join(':');
+    };
+    localRoadPlanningIndexer = (tigerFeatures: any[], osmFeatures: any[]) => {
+      let addedAny = false;
+      const index = (source: 'tiger' | 'osm', feature: any) => {
+        if (source === 'osm' && localRoadRestrictedForPlanning(feature)) return;
+        let featureAdded = false;
+        const roadName = localRoadFeatureName(feature);
+        const roadClass = source === 'osm' ? String(feature?.properties?.highway ?? '') : 'local road';
+        const roadTag = normalizeKentuckyRoadTag(roadName, roadClass);
+        const lines = geometryLines(feature?.geometry);
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+          if (localRoadPlanningKeys.size >= localRoadPlanningIndexLimit) break;
+          const line = lines[lineIndex]!;
+          if (line.length < 2) continue;
+          const key = localRoadPlanningLineKey(source, feature, lineIndex, line);
+          if (localRoadPlanningKeys.has(key)) continue;
+          const nodes = addSnapLine(line, roadTag);
+          if (nodes.length > 1) {
+            localRoadPlanningKeys.add(key);
+            featureAdded = true;
+            addedAny = true;
+          }
+        }
+        if (featureAdded) localRoadPlanningFeatureCount += 1;
+      };
+      tigerFeatures.forEach((feature) => index('tiger', feature));
+      osmFeatures.forEach((feature) => index('osm', feature));
+      container.dataset.localRoadPlanningFeatureCount = String(localRoadPlanningFeatureCount);
+      container.dataset.localRoadPlanningIndexLimited = String(localRoadPlanningKeys.size >= localRoadPlanningIndexLimit);
+      if (addedAny) {
+        bridgeNearbyNetworkNodes();
+        connectNamedRoadEndpointGaps();
+        container.dataset.plannerNodeCount = String(graph.size);
+      }
+    };
+    if (localRoadRenderedTigerFeatures.length || localRoadRenderedOsmFeatures.length) {
+      localRoadPlanningIndexer(localRoadRenderedTigerFeatures, localRoadRenderedOsmFeatures);
+    }
 
     const planSnapToleranceMeters = 90;
 
