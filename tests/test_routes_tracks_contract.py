@@ -447,6 +447,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('interactive: false', local_road_section)
         self.assertIn("/(?:old\\s+)?clif{1,2}ty\\s+school(?:\\s+(?:rd|road))?\\b/i", local_road_section)
         self.assertIn('Local / old roads', PRIVACY)
+        self.assertIn('available in every Map View', PRIVACY)
+        self.assertIn('off by default in Hiking and Sunlight, and on by default in Terrain and Aerial', PRIVACY)
         self.assertIn('They are roads, not trails.', PRIVACY)
         self.assertIn('current map viewport to the U.S. Census Bureau TIGERweb Local Roads service', PRIVACY)
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap', PRIVACY)
