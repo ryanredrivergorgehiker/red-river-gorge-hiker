@@ -44,6 +44,7 @@ const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_W
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
 const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0';
 const overpassService = 'https://www.openstreetmap.org/copyright';
+const usgsAggregatedTrailsService = 'https://partnerships.nationalmap.gov/arcgis/rest/services/USGSTrails/MapServer/0';
 
 export const mapSources: readonly MapSource[] = [
   {
@@ -264,7 +265,19 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'Community / Informal trails normally load from an RRGH-hosted OpenStreetMap-derived cache. Public Overpass API instances are used only as a browser fallback if the cache is unavailable. The cache includes paths explicitly tagged informal plus community-mapped path/footway candidates that do not substantially match RRGH\'s authoritative USDA Forest Service trail geometry. Appearance on this layer is not proof of legal access, maintenance, or official status.',
+    privacyNote: 'Community / Informal trails normally load from RRGH-hosted caches. The OpenStreetMap cache includes paths explicitly tagged informal plus community-mapped path/footway candidates that do not substantially match RRGH\'s authoritative USDA Forest Service trail geometry. Public Overpass API instances are used only as a browser fallback if the OSM cache is unavailable. Appearance on this layer is not proof of legal access, maintenance, or official status.',
+    opacity: 1
+  },
+  {
+    id: 'usgs-aggregated-trails',
+    label: 'USGS Aggregated Trails supplement',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: usgsAggregatedTrailsService,
+    attribution: 'USGS The National Map',
+    termsUrl: 'https://www.usgs.gov/national-digital-trails/qas-about-usgs-trail-data',
+    privacyNote: 'Supplemental Terra Trail geometry in Community / Informal trails loads from an RRGH-hosted cache generated from USGS National Digital Trails / National Transportation Dataset data. Ordinary visitors do not contact the USGS trail query service for this cache. RRGH excludes features that substantially duplicate current USDA Forest Service official trails or the existing OSM Community / Informal cache. Appearance does not establish current access, maintenance, official status, or current conditions.',
     opacity: 1
   },
   {

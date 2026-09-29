@@ -2948,6 +2948,7 @@ const enabledSources = enabledBrowserMapSources;
       setStatus('Loading Community / Informal trails… Build trail route will unlock when the planning graph is ready.');
 
       const cachedUrl = import.meta.env.BASE_URL + 'data/map/osm-informal-trails.geojson';
+      const usgsCachedUrl = import.meta.env.BASE_URL + 'data/map/usgs-aggregated-trails.geojson';
       const query = '[out:json][timeout:45];way["highway"="path"]["informal"="yes"](37.45,-83.93,38.05,-83.25);out tags geom qt;';
       const overpassEndpoints = [
         'https://overpass.maprva.org/api/interpreter',
@@ -3018,7 +3019,30 @@ const enabledSources = enabledBrowserMapSources;
           featureCollection = await fetchLiveFallback();
         }
 
-        const casingLayer = L.geoJSON(featureCollection as any, {
+        let usgsFeatureCollection: any = { type: 'FeatureCollection', features: [] };
+        try {
+          const usgsResponse = await fetch(usgsCachedUrl, { credentials: 'same-origin', cache: 'no-cache' });
+          if (!usgsResponse.ok) throw new Error('Cached USGS Aggregated Trails GeoJSON HTTP ' + usgsResponse.status);
+          const cachedUsgs = await usgsResponse.json();
+          if (cachedUsgs?.type !== 'FeatureCollection' || !Array.isArray(cachedUsgs.features)) {
+            throw new Error('Cached USGS Aggregated Trails GeoJSON is invalid');
+          }
+          usgsFeatureCollection = cachedUsgs;
+        } catch (usgsCacheError) {
+          console.warn('RRGH USGS Aggregated Trails cache unavailable; continuing with the existing Community / Informal source only.', usgsCacheError);
+        }
+
+        const combinedFeatureCollection = {
+          type: 'FeatureCollection',
+          features: [
+            ...(featureCollection?.features ?? []),
+            ...(usgsFeatureCollection?.features ?? [])
+          ]
+        };
+        container.dataset.informalTrailOsmCount = String(featureCollection?.features?.length ?? 0);
+        container.dataset.informalTrailUsgsCount = String(usgsFeatureCollection?.features?.length ?? 0);
+
+        const casingLayer = L.geoJSON(combinedFeatureCollection as any, {
           pane: 'informalTrails',
           interactive: false,
           style: {
@@ -3034,11 +3058,14 @@ const enabledSources = enabledBrowserMapSources;
           }
         });
 
-        const layer = L.geoJSON(featureCollection as any, {
+        const layer = L.geoJSON(combinedFeatureCollection as any, {
           pane: 'informalTrails',
           style: (feature: any) => {
             const access = String(feature?.properties?.access ?? feature?.properties?.foot ?? '').toLowerCase();
-            const restricted = access === 'no' || access === 'private';
+            const hikerPedestrian = String(feature?.properties?.hikerpedestrian ?? '').toLowerCase();
+            const restricted = access === 'no' || access === 'private'
+              || hikerPedestrian === 'n' || hikerPedestrian === 'no'
+              || feature?.properties?.rrgh_planner_eligible === false;
             return {
               color: restricted ? '#b9b9b9' : '#f7f2e7',
               weight: restricted ? 2.2 : 2.4,
@@ -3050,13 +3077,22 @@ const enabledSources = enabledBrowserMapSources;
           },
           onEachFeature: (feature: any, featureLayer: any) => {
             const props = feature.properties ?? {};
+            const isUsgs = String(props.rrgh_source ?? '') === 'usgs-aggregated-trails';
             const classification = String(props.rrgh_classification ?? (props.informal === 'yes' ? 'informal' : 'community-candidate'));
-            const label = classification === 'informal' ? 'Informal trail' : 'Community trail candidate';
-            const name = String(props.name ?? label);
+            const label = isUsgs
+              ? 'USGS aggregated trail'
+              : (classification === 'informal' ? 'Informal trail' : 'Community trail candidate');
+            const name = String(props.name ?? props.maplabel ?? label);
             const access = String(props.access ?? props.foot ?? 'not specified');
             const visibility = String(props.trail_visibility ?? 'not specified');
+            const hikerPedestrian = String(props.hikerpedestrian ?? 'not specified');
+            const packSaddle = String(props.packsaddle ?? 'not specified');
+            const sourceOriginator = String(props.sourceoriginator ?? 'not specified');
             const accessLower = access.toLowerCase();
-            const restricted = accessLower === 'no' || accessLower === 'private';
+            const hikerLower = hikerPedestrian.toLowerCase();
+            const restricted = accessLower === 'no' || accessLower === 'private'
+              || hikerLower === 'n' || hikerLower === 'no'
+              || props.rrgh_planner_eligible === false;
 
             const popup = document.createElement('div');
             const heading = document.createElement('strong');
@@ -3065,24 +3101,32 @@ const enabledSources = enabledBrowserMapSources;
 
             const warning = document.createElement('p');
             warning.className = 'route-map-popup-warning';
-            warning.textContent = classification === 'informal'
-              ? 'Mapped by OpenStreetMap as an informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.'
-              : 'OpenStreetMap trail-like path that does not substantially match the authoritative Forest Service trail geometry. Treat it as a community/unofficial candidate, not proof of legal access or current conditions.';
+            warning.textContent = isUsgs
+              ? 'USGS National Digital Trails / National Transportation Dataset feature that adds coverage beyond the current Forest Service trail layer and existing RRGH OpenStreetMap community cache. Source data may lag current access, maintenance, closures, or on-the-ground conditions.'
+              : (classification === 'informal'
+                  ? 'Mapped by OpenStreetMap as an informal trail. Not an official Forest Service trail; mapping does not establish legal access or current conditions.'
+                  : 'OpenStreetMap trail-like path that does not substantially match the authoritative Forest Service trail geometry. Treat it as a community/unofficial candidate, not proof of legal access or current conditions.');
             popup.append(warning);
 
             const meta = document.createElement('p');
             meta.className = 'route-map-popup-meta';
-            meta.textContent = 'Access: ' + access + ' · Trail visibility: ' + visibility + (restricted ? ' · Not used for route snapping' : ' · Available for route snapping');
+            meta.textContent = isUsgs
+              ? 'Hiker/Pedestrian: ' + hikerPedestrian + ' · Pack and Saddle: ' + packSaddle + ' · Source originator: ' + sourceOriginator + (restricted ? ' · Not used for route snapping' : ' · Available for route snapping')
+              : 'Access: ' + access + ' · Trail visibility: ' + visibility + (restricted ? ' · Not used for route snapping' : ' · Available for route snapping');
             popup.append(meta);
 
             const source = document.createElement('a');
-            source.href = 'https://www.openstreetmap.org/copyright';
+            source.href = isUsgs
+              ? 'https://partnerships.nationalmap.gov/arcgis/rest/services/USGSTrails/MapServer/0'
+              : 'https://www.openstreetmap.org/copyright';
             source.target = '_blank';
             source.rel = 'noopener noreferrer';
-            source.textContent = 'Map data © OpenStreetMap contributors';
+            source.textContent = isUsgs
+              ? 'Source: USGS The National Map — National Digital Trails'
+              : 'Map data © OpenStreetMap contributors';
             popup.append(source);
 
-            featureLayer.bindPopup(popup, { maxWidth: 330 });
+            featureLayer.bindPopup(popup, { maxWidth: 360 });
             featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
             informalPaths.push(featureLayer);
 
@@ -3093,7 +3137,7 @@ const enabledSources = enabledBrowserMapSources;
             if (featureLayer.getBounds) {
               searchItems.push({
                 label: name,
-                detail: label + ' · OpenStreetMap',
+                detail: label + ' · ' + (isUsgs ? 'USGS National Digital Trails' : 'OpenStreetMap'),
                 bounds: featureLayer.getBounds(),
                 open: () => featureLayer.openPopup()
               });
@@ -3108,6 +3152,9 @@ const enabledSources = enabledBrowserMapSources;
           informalPaths.forEach((path) => path.setStyle({ opacity: value }));
         });
         map.attributionControl.addAttribution('<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>');
+        if ((usgsFeatureCollection?.features?.length ?? 0) > 0) {
+          map.attributionControl.addAttribution('<a href="https://partnerships.nationalmap.gov/arcgis/rest/services/USGSTrails/MapServer/0" target="_blank" rel="noopener noreferrer">USGS The National Map trails</a>');
+        }
         container.dataset.informalTrailCount = String(informalPaths.length);
         syncVisibility('osm-informal-trails');
 
