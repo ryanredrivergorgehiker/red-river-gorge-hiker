@@ -183,7 +183,7 @@ for raw in raw_features:
     clean_props = {field: lower.get(field) for field in SELECTED_FIELDS if field in lower}
     clean_props['rrgh_source'] = 'usgs-aggregated-trails'
     clean_props['rrgh_classification'] = 'usgs-aggregated-candidate'
-    clean_props['rrgh_planner_eligible'] = str(lower.get('hikerpedestrian') or '').strip().lower() != 'n'
+    clean_props['rrgh_planner_eligible'] = str(lower.get('hikerpedestrian') or '').strip().lower() not in ('n', 'no')
 
     for part_index, part in enumerate(parts):
         line_utm = transform(to_utm, part)
@@ -262,7 +262,7 @@ out = {
         'bounds_clipped': True,
         'dropped_out_of_bounds_features': dropped_out_of_bounds,
         'clipped_edge_features': clipped_edge_features,
-        'planner_rule': 'Explicit hikerpedestrian=N features are displayed as context but excluded from route snapping.',
+        'planner_rule': 'Explicit hikerpedestrian=N/No features are displayed as context but excluded from route snapping.',
         'validation_reference': {
             'lat': REFERENCE_POINT[0],
             'lon': REFERENCE_POINT[1],
