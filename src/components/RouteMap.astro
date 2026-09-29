@@ -190,7 +190,7 @@ const enabledSources = enabledBrowserMapSources;
             <span>Local / other roads</span>
           </label>
           <p class="route-layer-source-note" data-local-roads-status>
-            Visible at close zoom. Kentucky GIS plus cached OpenStreetMap road context; appearance does not establish public access, maintenance, legal travel, or current drivability.
+            Visible at close zoom. Census TIGERweb plus cached OpenStreetMap road context; appearance does not establish public access, maintenance, legal travel, or current drivability.
           </p>
         </div>
 
@@ -478,7 +478,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
-      <p><strong>Roads:</strong> bright yellow pill-dashed lines show Forest Service roads; thin muted lines show Local / other roads from Kentucky GIS plus cached OpenStreetMap road context at close zoom. Road lines provide context and do not establish legal access, maintenance, or current drivability.</p>
+      <p><strong>Roads:</strong> bright yellow pill-dashed lines show Forest Service roads; thin muted lines show Local / other roads from Census TIGERweb plus cached OpenStreetMap road context at close zoom. Road lines provide context and do not establish legal access, maintenance, or current drivability.</p>
     </div>
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
@@ -1454,10 +1454,10 @@ const enabledSources = enabledBrowserMapSources;
     const localRoadMinZoom = 13;
     const localRoadMaxFeatures = 800;
     const localRoadLayer = L.layerGroup();
-    const localRoadKentuckyLayer = L.layerGroup().addTo(localRoadLayer);
+    const localRoadTigerLayer = L.layerGroup().addTo(localRoadLayer);
     const localRoadOsmLayer = L.layerGroup().addTo(localRoadLayer);
     const localRoadPaths: any[] = [];
-    const localRoadKentuckyPaths: any[] = [];
+    const localRoadTigerPaths: any[] = [];
     const localRoadOsmPaths: any[] = [];
     const localRoadStatus = shell.querySelector<HTMLElement>('[data-local-roads-status]');
     const localRoadCache = new Map<string, any>();
@@ -1468,7 +1468,7 @@ const enabledSources = enabledBrowserMapSources;
     let localRoadMoveTimer = 0;
     let localRoadAttributionVisible = false;
     const localRoadAttribution =
-      'Local roads © <a href="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Cartobase_WGS84WM/MapServer/12" target="_blank" rel="noopener">Kentucky Division of Geographic Information</a>'
+      'Local roads © <a href="https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_PhysicalFeatures/MapServer/5" target="_blank" rel="noopener">U.S. Census Bureau TIGERweb</a>'
       + ' · supplemental road context © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>';
 
     const setLocalRoadStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
@@ -1504,7 +1504,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const localRoadQueryUrl = () => {
       const source = sourceById(localRoadLayerId);
-      if (!source?.serviceUrl) throw new Error('Missing Kentucky local-road service URL');
+      if (!source?.serviceUrl) throw new Error('Missing Census TIGERweb local-road service URL');
       const bounds = map.getBounds().pad(0.06);
       const params = new URLSearchParams({
         where: '1=1',
@@ -1518,7 +1518,7 @@ const enabledSources = enabledBrowserMapSources;
         geometryType: 'esriGeometryEnvelope',
         inSR: '4326',
         spatialRel: 'esriSpatialRelIntersects',
-        outFields: 'OBJECTID,RD_NAME',
+        outFields: 'OID,NAME,BASENAME',
         returnGeometry: 'true',
         returnZ: 'false',
         returnM: 'false',
@@ -1555,10 +1555,15 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const localRoadFeatureName = (feature: any) =>
-      String(featureValue(feature?.properties, ['RD_NAME', 'name', 'official_name', 'alt_name']) ?? '');
+      String(featureValue(feature?.properties, ['NAME', 'BASENAME', 'name', 'official_name', 'alt_name']) ?? '');
 
+    const localRoadKnownCliftyTigerOids = new Set(['110206092766', '110206092933', '110206092934', '110206092773']);
+    const localRoadFeatureTigerOid = (feature: any) => String(featureValue(feature?.properties, ['OID']) ?? '');
     const localRoadFeatureIsClifty = (feature: any) =>
-      /clif{1,2}ty\s+school\s+(?:rd|road)\b/i.test(localRoadFeatureName(feature));
+      localRoadKnownCliftyTigerOids.has(localRoadFeatureTigerOid(feature))
+      || /(?:old\s+)?clif{1,2}ty\s+school(?:\s+(?:rd|road))?\b/i.test(localRoadFeatureName(feature));
+    const localRoadOsmIsNormalSupplement = (feature: any) =>
+      ['track', 'service'].includes(String(feature?.properties?.highway ?? '').toLowerCase());
 
     const loadLocalRoadOsmManifest = async () => {
       if (!localRoadOsmManifestPromise) {
@@ -1632,22 +1637,24 @@ const enabledSources = enabledBrowserMapSources;
       geoJson.eachLayer((layer: any) => layer.addTo(targetLayer));
     };
 
-    const renderLocalRoads = (kentuckyData: any, osmData: any, sourceWarning: string | null = null) => {
-      localRoadKentuckyLayer.clearLayers();
+    const renderLocalRoads = (tigerData: any, osmData: any, sourceWarning: string | null = null, fullOsmFallback = false) => {
+      localRoadTigerLayer.clearLayers();
       localRoadOsmLayer.clearLayers();
       localRoadPaths.length = 0;
-      localRoadKentuckyPaths.length = 0;
+      localRoadTigerPaths.length = 0;
       localRoadOsmPaths.length = 0;
 
-      const kentuckyFeatures = Array.isArray(kentuckyData?.features) ? kentuckyData.features : [];
-      const osmFeatures = Array.isArray(osmData?.features) ? osmData.features : [];
-      const totalFeatures = kentuckyFeatures.length + osmFeatures.length;
-      const tooMany = Boolean(kentuckyData?.exceededTransferLimit) || totalFeatures > localRoadMaxFeatures;
+      const tigerFeatures = Array.isArray(tigerData?.features) ? tigerData.features : [];
+      const osmCandidates = Array.isArray(osmData?.features) ? osmData.features : [];
+      const osmFeatures = fullOsmFallback ? osmCandidates : osmCandidates.filter(localRoadOsmIsNormalSupplement);
+      const totalFeatures = tigerFeatures.length + osmFeatures.length;
+      const tooMany = Boolean(tigerData?.exceededTransferLimit) || totalFeatures > localRoadMaxFeatures;
 
       if (tooMany) {
         container.dataset.localRoadFeatureCount = '0';
-        container.dataset.localRoadKentuckyFeatureCount = '0';
+        container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
+        delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'zoom-in';
         container.dataset.localRoadTruncated = 'true';
         setLocalRoadStatus('This view contains too many local / other roads for the lightweight display layer. Zoom in to see them.', 'warning');
@@ -1655,22 +1662,27 @@ const enabledSources = enabledBrowserMapSources;
       }
 
       delete container.dataset.localRoadTruncated;
-      renderLocalRoadCollection(localRoadKentuckyLayer, localRoadKentuckyPaths, kentuckyFeatures);
+      renderLocalRoadCollection(localRoadTigerLayer, localRoadTigerPaths, tigerFeatures);
       renderLocalRoadCollection(localRoadOsmLayer, localRoadOsmPaths, osmFeatures);
 
-      const kentuckyClifty = kentuckyFeatures.some(localRoadFeatureIsClifty);
+      const tigerClifty = tigerFeatures.some(localRoadFeatureIsClifty);
       const osmClifty = osmFeatures.some(localRoadFeatureIsClifty);
       container.dataset.localRoadFeatureCount = String(localRoadPaths.length);
-      container.dataset.localRoadKentuckyFeatureCount = String(localRoadKentuckyPaths.length);
+      container.dataset.localRoadTigerFeatureCount = String(localRoadTigerPaths.length);
       container.dataset.localRoadOsmFeatureCount = String(localRoadOsmPaths.length);
-      container.dataset.localRoadKentuckyCliftyFound = String(kentuckyClifty);
+      container.dataset.localRoadTigerCliftyFound = String(tigerClifty);
       container.dataset.localRoadOsmCliftyFound = String(osmClifty);
-      container.dataset.localRoadCliftyFound = String(kentuckyClifty || osmClifty);
+      container.dataset.localRoadCliftyFound = String(tigerClifty || osmClifty);
+      container.dataset.localRoadOsmMode = fullOsmFallback ? 'fallback' : 'track-service-supplement';
       container.dataset.localRoadLoadState = 'loaded';
+      const sourceText = fullOsmFallback
+        ? ' from cached OpenStreetMap fallback road context.'
+        : ' from Census TIGERweb plus cached OpenStreetMap track/service context.';
       setLocalRoadStatus(
         localRoadPaths.length.toLocaleString('en-US') + ' local / other road segment'
         + (localRoadPaths.length === 1 ? '' : 's')
-        + ' in this view from Kentucky GIS and cached OpenStreetMap context. Appearance does not establish public access, maintenance, legal travel, or current drivability.'
+        + ' in this view' + sourceText
+        + ' Appearance does not establish public access, maintenance, legal travel, or current drivability.'
         + (sourceWarning ? ' ' + sourceWarning : ''),
         sourceWarning ? 'warning' : 'normal'
       );
@@ -1682,16 +1694,17 @@ const enabledSources = enabledBrowserMapSources;
 
       if (map.getZoom() < localRoadMinZoom) {
         localRoadController?.abort();
-        localRoadKentuckyLayer.clearLayers();
+        localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
         localRoadPaths.length = 0;
-        localRoadKentuckyPaths.length = 0;
+        localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
         container.dataset.localRoadFeatureCount = '0';
-        container.dataset.localRoadKentuckyFeatureCount = '0';
+        container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
+        delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'zoom-in';
-        setLocalRoadStatus('Local / other roads is on. Zoom in to display Kentucky and cached OpenStreetMap road context.');
+        setLocalRoadStatus('Local / other roads is on. Zoom in to display Census TIGERweb and cached OpenStreetMap road context.');
         return;
       }
 
@@ -1699,7 +1712,7 @@ const enabledSources = enabledBrowserMapSources;
       const cacheKey = localRoadCacheKey();
       const cached = localRoadCache.get(cacheKey);
       if (cached) {
-        renderLocalRoads(cached.kentuckyData, cached.osmData, cached.sourceWarning ?? null);
+        renderLocalRoads(cached.tigerData, cached.osmData, cached.sourceWarning ?? null, Boolean(cached.fullOsmFallback));
         delete container.dataset.localRoadLoadError;
         return;
       }
@@ -1712,60 +1725,62 @@ const enabledSources = enabledBrowserMapSources;
       setLocalRoadStatus('Loading Local / other roads for this view…');
 
       const startedAt = performance.now();
-      const kentuckyPromise = fetch(localRoadQueryUrl(), {
+      const tigerPromise = fetch(localRoadQueryUrl(), {
         signal,
         mode: 'cors',
         credentials: 'omit',
         cache: 'no-store'
       }).then(async (response) => {
-        if (!response.ok) throw new Error('Kentucky local roads HTTP ' + response.status);
+        if (!response.ok) throw new Error('Census TIGERweb local roads HTTP ' + response.status);
         const data = await response.json();
-        if (data?.error) throw new Error('Kentucky local roads: ' + (data.error.message || 'query error'));
+        if (data?.error) throw new Error('Census TIGERweb local roads: ' + (data.error.message || 'query error'));
         return data;
       });
       const osmPromise = loadVisibleOsmLocalRoads(signal);
 
       try {
-        const [kentuckyResult, osmResult] = await Promise.allSettled([kentuckyPromise, osmPromise]);
+        const [tigerResult, osmResult] = await Promise.allSettled([tigerPromise, osmPromise]);
         if (signal.aborted || revision !== localRoadRequestRevision || !checked(localRoadLayerId)) return;
 
-        const kentuckyData = kentuckyResult.status === 'fulfilled'
-          ? kentuckyResult.value
+        const tigerData = tigerResult.status === 'fulfilled'
+          ? tigerResult.value
           : { type: 'FeatureCollection', features: [] };
         const osmData = osmResult.status === 'fulfilled'
           ? osmResult.value
           : { type: 'FeatureCollection', features: [] };
 
-        if (kentuckyResult.status === 'rejected' && osmResult.status === 'rejected') {
-          throw new Error('Both Kentucky and cached OpenStreetMap local-road sources failed');
+        if (tigerResult.status === 'rejected' && osmResult.status === 'rejected') {
+          throw new Error('Both Census TIGERweb and cached OpenStreetMap local-road sources failed');
         }
 
-        const sourceWarning = kentuckyResult.status === 'rejected'
-          ? 'Kentucky GIS is temporarily unavailable; cached OpenStreetMap road context is still shown.'
+        const fullOsmFallback = tigerResult.status === 'rejected' && osmResult.status === 'fulfilled';
+        const sourceWarning = tigerResult.status === 'rejected'
+          ? 'Census TIGERweb is temporarily unavailable; the broader cached OpenStreetMap road fallback is shown.'
           : osmResult.status === 'rejected'
-            ? 'Cached OpenStreetMap road context is temporarily unavailable; Kentucky GIS roads are still shown.'
+            ? 'Cached OpenStreetMap track/service context is temporarily unavailable; Census TIGERweb roads are still shown.'
             : null;
 
-        localRoadCache.set(cacheKey, { kentuckyData, osmData, sourceWarning });
+        localRoadCache.set(cacheKey, { tigerData, osmData, sourceWarning, fullOsmFallback });
         while (localRoadCache.size > 8) {
           const firstKey = localRoadCache.keys().next().value;
           if (firstKey === undefined) break;
           localRoadCache.delete(firstKey);
         }
-        renderLocalRoads(kentuckyData, osmData, sourceWarning);
+        renderLocalRoads(tigerData, osmData, sourceWarning, fullOsmFallback);
         container.dataset.localRoadLoadMs = String(Math.round(performance.now() - startedAt));
         delete container.dataset.localRoadLoadError;
       } catch (error) {
         if (signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return;
         console.error(error);
-        localRoadKentuckyLayer.clearLayers();
+        localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
         localRoadPaths.length = 0;
-        localRoadKentuckyPaths.length = 0;
+        localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
         container.dataset.localRoadFeatureCount = '0';
-        container.dataset.localRoadKentuckyFeatureCount = '0';
+        container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
+        delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'error';
         container.dataset.localRoadLoadError = 'true';
         setLocalRoadStatus('Local / other roads are temporarily unavailable. The rest of the map is unaffected; move the map or toggle this layer to retry.', 'warning');
@@ -1784,16 +1799,17 @@ const enabledSources = enabledBrowserMapSources;
         queueLocalRoadLoad(0);
       } else {
         localRoadController?.abort();
-        localRoadKentuckyLayer.clearLayers();
+        localRoadTigerLayer.clearLayers();
         localRoadOsmLayer.clearLayers();
         localRoadPaths.length = 0;
-        localRoadKentuckyPaths.length = 0;
+        localRoadTigerPaths.length = 0;
         localRoadOsmPaths.length = 0;
         container.dataset.localRoadFeatureCount = '0';
-        container.dataset.localRoadKentuckyFeatureCount = '0';
+        container.dataset.localRoadTigerFeatureCount = '0';
         container.dataset.localRoadOsmFeatureCount = '0';
+        delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'off';
-        setLocalRoadStatus('Local / other roads is off. Enable it to show Kentucky and cached OpenStreetMap road context at close zoom.');
+        setLocalRoadStatus('Local / other roads is off. Enable it to show Census TIGERweb and cached OpenStreetMap road context at close zoom.');
       }
     };
 
