@@ -918,7 +918,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-tooltip="Redo"', MAP)
         self.assertIn('aria-label="Undo"', MAP)
         self.assertIn('aria-label="Redo"', MAP)
-        self.assertIn('<p>Choose a planning tool.</p>', MAP)
+        self.assertIn('Measure distance: click or tap points to measure a straight-line distance.', MAP)
+        self.assertIn('Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.', MAP)
+        self.assertIn('Use Undo / Redo as you edit, or Clear to start over.', MAP)
         self.assertIn('Click or tap points to measure straight-line distance.', MAP)
         self.assertIn('Drag a planned segment to adjust or resnap it.', MAP)
 
