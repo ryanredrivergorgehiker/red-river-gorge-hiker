@@ -185,12 +185,12 @@ const enabledSources = enabledBrowserMapSources;
             <span>Forest Service roads</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="ky-local-roads" checked />
+            <input type="checkbox" data-map-layer="ky-local-roads" disabled title="Available in Terrain or Aerial view." />
             <span class="route-layer-swatch swatch-local-road" aria-hidden="true"></span>
-            <span>Local / other roads</span>
+            <span>Local / old roads</span>
           </label>
           <p class="route-layer-source-note" data-local-roads-status>
-            Visible at close zoom. Census TIGERweb plus cached OpenStreetMap road context; appearance does not establish public access, maintenance, legal travel, or current drivability.
+            Off in Hiking view. Available in Terrain or Aerial view. Status uncertain: may include active local roads, old or abandoned roadbeds, gated or closed segments, or roads no longer passable. These are roads, not trails.
           </p>
         </div>
 
@@ -323,7 +323,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Forest Service trails</span><input type="checkbox" data-fine-tune-layer="usfs-trails" checked aria-label="Toggle Forest Service trails" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" /></label>
             <label><span>Community / Informal trails</span><input type="checkbox" data-fine-tune-layer="osm-informal-trails" checked aria-label="Toggle Community / Informal trails" /><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" aria-label="Community / Informal trails opacity" /></label>
             <label><span>Forest Service roads</span><input type="checkbox" data-fine-tune-layer="usfs-roads" checked aria-label="Toggle Forest Service roads" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" /></label>
-            <label><span>Local / other roads</span><input type="checkbox" data-fine-tune-layer="ky-local-roads" checked aria-label="Toggle Local / other roads" /><input type="range" min="0" max="100" value="72" data-opacity="ky-local-roads" aria-label="Local / other roads opacity" /></label>
+            <label><span>Local / old roads</span><input type="checkbox" data-fine-tune-layer="ky-local-roads" disabled title="Available in Terrain or Aerial view." aria-label="Toggle Local / old roads" /><input type="range" min="0" max="100" value="72" data-opacity="ky-local-roads" aria-label="Local / old roads opacity" disabled /></label>
             <label><span>Kentucky Topo</span><input type="checkbox" data-fine-tune-layer="kytopo" aria-label="Toggle Kentucky Topo" /><input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" disabled /></label>
             <label><span>USGS Topo</span><input type="checkbox" data-fine-tune-layer="usgs-topo" checked aria-label="Toggle USGS Topo" /><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" aria-label="USGS Topo opacity" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="75" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
@@ -478,7 +478,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
-      <p><strong>Roads:</strong> bright yellow pill-dashed lines show Forest Service roads; thin muted lines show Local / other roads from Census TIGERweb plus cached OpenStreetMap road context at close zoom. Road lines provide context and do not establish legal access, maintenance, or current drivability.</p>
+      <p><strong>Roads:</strong> bright yellow pill-dashed lines show Forest Service roads. In Terrain or Aerial view, optional thin muted lines show Local / old roads from Census TIGERweb plus cached OpenStreetMap road context at close zoom. Their status is uncertain; they are roads, not trails, and may be abandoned, gated, closed, or no longer passable.</p>
     </div>
     <details class="route-map-nerd-details">
       <summary>Advanced Map Details</summary>
@@ -881,13 +881,21 @@ const enabledSources = enabledBrowserMapSources;
       const fineToggle = shell.querySelector<HTMLInputElement>('[data-fine-tune-layer="' + id + '"]');
       const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
       const blockedByAerial = aerialExclusiveIds.has(id) && aerialActive();
+      const mainToggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
+      const blockedByPreset = Boolean(mainToggle?.disabled);
       if (fineToggle) {
         fineToggle.checked = enabled;
+        fineToggle.disabled = blockedByPreset;
+        fineToggle.title = blockedByPreset ? 'Available in Terrain or Aerial view.' : '';
         if (id !== 'rrg-lidar-sun' && id !== oilGasLayerId) fineToggle.indeterminate = false;
       }
       if (slider) {
-        slider.disabled = !enabled || blockedByAerial;
-        slider.title = blockedByAerial ? 'Unavailable while aerial imagery is active.' : (!enabled ? 'Turn this layer on to adjust opacity.' : '');
+        slider.disabled = !enabled || blockedByAerial || blockedByPreset;
+        slider.title = blockedByPreset
+          ? 'Available in Terrain or Aerial view.'
+          : blockedByAerial
+            ? 'Unavailable while aerial imagery is active.'
+            : (!enabled ? 'Turn this layer on to adjust opacity.' : '');
       }
     };
     const syncAllFineTuneControls = () => {
@@ -1452,7 +1460,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const localRoadLayerId = 'ky-local-roads';
     const localRoadOsmSourceId = 'osm-local-roads';
-    const localRoadMinZoom = 13;
+    const localRoadMinZoom = 14;
     const localRoadMaxFeatures = 800;
     const localRoadLayer = L.layerGroup();
     const localRoadTigerLayer = L.layerGroup().addTo(localRoadLayer);
@@ -1462,7 +1470,8 @@ const enabledSources = enabledBrowserMapSources;
     const localRoadTigerPaths: any[] = [];
     const localRoadOsmPaths: any[] = [];
     const localRoadLabelMarkers: any[] = [];
-    const localRoadLabelMinZoom = 14;
+    const localRoadLabelMinZoom = 15;
+    const localRoadLabelMaxCount = 24;
     let localRoadPlanningIndexer: ((tigerFeatures: any[], osmFeatures: any[]) => void) | null = null;
     let localRoadRenderedTigerFeatures: any[] = [];
     let localRoadRenderedOsmFeatures: any[] = [];
@@ -1611,15 +1620,35 @@ const enabledSources = enabledBrowserMapSources;
         return;
       }
       const seen = new Set<string>();
+      const occupied: Array<{ left: number; right: number; top: number; bottom: number }> = [];
+      const mapSize = map.getSize();
+      const padding = 8;
       for (const feature of features) {
-        if (localRoadLabelMarkers.length >= 70) break;
+        if (localRoadLabelMarkers.length >= localRoadLabelMaxCount) break;
         const name = localRoadFeatureName(feature).trim();
         if (!name) continue;
         const key = localRoadLabelKey(name);
         if (!key || seen.has(key)) continue;
         const midpoint = localRoadFeatureMidpoint(feature);
         if (!midpoint) continue;
+
+        const labelWidth = Math.min(180, Math.max(72, Math.round(name.length * 5.7 + 20)));
+        const labelHeight = 22;
+        const point = map.latLngToContainerPoint(midpoint);
+        const box = {
+          left: point.x - labelWidth / 2 - padding,
+          right: point.x + labelWidth / 2 + padding,
+          top: point.y - labelHeight / 2 - padding,
+          bottom: point.y + labelHeight / 2 + padding
+        };
+        if (box.right < 0 || box.left > mapSize.x || box.bottom < 0 || box.top > mapSize.y) continue;
+        const overlaps = occupied.some((other) =>
+          box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top
+        );
+        if (overlaps) continue;
+
         seen.add(key);
+        occupied.push(box);
         const safeName = name.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string));
         const marker = L.marker(midpoint, {
           pane: 'localRoadLabels',
@@ -1629,8 +1658,8 @@ const enabledSources = enabledBrowserMapSources;
           icon: L.divIcon({
             className: 'rrgh-local-road-label',
             html: '<span>' + safeName + '</span>',
-            iconSize: [180, 24],
-            iconAnchor: [90, 12]
+            iconSize: [labelWidth, labelHeight],
+            iconAnchor: [labelWidth / 2, labelHeight / 2]
           })
         });
         localRoadLabelMarkers.push(marker);
@@ -1744,7 +1773,7 @@ const enabledSources = enabledBrowserMapSources;
         delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'zoom-in';
         container.dataset.localRoadTruncated = 'true';
-        setLocalRoadStatus('This view contains too many local / other roads for the lightweight display layer. Zoom in to see them.', 'warning');
+        setLocalRoadStatus('This view contains too many local / old roads for the lightweight display layer. Zoom in to see them.', 'warning');
         return;
       }
 
@@ -1773,7 +1802,7 @@ const enabledSources = enabledBrowserMapSources;
         localRoadPaths.length.toLocaleString('en-US') + ' local / other road segment'
         + (localRoadPaths.length === 1 ? '' : 's')
         + ' in this view' + sourceText
-        + ' Appearance does not establish public access, maintenance, legal travel, or current drivability.'
+        + ' Status uncertain; these are roads, not trails, and may be abandoned, gated, closed, or no longer passable. Appearance does not establish public access, maintenance, legal travel, or current drivability.'
         + (sourceWarning ? ' ' + sourceWarning : ''),
         sourceWarning ? 'warning' : 'normal'
       );
@@ -1800,7 +1829,7 @@ const enabledSources = enabledBrowserMapSources;
         container.dataset.localRoadOsmFeatureCount = '0';
         delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'zoom-in';
-        setLocalRoadStatus('Local / other roads is on. Zoom in to display Census TIGERweb and cached OpenStreetMap road context.');
+        setLocalRoadStatus('Local / old roads is on. Zoom in to display Census TIGERweb and cached OpenStreetMap road context.');
         return;
       }
 
@@ -1818,7 +1847,7 @@ const enabledSources = enabledBrowserMapSources;
       const signal = localRoadController.signal;
       container.dataset.localRoadLoadState = 'loading';
       delete container.dataset.localRoadLoadError;
-      setLocalRoadStatus('Loading Local / other roads for this view…');
+      setLocalRoadStatus('Loading Local / old roads for this view…');
 
       const startedAt = performance.now();
       const tigerPromise = fetch(localRoadQueryUrl(), {
@@ -1884,7 +1913,7 @@ const enabledSources = enabledBrowserMapSources;
         delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'error';
         container.dataset.localRoadLoadError = 'true';
-        setLocalRoadStatus('Local / other roads are temporarily unavailable. The rest of the map is unaffected; move the map or toggle this layer to retry.', 'warning');
+        setLocalRoadStatus('Local / old roads are temporarily unavailable. The rest of the map is unaffected; move the map or toggle this layer to retry.', 'warning');
       }
     };
 
@@ -1915,7 +1944,7 @@ const enabledSources = enabledBrowserMapSources;
         container.dataset.localRoadOsmFeatureCount = '0';
         delete container.dataset.localRoadOsmMode;
         container.dataset.localRoadLoadState = 'off';
-        setLocalRoadStatus('Local / other roads is off. Enable it to show Census TIGERweb and cached OpenStreetMap road context at close zoom.');
+        setLocalRoadStatus('Local / old roads is off. Enable it to show Census TIGERweb and cached OpenStreetMap road context at close zoom.');
       }
     };
 
@@ -3207,6 +3236,7 @@ const enabledSources = enabledBrowserMapSources;
     const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
       const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
+      if (id === localRoadLayerId && enabled && checkbox?.disabled) enabled = false;
       if (id === gorgeLayerId) {
         if (checkbox) {
           checkbox.checked = enabled;
@@ -3239,6 +3269,23 @@ const enabledSources = enabledBrowserMapSources;
       if (stage) delete stage.dataset.sunlightMode;
     };
 
+    const setLocalRoadPresetAvailability = (available: boolean) => {
+      const toggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + localRoadLayerId + '"]');
+      if (!toggle) return;
+      if (!available && toggle.checked) {
+        toggle.checked = false;
+        syncLocalRoadLayer();
+      }
+      toggle.disabled = !available;
+      toggle.title = available ? 'Off by default. Turn on to inspect Local / old roads.' : 'Available in Terrain or Aerial view.';
+      syncFineTuneControl(localRoadLayerId);
+      if (!available) {
+        setLocalRoadStatus('Off in Hiking/Sunlight view. Switch to Terrain or Aerial to enable. Status uncertain: these are roads, not trails, and may be abandoned, gated, closed, or no longer passable.');
+      } else if (!checked(localRoadLayerId)) {
+        setLocalRoadStatus('Off by default. Enable Local / old roads for close-zoom context. Status uncertain: these are roads, not trails, and may be abandoned, gated, closed, or no longer passable.');
+      }
+    };
+
     const applyPreset = (name: string) => {
       clearPresetState();
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
@@ -3251,6 +3298,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
+        setLayerControl(localRoadLayerId, false);
+        setLocalRoadPresetAvailability(false);
         setSunKinds(false);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 25);
@@ -3259,6 +3308,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
+        setLayerControl(localRoadLayerId, false);
+        setLocalRoadPresetAvailability(true);
         setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -3266,6 +3317,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('ky-hillshade', false, 75);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
+        setLayerControl(localRoadLayerId, false);
+        setLocalRoadPresetAvailability(true);
         setSunKinds(false);
       } else if (name === 'sunlight') {
         setLayerControl('kytopo', true, 25);
@@ -3276,6 +3329,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('usfs-wilderness', true);
         const sunOpacity = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
         if (sunOpacity) sunOpacity.value = '100';
+        setLayerControl(localRoadLayerId, false);
+        setLocalRoadPresetAvailability(false);
         setSunKinds(true);
       }
       syncAerialControlState();
@@ -3402,6 +3457,7 @@ const enabledSources = enabledBrowserMapSources;
       checkbox.addEventListener('change', syncRouteFilters);
     }
     syncRouteFilters();
+    setLocalRoadPresetAvailability(false);
 
     const shareParamNames = ['rrghMap', 'rrghPreset', 'rrghLayers', 'rrghSun', 'rrghOil', 'rrghCategories', 'rrghRoute'];
     const buildShareUrl = () => {
