@@ -185,12 +185,12 @@ const enabledSources = enabledBrowserMapSources;
             <span>Forest Service roads</span>
           </label>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="ky-local-roads" disabled title="Available in Terrain or Aerial view." />
+            <input type="checkbox" data-map-layer="ky-local-roads" title="Available in every Map View." />
             <span class="route-layer-swatch swatch-local-road" aria-hidden="true"></span>
             <span>Local / old roads</span>
           </label>
           <p class="route-layer-source-note" data-local-roads-status>
-            Off in Hiking view. Available in Terrain or Aerial view. Status uncertain: may include active local roads, old or abandoned roadbeds, gated or closed segments, or roads no longer passable. These are roads, not trails.
+            Available in every Map View. Off by default in Hiking and Sunlight; Terrain and Aerial turn it on by default. Status uncertain: may include active local roads, old or abandoned roadbeds, gated or closed segments, or roads no longer passable. These are roads, not trails.
           </p>
         </div>
 
@@ -3236,7 +3236,6 @@ const enabledSources = enabledBrowserMapSources;
     const setLayerControl = (id: string, enabled: boolean, opacityValue?: number) => {
       const checkbox = shell.querySelector<HTMLInputElement>('[data-map-layer="' + id + '"]');
       const slider = shell.querySelector<HTMLInputElement>('[data-opacity="' + id + '"]');
-      if (id === localRoadLayerId && enabled && checkbox?.disabled) enabled = false;
       if (id === gorgeLayerId) {
         if (checkbox) {
           checkbox.checked = enabled;
@@ -3269,23 +3268,6 @@ const enabledSources = enabledBrowserMapSources;
       if (stage) delete stage.dataset.sunlightMode;
     };
 
-    const setLocalRoadPresetAvailability = (available: boolean) => {
-      const toggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + localRoadLayerId + '"]');
-      if (!toggle) return;
-      if (!available && toggle.checked) {
-        toggle.checked = false;
-        syncLocalRoadLayer();
-      }
-      toggle.disabled = !available;
-      toggle.title = available ? 'Off by default. Turn on to inspect Local / old roads.' : 'Available in Terrain or Aerial view.';
-      syncFineTuneControl(localRoadLayerId);
-      if (!available) {
-        setLocalRoadStatus('Off in Hiking/Sunlight view. Switch to Terrain or Aerial to enable. Status uncertain: these are roads, not trails, and may be abandoned, gated, closed, or no longer passable.');
-      } else if (!checked(localRoadLayerId)) {
-        setLocalRoadStatus('Off by default. Enable Local / old roads for close-zoom context. Status uncertain: these are roads, not trails, and may be abandoned, gated, closed, or no longer passable.');
-      }
-    };
-
     const applyPreset = (name: string) => {
       clearPresetState();
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
@@ -3299,7 +3281,6 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, false);
-        setLocalRoadPresetAvailability(false);
         setSunKinds(false);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 25);
@@ -3308,8 +3289,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
-        setLayerControl(localRoadLayerId, false);
-        setLocalRoadPresetAvailability(true);
+        setLayerControl(localRoadLayerId, true);
         setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -3317,8 +3297,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('ky-hillshade', false, 75);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
-        setLayerControl(localRoadLayerId, false);
-        setLocalRoadPresetAvailability(true);
+        setLayerControl(localRoadLayerId, true);
         setSunKinds(false);
       } else if (name === 'sunlight') {
         setLayerControl('kytopo', true, 25);
@@ -3330,7 +3309,6 @@ const enabledSources = enabledBrowserMapSources;
         const sunOpacity = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
         if (sunOpacity) sunOpacity.value = '100';
         setLayerControl(localRoadLayerId, false);
-        setLocalRoadPresetAvailability(false);
         setSunKinds(true);
       }
       syncAerialControlState();
