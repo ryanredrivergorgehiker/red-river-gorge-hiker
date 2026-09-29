@@ -1538,6 +1538,7 @@ const enabledSources = enabledBrowserMapSources;
       const layerOpacity = opacity(localRoadLayerId);
       const geoJson = L.geoJSON({ type: 'FeatureCollection', features }, {
         pane: 'localRoads',
+        interactive: false,
         style: () => ({
           color: '#776f64',
           weight: map.getZoom() >= 16 ? 2.2 : 1.6,
@@ -1545,10 +1546,7 @@ const enabledSources = enabledBrowserMapSources;
           lineCap: 'round',
           lineJoin: 'round'
         }),
-        onEachFeature: (feature: any, featureLayer: any) => {
-          const properties = feature?.properties ?? {};
-          const name = featureValue(properties, ['RD_NAME']) || 'Local / other road';
-          featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+        onEachFeature: (_feature: any, featureLayer: any) => {
           localRoadPaths.push(featureLayer);
         }
       });
