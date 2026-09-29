@@ -1,0 +1,41 @@
+name: Refresh USGS aggregated trails cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '13 10 * * 1'
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - 'scripts/update_usgs_aggregated_trails.py'
+      - '.github/workflows/refresh-usgs-aggregated-trails.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install spatial cache dependencies
+        run: python -m pip install --disable-pip-version-check shapely pyproj
+      - name: Refresh cached USGS aggregated trails
+        run: python scripts/update_usgs_aggregated_trails.py
+      - name: Commit refreshed cache
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/map/usgs-aggregated-trails.geojson
+          if git diff --cached --quiet; then
+            echo "USGS aggregated trails cache unchanged."
+          else
+            git commit -m "Refresh cached USGS aggregated trails [skip ci]"
+            git push
+          fi
