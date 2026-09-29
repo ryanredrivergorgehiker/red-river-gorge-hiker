@@ -112,6 +112,15 @@ const enabledSources = enabledBrowserMapSources;
       </div>
     </div>
 
+    <div class="route-plan-mobile-history" data-plan-mobile-history hidden role="group" aria-label="Undo or redo planning changes">
+      <button type="button" data-plan-mobile-action="undo" aria-label="Undo" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+      </button>
+      <button type="button" data-plan-mobile-action="redo" aria-label="Redo" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path></svg>
+      </button>
+    </div>
+
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
       <button type="button" data-sheet-open="explore" data-ready-group="core" disabled>Explore</button>
       <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
@@ -377,18 +386,6 @@ const enabledSources = enabledBrowserMapSources;
       </form>
     </dialog>
 
-    <dialog class="route-plan-shake" data-plan-shake aria-labelledby="route-plan-shake-title">
-      <form method="dialog">
-        <h2 id="route-plan-shake-title">Undo or redo?</h2>
-        <p>Shake detected. Choose an action.</p>
-        <div class="route-plan-shake-actions">
-          <button type="button" data-plan-shake-undo disabled>Undo</button>
-          <button type="button" data-plan-shake-redo disabled>Redo</button>
-          <button type="submit" value="cancel" data-plan-shake-cancel>Cancel</button>
-        </div>
-      </form>
-    </dialog>
-
     <div class="route-share-panel route-map-sheet" data-map-sheet="share" hidden>
       <div class="route-map-sheet-header">
         <strong>Share this map</strong>
@@ -634,10 +631,9 @@ const enabledSources = enabledBrowserMapSources;
     const planConfirm = shell.querySelector<HTMLDialogElement>('[data-plan-confirm]');
     const planConfirmMessage = shell.querySelector<HTMLElement>('[data-plan-confirm-message]');
     const planConfirmOk = shell.querySelector<HTMLButtonElement>('[data-plan-confirm-ok]');
-    const planShake = shell.querySelector<HTMLDialogElement>('[data-plan-shake]');
-    const planShakeUndo = shell.querySelector<HTMLButtonElement>('[data-plan-shake-undo]');
-    const planShakeRedo = shell.querySelector<HTMLButtonElement>('[data-plan-shake-redo]');
-    const planShakeCancel = shell.querySelector<HTMLButtonElement>('[data-plan-shake-cancel]');
+    const planMobileHistory = shell.querySelector<HTMLElement>('[data-plan-mobile-history]');
+    const planMobileUndo = shell.querySelector<HTMLButtonElement>('[data-plan-mobile-action="undo"]');
+    const planMobileRedo = shell.querySelector<HTMLButtonElement>('[data-plan-mobile-action="redo"]');
     let activeTool: 'measure' | 'plan' | null = null;
     const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
     const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
@@ -3067,6 +3063,9 @@ const enabledSources = enabledBrowserMapSources;
               ? 'Measure distance'
               : 'Plan';
       }
+      if (planMobileHistory) {
+        planMobileHistory.hidden = !(isMobileFullMap() && minimized && activeTool !== null && !planPanel.hidden);
+      }
     };
 
     const minimizePlanPanel = () => {
@@ -3922,8 +3921,8 @@ const enabledSources = enabledBrowserMapSources;
       const canRedo = canRedoCurrentTool();
       if (undoButton) undoButton.disabled = !canUndo;
       if (redoButton) redoButton.disabled = !canRedo;
-      if (planShakeUndo) planShakeUndo.disabled = !canUndo;
-      if (planShakeRedo) planShakeRedo.disabled = !canRedo;
+      if (planMobileUndo) planMobileUndo.disabled = !canUndo;
+      if (planMobileRedo) planMobileRedo.disabled = !canRedo;
     };
 
     const commitMeasureHistory = () => {
@@ -4040,9 +4039,17 @@ const enabledSources = enabledBrowserMapSources;
       if (!planHelp) return;
       planHelp.replaceChildren();
       if (tool === null) {
-        const p = document.createElement('p');
-        p.textContent = 'Choose a planning tool.';
-        planHelp.append(p);
+        const list = document.createElement('ul');
+        for (const item of [
+          'Measure distance: click or tap points to measure a straight-line distance.',
+          'Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.',
+          'Use Undo / Redo as you edit, or Clear to start over.'
+        ]) {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.append(li);
+        }
+        planHelp.append(list);
         return;
       }
       if (tool === 'measure') {
@@ -4220,92 +4227,6 @@ const enabledSources = enabledBrowserMapSources;
       }
     });
 
-    type MotionPermissionState = 'unknown' | 'granted' | 'denied';
-    let motionPermissionState: MotionPermissionState = 'unknown';
-    let motionListenerAttached = false;
-    let shakePeakCount = 0;
-    let lastShakePeakAt = 0;
-    let lastShakeDialogAt = 0;
-
-    const isMobilePlanningShakeEligible = () =>
-      isMobileFullMap() && activeTool !== null && Boolean(planPanel && !planPanel.hidden);
-
-    const openShakeUndoRedo = () => {
-      if (!isMobilePlanningShakeEligible() || planConfirm?.open || planShake?.open || !planShake) return;
-      updateHistoryButtons();
-      planShake.showModal();
-      const focusTarget = canUndoCurrentTool()
-        ? planShakeUndo
-        : canRedoCurrentTool()
-          ? planShakeRedo
-          : planShakeCancel;
-      window.setTimeout(() => focusTarget?.focus(), 0);
-    };
-
-    const handlePlanningDeviceMotion = (event: DeviceMotionEvent) => {
-      if (!isMobilePlanningShakeEligible() || planConfirm?.open || planShake?.open) return;
-      const sample = event.acceleration ?? event.accelerationIncludingGravity;
-      if (!sample) return;
-      const x = Number(sample.x ?? 0);
-      const y = Number(sample.y ?? 0);
-      const z = Number(sample.z ?? 0);
-      if (![x, y, z].every(Number.isFinite)) return;
-
-      const strongestAxis = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
-      const combined = Math.abs(x) + Math.abs(y) + Math.abs(z);
-      if (strongestAxis < 15 || combined < 24) return;
-
-      const now = performance.now();
-      if (now - lastShakeDialogAt < 1400) return;
-      if (now - lastShakePeakAt > 550) shakePeakCount = 0;
-      lastShakePeakAt = now;
-      shakePeakCount += 1;
-      if (shakePeakCount < 2) return;
-
-      shakePeakCount = 0;
-      lastShakeDialogAt = now;
-      openShakeUndoRedo();
-    };
-
-    const attachPlanningMotionListener = () => {
-      if (motionListenerAttached) return;
-      window.addEventListener('devicemotion', handlePlanningDeviceMotion);
-      motionListenerAttached = true;
-      container.dataset.planShakeReady = 'true';
-    };
-
-    const ensureMobilePlanningMotion = async () => {
-      if (!isMobileFullMap() || motionPermissionState === 'denied') return;
-      const MotionEvent = window.DeviceMotionEvent as typeof DeviceMotionEvent & {
-        requestPermission?: () => Promise<'granted' | 'denied'>;
-      };
-
-      if (typeof MotionEvent?.requestPermission === 'function' && motionPermissionState !== 'granted') {
-        try {
-          motionPermissionState = await MotionEvent.requestPermission();
-        } catch {
-          motionPermissionState = 'denied';
-        }
-      } else if (motionPermissionState === 'unknown') {
-        motionPermissionState = 'granted';
-      }
-
-      if (motionPermissionState === 'granted') attachPlanningMotionListener();
-      container.dataset.planShakePermission = motionPermissionState;
-    };
-
-    planShakeUndo?.addEventListener('click', () => {
-      if (!canUndoCurrentTool()) return;
-      undoCurrentTool();
-      planShake?.close('undo');
-    });
-
-    planShakeRedo?.addEventListener('click', () => {
-      if (!canRedoCurrentTool()) return;
-      redoCurrentTool();
-      planShake?.close('redo');
-    });
-
     const xmlEscape = (value: string) =>
       value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
@@ -4363,7 +4284,6 @@ const enabledSources = enabledBrowserMapSources;
           return;
         }
         if (tool === 'measure' || tool === 'plan') {
-          if (activeTool !== tool) void ensureMobilePlanningMotion();
           setTool(activeTool === tool ? null : tool);
         }
       });
@@ -4371,6 +4291,8 @@ const enabledSources = enabledBrowserMapSources;
 
     undoButton?.addEventListener('click', undoCurrentTool);
     redoButton?.addEventListener('click', redoCurrentTool);
+    planMobileUndo?.addEventListener('click', undoCurrentTool);
+    planMobileRedo?.addEventListener('click', redoCurrentTool);
 
     const scheduleMeasureElevation = () => {
       const revision = ++measureElevationRevision;
