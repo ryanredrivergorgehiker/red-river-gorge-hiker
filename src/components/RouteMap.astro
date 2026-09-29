@@ -360,7 +360,13 @@ const enabledSources = enabledBrowserMapSources;
         <button type="button" data-map-tool="save" disabled>Export GPX</button>
         <button type="button" data-map-tool="clear" data-ready-group="core" disabled>Clear</button>
       </div>
-      <div class="route-plan-help" data-plan-help><p>Choose a planning tool.</p></div>
+      <div class="route-plan-help" data-plan-help>
+        <ul>
+          <li>Measure distance: click or tap points to measure a straight-line distance.</li>
+          <li>Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.</li>
+          <li>Use Undo / Redo as you edit, or Clear to start over.</li>
+        </ul>
+      </div>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
         <div class="route-plan-live-stats-head">
           <strong data-plan-stats-title>Planning totals</strong>
