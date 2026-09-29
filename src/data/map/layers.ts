@@ -165,6 +165,19 @@ export const mapSources: readonly MapSource[] = [
     opacity: 0.72
   },
   {
+    id: 'osm-local-roads',
+    label: 'OpenStreetMap local-road context',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: overpassService,
+    attribution: '© OpenStreetMap contributors',
+    termsUrl: 'https://www.openstreetmap.org/copyright',
+    privacyNote: 'Supplemental Local / other roads geometry loads from an RRGH-hosted OpenStreetMap-derived cache at close zoom. The cache includes residential, unclassified, track, service, living-street, and generic road geometry while excluding service driveways and parking aisles. Appearance does not establish public access, maintenance, legal travel, or current drivability.',
+    minZoom: 13,
+    opacity: 0.72
+  },
+  {
     id: 'ky-counties',
     label: 'County boundaries',
     kind: 'vector',
