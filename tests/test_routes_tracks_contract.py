@@ -271,7 +271,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         local_roads = LAYERS.split("id: 'ky-local-roads'", 1)[1].split("}", 1)[0]
         self.assertIn("MapServer/71", local_roads)
         self.assertIn("minZoom: 13", local_roads)
-        self.assertIn("viewport-only local-road geometry", local_roads)
+        self.assertIn("Viewport-only local-road geometry", local_roads)
         self.assertIn("does not establish public access, maintenance, or current drivability", local_roads)
         self.assertIn("id: 'ky-road-centerlines'", LAYERS)
         road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
@@ -356,7 +356,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('current map viewport to the Kentucky Division of Geographic Information service', PRIVACY)
         self.assertIn('road name, status, government-level, surface and geometry fields', PRIVACY)
         self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
-        self.assertIn('Last updated: September 29, 2026', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
         self.assertIn('RRGH Interactive Map', explore)
         self.assertIn('Kentucky LiDAR Guide', explore)
