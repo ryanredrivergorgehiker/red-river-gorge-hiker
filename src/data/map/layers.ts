@@ -38,6 +38,7 @@ const trailService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailN
 const roadService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RoadBasic_01/MapServer/0';
 const countyService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0';
 const kentuckyRoadCenterlineService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_911_Road_Centerlines_WGS84WM/MapServer/0';
+const kentuckyLocalRoadService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71';
 const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RecInfraRecreationSites_02/MapServer/0';
 const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
@@ -149,6 +150,19 @@ export const mapSources: readonly MapSource[] = [
     termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
     privacyNote: 'Road geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
     opacity: 0.6
+  },
+  {
+    id: 'ky-local-roads',
+    label: 'Local / other roads',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: kentuckyLocalRoadService,
+    attribution: 'Kentucky Division of Geographic Information',
+    termsUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71',
+    privacyNote: 'Viewport-only local-road geometry is requested from Kentucky GIS only when this layer is enabled at close zoom. It is not based on the visitor’s location and does not establish public access, maintenance, or current drivability.',
+    minZoom: 13,
+    opacity: 0.72
   },
   {
     id: 'ky-counties',
