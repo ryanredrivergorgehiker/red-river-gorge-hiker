@@ -1460,7 +1460,7 @@ const enabledSources = enabledBrowserMapSources;
     let localRoadRequestRevision = 0;
     let localRoadMoveTimer = 0;
     let localRoadAttributionVisible = false;
-    const localRoadAttribution = 'Local roads © <a href="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71" target="_blank" rel="noopener">Kentucky Division of Geographic Information</a>';
+    const localRoadAttribution = 'Local roads © <a href="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Cartobase_WGS84WM/MapServer/12" target="_blank" rel="noopener">Kentucky Division of Geographic Information</a>';
 
     const setLocalRoadStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
       if (!localRoadStatus) return;
@@ -1541,7 +1541,7 @@ const enabledSources = enabledBrowserMapSources;
         interactive: false,
         style: () => ({
           color: '#776f64',
-          weight: map.getZoom() >= 16 ? 2.2 : 1.6,
+          weight: map.getZoom() >= 16 ? 2.8 : 2.2,
           opacity: layerOpacity,
           lineCap: 'round',
           lineJoin: 'round'
@@ -1554,7 +1554,7 @@ const enabledSources = enabledBrowserMapSources;
 
       container.dataset.localRoadFeatureCount = String(localRoadPaths.length);
       container.dataset.localRoadCliftyFound = String(features.some((feature: any) =>
-        /clifty\s+school\s+road/i.test(featureValue(feature?.properties, ['RD_NAME']))
+        /clifty\s+school\s+(?:rd|road)\b/i.test(featureValue(feature?.properties, ['RD_NAME']))
       ));
       container.dataset.localRoadLoadState = 'loaded';
       setLocalRoadStatus(
@@ -4924,7 +4924,7 @@ const enabledSources = enabledBrowserMapSources;
       routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4.5 : 7.5, opacity: 1 }));
       trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2 : zoom >= 15 ? 3 : 2.5, opacity: opacity('usfs-trails') }));
       roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.6 : 2.8, opacity: opacity('usfs-roads') }));
-      localRoadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 16 ? 2.2 : 1.6, opacity: opacity(localRoadLayerId) }));
+      localRoadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 16 ? 2.8 : 2.2, opacity: opacity(localRoadLayerId) }));
       informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
     });
 
