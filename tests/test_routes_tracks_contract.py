@@ -26,6 +26,10 @@ PRIVACY = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
 TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
 OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
 OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
+OSM_LOCAL_ROAD_MANIFEST_PATH = ROOT / 'public/data/map/osm-local-roads-manifest.json'
+OSM_LOCAL_ROAD_MANIFEST = json.loads(OSM_LOCAL_ROAD_MANIFEST_PATH.read_text(encoding='utf-8'))
+OSM_LOCAL_ROAD_CACHE_DIR = ROOT / 'public/data/map/osm-local-roads'
+OSM_LOCAL_ROAD_GENERATOR = (ROOT / 'scripts/update_osm_local_roads.py').read_text(encoding='utf-8')
 GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
 LIDAR_SUN_GEO = ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.geojson'
 LIDAR_SUN_META = json.loads((ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.meta.json').read_text(encoding='utf-8'))
@@ -268,11 +272,16 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'usfs-roads'", LAYERS)
         self.assertIn("id: 'ky-counties'", LAYERS)
         self.assertIn("id: 'ky-local-roads'", LAYERS)
+        self.assertIn("id: 'osm-local-roads'", LAYERS)
         local_roads = LAYERS.split("id: 'ky-local-roads'", 1)[1].split("}", 1)[0]
         self.assertIn("Ky_Cartobase_WGS84WM/MapServer/12", local_roads)
         self.assertIn("minZoom: 13", local_roads)
         self.assertIn("Viewport-only local-road geometry", local_roads)
         self.assertIn("does not establish public access, maintenance, or current drivability", local_roads)
+        osm_local_roads = LAYERS.split("id: 'osm-local-roads'", 1)[1].split("}", 1)[0]
+        self.assertIn('RRGH-hosted OpenStreetMap-derived cache', osm_local_roads)
+        self.assertIn('residential, unclassified, track, service, living-street, and generic road geometry', osm_local_roads)
+        self.assertIn("minZoom: 13", osm_local_roads)
         self.assertIn("id: 'ky-road-centerlines'", LAYERS)
         road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
         self.assertIn('Kentucky 911 Services Board & Kentucky PSAPs', road_planning)
@@ -287,6 +296,68 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('enabled: false', parcel)
         self.assertNotIn('Gaia', LAYERS)
         self.assertNotIn('CalTopo', LAYERS)
+
+    def test_osm_local_road_cache_preserves_clifty_acceptance_geometry_and_road_classes(self):
+        self.assertEqual(OSM_LOCAL_ROAD_MANIFEST['rows'], 8)
+        self.assertEqual(OSM_LOCAL_ROAD_MANIFEST['cols'], 8)
+        self.assertEqual(len(OSM_LOCAL_ROAD_MANIFEST['tiles']), 64)
+        self.assertIn('track', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('service', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('residential', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('driveway', OSM_LOCAL_ROAD_MANIFEST['excluded_service_values'])
+        self.assertIn('parking_aisle', OSM_LOCAL_ROAD_MANIFEST['excluded_service_values'])
+        self.assertIn('residential|unclassified|track|service|living_street|road', OSM_LOCAL_ROAD_GENERATOR)
+        self.assertIn("EXCLUDED_SERVICE={'driveway','parking_aisle'}", OSM_LOCAL_ROAD_GENERATOR)
+
+        target_lat, target_lon = 37.822129, -83.541391
+        acceptance = []
+        all_features = []
+        for tile in OSM_LOCAL_ROAD_MANIFEST['tiles']:
+            tile_path = OSM_LOCAL_ROAD_CACHE_DIR / tile['file']
+            self.assertTrue(tile_path.exists(), tile_path)
+            collection = json.loads(tile_path.read_text(encoding='utf-8'))
+            all_features.extend(collection.get('features', []))
+            south, west, north, east = tile['bounds']
+            if south <= target_lat <= north and west <= target_lon <= east:
+                acceptance.extend(collection.get('features', []))
+
+        clifty = [
+            feature for feature in acceptance
+            if re.search(r'clif{1,2}ty\s+school\s+(?:rd|road)\b',
+                         str(feature.get('properties', {}).get('name') or ''),
+                         re.I)
+        ]
+        self.assertTrue(clifty, 'Clifty/Cliffty School Road must be present in the acceptance tile')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'residential'
+            for feature in clifty
+        ), 'The OSM residential continuation at the owner acceptance location must be preserved')
+
+        points = [
+            point
+            for feature in clifty
+            for point in feature.get('geometry', {}).get('coordinates', [])
+            if isinstance(point, list) and len(point) >= 2
+        ]
+        self.assertTrue(any(
+            abs(float(point[1]) - target_lat) < 0.001
+            and abs(float(point[0]) - target_lon) < 0.001
+            for point in points
+        ), 'Clifty/Cliffty School Road geometry must pass near the owner acceptance coordinate')
+
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'track'
+            for feature in all_features
+        ), 'OSM track roads must be preserved in the supplemental cache')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'service'
+            for feature in all_features
+        ), 'OSM service roads must be preserved in the supplemental cache')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'track'
+            and str(feature.get('properties', {}).get('name') or '').lower() == 'old clifty school road'
+            for feature in all_features
+        ), 'Old Clifty School Road must remain available as OSM track context')
 
     def test_elevation_uses_usgs_3dep_for_published_profiles_and_live_planning(self):
         self.assertIn('3DEPElevation/ImageServer/getSamples', GENERATOR)
@@ -336,7 +407,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('requests and transforms selected public well fields for web display', PRIVACY)
         self.assertIn('does not request or display KGS farm/lease-name fields', PRIVACY)
         self.assertIn('data-local-roads-status', MAP)
-        self.assertIn('Visible at close zoom. Kentucky/local road centerlines', MAP)
+        self.assertIn('Visible at close zoom. Kentucky GIS plus cached OpenStreetMap road context', MAP)
         self.assertIn("const localRoadLayerId = 'ky-local-roads'", MAP)
         self.assertIn('const localRoadMinZoom = 13', MAP)
         self.assertIn('const localRoadMaxFeatures = 800', MAP)
@@ -347,6 +418,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("cache: 'no-store'", MAP)
         self.assertIn('while (localRoadCache.size > 8)', MAP)
         self.assertIn("container.dataset.localRoadCliftyFound", MAP)
+        self.assertIn("container.dataset.localRoadOsmCliftyFound", MAP)
+        self.assertIn("data/map/osm-local-roads-manifest.json", MAP)
+        self.assertIn("data/map/osm-local-roads/", MAP)
+        self.assertIn("while (localRoadOsmTileCache.size > 16)", MAP)
         self.assertIn("localRoads: 340", MAP)
         local_road_section = MAP.split("const localRoadLayerId = 'ky-local-roads'", 1)[1].split("const routeGroup = L.layerGroup()", 1)[0]
         self.assertNotIn('addSnapLine', local_road_section)
@@ -354,9 +429,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('graph.', local_road_section)
         self.assertNotIn('bindPopup', local_road_section)
         self.assertIn('interactive: false', local_road_section)
-        self.assertIn("/clifty\\s+school\\s+(?:rd|road)\\b/i", local_road_section)
+        self.assertIn("/clif{1,2}ty\\s+school\\s+(?:rd|road)\\b/i", local_road_section)
         self.assertIn('Local / other roads', PRIVACY)
         self.assertIn('current map viewport to the Kentucky Division of Geographic Information service', PRIVACY)
+        self.assertIn('RRGH-hosted cache derived from OpenStreetMap', PRIVACY)
+        self.assertIn('Normal use of the cached OpenStreetMap road supplement does not require', PRIVACY)
+        self.assertIn('The OpenStreetMap road supplement is visual context only', TERMS)
         self.assertIn('road name and geometry fields', PRIVACY)
         self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
         self.assertIn('Last updated: September 25, 2026', PRIVACY)
