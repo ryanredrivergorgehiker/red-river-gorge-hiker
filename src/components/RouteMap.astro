@@ -1520,33 +1520,6 @@ const enabledSources = enabledBrowserMapSources;
       return source.serviceUrl + '/query?' + params.toString();
     };
 
-    const createLocalRoadPopup = (properties: Record<string, unknown> | undefined) => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'route-local-road-popup';
-
-      const title = document.createElement('strong');
-      title.textContent = featureValue(properties, ['RD_NAME']) || 'Local / other road';
-      wrapper.append(title);
-
-      const metadata = [
-        ['Status', featureValue(properties, ['STATUS'])],
-        ['Government', featureValue(properties, ['GOV_LEVEL'])],
-        ['Surface', featureValue(properties, ['SURFTYPE'])]
-      ].filter(([, value]) => Boolean(value));
-      for (const [label, value] of metadata) {
-        const row = document.createElement('p');
-        row.className = 'route-map-popup-meta';
-        row.textContent = label + ': ' + value;
-        wrapper.append(row);
-      }
-
-      const note = document.createElement('p');
-      note.className = 'route-local-road-note';
-      note.textContent = 'Kentucky/local road centerline. Appearance does not establish public access, maintenance, or current drivability.';
-      wrapper.append(note);
-      return wrapper;
-    };
-
     const renderLocalRoads = (data: any) => {
       localRoadLayer.clearLayers();
       localRoadPaths.length = 0;
@@ -1576,7 +1549,6 @@ const enabledSources = enabledBrowserMapSources;
           const properties = feature?.properties ?? {};
           const name = featureValue(properties, ['RD_NAME']) || 'Local / other road';
           featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
-          featureLayer.bindPopup(createLocalRoadPopup(properties), { maxWidth: 330, autoPan: false });
           localRoadPaths.push(featureLayer);
         }
       });
