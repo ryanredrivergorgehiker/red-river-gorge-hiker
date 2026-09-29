@@ -257,7 +257,7 @@ class RoutesTracksContractTests(unittest.TestCase):
             'EDW_RoadBasic_01',
             'Ky_CountyLines_WGS84WM',
             'Ky_911_Road_Centerlines_WGS84WM',
-            'Ky_Cartobase_WGS84WM',
+            'TIGERweb/tigerWMS_PhysicalFeatures',
             'EDW_RecInfraRecreationSites_02',
             'EDW_Wilderness_01',
             'EDW_SpecialInterestManagementArea_01',
@@ -274,13 +274,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("id: 'ky-local-roads'", LAYERS)
         self.assertIn("id: 'osm-local-roads'", LAYERS)
         local_roads = LAYERS.split("id: 'ky-local-roads'", 1)[1].split("}", 1)[0]
-        self.assertIn("Ky_Cartobase_WGS84WM/MapServer/12", local_roads)
+        self.assertIn("TIGERweb/tigerWMS_PhysicalFeatures/MapServer/5", local_roads)
         self.assertIn("minZoom: 13", local_roads)
-        self.assertIn("Viewport-only local-road geometry", local_roads)
-        self.assertIn("does not establish public access, maintenance, or current drivability", local_roads)
+        self.assertIn("Viewport-only Local Roads geometry", local_roads)
+        self.assertIn("does not establish public access, maintenance, legal travel, or current drivability", local_roads)
         osm_local_roads = LAYERS.split("id: 'osm-local-roads'", 1)[1].split("}", 1)[0]
         self.assertIn('RRGH-hosted OpenStreetMap-derived cache', osm_local_roads)
-        self.assertIn('residential, unclassified, track, service, living-street, and generic road geometry', osm_local_roads)
+        self.assertIn('track and service geometry', osm_local_roads)
         self.assertIn("minZoom: 13", osm_local_roads)
         self.assertIn("id: 'ky-road-centerlines'", LAYERS)
         road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
@@ -407,13 +407,17 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('requests and transforms selected public well fields for web display', PRIVACY)
         self.assertIn('does not request or display KGS farm/lease-name fields', PRIVACY)
         self.assertIn('data-local-roads-status', MAP)
-        self.assertIn('Visible at close zoom. Kentucky GIS plus cached OpenStreetMap road context', MAP)
+        self.assertIn('Visible at close zoom. Census TIGERweb plus cached OpenStreetMap road context', MAP)
         self.assertIn("const localRoadLayerId = 'ky-local-roads'", MAP)
         self.assertIn('const localRoadMinZoom = 13', MAP)
         self.assertIn('const localRoadMaxFeatures = 800', MAP)
         self.assertIn("map.getBounds().pad(0.06)", MAP)
         self.assertIn("resultRecordCount: String(localRoadMaxFeatures + 1)", MAP)
-        self.assertIn("outFields: 'OBJECTID,RD_NAME'", MAP)
+        self.assertIn("outFields: 'OID,NAME,BASENAME'", MAP)
+        self.assertIn("'110206092766', '110206092933', '110206092934', '110206092773'", MAP)
+        self.assertIn("['NAME', 'BASENAME', 'name', 'official_name', 'alt_name']", MAP)
+        self.assertIn("track-service-supplement", MAP)
+        self.assertIn("fullOsmFallback", MAP)
         self.assertIn("credentials: 'omit'", MAP)
         self.assertIn("cache: 'no-store'", MAP)
         self.assertIn('while (localRoadCache.size > 8)', MAP)
@@ -429,13 +433,13 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('graph.', local_road_section)
         self.assertNotIn('bindPopup', local_road_section)
         self.assertIn('interactive: false', local_road_section)
-        self.assertIn("/clif{1,2}ty\\s+school\\s+(?:rd|road)\\b/i", local_road_section)
+        self.assertIn("/(?:old\\s+)?clif{1,2}ty\\s+school(?:\\s+(?:rd|road))?\\b/i", local_road_section)
         self.assertIn('Local / other roads', PRIVACY)
-        self.assertIn('current map viewport to the Kentucky Division of Geographic Information service', PRIVACY)
+        self.assertIn('current map viewport to the U.S. Census Bureau TIGERweb Local Roads service', PRIVACY)
         self.assertIn('RRGH-hosted cache derived from OpenStreetMap', PRIVACY)
-        self.assertIn('Normal use of the cached OpenStreetMap road supplement does not require', PRIVACY)
-        self.assertIn('The OpenStreetMap road supplement is visual context only', TERMS)
-        self.assertIn('road name and geometry fields', PRIVACY)
+        self.assertIn('Normal use of the cached OpenStreetMap road data does not require', PRIVACY)
+        self.assertIn('The visible Local / other roads layer is visual context only', TERMS)
+        self.assertIn('road identifiers, names, and geometry', PRIVACY)
         self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
         self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertIn('RRGH Hikes & Routes', explore)
