@@ -38,7 +38,7 @@ const trailService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailN
 const roadService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RoadBasic_01/MapServer/0';
 const countyService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0';
 const kentuckyRoadCenterlineService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_911_Road_Centerlines_WGS84WM/MapServer/0';
-const kentuckyLocalRoadService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71';
+const kentuckyLocalRoadService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Cartobase_WGS84WM/MapServer/12';
 const recreationSiteService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_RecInfraRecreationSites_02/MapServer/0';
 const wildernessService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0';
 const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0';
@@ -159,7 +159,7 @@ export const mapSources: readonly MapSource[] = [
     browserLoaded: true,
     serviceUrl: kentuckyLocalRoadService,
     attribution: 'Kentucky Division of Geographic Information',
-    termsUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71',
+    termsUrl: 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Cartobase_WGS84WM/MapServer/12',
     privacyNote: 'Viewport-only local-road geometry is requested from Kentucky GIS only when this layer is enabled at close zoom. It is not based on the visitor’s location and does not establish public access, maintenance, or current drivability.',
     minZoom: 13,
     opacity: 0.72
