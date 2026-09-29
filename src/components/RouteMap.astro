@@ -747,6 +747,7 @@ const enabledSources = enabledBrowserMapSources;
       landUnits: 270,
       specialManagement: 285,
       wilderness: 300,
+      localRoads: 340,
       roads: 350,
       informalTrails: 370,
       trails: 390,
@@ -1446,6 +1447,240 @@ const enabledSources = enabledBrowserMapSources;
     syncOilGasLayer();
     map.on('moveend', () => {
       if (checked(oilGasLayerId)) queueOilGasLoad();
+    });
+
+    const localRoadLayerId = 'ky-local-roads';
+    const localRoadMinZoom = 13;
+    const localRoadMaxFeatures = 800;
+    const localRoadLayer = L.layerGroup();
+    const localRoadPaths: any[] = [];
+    const localRoadStatus = shell.querySelector<HTMLElement>('[data-local-roads-status]');
+    const localRoadCache = new Map<string, any>();
+    let localRoadController: AbortController | null = null;
+    let localRoadRequestRevision = 0;
+    let localRoadMoveTimer = 0;
+    let localRoadAttributionVisible = false;
+    const localRoadAttribution = 'Local roads © <a href="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_TCM_Street_Base_WGS84WM/MapServer/71" target="_blank" rel="noopener">Kentucky Division of Geographic Information</a>';
+
+    const setLocalRoadStatus = (message: string, kind: 'normal' | 'warning' = 'normal') => {
+      if (!localRoadStatus) return;
+      localRoadStatus.textContent = message;
+      localRoadStatus.dataset.kind = kind;
+    };
+
+    const syncLocalRoadAttribution = () => {
+      const enabled = checked(localRoadLayerId);
+      if (enabled && !localRoadAttributionVisible) {
+        map.attributionControl?.addAttribution(localRoadAttribution);
+        localRoadAttributionVisible = true;
+      } else if (!enabled && localRoadAttributionVisible) {
+        map.attributionControl?.removeAttribution(localRoadAttribution);
+        localRoadAttributionVisible = false;
+      }
+    };
+
+    const syncLocalRoadOpacity = (value = opacity(localRoadLayerId)) => {
+      for (const path of localRoadPaths) path.setStyle?.({ opacity: value });
+    };
+
+    const localRoadCacheKey = () => {
+      const bounds = map.getBounds().pad(0.06);
+      const round = (value: number) => value.toFixed(3);
+      return [
+        map.getZoom(),
+        round(bounds.getWest()), round(bounds.getSouth()),
+        round(bounds.getEast()), round(bounds.getNorth())
+      ].join(':');
+    };
+
+    const localRoadQueryUrl = () => {
+      const source = sourceById(localRoadLayerId);
+      if (!source?.serviceUrl) throw new Error('Missing Kentucky local-road service URL');
+      const bounds = map.getBounds().pad(0.06);
+      const params = new URLSearchParams({
+        where: '1=1',
+        geometry: JSON.stringify({
+          xmin: bounds.getWest(),
+          ymin: bounds.getSouth(),
+          xmax: bounds.getEast(),
+          ymax: bounds.getNorth(),
+          spatialReference: { wkid: 4326 }
+        }),
+        geometryType: 'esriGeometryEnvelope',
+        inSR: '4326',
+        spatialRel: 'esriSpatialRelIntersects',
+        outFields: 'OBJECTID,RD_NAME,SURFTYPE,GOV_LEVEL,STATUS',
+        returnGeometry: 'true',
+        returnZ: 'false',
+        returnM: 'false',
+        outSR: '4326',
+        resultRecordCount: String(localRoadMaxFeatures + 1),
+        f: 'geojson'
+      });
+      return source.serviceUrl + '/query?' + params.toString();
+    };
+
+    const createLocalRoadPopup = (properties: Record<string, unknown> | undefined) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'route-local-road-popup';
+
+      const title = document.createElement('strong');
+      title.textContent = featureValue(properties, ['RD_NAME']) || 'Local / other road';
+      wrapper.append(title);
+
+      const metadata = [
+        ['Status', featureValue(properties, ['STATUS'])],
+        ['Government', featureValue(properties, ['GOV_LEVEL'])],
+        ['Surface', featureValue(properties, ['SURFTYPE'])]
+      ].filter(([, value]) => Boolean(value));
+      for (const [label, value] of metadata) {
+        const row = document.createElement('p');
+        row.className = 'route-map-popup-meta';
+        row.textContent = label + ': ' + value;
+        wrapper.append(row);
+      }
+
+      const note = document.createElement('p');
+      note.className = 'route-local-road-note';
+      note.textContent = 'Kentucky/local road centerline. Appearance does not establish public access, maintenance, or current drivability.';
+      wrapper.append(note);
+      return wrapper;
+    };
+
+    const renderLocalRoads = (data: any) => {
+      localRoadLayer.clearLayers();
+      localRoadPaths.length = 0;
+      const features = Array.isArray(data?.features) ? data.features : [];
+      const tooMany = Boolean(data?.exceededTransferLimit) || features.length > localRoadMaxFeatures;
+
+      if (tooMany) {
+        container.dataset.localRoadFeatureCount = '0';
+        container.dataset.localRoadLoadState = 'zoom-in';
+        container.dataset.localRoadTruncated = 'true';
+        setLocalRoadStatus('This view contains too many local roads for the lightweight display layer. Zoom in to see them.', 'warning');
+        return;
+      }
+
+      delete container.dataset.localRoadTruncated;
+      const layerOpacity = opacity(localRoadLayerId);
+      const geoJson = L.geoJSON({ type: 'FeatureCollection', features }, {
+        pane: 'localRoads',
+        style: () => ({
+          color: '#776f64',
+          weight: map.getZoom() >= 16 ? 2.2 : 1.6,
+          opacity: layerOpacity,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }),
+        onEachFeature: (feature: any, featureLayer: any) => {
+          const properties = feature?.properties ?? {};
+          const name = featureValue(properties, ['RD_NAME']) || 'Local / other road';
+          featureLayer.bindTooltip(name, { sticky: true, className: 'rrgh-map-tooltip' });
+          featureLayer.bindPopup(createLocalRoadPopup(properties), { maxWidth: 330, autoPan: false });
+          localRoadPaths.push(featureLayer);
+        }
+      });
+      geoJson.eachLayer((layer: any) => layer.addTo(localRoadLayer));
+
+      container.dataset.localRoadFeatureCount = String(localRoadPaths.length);
+      container.dataset.localRoadCliftyFound = String(features.some((feature: any) =>
+        /clifty\s+school\s+road/i.test(featureValue(feature?.properties, ['RD_NAME']))
+      ));
+      container.dataset.localRoadLoadState = 'loaded';
+      setLocalRoadStatus(
+        localRoadPaths.length.toLocaleString('en-US') + ' Kentucky/local road segment' +
+        (localRoadPaths.length === 1 ? '' : 's') +
+        ' in this view. Appearance does not establish public access, maintenance, or current drivability.'
+      );
+    };
+
+    const loadVisibleLocalRoads = async () => {
+      if (!checked(localRoadLayerId)) return;
+      syncLocalRoadAttribution();
+
+      if (map.getZoom() < localRoadMinZoom) {
+        localRoadController?.abort();
+        localRoadLayer.clearLayers();
+        localRoadPaths.length = 0;
+        container.dataset.localRoadFeatureCount = '0';
+        container.dataset.localRoadLoadState = 'zoom-in';
+        setLocalRoadStatus('Local / other roads is on. Zoom in to display Kentucky/local road centerlines.');
+        return;
+      }
+
+      const revision = ++localRoadRequestRevision;
+      const cacheKey = localRoadCacheKey();
+      const cached = localRoadCache.get(cacheKey);
+      if (cached) {
+        renderLocalRoads(cached);
+        delete container.dataset.localRoadLoadError;
+        return;
+      }
+
+      localRoadController?.abort();
+      localRoadController = new AbortController();
+      container.dataset.localRoadLoadState = 'loading';
+      delete container.dataset.localRoadLoadError;
+      setLocalRoadStatus('Loading Kentucky/local roads for this view…');
+
+      try {
+        const startedAt = performance.now();
+        const response = await fetch(localRoadQueryUrl(), {
+          signal: localRoadController.signal,
+          mode: 'cors',
+          credentials: 'omit',
+          cache: 'no-store'
+        });
+        if (!response.ok) throw new Error('Kentucky local roads HTTP ' + response.status);
+        const data = await response.json();
+        if (data?.error) throw new Error('Kentucky local roads: ' + (data.error.message || 'query error'));
+        if (revision !== localRoadRequestRevision || !checked(localRoadLayerId)) return;
+
+        localRoadCache.set(cacheKey, data);
+        while (localRoadCache.size > 8) {
+          const firstKey = localRoadCache.keys().next().value;
+          if (firstKey === undefined) break;
+          localRoadCache.delete(firstKey);
+        }
+        renderLocalRoads(data);
+        container.dataset.localRoadLoadMs = String(Math.round(performance.now() - startedAt));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.error(error);
+        localRoadLayer.clearLayers();
+        localRoadPaths.length = 0;
+        container.dataset.localRoadFeatureCount = '0';
+        container.dataset.localRoadLoadState = 'error';
+        container.dataset.localRoadLoadError = 'true';
+        setLocalRoadStatus('Kentucky local-road service is temporarily unavailable. The rest of the map is unaffected; move the map or toggle this layer to retry.', 'warning');
+      }
+    };
+
+    const queueLocalRoadLoad = (delay = 240) => {
+      window.clearTimeout(localRoadMoveTimer);
+      localRoadMoveTimer = window.setTimeout(() => { void loadVisibleLocalRoads(); }, delay);
+    };
+
+    const syncLocalRoadLayer = () => {
+      syncVisibility(localRoadLayerId);
+      syncLocalRoadAttribution();
+      if (checked(localRoadLayerId)) {
+        queueLocalRoadLoad(0);
+      } else {
+        localRoadController?.abort();
+        localRoadLayer.clearLayers();
+        localRoadPaths.length = 0;
+        container.dataset.localRoadFeatureCount = '0';
+        container.dataset.localRoadLoadState = 'off';
+        setLocalRoadStatus('Local / other roads is off. Enable it to show Kentucky/local road centerlines at close zoom.');
+      }
+    };
+
+    mapLayers.set(localRoadLayerId, localRoadLayer);
+    opacitySetters.set(localRoadLayerId, (value) => syncLocalRoadOpacity(value));
+    syncVisibility(localRoadLayerId);
+    map.on('moveend', () => {
+      if (checked(localRoadLayerId)) queueLocalRoadLoad();
     });
 
     const routeGroup = L.layerGroup();
@@ -2687,6 +2922,9 @@ const enabledSources = enabledBrowserMapSources;
       if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
       if (id === oilGasLayerId) {
         setOilGasKinds(enabled);
+      } else if (id === localRoadLayerId) {
+        syncLocalRoadLayer();
+        syncFineTuneControl(id);
       } else {
         syncVisibility(id);
         syncFineTuneControl(id);
@@ -2784,7 +3022,8 @@ const enabledSources = enabledBrowserMapSources;
           setSunKinds(checkbox.checked);
         } else if (id === oilGasLayerId) {
           setOilGasKinds(checkbox.checked);
-        } else if (checkbox.checked && id === 'osm-informal-trails') {
+        } else if (id === localRoadLayerId) {
+          syncLocalRoadLayer();
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
         } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
@@ -3050,6 +3289,7 @@ const enabledSources = enabledBrowserMapSources;
       syncViewportDiagnostics();
     };
     applySharedMapState();
+    syncLocalRoadLayer();
     setReadiness('core', true);
     setReadiness('share', true);
     container.dataset.mapCoreReady = 'true';
@@ -4714,6 +4954,7 @@ const enabledSources = enabledBrowserMapSources;
       routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4.5 : 7.5, opacity: 1 }));
       trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2 : zoom >= 15 ? 3 : 2.5, opacity: opacity('usfs-trails') }));
       roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.6 : 2.8, opacity: opacity('usfs-roads') }));
+      localRoadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 16 ? 2.2 : 1.6, opacity: opacity(localRoadLayerId) }));
       informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
     });
 
