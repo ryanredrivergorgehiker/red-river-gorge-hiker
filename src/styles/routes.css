@@ -462,6 +462,66 @@
   outline-offset:2px;
 }
 
+.route-plan-shake{
+  box-sizing:border-box;
+  width:min(22rem,calc(100% - 2rem));
+  margin:auto;
+  padding:0;
+  border:1px solid rgba(23,55,45,.28);
+  border-radius:14px;
+  background:#fbfaf6;
+  color:#26372f;
+  box-shadow:0 .8rem 2.5rem rgba(20,29,24,.32);
+}
+.route-plan-shake::backdrop{
+  background:rgba(15,25,20,.38);
+}
+.route-plan-shake form{
+  display:grid;
+  gap:.65rem;
+  padding:1rem;
+}
+.route-plan-shake h2{
+  margin:0;
+  color:#17372d;
+  font-size:1.05rem;
+  line-height:1.2;
+}
+.route-plan-shake p{
+  margin:0;
+  color:#4f5d55;
+  font-size:.86rem;
+  line-height:1.4;
+}
+.route-plan-shake-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.55rem;
+}
+.route-plan-shake-actions button{
+  min-height:2.75rem;
+  padding:.5rem .75rem;
+  border:1px solid rgba(23,55,45,.25);
+  border-radius:9px;
+  background:#fff;
+  color:#17372d;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+.route-plan-shake-actions button:disabled{
+  opacity:.42;
+  cursor:not-allowed;
+}
+.route-plan-shake-actions [data-plan-shake-cancel]{
+  grid-column:1/-1;
+  background:transparent;
+}
+.route-plan-shake-actions button:focus-visible{
+  outline:3px solid rgba(184,107,67,.45);
+  outline-offset:2px;
+}
+
 .route-search-panel{
   position:absolute;
   z-index:960;
