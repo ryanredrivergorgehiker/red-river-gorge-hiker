@@ -183,14 +183,14 @@ const enabledSources = enabledBrowserMapSources;
             </div>
           </div>
           <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="ky-state-park-trails" checked />
-            <span class="route-layer-swatch swatch-state-park-trail" aria-hidden="true"></span>
-            <span>State Park trails</span>
-          </label>
-          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="usfs-trails" checked />
             <span class="route-layer-swatch swatch-usfs-trail" aria-hidden="true"></span>
             <span>Forest Service trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="ky-state-park-trails" checked />
+            <span class="route-layer-swatch swatch-state-park-trail" aria-hidden="true"></span>
+            <span>State Park trails</span>
           </label>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="osm-informal-trails" checked />
@@ -243,7 +243,7 @@ const enabledSources = enabledBrowserMapSources;
                 <option value="snow-depth">Current snow depth (in)</option>
               </select>
             </label>
-            <p class="route-layer-source-note" data-weather-status>Off. Terrain view turns on 10-day precipitation at light opacity.</p>
+            <p class="route-layer-source-note" data-weather-status>Off by default in every Map View. Choose a weather view, then turn this layer on.</p>
             <div class="route-weather-legend" data-weather-legend hidden aria-label="NOAA weather color legend"></div>
           </div>
           <label class="route-layer-toggle-row route-layer-toggle-master">
@@ -3651,7 +3651,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, true);
         if (weatherSelect) weatherSelect.value = 'precip-10d';
-        setLayerControl(weatherLayerId, true, 35);
+        setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -3683,7 +3683,7 @@ const enabledSources = enabledBrowserMapSources;
       const forestTrailsVisible = checked('usfs-trails') && map.getZoom() >= 13;
       if (forestTrailsVisible && !map.hasLayer(trailLabelGroup)) trailLabelGroup.addTo(map);
       if (!forestTrailsVisible && map.hasLayer(trailLabelGroup)) map.removeLayer(trailLabelGroup);
-      const stateParkTrailsVisible = checked('ky-state-park-trails') && map.getZoom() >= 13;
+      const stateParkTrailsVisible = checked('ky-state-park-trails') && map.getZoom() >= (isMobileFullMap() ? 16 : 15);
       if (stateParkTrailsVisible && !map.hasLayer(stateParkTrailLabelGroup)) stateParkTrailLabelGroup.addTo(map);
       if (!stateParkTrailsVisible && map.hasLayer(stateParkTrailLabelGroup)) map.removeLayer(stateParkTrailLabelGroup);
 
@@ -4678,6 +4678,13 @@ const enabledSources = enabledBrowserMapSources;
     type MeasureSnapshot = MeasurePointSnapshot[];
     let measureHistory: MeasureSnapshot[] = [[]];
     let measureHistoryIndex = 0;
+    let areaHistory: MeasureSnapshot[] = [[]];
+    let areaHistoryIndex = 0;
+    let bearingHistory: MeasureSnapshot[] = [[]];
+    let bearingHistoryIndex = 0;
+    type WatershedSnapshot = MeasurePointSnapshot | null;
+    let watershedHistory: WatershedSnapshot[] = [null];
+    let watershedHistoryIndex = 0;
 
     type PlanPoint = { lat: number; lng: number; nodeKey?: string };
     type PlanSegment = { mode: 'snap' | 'straight'; points: PlanPoint[] };
@@ -4936,8 +4943,11 @@ const enabledSources = enabledBrowserMapSources;
 
     const toolButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool]'));
 
-    const cloneMeasure = (): MeasureSnapshot =>
-      measurePoints.map((point) => ({ lat: point.lat, lng: point.lng }));
+    const clonePoints = (points: any[]): MeasureSnapshot =>
+      points.map((point) => ({ lat: point.lat, lng: point.lng }));
+    const cloneMeasure = (): MeasureSnapshot => clonePoints(measurePoints);
+    const cloneArea = (): MeasureSnapshot => clonePoints(areaPoints);
+    const cloneBearing = (): MeasureSnapshot => clonePoints(bearingPoints);
 
     const clonePlan = (): PlanSnapshot => ({
       stops: planStops.map((point) => ({ ...point })),
@@ -4950,16 +4960,28 @@ const enabledSources = enabledBrowserMapSources;
     const canUndoCurrentTool = () =>
       activeTool === 'measure'
         ? measureHistoryIndex > 0
-        : activeTool === 'plan'
-          ? planHistoryIndex > 0
-          : false;
+        : activeTool === 'area'
+          ? areaHistoryIndex > 0
+          : activeTool === 'bearing'
+            ? bearingHistoryIndex > 0
+            : activeTool === 'watershed'
+              ? watershedHistoryIndex > 0
+              : activeTool === 'plan'
+                ? planHistoryIndex > 0
+                : false;
 
     const canRedoCurrentTool = () =>
       activeTool === 'measure'
         ? measureHistoryIndex < measureHistory.length - 1
-        : activeTool === 'plan'
-          ? planHistoryIndex < planHistory.length - 1
-          : false;
+        : activeTool === 'area'
+          ? areaHistoryIndex < areaHistory.length - 1
+          : activeTool === 'bearing'
+            ? bearingHistoryIndex < bearingHistory.length - 1
+            : activeTool === 'watershed'
+              ? watershedHistoryIndex < watershedHistory.length - 1
+              : activeTool === 'plan'
+                ? planHistoryIndex < planHistory.length - 1
+                : false;
 
     const updateHistoryButtons = () => {
       const canUndo = canUndoCurrentTool();
@@ -4986,6 +5008,65 @@ const enabledSources = enabledBrowserMapSources;
       updateHistoryButtons();
     };
 
+    const commitAreaHistory = () => {
+      areaHistory = areaHistory.slice(0, areaHistoryIndex + 1);
+      areaHistory.push(cloneArea());
+      areaHistoryIndex = areaHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restoreAreaHistory = (index: number) => {
+      const snapshot = areaHistory[index];
+      if (!snapshot) return;
+      areaPoints = snapshot.map((point) => L.latLng(point.lat, point.lng));
+      areaHistoryIndex = index;
+      redrawArea();
+      updateHistoryButtons();
+    };
+
+    const commitBearingHistory = () => {
+      bearingHistory = bearingHistory.slice(0, bearingHistoryIndex + 1);
+      bearingHistory.push(cloneBearing());
+      bearingHistoryIndex = bearingHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restoreBearingHistory = (index: number) => {
+      const snapshot = bearingHistory[index];
+      if (!snapshot) return;
+      bearingPoints = snapshot.map((point) => L.latLng(point.lat, point.lng));
+      bearingHistoryIndex = index;
+      void redrawBearing();
+      updateHistoryButtons();
+    };
+
+    const commitWatershedHistory = (outlet: any) => {
+      watershedHistory = watershedHistory.slice(0, watershedHistoryIndex + 1);
+      watershedHistory.push({ lat: outlet.lat, lng: outlet.lng });
+      watershedHistoryIndex = watershedHistory.length - 1;
+      updateHistoryButtons();
+    };
+
+    const restoreWatershedHistory = (index: number) => {
+      const snapshot = watershedHistory[index];
+      if (snapshot === undefined) return;
+      watershedHistoryIndex = index;
+      watershedRevision += 1;
+      watershedController?.abort();
+      watershedController = null;
+      watershedLayer.clearLayers();
+      delete container.dataset.watershedFeatureCount;
+      delete container.dataset.watershedAreaSqMi;
+      if (snapshot === null) {
+        container.dataset.watershedLoadState = 'idle';
+        updateAnalysisStats('Watershed', ['Area','Outlet','Source','Status'], ['—','—','USGS','Choose point'], 'Choose a stream/outlet point.');
+        setStatus('Watershed: choose an outlet point.');
+      } else {
+        void loadWatershed(L.latLng(snapshot.lat, snapshot.lng));
+      }
+      updateHistoryButtons();
+    };
+
     const commitPlanHistory = () => {
       planHistory = planHistory.slice(0, planHistoryIndex + 1);
       planHistory.push(clonePlan());
@@ -5009,6 +5090,12 @@ const enabledSources = enabledBrowserMapSources;
     const undoCurrentTool = () => {
       if (activeTool === 'measure' && measureHistoryIndex > 0) {
         restoreMeasureHistory(measureHistoryIndex - 1);
+      } else if (activeTool === 'area' && areaHistoryIndex > 0) {
+        restoreAreaHistory(areaHistoryIndex - 1);
+      } else if (activeTool === 'bearing' && bearingHistoryIndex > 0) {
+        restoreBearingHistory(bearingHistoryIndex - 1);
+      } else if (activeTool === 'watershed' && watershedHistoryIndex > 0) {
+        restoreWatershedHistory(watershedHistoryIndex - 1);
       } else if (activeTool === 'plan' && planHistoryIndex > 0) {
         restorePlanHistory(planHistoryIndex - 1);
       }
@@ -5017,6 +5104,12 @@ const enabledSources = enabledBrowserMapSources;
     const redoCurrentTool = () => {
       if (activeTool === 'measure' && measureHistoryIndex < measureHistory.length - 1) {
         restoreMeasureHistory(measureHistoryIndex + 1);
+      } else if (activeTool === 'area' && areaHistoryIndex < areaHistory.length - 1) {
+        restoreAreaHistory(areaHistoryIndex + 1);
+      } else if (activeTool === 'bearing' && bearingHistoryIndex < bearingHistory.length - 1) {
+        restoreBearingHistory(bearingHistoryIndex + 1);
+      } else if (activeTool === 'watershed' && watershedHistoryIndex < watershedHistory.length - 1) {
+        restoreWatershedHistory(watershedHistoryIndex + 1);
       } else if (activeTool === 'plan' && planHistoryIndex < planHistory.length - 1) {
         restorePlanHistory(planHistoryIndex + 1);
       }
@@ -5195,6 +5288,12 @@ const enabledSources = enabledBrowserMapSources;
       planElevationController = null;
       measureHistory = [[]];
       measureHistoryIndex = 0;
+      areaHistory = [[]];
+      areaHistoryIndex = 0;
+      bearingHistory = [[]];
+      bearingHistoryIndex = 0;
+      watershedHistory = [null];
+      watershedHistoryIndex = 0;
       planHistory = [{ stops: [], segments: [] }];
       planHistoryIndex = 0;
       for (const button of saveButtons) button.disabled = true;
@@ -5920,17 +6019,20 @@ const enabledSources = enabledBrowserMapSources;
       }
       if (activeTool === 'area') {
         areaPoints.push(event.latlng);
+        commitAreaHistory();
         redrawArea();
         return;
       }
       if (activeTool === 'bearing') {
         if (bearingPoints.length >= 2) bearingPoints = [];
         bearingPoints.push(event.latlng);
+        commitBearingHistory();
         void redrawBearing();
         setStatus(bearingPoints.length === 1 ? 'Bearing / slope: start point set; choose the end point.' : 'Bearing / slope: calculating direction and grade…');
         return;
       }
       if (activeTool === 'watershed') {
+        commitWatershedHistory(event.latlng);
         void loadWatershed(event.latlng);
         return;
       }

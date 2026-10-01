@@ -13,6 +13,7 @@ REFERENCE_POINT = (37.86393, -83.55277)  # owner validation point, lat/lon
 CACHE_PATH = pathlib.Path('public/data/map/usgs-aggregated-trails.geojson')
 OSM_CACHE_PATH = pathlib.Path('public/data/map/osm-informal-trails.geojson')
 STATE_PARK_CACHE_PATH = pathlib.Path('public/data/map/ky-state-park-trails.geojson')
+STATE_PARK_BOUNDARY_LAYER = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_State_Parks_Features_WGS84WM/MapServer/8'
 USER_AGENT = 'RedRiverGorgeHiker/1.0 (+https://redrivergorgehiker.com/)'
 
 SERVICES = [
@@ -139,7 +140,23 @@ if STATE_PARK_CACHE_PATH.exists():
             pass
 else:
     raise SystemExit(f'Missing authoritative State Park trail cache: {STATE_PARK_CACHE_PATH}')
-state_park_buffer = unary_union(state_park_lines).buffer(30) if state_park_lines else None
+state_park_buffer = unary_union(state_park_lines).buffer(45) if state_park_lines else None
+
+state_park_boundary_wgs84 = None
+try:
+    boundary_features = fetch_arcgis_geojson(STATE_PARK_BOUNDARY_LAYER)
+    boundary_geometries = []
+    for feat in boundary_features:
+        try:
+            geom = shape(feat.get('geometry'))
+            if not geom.is_empty:
+                boundary_geometries.append(geom)
+        except Exception:
+            pass
+    if boundary_geometries:
+        state_park_boundary_wgs84 = unary_union(boundary_geometries)
+except Exception as exc:
+    print(f'WARNING: could not load Kentucky State Park boundaries for USGS suppression: {exc}')
 
 # The USGS source is supplemental to the existing OSM community/informal cache.
 # Remove features that substantially duplicate an existing displayed OSM candidate.
@@ -166,6 +183,7 @@ osm_duplicate_removed = 0
 non_terra_removed = 0
 dropped_out_of_bounds = 0
 clipped_edge_features = 0
+state_park_boundary_clipped = 0
 reference_audit = []
 
 for raw in raw_features:
@@ -190,6 +208,13 @@ for raw in raw_features:
         continue
     if not raw_geom.equals(clipped):
         clipped_edge_features += 1
+    if state_park_boundary_wgs84 is not None:
+        outside_state_parks = clipped.difference(state_park_boundary_wgs84)
+        if not clipped.equals(outside_state_parks):
+            state_park_boundary_clipped += 1
+        clipped = outside_state_parks
+        if clipped.is_empty:
+            continue
 
     if isinstance(clipped, LineString):
         parts = [clipped]
@@ -221,7 +246,7 @@ for raw in raw_features:
             osm_overlap = line_utm.intersection(osm_buffer).length / line_utm.length
 
         disposition = 'kept'
-        if state_park_overlap >= 0.65:
+        if state_park_overlap >= 0.50:
             state_park_like_removed += 1
             disposition = 'state-park-overlap'
         elif official_overlap >= 0.65:
@@ -274,7 +299,7 @@ out = {
         'source': source_name,
         'source_layer': source_layer,
         'source_fallback_errors': source_errors,
-        'method': 'USGS Terra Trail candidates minus authoritative Kentucky State Park and current USDA Forest Service official-trail buffers, then existing RRGH OSM Community / Informal duplicate buffer',
+        'method': 'USGS Terra Trail candidates with authoritative Kentucky State Park boundary interiors suppressed, then official Kentucky State Park / USDA Forest Service trail buffers and existing RRGH OSM Community / Informal duplicate buffer',
         'bbox': list(BBOX),
         'raw_feature_count': len(raw_features),
         'terra_input_count': terra_input,
@@ -285,13 +310,15 @@ out = {
         'osm_duplicate_removed': osm_duplicate_removed,
         'official_match_buffer_m': 30,
         'official_overlap_exclusion_ratio': 0.65,
-        'state_park_match_buffer_m': 30,
-        'state_park_overlap_exclusion_ratio': 0.65,
+        'state_park_match_buffer_m': 45,
+        'state_park_overlap_exclusion_ratio': 0.50,
         'osm_match_buffer_m': 20,
         'osm_overlap_exclusion_ratio': 0.65,
         'bounds_clipped': True,
         'dropped_out_of_bounds_features': dropped_out_of_bounds,
         'clipped_edge_features': clipped_edge_features,
+        'state_park_boundary_layer': STATE_PARK_BOUNDARY_LAYER,
+        'state_park_boundary_clipped_features': state_park_boundary_clipped,
         'planner_rule': 'Explicit hikerpedestrian=N/No features are displayed as context but excluded from route snapping.',
         'validation_reference': {
             'lat': REFERENCE_POINT[0],

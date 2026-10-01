@@ -46,6 +46,7 @@ const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_
 const overpassService = 'https://www.openstreetmap.org/copyright';
 const usgsAggregatedTrailsService = 'https://partnerships.nationalmap.gov/arcgis/rest/services/USGSTrails/MapServer/0';
 const kentuckyStateParkTrailService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_State_Parks_Features_WGS84WM/MapServer/9';
+const kentuckyStateParkBoundaryService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_State_Parks_Features_WGS84WM/MapServer/8';
 const noaaSnowService = 'https://mapservices.weather.noaa.gov/raster/rest/services/snow/NOHRSC_Snow_Analysis/MapServer';
 const noaaPrecipService = 'https://mapservices.weather.noaa.gov/raster/rest/services/obs/rfc_qpe/MapServer';
 const streamStatsDelineateService = 'https://streamstats.usgs.gov/ss-delineate';
@@ -273,6 +274,17 @@ export const mapSources: readonly MapSource[] = [
     opacity: 1
   },
   {
+    id: 'ky-state-park-boundaries-filter',
+    label: 'Kentucky State Park boundaries — cache filter',
+    kind: 'reference',
+    enabled: true,
+    browserLoaded: false,
+    serviceUrl: kentuckyStateParkBoundaryService,
+    attribution: 'Kentucky State Parks / Kentucky Division of Geographic Information',
+    termsUrl: 'https://kygeoportal.ky.gov/',
+    privacyNote: 'Used only by RRGH maintenance workflows to suppress Community / Informal trail geometry inside authoritative Kentucky State Park boundaries. Ordinary map visitors do not contact this boundary service.'
+  },
+  {
     id: 'osm-informal-trails',
     label: 'Community / Informal trails',
     kind: 'vector',
@@ -281,7 +293,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'Community / Informal trails normally load from RRGH-hosted caches. The OpenStreetMap cache includes paths explicitly tagged informal plus community-mapped path/footway candidates after substantial overlaps with authoritative Kentucky State Park and USDA Forest Service trail geometry are removed. Public Overpass API instances are used only as a browser fallback if the OSM cache is unavailable. Appearance on this layer is not proof of legal access, maintenance, or official status.',
+    privacyNote: 'Community / Informal trails normally load from RRGH-hosted caches. The OpenStreetMap cache suppresses geometry inside authoritative Kentucky State Park boundaries and removes substantial overlaps with official Kentucky State Park and USDA Forest Service trail geometry. Public Overpass API instances are used only as a browser fallback if the OSM cache is unavailable. Appearance on this layer is not proof of legal access, maintenance, or official status.',
     opacity: 1
   },
   {
@@ -293,7 +305,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: usgsAggregatedTrailsService,
     attribution: 'USGS The National Map',
     termsUrl: 'https://www.usgs.gov/national-digital-trails/qas-about-usgs-trail-data',
-    privacyNote: 'Supplemental Terra Trail geometry in Community / Informal trails loads from an RRGH-hosted cache generated from USGS National Digital Trails / National Transportation Dataset data. Ordinary visitors do not contact the USGS trail query service for this cache. RRGH excludes features that substantially duplicate authoritative Kentucky State Park trails, current USDA Forest Service official trails, or the existing OSM Community / Informal cache. Appearance does not establish current access, maintenance, official status, or current conditions.',
+    privacyNote: 'Supplemental Terra Trail geometry in Community / Informal trails loads from an RRGH-hosted cache generated from USGS National Digital Trails / National Transportation Dataset data. Ordinary visitors do not contact the USGS trail query service for this cache. RRGH suppresses geometry inside authoritative Kentucky State Park boundaries and excludes features that substantially duplicate official Kentucky State Park trails, current USDA Forest Service official trails, or the existing OSM Community / Informal cache. Appearance does not establish current access, maintenance, official status, or current conditions.',
     opacity: 1
   },
   {
