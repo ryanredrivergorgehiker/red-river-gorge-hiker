@@ -1,0 +1,48 @@
+name: Staging security lock refresh
+
+on:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - .github/workflows/staging-security-lock-refresh.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v6
+        with:
+          ref: staging/routes-tracks-interactive-map
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Refresh vulnerable transitive lock entries only
+        run: npm audit fix --package-lock-only --ignore-scripts
+
+      - name: Verify production dependency audit gate
+        run: |
+          npm audit --audit-level=critical
+          npm audit --omit=dev --audit-level=high
+
+      - name: Commit lockfile security refresh
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json already satisfies the audit gate."
+          else
+            git commit -m "Refresh vulnerable transitive npm lock entries"
+            git push
+          fi
