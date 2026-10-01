@@ -94,6 +94,43 @@ const enabledSources = enabledBrowserMapSources;
       <div class="route-map-loading-progress" aria-hidden="true"><span data-map-loading-progress></span></div>
       <span class="route-map-loading-percent" data-map-loading-percent>0%</span>
     </div>
+
+    <div class="route-map-activity-stack" data-map-activity-stack aria-live="polite" aria-atomic="true">
+      <div class="route-map-activity route-map-activity-watershed" data-map-activity="watershed" hidden>
+        <svg class="route-map-activity-art route-map-water-flow" viewBox="0 0 112 58" aria-hidden="true">
+          <path class="route-map-water-bank" d="M5 15c17-8 29 4 43 0s29-11 59-2"></path>
+          <path class="route-map-water-wave route-map-water-wave-a" d="M4 28c12-7 20 7 32 0s20-7 32 0 20 7 40 0"></path>
+          <path class="route-map-water-wave route-map-water-wave-b" d="M4 39c12-7 20 7 32 0s20-7 32 0 20 7 40 0"></path>
+          <path class="route-map-water-wave route-map-water-wave-c" d="M4 50c12-7 20 7 32 0s20-7 32 0 20 7 40 0"></path>
+          <circle class="route-map-water-drop route-map-water-drop-a" cx="35" cy="10" r="2.6"></circle>
+          <circle class="route-map-water-drop route-map-water-drop-b" cx="77" cy="7" r="2.1"></circle>
+        </svg>
+        <div>
+          <strong>Delineating watershed…</strong>
+          <span>Following the drainage basin from your outlet point.</span>
+        </div>
+      </div>
+
+      <div class="route-map-activity route-map-activity-sunlight" data-map-activity="sunlight" hidden>
+        <svg class="route-map-activity-art route-map-sunrise-load" viewBox="0 0 112 58" aria-hidden="true">
+          <path class="route-map-sun-horizon" d="M8 45h96"></path>
+          <g class="route-map-sun-rays">
+            <path d="M56 7v9"></path>
+            <path d="M31 17l7 7"></path>
+            <path d="M81 17l-7 7"></path>
+            <path d="M19 37h10"></path>
+            <path d="M83 37h10"></path>
+          </g>
+          <circle class="route-map-sun-disc" cx="56" cy="45" r="14"></circle>
+          <path class="route-map-sun-mask" d="M0 45h112v14H0z"></path>
+        </svg>
+        <div>
+          <strong>Loading sunlight…</strong>
+          <span>Painting the visible sunrise and sunset terrain.</span>
+        </div>
+      </div>
+    </div>
+
     <div
       id={mapId}
       class:list={['route-map', { 'route-map-full': mode === 'full' }]}
@@ -678,6 +715,15 @@ const enabledSources = enabledBrowserMapSources;
     const loadingProgress = shell.querySelector<HTMLElement>('[data-map-loading-progress]');
     const loadingPercent = shell.querySelector<HTMLElement>('[data-map-loading-percent]');
     const loadingLabel = shell.querySelector<HTMLElement>('[data-map-loading-label]');
+    type MapActivityKind = 'watershed' | 'sunlight';
+    const setMapActivity = (kind: MapActivityKind, loading: boolean) => {
+      const indicator = shell.querySelector<HTMLElement>('[data-map-activity="' + kind + '"]');
+      if (indicator) indicator.hidden = !loading;
+      if (kind === 'watershed') container.dataset.watershedActivityVisible = loading ? 'true' : 'false';
+      if (kind === 'sunlight') container.dataset.sunlightActivityVisible = loading ? 'true' : 'false';
+    };
+    setMapActivity('watershed', false);
+    setMapActivity('sunlight', false);
     const fullscreenButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-action="fullscreen"]'));
     let loadProgressValue = 0;
     const setLoadProgress = (value: number, label?: string) => {
@@ -1154,6 +1200,7 @@ const enabledSources = enabledBrowserMapSources;
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
     let gorgeHardFeatureCount = 0;
+    let gorgeLoadRevision = 0;
 
     const sunKindToggle = (kind: 'sunrise' | 'sunset') =>
       shell.querySelector<HTMLInputElement>('[data-sun-kind-toggle="' + kind + '"]');
@@ -1191,7 +1238,13 @@ const enabledSources = enabledBrowserMapSources;
       }
       syncVisibility(gorgeLayerId);
       syncSunPotentialStyles();
-      if (any) void loadVisibleGorgeSectors();
+      if (any) {
+        void loadVisibleGorgeSectors();
+      } else {
+        gorgeLoadRevision += 1;
+        setMapActivity('sunlight', false);
+        container.dataset.rrgLidarSunLoadState = 'idle';
+      }
     };
 
     const setSunKinds = (enabled: boolean) => {
@@ -1233,13 +1286,51 @@ const enabledSources = enabledBrowserMapSources;
       return gorgeManifestPromise;
     };
 
+    const waitForSunImage = (overlay: any, id: string, kind: 'sunrise' | 'sunset') =>
+      new Promise<void>((resolve, reject) => {
+        const onLoad = () => {
+          overlay.off('error', onError);
+          resolve();
+        };
+        const onError = () => {
+          overlay.off('load', onLoad);
+          reject(new Error('Gorge continuous sunlight ' + kind + ' image failed for sector ' + id));
+        };
+        overlay.once('load', onLoad);
+        overlay.once('error', onError);
+      });
+
     const loadVisibleGorgeSectors = async () => {
       if (!checked(gorgeLayerId)) return;
+      const revision = ++gorgeLoadRevision;
+      let activityShown = false;
+      const showActivity = () => {
+        if (activityShown) return;
+        activityShown = true;
+        container.dataset.rrgLidarSunLoadState = 'loading';
+        setMapActivity('sunlight', true);
+      };
       try {
+        if (!gorgeManifest) showActivity();
         const manifest = await loadGorgeManifest();
+        if (revision !== gorgeLoadRevision || !checked(gorgeLayerId)) return;
         const view = map.getBounds().pad(0.35);
         const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
-        for (const sector of sectors) {
+        const pending = sectors.filter((sector: any) => {
+          const id = String(sector?.id ?? '');
+          const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
+          if (!id || bounds.length !== 4 || loadedGorgeSectorIds.has(id)) return false;
+          const [west, south, east, north] = bounds.map(Number);
+          return view.intersects(L.latLngBounds([[south, west], [north, east]]));
+        });
+        if (!pending.length) {
+          container.dataset.rrgLidarSunLoadState = 'loaded';
+          return;
+        }
+        showActivity();
+
+        const imageLoads: Promise<void>[] = [];
+        for (const sector of pending) {
           const id = String(sector?.id ?? '');
           const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
           const sunriseRasterFile = String(sector?.sunriseRasterFile ?? '');
@@ -1261,8 +1352,10 @@ const enabledSources = enabledBrowserMapSources;
                 interactive: false
               }
             );
+            const sunriseReady = waitForSunImage(sunriseOverlay, id, 'sunrise');
             sunriseOverlay.addTo(gorgeLayer);
             gorgeSunImages.push({ overlay: sunriseOverlay, kind: 'sunrise' });
+            imageLoads.push(sunriseReady);
 
             const sunsetOverlay = L.imageOverlay(
               import.meta.env.BASE_URL + sunsetRasterFile,
@@ -1273,8 +1366,10 @@ const enabledSources = enabledBrowserMapSources;
                 interactive: false
               }
             );
+            const sunsetReady = waitForSunImage(sunsetOverlay, id, 'sunset');
             sunsetOverlay.addTo(gorgeLayer);
             gorgeSunImages.push({ overlay: sunsetOverlay, kind: 'sunset' });
+            imageLoads.push(sunsetReady);
 
             const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
               credentials: 'same-origin',
@@ -1301,14 +1396,22 @@ const enabledSources = enabledBrowserMapSources;
             throw error;
           }
         }
+
+        await Promise.all(imageLoads);
+        if (revision !== gorgeLoadRevision || !checked(gorgeLayerId)) return;
         container.dataset.rrgLidarSunLoadedSectors = String(loadedGorgeSectorIds.size);
         container.dataset.rrgLidarSunImageCount = String(gorgeSunImages.length);
         container.dataset.rrgLidarSunHardFeatureCount = String(gorgeHardFeatureCount);
+        container.dataset.rrgLidarSunLoadState = 'loaded';
         syncVisibility(gorgeLayerId);
         syncSunPotentialStyles();
       } catch (error) {
+        if (revision !== gorgeLoadRevision) return;
         console.error(error);
         container.dataset.rrgLidarSunLoadError = 'true';
+        container.dataset.rrgLidarSunLoadState = 'error';
+      } finally {
+        if (revision === gorgeLoadRevision && activityShown) setMapActivity('sunlight', false);
       }
     };
 
@@ -3644,7 +3747,7 @@ const enabledSources = enabledBrowserMapSources;
       }
       if (checkbox) checkbox.checked = enabled;
       if (slider && opacityValue !== undefined) slider.value = String(opacityValue);
-      if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
+      if (id === 'ky-hillshade' && enabled && opacityValue === undefined && slider && Number(slider.value) < 75) slider.value = '75';
       if (id === oilGasLayerId) {
         setOilGasKinds(enabled);
       } else if (id === weatherLayerId) {
@@ -3704,9 +3807,9 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'sunlight') {
-        setLayerControl('kytopo', true, 25);
-        setLayerControl('usgs-topo', true, 75);
-        setLayerControl('ky-hillshade', true, 100);
+        setLayerControl('kytopo', false, 0);
+        setLayerControl('usgs-topo', true, 100);
+        setLayerControl('ky-hillshade', true, 25);
         setLayerControl('kyaerial-phase3', false, 100);
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
@@ -5095,6 +5198,7 @@ const enabledSources = enabledBrowserMapSources;
       watershedRevision += 1;
       watershedController?.abort();
       watershedController = null;
+      setMapActivity('watershed', false);
       watershedLayer.clearLayers();
       delete container.dataset.watershedFeatureCount;
       delete container.dataset.watershedAreaSqMi;
@@ -5315,6 +5419,7 @@ const enabledSources = enabledBrowserMapSources;
       watershedController?.abort();
       bearingElevationController = null;
       watershedController = null;
+      setMapActivity('watershed', false);
       planStops = [];
       planSegments = [];
       measureElevationsFt = null;
@@ -5678,6 +5783,7 @@ const enabledSources = enabledBrowserMapSources;
         fillColor: '#2863a6', fillOpacity: 1
       }).bindTooltip('Watershed outlet', { direction: 'top' }).addTo(watershedLayer);
       container.dataset.watershedLoadState = 'loading';
+      setMapActivity('watershed', true);
       updateAnalysisStats(
         'Watershed',
         ['Area','Outlet','Source','Status'],
@@ -5685,10 +5791,10 @@ const enabledSources = enabledBrowserMapSources;
         'USGS StreamStats is delineating the drainage basin. This can take several seconds.'
       );
       setStatus('Watershed: asking USGS StreamStats to delineate the basin…');
-      const source = sourceById('usgs-streamstats-delineate');
-      if (!source?.serviceUrl) throw new Error('USGS StreamStats source is unavailable.');
       const params = new URLSearchParams({ lat: outlet.lat.toFixed(7), lon: outlet.lng.toFixed(7) });
       try {
+        const source = sourceById('usgs-streamstats-delineate');
+        if (!source?.serviceUrl) throw new Error('USGS StreamStats source is unavailable.');
         const response = await fetch(source.serviceUrl + '/v1/delineate/features/KY?' + params.toString(), {
           signal: watershedController.signal,
           mode: 'cors',
@@ -5721,10 +5827,12 @@ const enabledSources = enabledBrowserMapSources;
           'Automated USGS StreamStats delineation. Verify against terrain; not a property, flood, access, or legal boundary.'
         );
         setStatus('Watershed delineated: ' + formatArea(areaSqMeters) + '. StreamStats boundaries are approximate and should be checked against terrain.');
+        if (revision === watershedRevision) setMapActivity('watershed', false);
       } catch (error) {
         if (watershedController.signal.aborted || revision !== watershedRevision) return;
         console.error(error);
         container.dataset.watershedLoadState = 'error';
+        setMapActivity('watershed', false);
         updateAnalysisStats(
           'Watershed',
           ['Area','Outlet','Source','Status'],
