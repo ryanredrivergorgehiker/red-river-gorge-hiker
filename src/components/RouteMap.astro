@@ -77,10 +77,23 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-topbar" role="toolbar" aria-label="Mobile map utilities">
     <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
     <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
+    <button type="button" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>Full screen</button>
     <button type="button" data-sheet-open="layers" data-ready-group="core" aria-label="Open map layers" disabled>Layers</button>
   </div>
 
   <div class="route-map-stage">
+    <div class="route-map-loading" data-map-loading role="status" aria-live="polite">
+      <svg class="route-map-loading-trees" viewBox="0 0 220 80" aria-hidden="true">
+        <path class="tree tree-a" d="M22 72V40M8 50L22 19l14 31H8Zm5 8h18L22 30 13 58Z"></path>
+        <path class="tree tree-b" d="M82 72V34M65 46L82 9l17 37H65Zm5 11h24L82 22 70 57Z"></path>
+        <path class="tree tree-c" d="M145 72V42M132 51l13-28 13 28h-26Zm4 8h18l-9-25-9 25Z"></path>
+        <path class="tree tree-d" d="M196 72V38M181 49l15-33 15 33h-30Zm5 9h20l-10-29-10 29Z"></path>
+        <path class="route-map-loading-ground" d="M0 73h220"></path>
+      </svg>
+      <strong data-map-loading-label>Please wait while map loads…</strong>
+      <div class="route-map-loading-progress" aria-hidden="true"><span data-map-loading-progress></span></div>
+      <span class="route-map-loading-percent" data-map-loading-percent>0%</span>
+    </div>
     <div
       id={mapId}
       class:list={['route-map', { 'route-map-full': mode === 'full' }]}
@@ -170,6 +183,11 @@ const enabledSources = enabledBrowserMapSources;
             </div>
           </div>
           <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="ky-state-park-trails" checked />
+            <span class="route-layer-swatch swatch-state-park-trail" aria-hidden="true"></span>
+            <span>State Park trails</span>
+          </label>
+          <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="usfs-trails" checked />
             <span class="route-layer-swatch swatch-usfs-trail" aria-hidden="true"></span>
             <span>Forest Service trails</span>
@@ -211,6 +229,23 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
             <span>Terrain relief (LiDAR)</span>
           </label>
+          <label class="route-layer-toggle-row route-layer-toggle-master">
+            <input type="checkbox" data-map-layer="rrgh-weather" />
+            <span class="route-layer-swatch swatch-weather" aria-hidden="true"></span>
+            <span>Snow / recent precipitation</span>
+          </label>
+          <div class="route-weather-options">
+            <label>
+              <span>Weather view</span>
+              <select data-weather-product aria-label="Snow or recent precipitation view">
+                <option value="precip-10d" selected>Precipitation — last 10 days (in)</option>
+                <option value="precip-30d">Precipitation — last 30 days (in)</option>
+                <option value="snow-depth">Current snow depth (in)</option>
+              </select>
+            </label>
+            <p class="route-layer-source-note" data-weather-status>Off. Terrain view turns on 10-day precipitation at light opacity.</p>
+            <div class="route-weather-legend" data-weather-legend hidden aria-label="NOAA weather color legend"></div>
+          </div>
           <label class="route-layer-toggle-row route-layer-toggle-master">
             <input type="checkbox" data-map-layer="rrg-lidar-sun" data-sun-potential-master />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
@@ -320,6 +355,7 @@ const enabledSources = enabledBrowserMapSources;
           <summary>Fine tune layers</summary>
           <p>Use each checkbox to turn that layer on or off; its slider is enabled only while the layer is visible. These controls stay synced with the matching layer above.</p>
           <div class="route-layer-opacity-grid">
+            <label><span>State Park trails</span><input type="checkbox" data-fine-tune-layer="ky-state-park-trails" checked aria-label="Toggle State Park trails" /><input type="range" min="0" max="100" value="100" data-opacity="ky-state-park-trails" aria-label="State Park trails opacity" /></label>
             <label><span>Forest Service trails</span><input type="checkbox" data-fine-tune-layer="usfs-trails" checked aria-label="Toggle Forest Service trails" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-trails" aria-label="Forest Service trails opacity" /></label>
             <label><span>Community / Informal trails</span><input type="checkbox" data-fine-tune-layer="osm-informal-trails" checked aria-label="Toggle Community / Informal trails" /><input type="range" min="0" max="100" value="100" data-opacity="osm-informal-trails" aria-label="Community / Informal trails opacity" /></label>
             <label><span>Forest Service roads</span><input type="checkbox" data-fine-tune-layer="usfs-roads" checked aria-label="Toggle Forest Service roads" /><input type="range" min="0" max="100" value="100" data-opacity="usfs-roads" aria-label="Forest Service roads opacity" /></label>
@@ -327,6 +363,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Kentucky Topo</span><input type="checkbox" data-fine-tune-layer="kytopo" aria-label="Toggle Kentucky Topo" /><input type="range" min="0" max="100" value="88" data-opacity="kytopo" aria-label="Kentucky Topo opacity" disabled /></label>
             <label><span>USGS Topo</span><input type="checkbox" data-fine-tune-layer="usgs-topo" checked aria-label="Toggle USGS Topo" /><input type="range" min="0" max="100" value="100" data-opacity="usgs-topo" aria-label="USGS Topo opacity" /></label>
             <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="75" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
+            <label><span>Snow / precipitation</span><input type="checkbox" data-fine-tune-layer="rrgh-weather" aria-label="Toggle snow / precipitation" /><input type="range" min="0" max="100" value="35" data-opacity="rrgh-weather" aria-label="Snow / precipitation opacity" disabled /></label>
             <label><span>Sunrise / Sunset Potential</span><input type="checkbox" data-fine-tune-layer="rrg-lidar-sun" aria-label="Toggle Sunrise / Sunset Potential" /><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" aria-label="Sunrise / Sunset Potential opacity" disabled /></label>
             <label><span>Leaf-on aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Leaf-on aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Leaf-on aerial imagery opacity" disabled /></label>
             <label><span>Leaf-off aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase2-leafoff" aria-label="Toggle Leaf-off aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase2-leafoff" aria-label="Leaf-off aerial imagery opacity" disabled /></label>
