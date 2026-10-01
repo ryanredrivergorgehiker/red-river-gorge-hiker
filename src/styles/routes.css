@@ -3088,6 +3088,52 @@
 }
 .route-map-loading-percent{font-size:.75rem;font-variant-numeric:tabular-nums;color:#536058}
 
+.route-map-activity-stack{
+  position:absolute;
+  z-index:945;
+  top:.78rem;
+  left:50%;
+  width:min(350px,calc(100% - 2rem));
+  display:grid;
+  gap:.5rem;
+  transform:translateX(-50%);
+  pointer-events:none;
+}
+.route-map-activity{
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr);
+  align-items:center;
+  gap:.65rem;
+  min-height:64px;
+  padding:.5rem .72rem;
+  border:1px solid rgba(23,55,45,.2);
+  border-radius:14px;
+  background:rgba(251,250,246,.96);
+  color:#17372d;
+  box-shadow:0 .35rem 1.25rem rgba(20,29,24,.22);
+  backdrop-filter:blur(10px);
+  animation:rrgh-map-activity-in .18s ease-out both;
+}
+.route-map-activity[hidden]{display:none!important}
+.route-map-activity strong{display:block;font-size:.84rem;line-height:1.2}
+.route-map-activity span{display:block;margin-top:.14rem;color:#59665f;font-size:.69rem;line-height:1.25}
+.route-map-activity-art{display:block;width:72px;height:44px;overflow:visible}
+.route-map-water-bank{fill:none;stroke:#657b68;stroke-width:2;stroke-linecap:round}
+.route-map-water-wave{fill:none;stroke:#2f7fa6;stroke-width:3;stroke-linecap:round;stroke-dasharray:17 7;animation:rrgh-water-flow 1.2s linear infinite}
+.route-map-water-wave-b{stroke:#3e91ba;animation-delay:-.35s}
+.route-map-water-wave-c{stroke:#5aa4c5;animation-delay:-.7s}
+.route-map-water-drop{fill:#2f7fa6;animation:rrgh-water-drop 1.25s ease-in-out infinite alternate}
+.route-map-water-drop-b{animation-delay:-.55s}
+.route-map-sun-horizon{fill:none;stroke:#776954;stroke-width:2.2;stroke-linecap:round}
+.route-map-sun-rays{fill:none;stroke:#df8a2f;stroke-width:2.8;stroke-linecap:round;transform-origin:56px 37px;animation:rrgh-sun-rays 1.35s ease-in-out infinite alternate}
+.route-map-sun-disc{fill:#f2a23c;stroke:#c87424;stroke-width:1.6;transform-box:fill-box;transform-origin:50% 50%;animation:rrgh-sun-rise 1.35s ease-in-out infinite alternate}
+.route-map-sun-mask{fill:#fbfaf6}
+@keyframes rrgh-map-activity-in{from{opacity:0;transform:translateY(-5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes rrgh-water-flow{to{stroke-dashoffset:-48}}
+@keyframes rrgh-water-drop{from{transform:translateY(-1px);opacity:.45}to{transform:translateY(3px);opacity:1}}
+@keyframes rrgh-sun-rise{from{transform:translateY(7px)}to{transform:translateY(-3px)}}
+@keyframes rrgh-sun-rays{from{opacity:.35;transform:scale(.9)}to{opacity:1;transform:scale(1.05)}}
+
 .route-map-shell[data-focus-mode="true"],
 .route-map-shell:fullscreen{
   position:fixed!important;
@@ -3116,6 +3162,11 @@
 }
 .route-map-shell[data-focus-mode="true"]~*{pointer-events:none}
 @media(max-width:700px){
+  .route-map-activity-stack{top:.55rem;width:min(310px,calc(100% - 1.2rem))}
+  .route-map-activity{grid-template-columns:58px minmax(0,1fr);min-height:58px;padding:.42rem .58rem}
+  .route-map-activity-art{width:58px;height:38px}
+  .route-map-activity strong{font-size:.78rem}
+  .route-map-activity span{font-size:.64rem}
   .route-map-mobile-topbar{
     grid-template-columns:minmax(0,1.25fr) repeat(3,minmax(0,.8fr));
   }
@@ -3127,6 +3178,7 @@
 @media(prefers-reduced-motion:reduce){
   .route-map-loading-trees .tree{animation:none!important}
   .route-map-loading-progress span{transition:none}
+  .route-map-activity,.route-map-water-wave,.route-map-water-drop,.route-map-sun-rays,.route-map-sun-disc{animation:none!important}
 }
 
 
