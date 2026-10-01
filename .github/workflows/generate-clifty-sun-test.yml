@@ -1,4 +1,5 @@
 name: Generate Clifty 1000-1100 ft sun test overlay
+# Owner-UAT regeneration trigger: isolated test layer; accepted 1100+ files remain locked.
 
 on:
   push:
