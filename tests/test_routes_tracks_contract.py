@@ -41,9 +41,9 @@ LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_
 RRG_LIDAR_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-manifest.json'
 RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-8'))
 RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
-RASTER_SUN_TEST_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-raster-test-manifest.json'
-RASTER_SUN_TEST_MANIFEST = json.loads(RASTER_SUN_TEST_MANIFEST_PATH.read_text(encoding='utf-8'))
-RASTER_SUN_TEST_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-raster-test.py').read_text(encoding='utf-8')
+CONTINUOUS_SUN_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-continuous-manifest.json'
+CONTINUOUS_SUN_MANIFEST = json.loads(CONTINUOUS_SUN_MANIFEST_PATH.read_text(encoding='utf-8'))
+CONTINUOUS_SUN_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-continuous.py').read_text(encoding='utf-8')
 SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
 
 
@@ -123,46 +123,49 @@ class RoutesTracksContractTests(unittest.TestCase):
             self.assertEqual(sha256(path), sector['geojsonSha256'])
             self.assertEqual(len(sector['demArraySha256']), 64)
 
-    def test_continuous_raster_sunlight_test_is_isolated_and_off_by_default(self):
-        manifest = RASTER_SUN_TEST_MANIFEST
-        self.assertEqual(manifest['version'], 'lidar-continuous-raster-gradient-test-v1')
-        self.assertEqual(manifest['status'], 'staging-owner-uat-only')
-        self.assertFalse(manifest['defaultEnabled'])
-        self.assertFalse(manifest['acceptedLayerModified'])
+    def test_continuous_raster_sunlight_is_promoted_without_changing_terrain_contract(self):
+        manifest = CONTINUOUS_SUN_MANIFEST
+        self.assertEqual(manifest['version'], 'lidar-continuous-gradient-v1')
+        self.assertEqual(manifest['status'], 'staging-promotion-candidate')
         self.assertEqual(manifest['minimumElevationFeet'], 1100.0)
-        presentation = manifest['presentationOnlyChange']
-        self.assertEqual(presentation['acceptedGradientBands'], 6)
-        self.assertEqual(presentation['testRendering'], 'continuous raster alpha WebP')
-        self.assertEqual(presentation['outerAlphaCutoff'], 0.15)
-        self.assertEqual(presentation['fullStrengthThreshold'], 0.85)
-        self.assertFalse(presentation['terrainQualificationChanged'])
-        self.assertFalse(presentation['hardLipGeometryChanged'])
-        self.assertTrue(presentation['acceptedHardLipReusedVerbatim'])
+        rendering = manifest['rendering']
+        self.assertEqual(rendering['gradient'], 'continuous raster alpha WebP')
+        self.assertTrue(rendering['separateSunriseSunsetRasters'])
+        self.assertEqual(rendering['outerAlphaCutoff'], 0.15)
+        self.assertEqual(rendering['fullStrengthThreshold'], 0.85)
+        self.assertFalse(rendering['terrainQualificationChanged'])
+        self.assertFalse(rendering['hardLipGeometryChanged'])
+        self.assertTrue(rendering['acceptedHardLipReusedVerbatim'])
         self.assertEqual(manifest['counts']['sectors'], RRG_LIDAR_MANIFEST['counts']['sectors'])
         self.assertGreater(manifest['counts']['rasterBytes'], 0)
         self.assertGreater(manifest['counts']['hardFeatures'], 0)
-        self.assertIn('OUTER_ALPHA_CUTOFF = 0.15', RASTER_SUN_TEST_GENERATOR)
-        self.assertIn('FULL_STRENGTH_ALPHA = 0.85', RASTER_SUN_TEST_GENERATOR)
-        self.assertIn('composite_rgba', RASTER_SUN_TEST_GENERATOR)
-        self.assertIn('Accepted Sunrise / Sunset Potential files changed', RASTER_SUN_TEST_GENERATOR)
+        self.assertIn('OUTER_ALPHA_CUTOFF = 0.15', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('FULL_STRENGTH_ALPHA = 0.85', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('rgba_for_kind', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('Accepted stepped sunlight files changed', CONTINUOUS_SUN_GENERATOR)
         for sector in manifest['sectors']:
-            raster = ROOT / 'public' / sector['rasterFile']
+            sunrise = ROOT / 'public' / sector['sunriseRasterFile']
+            sunset = ROOT / 'public' / sector['sunsetRasterFile']
             hard = ROOT / 'public' / sector['hardFile']
-            self.assertTrue(raster.is_file(), sector['rasterFile'])
+            self.assertTrue(sunrise.is_file(), sector['sunriseRasterFile'])
+            self.assertTrue(sunset.is_file(), sector['sunsetRasterFile'])
             self.assertTrue(hard.is_file(), sector['hardFile'])
-            self.assertEqual(sha256(raster), sector['rasterSha256'])
+            self.assertEqual(sha256(sunrise), sector['sunriseRasterSha256'])
+            self.assertEqual(sha256(sunset), sector['sunsetRasterSha256'])
             self.assertEqual(sha256(hard), sector['hardSha256'])
 
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
-        self.assertIn('data-map-layer="rrg-lidar-sun-raster-test"', base_markup)
-        self.assertIn('TEST</strong> — Smooth sunlight gradient (continuous)', base_markup)
-        self.assertNotIn('data-map-layer="rrg-lidar-sun-raster-test" checked', MAP)
-        self.assertIn("const rasterSunTestLayerId = 'rrg-lidar-sun-raster-test'", MAP)
-        self.assertIn('data/map/rrg-lidar-sun-raster-test-manifest.json', MAP)
+        self.assertNotIn('TEST</strong> — Smooth sunlight gradient', base_markup)
+        self.assertNotIn('Off by default. Same accepted 1,100+', base_markup)
+        self.assertNotIn('data-map-layer="rrg-lidar-sun-raster-test"', base_markup)
+        self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
+        self.assertIn('data/map/rrg-lidar-sun-continuous-manifest.json', MAP)
+        self.assertIn('sunriseRasterFile', MAP)
+        self.assertIn('sunsetRasterFile', MAP)
         self.assertIn('L.imageOverlay(', MAP)
-        self.assertIn('loadedRasterSunTestSectorIds', MAP)
-        self.assertIn('container.dataset.rasterSunTestImageCount', MAP)
-        self.assertIn("presentationOnlyChange?.testRendering !== 'continuous raster alpha WebP'", MAP)
+        self.assertIn('container.dataset.rrgLidarSunImageCount', MAP)
+        self.assertIn("rendering?.gradient !== 'continuous raster alpha WebP'", MAP)
+        self.assertIn("rendering?.separateSunriseSunsetRasters !== true", MAP)
 
     def test_sunrise_sunset_potential_is_off_by_default_and_sector_loaded(self):
         base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
@@ -171,11 +174,12 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
         self.assertIn('data-fine-tune-layer="rrg-lidar-sun"', MAP)
         self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
-        self.assertIn("data/map/rrg-lidar-sun-manifest.json", MAP)
+        self.assertIn("data/map/rrg-lidar-sun-continuous-manifest.json", MAP)
         self.assertIn("loadedGorgeSectorIds", MAP)
         self.assertIn("map.getBounds().pad(0.35)", MAP)
         self.assertIn("container.dataset.rrgLidarSunLoadedSectors", MAP)
-        self.assertIn("container.dataset.rrgLidarSunFeatureCount", MAP)
+        self.assertIn("container.dataset.rrgLidarSunImageCount", MAP)
+        self.assertIn("container.dataset.rrgLidarSunHardFeatureCount", MAP)
         self.assertNotIn('Potential does not guarantee standing room', MAP)
         self.assertIn("const aerialLayerIds = new Set(['kyaerial-phase3', 'kyaerial-phase2-leafoff'])", MAP)
         self.assertIn("setLayerControl('ky-hillshade', true, 100)", MAP)
