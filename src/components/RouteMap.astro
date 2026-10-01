@@ -262,11 +262,11 @@ const enabledSources = enabledBrowserMapSources;
             <span>Sunset Potential</span>
           </label>
           <label class="route-layer-toggle-row route-layer-toggle-child" title="Staging-only comparison. The accepted six-band sunlight layer is unchanged.">
-            <input type="checkbox" data-map-layer="rrg-lidar-sun-smooth-test" />
+            <input type="checkbox" data-map-layer="rrg-lidar-sun-raster-test" />
             <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span><strong>TEST</strong> — Smooth sunlight gradient (12-band)</span>
+            <span><strong>TEST</strong> — Smooth sunlight gradient (continuous)</span>
           </label>
-          <p class="route-layer-source-note">Off by default. Same accepted 1,100+ terrain model and hard rim lip; only the fade is split into 12 steps instead of 6. Turn the accepted sunlight layer off for a clean comparison.</p>
+          <p class="route-layer-source-note">Off by default. Same accepted 1,100+ terrain model, cutoff, colors, and hard rim lip. The fade itself is rendered as continuous transparent raster instead of stepped vector polygons. Turn the accepted sunlight layer off for a clean comparison.</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -1286,98 +1286,129 @@ const enabledSources = enabledBrowserMapSources;
       if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
     });
 
-    // Staging-only owner UAT: a presentation duplicate of the accepted 1,100+
-    // sunlight model using twelve fade bands instead of six. It is deliberately
-    // independent so the accepted layer can remain completely untouched.
-    const smoothSunTestLayerId = 'rrg-lidar-sun-smooth-test';
-    const smoothSunTestLayer = L.layerGroup();
-    const loadedSmoothSunTestSectorIds = new Set<string>();
-    let smoothSunTestManifest: any = null;
-    let smoothSunTestManifestPromise: Promise<any> | null = null;
-    let smoothSunTestFeatureCount = 0;
+    // Staging-only owner UAT: continuous-raster presentation duplicate of the
+    // accepted 1,100+ sunlight model. The accepted six-band vector layer remains
+    // untouched; this test reuses its hard rim-lip vectors verbatim.
+    const rasterSunTestLayerId = 'rrg-lidar-sun-raster-test';
+    const rasterSunTestLayer = L.layerGroup();
+    const rasterSunTestImages: any[] = [];
+    const rasterSunTestHardPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset' }> = [];
+    const loadedRasterSunTestSectorIds = new Set<string>();
+    let rasterSunTestManifest: any = null;
+    let rasterSunTestManifestPromise: Promise<any> | null = null;
+    let rasterSunTestHardFeatureCount = 0;
 
-    mapLayers.set(smoothSunTestLayerId, smoothSunTestLayer);
-    syncVisibility(smoothSunTestLayerId);
+    const syncRasterSunTestOpacity = (value = opacity(rasterSunTestLayerId)) => {
+      rasterSunTestImages.forEach((overlay) => overlay.setOpacity(value));
+      rasterSunTestHardPaths.forEach((item) => {
+        item.layer.setStyle(sunPotentialStyle(item.kind, 1, true, value));
+      });
+    };
 
-    const loadSmoothSunTestManifest = async () => {
-      if (smoothSunTestManifest) return smoothSunTestManifest;
-      if (!smoothSunTestManifestPromise) {
-        smoothSunTestManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-smooth-test-manifest.json', {
+    mapLayers.set(rasterSunTestLayerId, rasterSunTestLayer);
+    opacitySetters.set(rasterSunTestLayerId, (value) => syncRasterSunTestOpacity(value));
+    syncVisibility(rasterSunTestLayerId);
+
+    const loadRasterSunTestManifest = async () => {
+      if (rasterSunTestManifest) return rasterSunTestManifest;
+      if (!rasterSunTestManifestPromise) {
+        rasterSunTestManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-raster-test-manifest.json', {
           credentials: 'same-origin',
           cache: 'no-cache'
         }).then(async (response) => {
-          if (!response.ok) throw new Error('Smooth sunlight TEST manifest HTTP ' + response.status);
-          smoothSunTestManifest = await response.json();
+          if (!response.ok) throw new Error('Continuous sunlight TEST manifest HTTP ' + response.status);
+          rasterSunTestManifest = await response.json();
           if (
-            smoothSunTestManifest?.acceptedLayerModified !== false ||
-            smoothSunTestManifest?.defaultEnabled !== false ||
-            Number(smoothSunTestManifest?.minimumElevationFeet) !== 1100 ||
-            Number(smoothSunTestManifest?.presentationOnlyChange?.testGradientBands) !== 12 ||
-            smoothSunTestManifest?.presentationOnlyChange?.terrainQualificationChanged !== false ||
-            smoothSunTestManifest?.presentationOnlyChange?.hardLipGeometryChanged !== false
+            rasterSunTestManifest?.acceptedLayerModified !== false ||
+            rasterSunTestManifest?.defaultEnabled !== false ||
+            Number(rasterSunTestManifest?.minimumElevationFeet) !== 1100 ||
+            rasterSunTestManifest?.presentationOnlyChange?.testRendering !== 'continuous raster alpha WebP' ||
+            rasterSunTestManifest?.presentationOnlyChange?.terrainQualificationChanged !== false ||
+            rasterSunTestManifest?.presentationOnlyChange?.hardLipGeometryChanged !== false ||
+            rasterSunTestManifest?.presentationOnlyChange?.acceptedHardLipReusedVerbatim !== true
           ) {
-            throw new Error('Smooth sunlight TEST manifest failed isolation contract.');
+            throw new Error('Continuous sunlight TEST manifest failed isolation contract.');
           }
-          container.dataset.smoothSunTestSectorCount = String(Array.isArray(smoothSunTestManifest?.sectors) ? smoothSunTestManifest.sectors.length : 0);
-          return smoothSunTestManifest;
+          container.dataset.rasterSunTestSectorCount = String(Array.isArray(rasterSunTestManifest?.sectors) ? rasterSunTestManifest.sectors.length : 0);
+          return rasterSunTestManifest;
         });
       }
-      return smoothSunTestManifestPromise;
+      return rasterSunTestManifestPromise;
     };
 
-    const loadVisibleSmoothSunTestSectors = async () => {
-      if (!checked(smoothSunTestLayerId)) return;
+    const loadVisibleRasterSunTestSectors = async () => {
+      if (!checked(rasterSunTestLayerId)) return;
       try {
-        const manifest = await loadSmoothSunTestManifest();
+        const manifest = await loadRasterSunTestManifest();
         const view = map.getBounds().pad(0.35);
         const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
         for (const sector of sectors) {
           const id = String(sector?.id ?? '');
           const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
-          const file = String(sector?.file ?? '');
-          if (!id || bounds.length !== 4 || !file || loadedSmoothSunTestSectorIds.has(id)) continue;
+          const rasterFile = String(sector?.rasterFile ?? '');
+          const hardFile = String(sector?.hardFile ?? '');
+          if (!id || bounds.length !== 4 || !rasterFile || !hardFile || loadedRasterSunTestSectorIds.has(id)) continue;
           const [west, south, east, north] = bounds.map(Number);
           const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
           if (!view.intersects(sectorBounds)) continue;
 
-          loadedSmoothSunTestSectorIds.add(id);
+          loadedRasterSunTestSectorIds.add(id);
           try {
-            const response = await fetch(import.meta.env.BASE_URL + file, {
+            const overlay = L.imageOverlay(
+              import.meta.env.BASE_URL + rasterFile,
+              sectorBounds,
+              {
+                pane: 'lidarSun',
+                opacity: opacity(rasterSunTestLayerId),
+                interactive: false
+              }
+            );
+            overlay.addTo(rasterSunTestLayer);
+            rasterSunTestImages.push(overlay);
+
+            const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
               credentials: 'same-origin',
               cache: 'no-cache'
             });
-            if (!response.ok) throw new Error('Smooth sunlight TEST sector ' + id + ' HTTP ' + response.status);
-            const data = await response.json();
-            const sectorLayer = L.geoJSON(data, {
+            if (!hardResponse.ok) throw new Error('Continuous sunlight TEST hard sector ' + id + ' HTTP ' + hardResponse.status);
+            const hardData = await hardResponse.json();
+            const hardLayer = L.geoJSON(hardData, {
               pane: 'lidarSun',
               interactive: false,
               style: (feature: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                const strength = Number(feature?.properties?.strength ?? 0);
-                const hard = feature?.properties?.hard === true;
-                return sunPotentialStyle(kind, strength, hard, 1);
+                return sunPotentialStyle(kind, 1, true, opacity(rasterSunTestLayerId));
+              },
+              onEachFeature: (feature: any, layer: any) => {
+                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                rasterSunTestHardPaths.push({ layer, kind });
               }
             });
-            sectorLayer.addTo(smoothSunTestLayer);
-            smoothSunTestFeatureCount += Array.isArray(data?.features) ? data.features.length : 0;
+            hardLayer.addTo(rasterSunTestLayer);
+            rasterSunTestHardFeatureCount += Array.isArray(hardData?.features) ? hardData.features.length : 0;
           } catch (error) {
-            loadedSmoothSunTestSectorIds.delete(id);
+            loadedRasterSunTestSectorIds.delete(id);
             throw error;
           }
         }
-        container.dataset.smoothSunTestLoadedSectors = String(loadedSmoothSunTestSectorIds.size);
-        container.dataset.smoothSunTestFeatureCount = String(smoothSunTestFeatureCount);
-        syncVisibility(smoothSunTestLayerId);
+        container.dataset.rasterSunTestLoadedSectors = String(loadedRasterSunTestSectorIds.size);
+        container.dataset.rasterSunTestImageCount = String(rasterSunTestImages.length);
+        container.dataset.rasterSunTestHardFeatureCount = String(rasterSunTestHardFeatureCount);
+        syncVisibility(rasterSunTestLayerId);
+        syncRasterSunTestOpacity();
       } catch (error) {
         console.error(error);
-        container.dataset.smoothSunTestLoadError = 'true';
+        container.dataset.rasterSunTestLoadError = 'true';
       }
     };
 
-    map.on('moveend', () => {
-      if (checked(smoothSunTestLayerId)) void loadVisibleSmoothSunTestSectors();
+    void loadRasterSunTestManifest().catch((error) => {
+      console.error(error);
+      container.dataset.rasterSunTestLoadError = 'true';
     });
-
+    map.on('moveend', () => {
+      if (checked(rasterSunTestLayerId)) void loadVisibleRasterSunTestSectors();
+    });
 
     const oilGasLayerId = 'kgs-oil-gas-wells';
     const oilGasServiceUrl = 'https://kgs.uky.edu/arcgis/rest/services/KYOilGas/KYOilGasWells_static_WGS84/MapServer/1/query';
@@ -3728,7 +3759,7 @@ const enabledSources = enabledBrowserMapSources;
     const applyPreset = (name: string) => {
       clearPresetState();
       // Experimental comparison layers never carry across presets.
-      setLayerControl(smoothSunTestLayerId, false);
+      setLayerControl(rasterSunTestLayerId, false);
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
       if (stage && name === 'sunlight') stage.dataset.sunlightMode = 'true';
 
@@ -3820,9 +3851,9 @@ const enabledSources = enabledBrowserMapSources;
 
         if (id === gorgeLayerId) {
           setSunKinds(checkbox.checked);
-        } else if (id === smoothSunTestLayerId) {
+        } else if (id === rasterSunTestLayerId) {
           syncVisibility(id);
-          if (checkbox.checked) await loadVisibleSmoothSunTestSectors();
+          if (checkbox.checked) await loadVisibleRasterSunTestSectors();
         } else if (id === oilGasLayerId) {
           setOilGasKinds(checkbox.checked);
         } else if (id === localRoadLayerId) {
