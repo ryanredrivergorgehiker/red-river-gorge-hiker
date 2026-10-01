@@ -43,6 +43,8 @@ RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-
 RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
 CLIFTY_SUN_TEST_GENERATOR = (ROOT / 'scripts/generate-clifty-sun-test.py').read_text(encoding='utf-8')
 CLIFTY_SUN_TEST_WORKFLOW = (ROOT / '.github/workflows/generate-clifty-sun-test.yml').read_text(encoding='utf-8')
+CLIFTY_SUN_TEST_MANIFEST_PATH = ROOT / 'public/data/map/clifty-sun-1000-1100-test-manifest.json'
+CLIFTY_SUN_TEST_MANIFEST = json.loads(CLIFTY_SUN_TEST_MANIFEST_PATH.read_text(encoding='utf-8'))
 SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
 
 
@@ -163,6 +165,23 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('acceptedLayerModified !== false', MAP)
         self.assertEqual(MAP.count('setLayerControl(cliftySunTestLayerId, false, 100);'), 4)
         self.assertNotIn('data-map-layer="clifty-sun-1000-1100-test" checked', MAP)
+
+        manifest = CLIFTY_SUN_TEST_MANIFEST
+        self.assertEqual(manifest['version'], 'clifty-1000-1100-test-v1')
+        self.assertEqual(manifest['status'], 'staging-owner-uat-only')
+        self.assertFalse(manifest['defaultEnabled'])
+        self.assertFalse(manifest['acceptedLayerModified'])
+        self.assertEqual(manifest['elevationBandFeet']['minimumInclusive'], 1000.0)
+        self.assertEqual(manifest['elevationBandFeet']['maximumExclusive'], 1100.0)
+        self.assertFalse(manifest['scope']['usesWholeCliftyWilderness'])
+        self.assertLess(manifest['scope']['combinedCliftyAreaFraction'], 0.80)
+        self.assertGreater(manifest['counts']['sectors'], 0)
+        self.assertGreater(manifest['counts']['features'], 0)
+        for sector in manifest['sectors']:
+            output = ROOT / 'public' / sector['file']
+            self.assertTrue(output.is_file(), sector['file'])
+            self.assertEqual(sha256(output), sector['geojsonSha256'])
+        self.assertEqual(RRG_LIDAR_MANIFEST['minimumElevationFeet'], 1100.0)
 
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
