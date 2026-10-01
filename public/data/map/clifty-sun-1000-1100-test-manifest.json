@@ -1,0 +1,363 @@
+{
+  "acceptedGeneratorSha256": "8555cd078ca90a985f53181bfc79229b245d23caf5dd1a4a463ad6c9d20860f1",
+  "acceptedLayerModified": false,
+  "acceptedOverlayFingerprintSha256": "f4c6cd3bef1f606c10a4cd5082863e9c2dfde281b49c992e46130dafdec827c1",
+  "algorithm": {
+    "onlyThresholdDifference": "accepted algorithm evaluated from 1,000 ft, then output restricted to cells below 1,100 ft",
+    "sameTerrainRulesAsAcceptedLayer": true,
+    "source": "scripts/generate-rrg-lidar-sun.py"
+  },
+  "counts": {
+    "features": 14413,
+    "sectors": 11
+  },
+  "defaultEnabled": false,
+  "disclaimer": "Staging test supplement only. Terrain-only heuristic for owner comparison. The accepted 1,100+ Sunrise / Sunset Potential layer is unchanged.",
+  "elevationBandFeet": {
+    "maximumExclusive": 1100.0,
+    "minimumInclusive": 1000.0
+  },
+  "scope": {
+    "combinedCliftyAreaFraction": 0.5809222952735714,
+    "douglasGeometrySource": "RRGH-hosted OSM Community / Informal trail cache fallback",
+    "osborneEnvelopeCenterWgs84": [
+      -83.57914971795586,
+      37.837284340099686
+    ],
+    "osborneGeometrySource": "USDA Forest Service NFS Trails",
+    "osborneNortheastCliftyAreaFraction": 0.15458971702144397,
+    "southOfDouglasCliftyAreaFraction": 0.4263325782521281,
+    "usesWholeCliftyWilderness": false,
+    "wilderness": "Clifty Wilderness",
+    "zoneA": "Official Clifty Wilderness south side of Douglas Trail, split by the extended Douglas Trail line",
+    "zoneB": "Official Clifty Wilderness northeast quadrant from the Osborne Bend Loop envelope center"
+  },
+  "sectors": [
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.89,
+        -83.565,
+        37.93
+      ],
+      "demArraySha256": "e6eaaad78ae9c32c1a4b060712dcb5723500015391ce4f8538a5ffbcb9b99d56",
+      "features": 314,
+      "file": "data/map/clifty-sun-1000-1100-test/ring-r1c4.geojson",
+      "geojsonSha256": "5cb518b4b37eb7cbf698e5b04a06a033ace9a92621a06b1406e6da54c5f22836",
+      "id": "ring-r1c4",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4563718.135113,-9302233.248140,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "sunriseGradientCells": 72326,
+      "sunriseHardCells": 11072,
+      "sunsetGradientCells": 72300,
+      "sunsetHardCells": 10882
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.89,
+        -83.52000000000001,
+        37.93
+      ],
+      "demArraySha256": "4930f8b819081d64952c29e9634c194b86df6af2a96de7711406b4cae52c23ea",
+      "features": 178,
+      "file": "data/map/clifty-sun-1000-1100-test/ring-r1c5.geojson",
+      "geojsonSha256": "5e88d1114decfb5dc08fab17d33a99ba76030276917ece7ab58754a54bc7e13c",
+      "id": "ring-r1c5",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4563718.135113,-9297223.871054,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "sunriseGradientCells": 31390,
+      "sunriseHardCells": 3817,
+      "sunsetGradientCells": 37629,
+      "sunsetHardCells": 4243
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.85,
+        -83.565,
+        37.89
+      ],
+      "demArraySha256": "4845bd53beee09c583ef3cca550ae960218ce00ec60e0db78124de46722f44fe",
+      "features": 1042,
+      "file": "data/map/clifty-sun-1000-1100-test/r1c3.geojson",
+      "geojsonSha256": "70d792df3969bc622a58117e412b872dfaa447fcab5528396faa137f4e39be32",
+      "id": "r1c3",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4558077.460986,-9302233.248140,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "sunriseGradientCells": 158118,
+      "sunriseHardCells": 25826,
+      "sunsetGradientCells": 152482,
+      "sunsetHardCells": 24971
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.85,
+        -83.52000000000001,
+        37.89
+      ],
+      "demArraySha256": "25aea482ab7395624dba21cbde274ea8332242f950a0cb6636a7b895782bad5b",
+      "features": 682,
+      "file": "data/map/clifty-sun-1000-1100-test/r1c4.geojson",
+      "geojsonSha256": "4c578af27f99c1e52f2019ffc938c11404ff65c7a2df576b6f35a18d4ce6105a",
+      "id": "r1c4",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4558077.460986,-9297223.871054,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "sunriseGradientCells": 101699,
+      "sunriseHardCells": 9954,
+      "sunsetGradientCells": 108341,
+      "sunsetHardCells": 10358
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.81,
+        -83.565,
+        37.85
+      ],
+      "demArraySha256": "22f7f08ed134f166daaf4646f9a92d74068c53911c33a0d61b635c67bad5d0c1",
+      "features": 1585,
+      "file": "data/map/clifty-sun-1000-1100-test/r2c3.geojson",
+      "geojsonSha256": "611fbecf7ac52e60ad486400c53d97a63ceefc16e76c8f9031f40094d31b0840",
+      "id": "r2c3",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4552439.846113,-9302233.248140,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "sunriseGradientCells": 268833,
+      "sunriseHardCells": 38210,
+      "sunsetGradientCells": 280934,
+      "sunsetHardCells": 38961
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.81,
+        -83.52000000000001,
+        37.85
+      ],
+      "demArraySha256": "d7c2355fd0d325c91ec3018e4b28b6ce7b19ee4ae0f1c834f461868b38dc1331",
+      "features": 1364,
+      "file": "data/map/clifty-sun-1000-1100-test/r2c4.geojson",
+      "geojsonSha256": "f790b9af7354d48ba52015fe2132164f61c2912f764d85e3f4750f07123fc5ad",
+      "id": "r2c4",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4552439.846113,-9297223.871054,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "sunriseGradientCells": 289572,
+      "sunriseHardCells": 12658,
+      "sunsetGradientCells": 298897,
+      "sunsetHardCells": 13134
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.77,
+        -83.61,
+        37.81
+      ],
+      "demArraySha256": "76e3da469bb6ff0ccb5a0a2cc8ed8edf0b4761053a548c69267aac8576793f1b",
+      "features": 2,
+      "file": "data/map/clifty-sun-1000-1100-test/r3c2.geojson",
+      "geojsonSha256": "0de833af0b1e0122264e3c94a3f25326725f7cb59a8cf7148d9cea2f9274cab1",
+      "id": "r3c2",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4546805.284430,-9307242.625226,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "sunriseGradientCells": 351789,
+      "sunriseHardCells": 30684,
+      "sunsetGradientCells": 343186,
+      "sunsetHardCells": 29958
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.77,
+        -83.565,
+        37.81
+      ],
+      "demArraySha256": "89512db3c1892c78a1f7b901588fc0d0f0e858ec68ec8ae1e059be68b5672b35",
+      "features": 7924,
+      "file": "data/map/clifty-sun-1000-1100-test/r3c3.geojson",
+      "geojsonSha256": "deba94c8e9e641c44e71eb271bdda1cb28adf05915701b69c0794502230eb93c",
+      "id": "r3c3",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4546805.284430,-9302233.248140,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "sunriseGradientCells": 396103,
+      "sunriseHardCells": 44327,
+      "sunsetGradientCells": 402313,
+      "sunsetHardCells": 38439
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.77,
+        -83.52000000000001,
+        37.81
+      ],
+      "demArraySha256": "0de0ebb05ad2294202e57cb392578630a3f2d7017c73739dc135bc6ff14c07cc",
+      "features": 1266,
+      "file": "data/map/clifty-sun-1000-1100-test/r3c4.geojson",
+      "geojsonSha256": "445c2b443b2d600ad699a8e5f0fb3b30d8da67ea67f63ce9d277b4830684898c",
+      "id": "r3c4",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4546805.284430,-9297223.871054,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "sunriseGradientCells": 234843,
+      "sunriseHardCells": 10608,
+      "sunsetGradientCells": 254184,
+      "sunsetHardCells": 10757
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.73,
+        -83.565,
+        37.77
+      ],
+      "demArraySha256": "9dfd1ca35755578bd5e06f0493e96f52239044c5638d7289f05499a80789a5ad",
+      "features": 56,
+      "file": "data/map/clifty-sun-1000-1100-test/ring-r5c4.geojson",
+      "geojsonSha256": "ddc8ae25810fa9f7a7bbd9a4eff53ec86ef1fca89cb9f7e05cc0d757be73ff1d",
+      "id": "ring-r5c4",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4541173.769891,-9302233.248140,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "sunriseGradientCells": 170674,
+      "sunriseHardCells": 15887,
+      "sunsetGradientCells": 179227,
+      "sunsetHardCells": 15841
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.73,
+        -83.52000000000001,
+        37.77
+      ],
+      "demArraySha256": "9055266e9b90e56c2269ee3cc5b472eb84e8c873bd9683a128c359e3d7f24496",
+      "features": 0,
+      "file": "data/map/clifty-sun-1000-1100-test/ring-r5c5.geojson",
+      "geojsonSha256": "f91b71b0ade81272cd37f206889f3c97e1d00994972e7f348e3a22e45c1919f3",
+      "id": "ring-r5c5",
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4541173.769891,-9297223.871054,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "sunriseGradientCells": 172037,
+      "sunriseHardCells": 10591,
+      "sunsetGradientCells": 190138,
+      "sunsetHardCells": 9909
+    }
+  ],
+  "source": {
+    "dem": "KyFromAbove Phase 2 2-foot LiDAR-derived bare-earth DEM",
+    "trailService": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublishWithDataStatus_01/MapServer/0",
+    "wildernessBoundary": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_Wilderness_01/MapServer/0"
+  },
+  "status": "staging-owner-uat-only",
+  "version": "clifty-1000-1100-test-v1"
+}
