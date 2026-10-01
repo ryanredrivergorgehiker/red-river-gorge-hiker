@@ -41,6 +41,8 @@ LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_
 RRG_LIDAR_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-manifest.json'
 RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-8'))
 RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
+CLIFTY_SUN_TEST_GENERATOR = (ROOT / 'scripts/generate-clifty-sun-test.py').read_text(encoding='utf-8')
+CLIFTY_SUN_TEST_WORKFLOW = (ROOT / '.github/workflows/generate-clifty-sun-test.yml').read_text(encoding='utf-8')
 SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
 
 
@@ -140,6 +142,27 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunrise\"", MAP)
         self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunset\"", MAP)
         self.assertIn("rrghSun", MAP)
+
+    def test_clifty_1000_1100_sun_test_is_isolated_and_off_by_default(self):
+        self.assertIn('LOW_ELEVATION_FT = 1000.0', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('HIGH_ELEVATION_FT = 1100.0', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('scripts/generate-rrg-lidar-sun.py', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('accepted_overlay_fingerprint', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('Accepted 1,100+ Sunrise / Sunset Potential files changed during test generation', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('Douglas Trail divider did not split Clifty Wilderness; refusing broad test scope', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('Combined test scope covers too much of Clifty Wilderness', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('public/data/map/clifty-sun-1000-1100-test', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('public/data/map/clifty-sun-1000-1100-test-manifest.json', CLIFTY_SUN_TEST_GENERATOR)
+        self.assertIn('Prove accepted 1100+ layer is untouched', CLIFTY_SUN_TEST_WORKFLOW)
+        self.assertIn('diff -u /tmp/accepted-sun-before.sha256 /tmp/accepted-sun-after.sha256', CLIFTY_SUN_TEST_WORKFLOW)
+        self.assertIn('data-map-layer="clifty-sun-1000-1100-test"', MAP)
+        self.assertIn('<strong>TEST</strong> — Clifty 1,000–1,100 ft supplement', MAP)
+        self.assertIn('data-fine-tune-layer="clifty-sun-1000-1100-test"', MAP)
+        self.assertIn("const cliftySunTestLayerId = 'clifty-sun-1000-1100-test'", MAP)
+        self.assertIn("data/map/clifty-sun-1000-1100-test-manifest.json", MAP)
+        self.assertIn('acceptedLayerModified !== false', MAP)
+        self.assertEqual(MAP.count('setLayerControl(cliftySunTestLayerId, false, 100);'), 4)
+        self.assertNotIn('data-map-layer="clifty-sun-1000-1100-test" checked', MAP)
 
     def test_skybridge_public_package_identity(self):
         self.assertEqual(ROUTE['routeId'], 'RTE-0001')
