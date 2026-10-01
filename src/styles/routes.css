@@ -3128,3 +3128,26 @@
   .route-map-loading-trees .tree{animation:none!important}
   .route-map-loading-progress span{transition:none}
 }
+
+
+/* Terrain analysis tools — staging */
+.route-plan-mode-buttons{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.route-plan-mode-buttons button{
+  min-width:0;
+  line-height:1.15;
+}
+@media(min-width:701px){
+  .route-plan-mode-buttons button:last-child{grid-column:1/-1}
+}
+.rrgh-planning-distance-label.is-area-total span{
+  background:#147268!important;color:#fff!important;
+}
+.rrgh-planning-distance-label.is-bearing span{
+  background:#6c3e8d!important;color:#fff!important;
+}
+@media(max-width:700px){
+  .route-plan-mode-buttons{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}

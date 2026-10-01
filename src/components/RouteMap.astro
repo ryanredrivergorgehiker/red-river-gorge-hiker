@@ -394,6 +394,9 @@ const enabledSources = enabledBrowserMapSources;
       </div>
       <div class="route-plan-mode-buttons">
         <button type="button" data-map-tool="measure" data-ready-group="core" aria-pressed="false" disabled>Measure distance</button>
+        <button type="button" data-map-tool="area" data-ready-group="core" aria-pressed="false" disabled>Measure area</button>
+        <button type="button" data-map-tool="bearing" data-ready-group="core" aria-pressed="false" disabled>Bearing / slope</button>
+        <button type="button" data-map-tool="watershed" data-ready-group="core" aria-pressed="false" disabled>Watershed</button>
         <button type="button" data-map-tool="plan" data-ready-group="planning" aria-pressed="false" disabled>Build trail route</button>
       </div>
       <div class="route-plan-actions">
@@ -408,9 +411,12 @@ const enabledSources = enabledBrowserMapSources;
       </div>
       <div class="route-plan-help" data-plan-help>
         <ul>
-          <li>Measure distance: click or tap points to measure a straight-line distance.</li>
+          <li>Measure distance: click or tap points for distance and elevation change.</li>
+          <li>Measure area: outline a place to calculate acres, square miles and perimeter.</li>
+          <li>Bearing / slope: choose two points for bearing, grade and slope angle.</li>
+          <li>Watershed: choose an outlet point to request an approximate USGS StreamStats drainage basin.</li>
           <li>Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.</li>
-          <li>Use Undo / Redo as you edit, or Clear to start over.</li>
+          <li>Use Undo / Redo for line/route editing, or Clear to start over.</li>
         </ul>
       </div>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
@@ -419,10 +425,10 @@ const enabledSources = enabledBrowserMapSources;
           <span data-plan-stats-note>Elevation updates after two points.</span>
         </div>
         <div class="route-plan-live-stats-grid">
-          <span><small>Distance</small><strong data-plan-stats-distance>—</strong></span>
-          <span><small>Gain</small><strong data-plan-stats-gain>—</strong></span>
-          <span><small>Loss</small><strong data-plan-stats-loss>—</strong></span>
-          <span><small>Elevation</small><strong data-plan-stats-range>—</strong></span>
+          <span><small data-plan-stat-label="a">Distance</small><strong data-plan-stats-distance>—</strong></span>
+          <span><small data-plan-stat-label="b">Gain</small><strong data-plan-stats-gain>—</strong></span>
+          <span><small data-plan-stat-label="c">Loss</small><strong data-plan-stats-loss>—</strong></span>
+          <span><small data-plan-stat-label="d">Elevation</small><strong data-plan-stats-range>—</strong></span>
         </div>
       </div>
     </div>
@@ -499,7 +505,7 @@ const enabledSources = enabledBrowserMapSources;
   </div>
 
   <div class="route-map-context-strip">
-    <p><strong>Map data:</strong> Kentucky GIS · USGS · USDA Forest Service · OpenStreetMap.</p>
+    <p><strong>Map data:</strong> Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · OpenStreetMap.</p>
     <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
     <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#current-conditions'}>Before you go: check closures, road access &amp; conditions →</a></p>
     <p><a href={import.meta.env.BASE_URL + 'copyright-and-terms/#outdoor-safety-location-disclaimer'}>Outdoor safety and location disclaimer →</a></p>
@@ -512,7 +518,7 @@ const enabledSources = enabledBrowserMapSources;
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
       <p><strong>Sunrise / Sunset Potential:</strong> terrain-only estimate above 1,100 ft. Solid coral/indigo starts at directional exposed rims and fades toward the local ridge crest. “Potential” means likely exposure, not guaranteed access, safety, standing room, vegetation clearance, or a usable viewpoint.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
-      <p><strong>Official trails:</strong> bright cyan pill-dashed lines with a dark casing from USDA Forest Service data.</p>
+      <p><strong>Official trails:</strong> magenta pill-dashed lines show Kentucky State Park trails; bright cyan pill-dashed lines show USDA Forest Service trails. Where the two overlap, the State Park trail is drawn on top.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
       <p><strong>Community / informal trails:</strong> light dashed lines with a dark casing, kept visually separate from official trails, roads, land-management boundaries, and the solid RRGH route palette.</p>
       <p><strong>Roads:</strong> bright yellow pill-dashed lines show Forest Service roads. In Terrain or Aerial view, optional thin muted lines show Local / old roads from Census TIGERweb plus cached OpenStreetMap road context at close zoom. Their status is uncertain; they are roads, not trails, and may be abandoned, gated, closed, or no longer passable.</p>
@@ -704,7 +710,8 @@ const enabledSources = enabledBrowserMapSources;
     const planMobileHistory = shell.querySelector<HTMLElement>('[data-plan-mobile-history]');
     const planMobileUndo = shell.querySelector<HTMLButtonElement>('[data-plan-mobile-action="undo"]');
     const planMobileRedo = shell.querySelector<HTMLButtonElement>('[data-plan-mobile-action="redo"]');
-    let activeTool: 'measure' | 'plan' | null = null;
+    type ActiveMapTool = 'measure' | 'area' | 'bearing' | 'watershed' | 'plan' | null;
+    let activeTool: ActiveMapTool = null;
     const sharePanel = shell.querySelector<HTMLElement>('[data-map-sheet="share"]');
     const shareUrlInput = shell.querySelector<HTMLInputElement>('[data-share-url]');
     const shareDescription = shell.querySelector<HTMLElement>('[data-share-description]');
@@ -728,6 +735,10 @@ const enabledSources = enabledBrowserMapSources;
     const planStatsGain = shell.querySelector<HTMLElement>('[data-plan-stats-gain]');
     const planStatsLoss = shell.querySelector<HTMLElement>('[data-plan-stats-loss]');
     const planStatsRange = shell.querySelector<HTMLElement>('[data-plan-stats-range]');
+    const planStatLabelA = shell.querySelector<HTMLElement>('[data-plan-stat-label="a"]');
+    const planStatLabelB = shell.querySelector<HTMLElement>('[data-plan-stat-label="b"]');
+    const planStatLabelC = shell.querySelector<HTMLElement>('[data-plan-stat-label="c"]');
+    const planStatLabelD = shell.querySelector<HTMLElement>('[data-plan-stat-label="d"]');
     const planHelp = shell.querySelector<HTMLElement>('[data-plan-help]');
     const coordinateSunToday = shell.querySelector<HTMLElement>('[data-coordinate-sun-today]');
     const coordinateSunriseToday = shell.querySelector<HTMLElement>('[data-coordinate-sunrise-today]');
@@ -4009,7 +4020,13 @@ const enabledSources = enabledBrowserMapSources;
             ? 'Build trail route'
             : activeTool === 'measure'
               ? 'Measure distance'
-              : 'Plan';
+              : activeTool === 'area'
+                ? 'Measure area'
+                : activeTool === 'bearing'
+                  ? 'Bearing / slope'
+                  : activeTool === 'watershed'
+                    ? 'Watershed'
+                    : 'Plan';
       }
       if (planMobileHistory) {
         planMobileHistory.hidden = !(minimized && activeTool !== null && !planPanel.hidden);
@@ -4646,8 +4663,17 @@ const enabledSources = enabledBrowserMapSources;
 
     const planningRenderer = L.svg({ pane: 'planning' });
     const measureLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
+    const areaLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
+    const bearingLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
+    const watershedLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     const planLayer = L.layerGroup([], { pane: 'planning' }).addTo(map);
     let measurePoints: any[] = [];
+    let areaPoints: any[] = [];
+    let bearingPoints: any[] = [];
+    let bearingElevationController: AbortController | null = null;
+    let bearingRevision = 0;
+    let watershedController: AbortController | null = null;
+    let watershedRevision = 0;
     type MeasurePointSnapshot = { lat: number; lng: number };
     type MeasureSnapshot = MeasurePointSnapshot[];
     let measureHistory: MeasureSnapshot[] = [[]];
@@ -4808,12 +4834,34 @@ const enabledSources = enabledBrowserMapSources;
       return elevationsFt;
     };
 
+    const setStatLabels = (a: string, b: string, c: string, d: string) => {
+      if (planStatLabelA) planStatLabelA.textContent = a;
+      if (planStatLabelB) planStatLabelB.textContent = b;
+      if (planStatLabelC) planStatLabelC.textContent = c;
+      if (planStatLabelD) planStatLabelD.textContent = d;
+    };
+    const updateAnalysisStats = (
+      title: string,
+      labels: [string, string, string, string],
+      values: [string, string, string, string],
+      note: string
+    ) => {
+      if (planLiveStats) planLiveStats.hidden = false;
+      if (planStatsTitle) planStatsTitle.textContent = title;
+      setStatLabels(...labels);
+      if (planStatsDistance) planStatsDistance.textContent = values[0];
+      if (planStatsGain) planStatsGain.textContent = values[1];
+      if (planStatsLoss) planStatsLoss.textContent = values[2];
+      if (planStatsRange) planStatsRange.textContent = values[3];
+      if (planStatsNote) planStatsNote.textContent = note;
+    };
     const updateLiveStats = (
       title: string,
       totalMeters: number,
       summary: ElevationSummary | null,
       note: string
     ) => {
+      setStatLabels('Distance', 'Gain', 'Loss', 'Elevation');
       if (planLiveStats) planLiveStats.hidden = false;
       if (planStatsTitle) planStatsTitle.textContent = title;
       if (planStatsDistance) planStatsDistance.textContent = formatDistance(totalMeters);
@@ -4821,6 +4869,55 @@ const enabledSources = enabledBrowserMapSources;
       if (planStatsLoss) planStatsLoss.textContent = summary ? '−' + formatFeet(summary.lossFt) : '—';
       if (planStatsRange) planStatsRange.textContent = summary ? formatFeet(summary.minFt) + '–' + formatFeet(summary.maxFt) : '—';
       if (planStatsNote) planStatsNote.textContent = note;
+    };
+
+    const polygonAreaSqMeters = (points: any[]) => {
+      if (points.length < 3) return 0;
+      const meanLat = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+      const cosLat = Math.cos(meanLat * Math.PI / 180);
+      const origin = points[0];
+      const projected = points.map((point) => ({
+        x: (point.lng - origin.lng) * 111320 * cosLat,
+        y: (point.lat - origin.lat) * 110540
+      }));
+      let twiceArea = 0;
+      for (let i = 0; i < projected.length; i += 1) {
+        const a = projected[i]!;
+        const b = projected[(i + 1) % projected.length]!;
+        twiceArea += a.x * b.y - b.x * a.y;
+      }
+      return Math.abs(twiceArea) / 2;
+    };
+    const formatArea = (squareMeters: number) => {
+      const acres = squareMeters / 4046.8564224;
+      const squareMiles = squareMeters / 2589988.110336;
+      if (acres < 100) return acres.toFixed(acres < 10 ? 2 : 1) + ' ac';
+      return acres.toFixed(0) + ' ac · ' + squareMiles.toFixed(2) + ' sq mi';
+    };
+    const trueBearingDegrees = (from: any, to: any) => {
+      const lat1 = from.lat * Math.PI / 180;
+      const lat2 = to.lat * Math.PI / 180;
+      const dLon = (to.lng - from.lng) * Math.PI / 180;
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    };
+    const bearingCardinal = (degrees: number) => {
+      const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+      return dirs[Math.round(degrees / 45) % 8]!;
+    };
+    const geoJsonPolygonAreaSqMeters = (geometry: any) => {
+      if (!geometry) return 0;
+      const ringArea = (ring: any[]) => polygonAreaSqMeters((ring || []).map((coord) => L.latLng(Number(coord[1]), Number(coord[0]))));
+      const polygonArea = (rings: any[]) => {
+        if (!Array.isArray(rings) || !rings.length) return 0;
+        let total = ringArea(rings[0]);
+        for (let i = 1; i < rings.length; i += 1) total -= ringArea(rings[i]);
+        return Math.max(0, total);
+      };
+      if (geometry.type === 'Polygon') return polygonArea(geometry.coordinates);
+      if (geometry.type === 'MultiPolygon') return (geometry.coordinates || []).reduce((sum: number, polygon: any[]) => sum + polygonArea(polygon), 0);
+      return 0;
     };
 
     const addPlanningLabel = (latlng: any, text: string, className: string, targetLayer: any) => {
@@ -4983,43 +5080,42 @@ const enabledSources = enabledBrowserMapSources;
       planSegments = rebuiltSegments;
     };
 
-    const renderPlanHelp = (tool: 'measure' | 'plan' | null) => {
+    const renderPlanHelp = (tool: ActiveMapTool) => {
       if (!planHelp) return;
       planHelp.replaceChildren();
-      if (tool === null) {
-        const list = document.createElement('ul');
-        for (const item of [
-          'Measure distance: click or tap points to measure a straight-line distance.',
-          'Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.',
-          'Use Undo / Redo as you edit, or Clear to start over.'
-        ]) {
+      const messages: Record<string, string[]> = {
+        overview: [
+          'Measure distance: point-to-point distance with elevation change.',
+          'Measure area: outline a polygon for area and perimeter.',
+          'Bearing / slope: choose two points for true bearing, grade and slope angle.',
+          'Watershed: choose an outlet point for a USGS StreamStats drainage-basin estimate.',
+          'Build trail route: snap to mapped trails/roads or add straight off-network segments.'
+        ],
+        measure: ['Click or tap points to measure straight-line distance and elevation change.'],
+        area: ['Click or tap three or more boundary points. Area and perimeter update with every point.'],
+        bearing: ['Choose a start point and end point. A third click starts a new bearing measurement.'],
+        watershed: ['Click a stream/outlet point. RRGH sends only that clicked coordinate to USGS StreamStats and displays its approximate basin delineation.'],
+        plan: [
+          'Click near a mapped trail or road to snap to the network; click away from it for a straight segment.',
+          'Drag a planned segment to adjust or resnap it.',
+          'Right-click or press and hold a planned segment to delete it.'
+        ]
+      };
+      const items = messages[tool ?? 'overview'] ?? messages.overview;
+      const list = document.createElement(items.length === 1 ? 'p' : 'ul');
+      for (const item of items) {
+        if (list instanceof HTMLUListElement) {
           const li = document.createElement('li');
           li.textContent = item;
           list.append(li);
+        } else {
+          list.textContent = item;
         }
-        planHelp.append(list);
-        return;
-      }
-      if (tool === 'measure') {
-        const p = document.createElement('p');
-        p.textContent = 'Click or tap points to measure straight-line distance.';
-        planHelp.append(p);
-        return;
-      }
-      const list = document.createElement('ul');
-      for (const item of [
-        'Click near a mapped trail or road to snap to the network; click away from it for a straight segment.',
-        'Drag a planned segment to adjust or resnap it.',
-        'Right-click or press and hold a planned segment to delete it.'
-      ]) {
-        const li = document.createElement('li');
-        li.textContent = item;
-        list.append(li);
       }
       planHelp.append(list);
     };
 
-    const setTool = (tool: 'measure' | 'plan' | null) => {
+    const setTool = (tool: ActiveMapTool) => {
       activeTool = tool;
       renderPlanHelp(tool);
       updateHistoryButtons();
@@ -5029,15 +5125,31 @@ const enabledSources = enabledBrowserMapSources;
 
       for (const button of toolButtons) {
         const buttonTool = button.dataset.mapTool;
-        if (buttonTool === 'measure' || buttonTool === 'plan') {
+        if (['measure','area','bearing','watershed','plan'].includes(buttonTool || '')) {
           button.setAttribute('aria-pressed', String(buttonTool === tool));
         }
       }
+      for (const button of saveButtons) button.disabled = tool !== 'plan' || planTrackPoints().length < 2;
 
       if (tool === 'measure') {
         if (planPanel) planPanel.hidden = false;
         redrawMeasure(false);
         setStatus('Measure distance: click points anywhere on the map. Segment distances appear on the map; elevation updates from USGS 3DEP after two points.');
+        minimizePlanPanel();
+      } else if (tool === 'area') {
+        if (planPanel) planPanel.hidden = false;
+        redrawArea();
+        setStatus('Measure area: click at least three boundary points. Keep clicking to refine the polygon.');
+        minimizePlanPanel();
+      } else if (tool === 'bearing') {
+        if (planPanel) planPanel.hidden = false;
+        redrawBearing();
+        setStatus('Bearing / slope: choose a start point and end point.');
+        minimizePlanPanel();
+      } else if (tool === 'watershed') {
+        if (planPanel) planPanel.hidden = false;
+        updateAnalysisStats('Watershed', ['Area','Outlet','Source','Status'], ['—','—','USGS','Choose point'], 'Click a stream/outlet point to request an approximate USGS StreamStats delineation.');
+        setStatus('Watershed: click the outlet point you want to analyze. StreamStats works best when the point is on its mapped stream grid.');
         minimizePlanPanel();
       } else if (tool === 'plan') {
         if (planPanel) planPanel.hidden = false;
@@ -5046,14 +5158,25 @@ const enabledSources = enabledBrowserMapSources;
         minimizePlanPanel();
       } else if (!vectorFailures.length && readiness.core) {
         if (planLiveStats) planLiveStats.hidden = true;
-        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan to measure and build a route.');
+        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan for terrain measurements and route building.');
       }
     };
 
     const clearTools = () => {
       measureLayer.clearLayers();
+      areaLayer.clearLayers();
+      bearingLayer.clearLayers();
+      watershedLayer.clearLayers();
       planLayer.clearLayers();
       measurePoints = [];
+      areaPoints = [];
+      bearingPoints = [];
+      bearingRevision += 1;
+      watershedRevision += 1;
+      bearingElevationController?.abort();
+      watershedController?.abort();
+      bearingElevationController = null;
+      watershedController = null;
       planStops = [];
       planSegments = [];
       measureElevationsFt = null;
@@ -5076,6 +5199,15 @@ const enabledSources = enabledBrowserMapSources;
       if (activeTool === 'measure') {
         updateLiveStats('Measured line', 0, null, 'Add two points for elevation.');
         setStatus('Measure distance: click points anywhere on the map.');
+      } else if (activeTool === 'area') {
+        updateAnalysisStats('Measured area', ['Area','Perimeter','Vertices','Surface'], ['—','—','0','Map'], 'Add at least three boundary points.');
+        setStatus('Measure area: click at least three boundary points.');
+      } else if (activeTool === 'bearing') {
+        updateAnalysisStats('Bearing / slope', ['Bearing','Distance','Grade','Slope'], ['—','—','—','—'], 'Choose two points.');
+        setStatus('Bearing / slope: choose a start point and end point.');
+      } else if (activeTool === 'watershed') {
+        updateAnalysisStats('Watershed', ['Area','Outlet','Source','Status'], ['—','—','USGS','Choose point'], 'Choose a stream/outlet point.');
+        setStatus('Watershed: choose an outlet point.');
       } else if (activeTool === 'plan') {
         updateLiveStats('Planned route', 0, null, 'Add two points for elevation.');
         setStatus('Build route: place a first point near the mapped trail/road network, or clearly away from it to start off trail.');
@@ -5088,13 +5220,13 @@ const enabledSources = enabledBrowserMapSources;
     let pendingPlanConfirmAction: PlanConfirmAction | null = null;
 
     const hasPlanningWork = () =>
-      measurePoints.length > 0 || planStops.length > 0 || planSegments.length > 0;
+      measurePoints.length > 0 || areaPoints.length > 0 || bearingPoints.length > 0 || watershedLayer.getLayers().length > 0 || planStops.length > 0 || planSegments.length > 0;
 
     const planningDeleteMessage = () => {
-      const hasMeasure = measurePoints.length > 0;
+      const hasMeasure = measurePoints.length > 0 || areaPoints.length > 0 || bearingPoints.length > 0 || watershedLayer.getLayers().length > 0;
       const hasRoute = planStops.length > 0 || planSegments.length > 0;
-      if (hasMeasure && hasRoute) return 'Are you sure you want to delete your measurement and built path?';
-      if (hasMeasure) return 'Are you sure you want to delete your measurement?';
+      if (hasMeasure && hasRoute) return 'Are you sure you want to delete your measurements, analysis, and built path?';
+      if (hasMeasure) return 'Are you sure you want to delete your measurements and analysis?';
       return 'Are you sure you want to delete your built path?';
     };
 
@@ -5231,7 +5363,7 @@ const enabledSources = enabledBrowserMapSources;
           savePlanGpx();
           return;
         }
-        if (tool === 'measure' || tool === 'plan') {
+        if (tool === 'measure' || tool === 'area' || tool === 'bearing' || tool === 'watershed' || tool === 'plan') {
           setTool(activeTool === tool ? null : tool);
         }
       });
@@ -5293,6 +5425,167 @@ const enabledSources = enabledBrowserMapSources;
           updateLiveStats('Planned route', total, null, 'Distance is available; USGS elevation is temporarily unavailable.');
         }
       }, 260);
+    };
+
+    const redrawArea = () => {
+      areaLayer.clearLayers();
+      for (const point of areaPoints) {
+        L.circleMarker(point, {
+          pane: 'planning', renderer: planningRenderer, radius: 5, color: '#fff', weight: 2,
+          fillColor: '#2b7f78', fillOpacity: 1, interactive: false
+        }).addTo(areaLayer);
+      }
+      if (areaPoints.length >= 2) {
+        L.polyline(areaPoints, {
+          pane: 'planning', renderer: planningRenderer, color: '#2b7f78', weight: 4,
+          opacity: 1, dashArray: '7 5', interactive: false
+        }).addTo(areaLayer);
+      }
+      const perimeterOpen = pathDistanceMeters(areaPoints);
+      const perimeter = areaPoints.length >= 3 ? perimeterOpen + areaPoints[areaPoints.length - 1]!.distanceTo(areaPoints[0]) : perimeterOpen;
+      const squareMeters = polygonAreaSqMeters(areaPoints);
+      if (areaPoints.length >= 3) {
+        L.polygon(areaPoints, {
+          pane: 'planning', renderer: planningRenderer, color: '#147268', weight: 3,
+          opacity: 1, fillColor: '#4ab3a6', fillOpacity: 0.18, interactive: false
+        }).addTo(areaLayer);
+        const center = L.latLngBounds(areaPoints).getCenter();
+        addPlanningLabel(center, formatArea(squareMeters), 'is-area-total', areaLayer);
+      }
+      updateAnalysisStats(
+        'Measured area',
+        ['Area','Perimeter','Vertices','Surface'],
+        [areaPoints.length >= 3 ? formatArea(squareMeters) : '—', areaPoints.length >= 2 ? formatDistance(perimeter) : '—', String(areaPoints.length), 'Planar'],
+        areaPoints.length >= 3 ? 'Approximate map-plane area; add more vertices to refine the boundary.' : 'Add at least three boundary points.'
+      );
+      setStatus(areaPoints.length >= 3
+        ? 'Measured area: ' + formatArea(squareMeters) + ' · perimeter ' + formatDistance(perimeter) + '.'
+        : 'Measure area: ' + areaPoints.length + ' point(s) set; add at least three.');
+    };
+
+    const redrawBearing = async () => {
+      const revision = ++bearingRevision;
+      bearingElevationController?.abort();
+      bearingElevationController = null;
+      bearingLayer.clearLayers();
+      for (const point of bearingPoints) {
+        L.circleMarker(point, {
+          pane: 'planning', renderer: planningRenderer, radius: 6, color: '#fff', weight: 2,
+          fillColor: '#7a4d9f', fillOpacity: 1, interactive: false
+        }).addTo(bearingLayer);
+      }
+      if (bearingPoints.length < 2) {
+        updateAnalysisStats('Bearing / slope', ['Bearing','Distance','Grade','Slope'], ['—','—','—','—'], 'Choose a start point and end point.');
+        return;
+      }
+      const [from,to] = bearingPoints;
+      const distanceMeters = from.distanceTo(to);
+      const bearing = trueBearingDegrees(from,to);
+      L.polyline([from,to], {
+        pane: 'planning', renderer: planningRenderer, color: '#7a4d9f', weight: 4, opacity: 1,
+        dashArray: '10 5', interactive: false
+      }).addTo(bearingLayer);
+      addPlanningLabel(pathMidpoint([from,to]), Math.round(bearing) + '° ' + bearingCardinal(bearing) + ' · ' + formatDistance(distanceMeters), 'is-bearing', bearingLayer);
+      updateAnalysisStats(
+        'Bearing / slope',
+        ['Bearing','Distance','Grade','Slope'],
+        [Math.round(bearing) + '° ' + bearingCardinal(bearing), formatDistance(distanceMeters), '…', '…'],
+        'Calculating endpoint elevations from USGS 3DEP…'
+      );
+      const controller = new AbortController();
+      bearingElevationController = controller;
+      try {
+        const elevations = await fetchElevations([from,to],controller.signal);
+        if (revision !== bearingRevision) return;
+        const riseFt = elevations[1]! - elevations[0]!;
+        const horizontalFt = distanceMeters * 3.280839895013123;
+        const grade = horizontalFt > 0 ? riseFt / horizontalFt * 100 : 0;
+        const slope = Math.atan2(riseFt,horizontalFt) * 180 / Math.PI;
+        updateAnalysisStats(
+          'Bearing / slope',
+          ['Bearing','Distance','Grade','Slope'],
+          [Math.round(bearing) + '° ' + bearingCardinal(bearing), formatDistance(distanceMeters), (grade >= 0 ? '+' : '') + grade.toFixed(1) + '%', (slope >= 0 ? '+' : '') + slope.toFixed(1) + '°'],
+          'USGS 3DEP endpoints: ' + formatFeet(elevations[0]!) + ' → ' + formatFeet(elevations[1]!) + ' (' + formatElevationDelta(riseFt) + ').'
+        );
+        container.dataset.bearingDegrees = bearing.toFixed(2);
+        container.dataset.bearingGradePercent = grade.toFixed(2);
+      } catch (error) {
+        if (controller.signal.aborted || revision !== bearingRevision) return;
+        console.error(error);
+        updateAnalysisStats(
+          'Bearing / slope',
+          ['Bearing','Distance','Grade','Slope'],
+          [Math.round(bearing) + '° ' + bearingCardinal(bearing), formatDistance(distanceMeters), '—', '—'],
+          'Bearing and distance are available; USGS elevation is temporarily unavailable.'
+        );
+      }
+    };
+
+    const loadWatershed = async (outlet: any) => {
+      const revision = ++watershedRevision;
+      watershedController?.abort();
+      watershedController = new AbortController();
+      watershedLayer.clearLayers();
+      L.circleMarker(outlet, {
+        pane: 'planning', renderer: planningRenderer, radius: 7, color: '#fff', weight: 2,
+        fillColor: '#2863a6', fillOpacity: 1
+      }).bindTooltip('Watershed outlet', { direction: 'top' }).addTo(watershedLayer);
+      container.dataset.watershedLoadState = 'loading';
+      updateAnalysisStats(
+        'Watershed',
+        ['Area','Outlet','Source','Status'],
+        ['…', outlet.lat.toFixed(5) + ', ' + outlet.lng.toFixed(5), 'USGS', 'Loading'],
+        'USGS StreamStats is delineating the drainage basin. This can take several seconds.'
+      );
+      setStatus('Watershed: asking USGS StreamStats to delineate the basin…');
+      const source = sourceById('usgs-streamstats-delineate');
+      if (!source?.serviceUrl) throw new Error('USGS StreamStats source is unavailable.');
+      const params = new URLSearchParams({ lat: outlet.lat.toFixed(7), lon: outlet.lng.toFixed(7) });
+      try {
+        const response = await fetch(source.serviceUrl + '/v1/delineate/features/KY?' + params.toString(), {
+          signal: watershedController.signal,
+          mode: 'cors',
+          credentials: 'omit',
+          referrerPolicy: 'strict-origin-when-cross-origin'
+        });
+        if (!response.ok) throw new Error('USGS StreamStats returned HTTP ' + response.status);
+        const data = await response.json();
+        if (revision !== watershedRevision) return;
+        if (data?.type !== 'FeatureCollection' || !Array.isArray(data?.features)) throw new Error('USGS StreamStats returned an unexpected response.');
+        const polygonFeatures = data.features.filter((feature: any) => feature?.geometry?.type === 'Polygon' || feature?.geometry?.type === 'MultiPolygon');
+        if (!polygonFeatures.length) throw new Error('USGS StreamStats returned no basin polygon.');
+        let areaSqMeters = 0;
+        for (const feature of polygonFeatures) areaSqMeters += geoJsonPolygonAreaSqMeters(feature.geometry);
+        const basin = { type: 'FeatureCollection', features: polygonFeatures };
+        L.geoJSON(basin as any, {
+          pane: 'planning',
+          style: {
+            color: '#2863a6', weight: 3, opacity: 0.95, dashArray: '8 4',
+            fillColor: '#4e93d1', fillOpacity: 0.18
+          }
+        }).addTo(watershedLayer);
+        container.dataset.watershedLoadState = 'loaded';
+        container.dataset.watershedFeatureCount = String(polygonFeatures.length);
+        container.dataset.watershedAreaSqMi = (areaSqMeters / 2589988.110336).toFixed(4);
+        updateAnalysisStats(
+          'Watershed',
+          ['Area','Outlet','Source','Status'],
+          [formatArea(areaSqMeters), outlet.lat.toFixed(5) + ', ' + outlet.lng.toFixed(5), 'USGS', 'Delineated'],
+          'Automated USGS StreamStats delineation. Verify against terrain; not a property, flood, access, or legal boundary.'
+        );
+        setStatus('Watershed delineated: ' + formatArea(areaSqMeters) + '. StreamStats boundaries are approximate and should be checked against terrain.');
+      } catch (error) {
+        if (watershedController.signal.aborted || revision !== watershedRevision) return;
+        console.error(error);
+        container.dataset.watershedLoadState = 'error';
+        updateAnalysisStats(
+          'Watershed',
+          ['Area','Outlet','Source','Status'],
+          ['—', outlet.lat.toFixed(5) + ', ' + outlet.lng.toFixed(5), 'USGS', 'Unavailable'],
+          'StreamStats could not delineate this point. Try clicking directly on a mapped stream/grid location.'
+        );
+        setStatus('USGS StreamStats could not delineate that point. Try a nearby point directly on the stream.', 'warning');
+      }
     };
 
     const redrawMeasure = (refreshElevation = true) => {
@@ -5616,6 +5909,22 @@ const enabledSources = enabledBrowserMapSources;
         measurePoints.push(event.latlng);
         commitMeasureHistory();
         redrawMeasure();
+        return;
+      }
+      if (activeTool === 'area') {
+        areaPoints.push(event.latlng);
+        redrawArea();
+        return;
+      }
+      if (activeTool === 'bearing') {
+        if (bearingPoints.length >= 2) bearingPoints = [];
+        bearingPoints.push(event.latlng);
+        void redrawBearing();
+        setStatus(bearingPoints.length === 1 ? 'Bearing / slope: start point set; choose the end point.' : 'Bearing / slope: calculating direction and grade…');
+        return;
+      }
+      if (activeTool === 'watershed') {
+        void loadWatershed(event.latlng);
         return;
       }
       if (activeTool !== 'plan') return;
