@@ -45,6 +45,10 @@ const specialManagementService = 'https://apps.fs.usda.gov/arcx/rest/services/ED
 const nfsLandUnitService = 'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0';
 const overpassService = 'https://www.openstreetmap.org/copyright';
 const usgsAggregatedTrailsService = 'https://partnerships.nationalmap.gov/arcgis/rest/services/USGSTrails/MapServer/0';
+const kentuckyStateParkTrailService = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_State_Parks_Features_WGS84WM/MapServer/9';
+const noaaSnowService = 'https://mapservices.weather.noaa.gov/raster/rest/services/snow/NOHRSC_Snow_Analysis/MapServer';
+const noaaPrecipService = 'https://mapservices.weather.noaa.gov/raster/rest/services/obs/rfc_qpe/MapServer';
+const streamStatsDelineateService = 'https://streamstats.usgs.gov/ss-delineate';
 
 export const mapSources: readonly MapSource[] = [
   {
@@ -257,6 +261,18 @@ export const mapSources: readonly MapSource[] = [
     opacity: 0.45
   },
   {
+    id: 'ky-state-park-trails',
+    label: 'Kentucky State Park trails',
+    kind: 'vector',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: kentuckyStateParkTrailService,
+    attribution: 'Kentucky State Parks / Kentucky Division of Geographic Information',
+    termsUrl: 'https://kygeoportal.ky.gov/',
+    privacyNote: 'Official State Park trail geometry loads from an RRGH-hosted cache generated from the Commonwealth of Kentucky State Park Trails layer. Ordinary visitors do not contact the Kentucky trail service for this cache. State Park geometry is classified separately from Community / Informal trails and is authoritative for that State Park trail display.',
+    opacity: 1
+  },
+  {
     id: 'osm-informal-trails',
     label: 'Community / Informal trails',
     kind: 'vector',
@@ -265,7 +281,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: overpassService,
     attribution: '© OpenStreetMap contributors',
     termsUrl: 'https://www.openstreetmap.org/copyright',
-    privacyNote: 'Community / Informal trails normally load from RRGH-hosted caches. The OpenStreetMap cache includes paths explicitly tagged informal plus community-mapped path/footway candidates that do not substantially match RRGH\'s authoritative USDA Forest Service trail geometry. Public Overpass API instances are used only as a browser fallback if the OSM cache is unavailable. Appearance on this layer is not proof of legal access, maintenance, or official status.',
+    privacyNote: 'Community / Informal trails normally load from RRGH-hosted caches. The OpenStreetMap cache includes paths explicitly tagged informal plus community-mapped path/footway candidates after substantial overlaps with authoritative Kentucky State Park and USDA Forest Service trail geometry are removed. Public Overpass API instances are used only as a browser fallback if the OSM cache is unavailable. Appearance on this layer is not proof of legal access, maintenance, or official status.',
     opacity: 1
   },
   {
@@ -277,8 +293,41 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: usgsAggregatedTrailsService,
     attribution: 'USGS The National Map',
     termsUrl: 'https://www.usgs.gov/national-digital-trails/qas-about-usgs-trail-data',
-    privacyNote: 'Supplemental Terra Trail geometry in Community / Informal trails loads from an RRGH-hosted cache generated from USGS National Digital Trails / National Transportation Dataset data. Ordinary visitors do not contact the USGS trail query service for this cache. RRGH excludes features that substantially duplicate current USDA Forest Service official trails or the existing OSM Community / Informal cache. Appearance does not establish current access, maintenance, official status, or current conditions.',
+    privacyNote: 'Supplemental Terra Trail geometry in Community / Informal trails loads from an RRGH-hosted cache generated from USGS National Digital Trails / National Transportation Dataset data. Ordinary visitors do not contact the USGS trail query service for this cache. RRGH excludes features that substantially duplicate authoritative Kentucky State Park trails, current USDA Forest Service official trails, or the existing OSM Community / Informal cache. Appearance does not establish current access, maintenance, official status, or current conditions.',
     opacity: 1
+  },
+  {
+    id: 'rrgh-weather',
+    label: 'Snow / recent precipitation',
+    kind: 'reference',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: noaaPrecipService,
+    attribution: 'NOAA / National Weather Service',
+    termsUrl: 'https://www.weather.gov/disclaimer',
+    privacyNote: 'Current snow-depth and recent precipitation rasters are fetched by an RRGH maintenance workflow from NOAA/National Weather Service services, cropped to the Red River Gorge working area, and served to visitors from RRGH-hosted files. Ordinary visitors do not contact NOAA merely by displaying this layer. Snow depth and precipitation are observational/model products and are not a trail-condition or safety guarantee.'
+  },
+  {
+    id: 'noaa-snow-analysis',
+    label: 'NOAA National Snow Analysis',
+    kind: 'reference',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: noaaSnowService,
+    attribution: 'NOAA / National Weather Service',
+    termsUrl: 'https://www.weather.gov/disclaimer',
+    privacyNote: 'The RRGH-hosted current snow-depth image is refreshed from NOAA National Snow Analysis rather than requested from NOAA by ordinary map visitors.'
+  },
+  {
+    id: 'usgs-streamstats-delineate',
+    label: 'USGS StreamStats watershed delineation',
+    kind: 'reference',
+    enabled: true,
+    browserLoaded: true,
+    serviceUrl: streamStatsDelineateService,
+    attribution: 'USGS StreamStats',
+    termsUrl: 'https://www.usgs.gov/streamstats',
+    privacyNote: 'Watershed analysis is user-triggered. When a visitor chooses Watershed and clicks a map point, that clicked latitude/longitude is sent directly from the browser to USGS StreamStats SS-Delineate to request a watershed boundary. RRGH does not send the visitor\'s device location to StreamStats unless the visitor deliberately uses that location as the clicked watershed point.'
   },
   {
     id: 'parcel-private-property',
@@ -311,7 +360,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
     attribution: 'USGS National Map 3D Elevation Program (3DEP)',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback. USGS 3DEP is also the fallback terrain source for Map Point sunlight timing if the Kentucky bare-earth service is unavailable.'
+    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance, Bearing / slope, or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback. USGS 3DEP is also the fallback terrain source for Map Point sunlight timing if the Kentucky bare-earth service is unavailable.'
   }
 ] as const;
 
