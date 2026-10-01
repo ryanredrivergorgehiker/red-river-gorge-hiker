@@ -1179,8 +1179,11 @@ const enabledSources = enabledBrowserMapSources;
       });
     };
     const syncCliftySunTestStyles = (value = opacity(cliftySunTestLayerId)) => {
+      // The Clifty 1,000–1,100 ft supplement is an independent owner-UAT layer.
+      // It must remain visible whenever its own checkbox is on, regardless of
+      // whether the accepted Sunrise / Sunset child toggles are on or off.
+      const multiplier = checked(cliftySunTestLayerId) ? value : 0;
       cliftySunTestPaths.forEach((item) => {
-        const multiplier = sunKindEnabled(item.kind) ? value : 0;
         item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, multiplier));
       });
     };
@@ -1358,7 +1361,7 @@ const enabledSources = enabledBrowserMapSources;
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
                 const strength = Number(feature?.properties?.strength ?? 0);
                 const hard = feature?.properties?.hard === true;
-                return sunPotentialStyle(kind, strength, hard, sunKindEnabled(kind) ? opacity(cliftySunTestLayerId) : 0);
+                return sunPotentialStyle(kind, strength, hard, checked(cliftySunTestLayerId) ? opacity(cliftySunTestLayerId) : 0);
               },
               onEachFeature: (feature: any, layer: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
