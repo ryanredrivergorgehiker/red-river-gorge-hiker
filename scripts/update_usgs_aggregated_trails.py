@@ -125,7 +125,7 @@ for feat in fs.get('features', []):
         pass
 official_buffer = unary_union(official_lines).buffer(30) if official_lines else None
 
-# Kentucky State Park trails are also authoritative official geometry. Remove
+# Kentucky State Park trails are authoritative official geometry. Always remove
 # State Park matches before the USGS aggregate can enter Community / Informal.
 state_park_lines = []
 if STATE_PARK_CACHE_PATH.exists():
