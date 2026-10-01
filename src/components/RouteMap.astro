@@ -668,6 +668,24 @@ const enabledSources = enabledBrowserMapSources;
     const status = shell.querySelector<HTMLElement>('[data-map-status]');
     const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]');
     const stage = shell.querySelector<HTMLElement>('.route-map-stage');
+    const loadingOverlay = shell.querySelector<HTMLElement>('[data-map-loading]');
+    const loadingProgress = shell.querySelector<HTMLElement>('[data-map-loading-progress]');
+    const loadingPercent = shell.querySelector<HTMLElement>('[data-map-loading-percent]');
+    const loadingLabel = shell.querySelector<HTMLElement>('[data-map-loading-label]');
+    const fullscreenButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-action="fullscreen"]'));
+    let loadProgressValue = 0;
+    const setLoadProgress = (value: number, label?: string) => {
+      loadProgressValue = Math.max(loadProgressValue, Math.max(0, Math.min(100, Math.round(value))));
+      container.dataset.mapLoadProgress = String(loadProgressValue);
+      if (loadingProgress) loadingProgress.style.width = loadProgressValue + '%';
+      if (loadingPercent) loadingPercent.textContent = loadProgressValue + '%';
+      if (label && loadingLabel) loadingLabel.textContent = label;
+      if (loadProgressValue >= 100 && loadingOverlay) {
+        if (loadingLabel) loadingLabel.textContent = 'Map ready';
+        window.setTimeout(() => { loadingOverlay.hidden = true; }, 180);
+      }
+    };
+    setLoadProgress(4, 'Please wait while map loads…');
     const planButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="plan"]'));
     const saveButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-map-tool="save"]'));
     const explorePlanOpenButtons = Array.from(shell.querySelectorAll<HTMLButtonElement>('[data-sheet-open="explore"], [data-sheet-open="plan"]'));
@@ -775,12 +793,14 @@ const enabledSources = enabledBrowserMapSources;
       preferCanvas: true
     });
     L.control.scale({ position: 'topleft', imperial: true, metric: true, maxWidth: 130 }).addTo(map);
+    setLoadProgress(10, 'Starting map…');
 
     const panes: Record<string, number> = {
       hillshade: 180,
       baseTopo: 200,
       baseUsTopo: 210,
       baseAerial: 220,
+      weather: 240,
       landUnits: 270,
       specialManagement: 285,
       wilderness: 300,
@@ -789,6 +809,7 @@ const enabledSources = enabledBrowserMapSources;
       roads: 350,
       informalTrails: 370,
       trails: 390,
+      stateParkTrails: 400,
       counties: 415,
       lidarSun: 425,
       oilGas: 495,
@@ -807,6 +828,56 @@ const enabledSources = enabledBrowserMapSources;
         pane.style.mixBlendMode = 'multiply';
       }
     }
+
+    const priorOverflow = { body: document.body.style.overflow, html: document.documentElement.style.overflow };
+    const focusModeActive = () => shell.dataset.focusMode === 'true';
+    const realFullscreenActive = () => document.fullscreenElement === shell;
+    const syncFullscreenUi = () => {
+      const active = realFullscreenActive() || focusModeActive();
+      for (const button of fullscreenButtons) {
+        button.textContent = active ? 'Exit full screen' : 'Full screen';
+        button.setAttribute('aria-label', active ? 'Exit full screen map' : 'Enter full screen map');
+        button.setAttribute('aria-pressed', String(active));
+      }
+      container.dataset.fullscreenMode = realFullscreenActive() ? 'native' : focusModeActive() ? 'focus' : 'off';
+      window.requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+    };
+    const enterFocusMode = () => {
+      shell.dataset.focusMode = 'true';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      syncFullscreenUi();
+    };
+    const exitFocusMode = () => {
+      delete shell.dataset.focusMode;
+      document.body.style.overflow = priorOverflow.body;
+      document.documentElement.style.overflow = priorOverflow.html;
+      syncFullscreenUi();
+    };
+    const toggleFullscreen = async () => {
+      if (realFullscreenActive()) {
+        try { await document.exitFullscreen(); } catch {}
+        return;
+      }
+      if (focusModeActive()) {
+        exitFocusMode();
+        return;
+      }
+      if (typeof shell.requestFullscreen === 'function') {
+        try {
+          await shell.requestFullscreen();
+          return;
+        } catch {
+          // iPhone and some embedded browsers do not permit arbitrary-element fullscreen.
+        }
+      }
+      enterFocusMode();
+    };
+    for (const button of fullscreenButtons) button.addEventListener('click', () => { void toggleFullscreen(); });
+    document.addEventListener('fullscreenchange', () => {
+      if (!realFullscreenActive() && focusModeActive()) exitFocusMode();
+      else syncFullscreenUi();
+    });
 
     const areaLabelGroup = L.layerGroup().addTo(map);
     const areaLabels = [
@@ -975,6 +1046,81 @@ const enabledSources = enabledBrowserMapSources;
       opacitySetters.set(source.id, (value) => layer.setOpacity(value));
       syncVisibility(source.id);
     }
+    setLoadProgress(18, 'Base map ready…');
+
+    const weatherLayerId = 'rrgh-weather';
+    const weatherLayer = L.layerGroup();
+    const weatherSelect = shell.querySelector<HTMLSelectElement>('[data-weather-product]');
+    const weatherStatus = shell.querySelector<HTMLElement>('[data-weather-status]');
+    const weatherLegend = shell.querySelector<HTMLElement>('[data-weather-legend]');
+    let weatherManifestPromise: Promise<any> | null = null;
+    let weatherOverlay: any = null;
+    const weatherManifestUrl = import.meta.env.BASE_URL + 'data/map/weather/manifest.json';
+    mapLayers.set(weatherLayerId, weatherLayer);
+    const loadWeatherManifest = async () => {
+      if (!weatherManifestPromise) {
+        weatherManifestPromise = fetch(weatherManifestUrl, { credentials: 'same-origin', cache: 'no-cache' })
+          .then((response) => {
+            if (!response.ok) throw new Error('Weather manifest HTTP ' + response.status);
+            return response.json();
+          });
+      }
+      return weatherManifestPromise;
+    };
+    const renderWeatherLegend = (legend: any[]) => {
+      if (!weatherLegend) return;
+      weatherLegend.replaceChildren();
+      for (const item of Array.isArray(legend) ? legend : []) {
+        if (!item?.label || !item?.imageData) continue;
+        const row = document.createElement('span');
+        row.className = 'route-weather-legend-item';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = 'data:' + (item.contentType || 'image/png') + ';base64,' + item.imageData;
+        const label = document.createElement('span');
+        label.textContent = item.label;
+        row.append(img, label);
+        weatherLegend.append(row);
+      }
+      weatherLegend.hidden = weatherLegend.childElementCount === 0;
+    };
+    const loadWeatherOverlay = async () => {
+      const productId = weatherSelect?.value || 'precip-10d';
+      container.dataset.weatherLoadState = 'loading';
+      if (weatherStatus) weatherStatus.textContent = 'Loading RRGH-hosted NOAA overlay…';
+      try {
+        const manifest = await loadWeatherManifest();
+        const product = manifest?.products?.[productId];
+        const bounds = manifest?.boundsWgs84;
+        if (!product?.file || !Array.isArray(bounds) || bounds.length !== 4) throw new Error('Weather cache manifest is incomplete.');
+        weatherLayer.clearLayers();
+        const [west, south, east, north] = bounds.map(Number);
+        weatherOverlay = L.imageOverlay(
+          import.meta.env.BASE_URL + product.file,
+          [[south, west], [north, east]],
+          { pane: 'weather', opacity: opacity(weatherLayerId), interactive: false, alt: product.label || 'Weather overlay' }
+        );
+        weatherLayer.addLayer(weatherOverlay);
+        renderWeatherLegend(product.legend || []);
+        container.dataset.weatherProduct = productId;
+        container.dataset.weatherFetchedAt = String(manifest.fetchedAtUtc || '');
+        container.dataset.weatherLoadState = 'loaded';
+        if (weatherStatus) {
+          const fetched = manifest.fetchedAtUtc ? new Date(manifest.fetchedAtUtc).toLocaleString() : 'latest cache';
+          weatherStatus.textContent = (product.label || productId) + ' · ' + (product.unit || 'inches') + ' · NOAA/NWS cache ' + fetched + '.';
+        }
+        syncVisibility(weatherLayerId);
+      } catch (error) {
+        console.error(error);
+        container.dataset.weatherLoadState = 'error';
+        if (weatherStatus) weatherStatus.textContent = 'Weather overlay is temporarily unavailable. Other map layers are unaffected.';
+        if (weatherLegend) weatherLegend.hidden = true;
+      }
+    };
+    opacitySetters.set(weatherLayerId, (value) => weatherOverlay?.setOpacity(value));
+    weatherSelect?.addEventListener('change', () => {
+      if (checked(weatherLayerId)) void loadWeatherOverlay();
+    });
 
     const sunPotentialStyle = (kind: 'sunrise' | 'sunset', strength: number, hard: boolean, multiplier: number) => {
       const color = kind === 'sunset' ? '#4640b0' : '#f2685c';
@@ -1997,6 +2143,7 @@ const enabledSources = enabledBrowserMapSources;
     const landmarkGroup = L.layerGroup();
     const recreationGroup = L.layerGroup();
     const trailLabelGroup = L.layerGroup();
+    const stateParkTrailLabelGroup = L.layerGroup();
     const countyLabelGroup = L.layerGroup();
     const routePaths: any[] = [];
     const routeStartMarkers: any[] = [];
@@ -2012,6 +2159,9 @@ const enabledSources = enabledBrowserMapSources;
     }[category] ?? category);
     const trailPaths: any[] = [];
     const trailCasingPaths: any[] = [];
+    const stateParkTrailPaths: any[] = [];
+    const stateParkTrailCasingPaths: any[] = [];
+    const stateParkTrailLabelMarkers: any[] = [];
     const roadPaths: any[] = [];
     const roadCasingPaths: any[] = [];
     const countyPaths: any[] = [];
@@ -2522,6 +2672,7 @@ const enabledSources = enabledBrowserMapSources;
     }
     setReadiness('routes', routeConfigs.length === 0 || routeExploreEntries.size > 0);
     container.dataset.routeDataReady = String(readiness.routes);
+    setLoadProgress(35, 'Loading official trail network…');
 
     if (mode !== 'full' && routeBounds.isValid()) {
       map.fitBounds(routeBounds.pad(0.28), { maxZoom: 16 });
@@ -2569,6 +2720,114 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const vectorFailures: string[] = [];
+
+    try {
+      const response = await fetch(import.meta.env.BASE_URL + 'data/map/ky-state-park-trails.geojson', {
+        credentials: 'same-origin',
+        cache: 'no-cache'
+      });
+      if (!response.ok) throw new Error('State Park trail cache HTTP ' + response.status);
+      const stateParkTrails = await response.json();
+      if (stateParkTrails?.type !== 'FeatureCollection' || !Array.isArray(stateParkTrails?.features)) {
+        throw new Error('State Park trail cache is invalid.');
+      }
+      indexGeometry(stateParkTrails);
+      const seenStateParkLabels = new Set<string>();
+      const casing = L.geoJSON(stateParkTrails, {
+        pane: 'stateParkTrails',
+        interactive: false,
+        style: {
+          color: '#22313a',
+          weight: 5.8,
+          opacity: opacity('ky-state-park-trails'),
+          dashArray: '8 5',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (_feature: any, layer: any) => stateParkTrailCasingPaths.push(layer)
+      });
+      const visible = L.geoJSON(stateParkTrails, {
+        pane: 'stateParkTrails',
+        style: {
+          color: '#e56ad7',
+          weight: 3.2,
+          opacity: opacity('ky-state-park-trails'),
+          dashArray: '8 5',
+          lineCap: 'round',
+          lineJoin: 'round'
+        },
+        onEachFeature: (feature: any, layer: any) => {
+          const name = featureValue(feature.properties, ['TRAIL_NAME', 'trail_name']) || 'State Park trail';
+          const trailId = featureValue(feature.properties, ['TRAIL_ID', 'trail_id']);
+          const park = featureValue(feature.properties, ['PUBLIC_NAME', 'public_name']);
+          const hiking = featureValue(feature.properties, ['HIKING', 'hiking']);
+          const horse = featureValue(feature.properties, ['HORSE', 'horse']);
+          const surface = featureValue(feature.properties, ['SURFACE', 'surface']);
+          const miles = featureValue(feature.properties, ['TRAIL_MILE', 'trail_mile']);
+          const detail = trailId && !name.includes(trailId) ? name + ' · Trail ' + trailId : name;
+          layer.bindTooltip(detail, { sticky: true, className: 'rrgh-map-tooltip' });
+
+          const popup = document.createElement('div');
+          const heading = document.createElement('strong');
+          heading.textContent = detail;
+          popup.append(heading);
+          const meta = document.createElement('p');
+          meta.className = 'route-map-popup-meta';
+          meta.textContent = [
+            'Kentucky State Park trail',
+            park,
+            hiking && ('Hiking: ' + hiking),
+            horse && ('Horse: ' + horse),
+            miles && ('Length: ' + Number(miles).toFixed(2) + ' mi'),
+            surface && ('Surface: ' + surface)
+          ].filter(Boolean).join(' · ');
+          popup.append(meta);
+          const source = document.createElement('p');
+          source.textContent = 'Source: Kentucky State Parks / Kentucky Division of Geographic Information';
+          popup.append(source);
+          layer.bindPopup(popup, { maxWidth: 340 });
+          stateParkTrailPaths.push(layer);
+          if (layer.getBounds) {
+            searchItems.push({
+              label: detail,
+              detail: 'Kentucky State Park trail' + (park ? ' · ' + park : ''),
+              bounds: layer.getBounds(),
+              open: () => layer.openPopup()
+            });
+          }
+
+          if (name && !seenStateParkLabels.has(name) && seenStateParkLabels.size < 80 && layer.getBounds) {
+            seenStateParkLabels.add(name);
+            const center = layer.getBounds().getCenter();
+            const marker = L.marker(center, {
+              interactive: false,
+              pane: 'stateParkTrails',
+              icon: L.divIcon({
+                className: 'rrgh-trail-label rrgh-state-park-trail-label',
+                html: '<span>' + name.replace(/[&<>"']/g, (char: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char] as string)) + '</span>',
+                iconSize: [170, 24],
+                iconAnchor: [85, 12]
+              })
+            });
+            stateParkTrailLabelMarkers.push(marker);
+            stateParkTrailLabelGroup.addLayer(marker);
+          }
+        }
+      });
+      mapLayers.set('ky-state-park-trails', L.layerGroup([casing, visible]));
+      opacitySetters.set('ky-state-park-trails', (value) => {
+        stateParkTrailCasingPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        stateParkTrailPaths.forEach((layer) => layer.setStyle({ opacity: value }));
+        stateParkTrailLabelMarkers.forEach((marker) => marker.setOpacity(value));
+      });
+      container.dataset.stateParkTrailFeatureCount = String(stateParkTrails.features.length);
+      syncVisibility('ky-state-park-trails');
+    } catch (error) {
+      console.error(error);
+      container.dataset.stateParkTrailFeatureCount = '0';
+      vectorFailures.push('State Park trails');
+    }
+    setLoadProgress(47, 'Official State Park trails ready…');
 
     try {
       const trails = await fetchGeoJson('usfs-trails');
@@ -2659,6 +2918,7 @@ const enabledSources = enabledBrowserMapSources;
       console.error(error);
       vectorFailures.push('Forest Service trails');
     }
+    setLoadProgress(58, 'Official trail network ready…');
 
     try {
       const roads = await fetchGeoJson('usfs-roads');
@@ -2881,7 +3141,6 @@ const enabledSources = enabledBrowserMapSources;
           const paddedBounds = gorgeBounds.pad(0.035);
           homeBounds = paddedBounds;
           map.setMaxBounds(paddedBounds);
-          setHomeView();
           container.dataset.gorgeOverviewZoom = String(map.getZoom());
         }
       }
@@ -2889,6 +3148,7 @@ const enabledSources = enabledBrowserMapSources;
       console.error(error);
       vectorFailures.push('County boundaries');
     }
+    setLoadProgress(78, 'Map context ready…');
 
     const loadPolygonLayer = async (
       id: string,
@@ -3335,6 +3595,10 @@ const enabledSources = enabledBrowserMapSources;
       if (id === 'ky-hillshade' && enabled && slider && Number(slider.value) < 75) slider.value = '75';
       if (id === oilGasLayerId) {
         setOilGasKinds(enabled);
+      } else if (id === weatherLayerId) {
+        syncVisibility(id);
+        syncFineTuneControl(id);
+        if (enabled) void loadWeatherOverlay();
       } else if (id === localRoadLayerId) {
         syncLocalRoadLayer();
         syncFineTuneControl(id);
@@ -3365,6 +3629,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, false);
+        setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 25);
@@ -3374,6 +3639,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, true);
+        if (weatherSelect) weatherSelect.value = 'precip-10d';
+        setLayerControl(weatherLayerId, true, 35);
         setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -3382,6 +3649,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
         setLayerControl(localRoadLayerId, true);
+        setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'sunlight') {
         setLayerControl('kytopo', true, 25);
@@ -3393,6 +3661,7 @@ const enabledSources = enabledBrowserMapSources;
         const sunOpacity = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
         if (sunOpacity) sunOpacity.value = '100';
         setLayerControl(localRoadLayerId, false);
+        setLayerControl(weatherLayerId, false, 35);
         setSunKinds(true);
       }
       syncAerialControlState();
@@ -3400,16 +3669,19 @@ const enabledSources = enabledBrowserMapSources;
     };
 
     const syncContextLabels = () => {
-      const trailsVisible = checked('usfs-trails') && map.getZoom() >= 13;
-      if (trailsVisible && !map.hasLayer(trailLabelGroup)) trailLabelGroup.addTo(map);
-      if (!trailsVisible && map.hasLayer(trailLabelGroup)) map.removeLayer(trailLabelGroup);
+      const forestTrailsVisible = checked('usfs-trails') && map.getZoom() >= 13;
+      if (forestTrailsVisible && !map.hasLayer(trailLabelGroup)) trailLabelGroup.addTo(map);
+      if (!forestTrailsVisible && map.hasLayer(trailLabelGroup)) map.removeLayer(trailLabelGroup);
+      const stateParkTrailsVisible = checked('ky-state-park-trails') && map.getZoom() >= 13;
+      if (stateParkTrailsVisible && !map.hasLayer(stateParkTrailLabelGroup)) stateParkTrailLabelGroup.addTo(map);
+      if (!stateParkTrailsVisible && map.hasLayer(stateParkTrailLabelGroup)) map.removeLayer(stateParkTrailLabelGroup);
 
       const countiesVisible = map.getZoom() <= 13;
       if (countiesVisible && !map.hasLayer(countyLabelGroup)) countyLabelGroup.addTo(map);
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
 
-    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff']);
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff', weatherLayerId]);
     const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
 
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
@@ -3441,6 +3713,9 @@ const enabledSources = enabledBrowserMapSources;
           setOilGasKinds(checkbox.checked);
         } else if (id === localRoadLayerId) {
           syncLocalRoadLayer();
+        } else if (id === weatherLayerId) {
+          syncVisibility(id);
+          if (checkbox.checked) await loadWeatherOverlay();
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
         } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
@@ -3709,6 +3984,7 @@ const enabledSources = enabledBrowserMapSources;
     syncLocalRoadLayer();
     setReadiness('core', true);
     setReadiness('share', true);
+    setLoadProgress(94, 'Restoring map controls…');
     container.dataset.mapCoreReady = 'true';
     container.dataset.shareReady = 'true';
 
@@ -5370,6 +5646,7 @@ const enabledSources = enabledBrowserMapSources;
       container.dataset.currentZoom = String(zoom);
       routePaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 4.5 : 7.5, opacity: 1 }));
       trailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2 : zoom >= 15 ? 3 : 2.5, opacity: opacity('usfs-trails') }));
+      stateParkTrailPaths.forEach((layer) => layer.setStyle({ weight: zoom < 11 ? 2.6 : zoom >= 15 ? 3.6 : 3.2, opacity: opacity('ky-state-park-trails') }));
       roadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 3.6 : 2.8, opacity: opacity('usfs-roads') }));
       localRoadPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 16 ? 2.8 : 2.2, opacity: opacity(localRoadLayerId) }));
       informalPaths.forEach((layer) => layer.setStyle({ weight: zoom >= 15 ? 2.8 : 2.2, opacity: opacity('osm-informal-trails') }));
@@ -5380,10 +5657,10 @@ const enabledSources = enabledBrowserMapSources;
     syncContextLabels();
     container.dataset.currentZoom = String(map.getZoom());
     setTimeout(() => {
-      map.invalidateSize();
-      if (mode === 'full' && !sharedViewApplied) setHomeView();
+      map.invalidateSize({ pan: false });
       syncViewportDiagnostics();
     }, 50);
+    setLoadProgress(100, 'Map ready');
 
     if (vectorFailures.length) {
       setStatus('Map ready. Unavailable right now: ' + vectorFailures.join(', ') + '.', 'warning');

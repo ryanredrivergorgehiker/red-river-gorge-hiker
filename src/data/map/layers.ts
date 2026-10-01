@@ -360,7 +360,7 @@ export const mapSources: readonly MapSource[] = [
     serviceUrl: 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer',
     attribution: 'USGS National Map 3D Elevation Program (3DEP)',
     termsUrl: 'https://www.usgs.gov/faqs/what-are-terms-uselicensing-map-services-and-data-national-map',
-    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance, Bearing / slope, or Build trail route, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback. USGS 3DEP is also the fallback terrain source for Map Point sunlight timing if the Kentucky bare-earth service is unavailable.'
+    privacyNote: 'Approved route elevation remains generated at build time. When a visitor uses Measure distance or Build trail route, or the Bearing / slope analysis, sampled planning coordinates are sent directly from the browser to USGS 3DEP only to calculate the requested elevation feedback. USGS 3DEP is also the fallback terrain source for Map Point sunlight timing if the Kentucky bare-earth service is unavailable.'
   }
 ] as const;
 
