@@ -165,6 +165,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('acceptedLayerModified !== false', MAP)
         self.assertEqual(MAP.count('setLayerControl(cliftySunTestLayerId, false, 100);'), 4)
         self.assertNotIn('data-map-layer="clifty-sun-1000-1100-test" checked', MAP)
+        self.assertIn('const multiplier = checked(cliftySunTestLayerId) ? value : 0;', MAP)
+        self.assertIn('checked(cliftySunTestLayerId) ? opacity(cliftySunTestLayerId) : 0', MAP)
 
         manifest = CLIFTY_SUN_TEST_MANIFEST
         self.assertEqual(manifest['version'], 'clifty-1000-1100-test-v1')
