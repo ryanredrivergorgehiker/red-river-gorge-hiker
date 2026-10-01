@@ -6,6 +6,7 @@ from pyproj import Transformer
 
 BBOX=(37.45,-83.93,38.05,-83.25)  # south, west, north, east
 CACHE_PATH=pathlib.Path('public/data/map/osm-informal-trails.geojson')
+STATE_PARK_CACHE_PATH=pathlib.Path('public/data/map/ky-state-park-trails.geojson')
 TILES=[
   (37.45,-83.93,37.75,-83.59),
   (37.45,-83.59,37.75,-83.25),
@@ -102,12 +103,29 @@ for feat in fs.get('features',[]):
     except Exception:
         pass
 official_buffer=unary_union(official_lines).buffer(30) if official_lines else None
+
+# Kentucky State Park trails are authoritative official geometry and must not be
+# displayed again as Community / Informal, even if an OSM feature is tagged informal.
+state_park_lines=[]
+if STATE_PARK_CACHE_PATH.exists():
+    state_park=json.loads(STATE_PARK_CACHE_PATH.read_text(encoding='utf-8'))
+    for feat in state_park.get('features',[]):
+        try:
+            geom=shape(feat.get('geometry'))
+            if not geom.is_empty:
+                state_park_lines.append(transform(to_utm,geom))
+        except Exception:
+            pass
+else:
+    raise SystemExit(f'Missing authoritative State Park trail cache: {STATE_PARK_CACHE_PATH}')
+state_park_buffer=unary_union(state_park_lines).buffer(30) if state_park_lines else None
 clip_box=box(BBOX[1],BBOX[0],BBOX[3],BBOX[2])
 
 features=[]
 explicit_informal=0
 candidate_count=0
 official_like_removed=0
+state_park_like_removed=0
 dropped_out_of_bounds_features=0
 clipped_edge_features=0
 for element in elements_by_id.values():
@@ -138,7 +156,13 @@ for element in elements_by_id.values():
         overlap_ratio=0.0
         if official_buffer is not None and line_utm.length>0:
             overlap_ratio=line_utm.intersection(official_buffer).length/line_utm.length
+        state_park_overlap_ratio=0.0
+        if state_park_buffer is not None and line_utm.length>0:
+            state_park_overlap_ratio=line_utm.intersection(state_park_buffer).length/line_utm.length
 
+        if state_park_overlap_ratio>=0.65:
+            state_park_like_removed+=1
+            continue
         if not informal and overlap_ratio>=0.65:
             official_like_removed+=1
             continue
@@ -154,6 +178,7 @@ for element in elements_by_id.values():
         props['rrgh_part']=part_index
         props['rrgh_classification']=classification
         props['rrgh_official_overlap_ratio']=round(overlap_ratio,3)
+        props['rrgh_state_park_overlap_ratio']=round(state_park_overlap_ratio,3)
         part_coords=[[float(x),float(y)] for x,y in part.coords]
         features.append({'type':'Feature','properties':props,'geometry':{'type':'LineString','coordinates':part_coords}})
 
@@ -163,12 +188,15 @@ out={
   'rrgh_cache':{
     'source':'OpenStreetMap contributors via Overpass API',
     'source_endpoints':sorted(set(used_sources)),
-    'method':'OSM path/footway candidates minus USDA Forest Service official trail buffer',
+    'method':'OSM path/footway candidates minus authoritative Kentucky State Park trail buffer and USDA Forest Service official trail buffer',
     'bbox':list(BBOX),
     'explicit_informal':explicit_informal,
     'community_candidates':candidate_count,
     'official_like_removed':official_like_removed,
+    'state_park_like_removed':state_park_like_removed,
     'official_match_buffer_m':30,
+    'state_park_match_buffer_m':30,
+    'state_park_overlap_exclusion_ratio':0.65,
     'official_overlap_exclusion_ratio':0.65,
     'osm_way_count_before_filter':len(elements_by_id),
     'bounds_clipped':True,
@@ -179,4 +207,4 @@ out={
 path=CACHE_PATH
 path.parent.mkdir(parents=True,exist_ok=True)
 path.write_text(json.dumps(out,separators=(',',':'))+'\n',encoding='utf-8')
-print(f'Wrote {len(features)} community/informal trails ({explicit_informal} explicit informal, {candidate_count} candidates); removed {official_like_removed} official-like OSM paths from {len(elements_by_id)} OSM ways.')
+print(f'Wrote {len(features)} community/informal trails ({explicit_informal} explicit informal, {candidate_count} candidates); removed {state_park_like_removed} State-Park-overlap and {official_like_removed} Forest-Service-overlap OSM paths from {len(elements_by_id)} OSM ways.')

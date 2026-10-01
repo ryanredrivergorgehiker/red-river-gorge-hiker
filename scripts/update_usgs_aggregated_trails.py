@@ -12,6 +12,7 @@ BBOX = (37.45, -83.93, 38.05, -83.25)  # south, west, north, east
 REFERENCE_POINT = (37.86393, -83.55277)  # owner validation point, lat/lon
 CACHE_PATH = pathlib.Path('public/data/map/usgs-aggregated-trails.geojson')
 OSM_CACHE_PATH = pathlib.Path('public/data/map/osm-informal-trails.geojson')
+STATE_PARK_CACHE_PATH = pathlib.Path('public/data/map/ky-state-park-trails.geojson')
 USER_AGENT = 'RedRiverGorgeHiker/1.0 (+https://redrivergorgehiker.com/)'
 
 SERVICES = [
@@ -124,6 +125,22 @@ for feat in fs.get('features', []):
         pass
 official_buffer = unary_union(official_lines).buffer(30) if official_lines else None
 
+# Kentucky State Park trails are also authoritative official geometry. Remove
+# State Park matches before the USGS aggregate can enter Community / Informal.
+state_park_lines = []
+if STATE_PARK_CACHE_PATH.exists():
+    state_park = json.loads(STATE_PARK_CACHE_PATH.read_text(encoding='utf-8'))
+    for feat in state_park.get('features', []):
+        try:
+            geom = shape(feat.get('geometry'))
+            if not geom.is_empty:
+                state_park_lines.append(transform(to_utm, geom))
+        except Exception:
+            pass
+else:
+    raise SystemExit(f'Missing authoritative State Park trail cache: {STATE_PARK_CACHE_PATH}')
+state_park_buffer = unary_union(state_park_lines).buffer(30) if state_park_lines else None
+
 # The USGS source is supplemental to the existing OSM community/informal cache.
 # Remove features that substantially duplicate an existing displayed OSM candidate.
 osm_lines = []
@@ -144,6 +161,7 @@ reference_utm = transform(to_utm, Point(REFERENCE_POINT[1], REFERENCE_POINT[0]))
 features = []
 terra_input = 0
 official_like_removed = 0
+state_park_like_removed = 0
 osm_duplicate_removed = 0
 non_terra_removed = 0
 dropped_out_of_bounds = 0
@@ -194,12 +212,19 @@ for raw in raw_features:
         if official_buffer is not None:
             official_overlap = line_utm.intersection(official_buffer).length / line_utm.length
 
+        state_park_overlap = 0.0
+        if state_park_buffer is not None:
+            state_park_overlap = line_utm.intersection(state_park_buffer).length / line_utm.length
+
         osm_overlap = 0.0
         if osm_buffer is not None:
             osm_overlap = line_utm.intersection(osm_buffer).length / line_utm.length
 
         disposition = 'kept'
-        if official_overlap >= 0.65:
+        if state_park_overlap >= 0.65:
+            state_park_like_removed += 1
+            disposition = 'state-park-overlap'
+        elif official_overlap >= 0.65:
             official_like_removed += 1
             disposition = 'official-overlap'
         elif osm_overlap >= 0.65:
@@ -220,6 +245,7 @@ for raw in raw_features:
             'sourcedatasetid': clean_props.get('sourcedatasetid'),
             'sourcefeatureid': clean_props.get('sourcefeatureid'),
             'official_overlap_ratio': round(official_overlap, 3),
+            'state_park_overlap_ratio': round(state_park_overlap, 3),
             'osm_overlap_ratio': round(osm_overlap, 3),
         })
 
@@ -229,6 +255,7 @@ for raw in raw_features:
         props = dict(clean_props)
         props['rrgh_part'] = part_index
         props['rrgh_official_overlap_ratio'] = round(official_overlap, 3)
+        props['rrgh_state_park_overlap_ratio'] = round(state_park_overlap, 3)
         props['rrgh_osm_overlap_ratio'] = round(osm_overlap, 3)
         coords = [[float(x), float(y)] for x, y in part.coords]
         features.append({
@@ -247,16 +274,19 @@ out = {
         'source': source_name,
         'source_layer': source_layer,
         'source_fallback_errors': source_errors,
-        'method': 'USGS Terra Trail candidates minus current USDA Forest Service official-trail buffer and existing RRGH OSM Community / Informal duplicate buffer',
+        'method': 'USGS Terra Trail candidates minus authoritative Kentucky State Park and current USDA Forest Service official-trail buffers, then existing RRGH OSM Community / Informal duplicate buffer',
         'bbox': list(BBOX),
         'raw_feature_count': len(raw_features),
         'terra_input_count': terra_input,
         'kept_feature_count': len(features),
         'non_terra_removed': non_terra_removed,
         'official_like_removed': official_like_removed,
+        'state_park_like_removed': state_park_like_removed,
         'osm_duplicate_removed': osm_duplicate_removed,
         'official_match_buffer_m': 30,
         'official_overlap_exclusion_ratio': 0.65,
+        'state_park_match_buffer_m': 30,
+        'state_park_overlap_exclusion_ratio': 0.65,
         'osm_match_buffer_m': 20,
         'osm_overlap_exclusion_ratio': 0.65,
         'bounds_clipped': True,
@@ -275,7 +305,7 @@ CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
 CACHE_PATH.write_text(json.dumps(out, separators=(',', ':')) + '\n', encoding='utf-8')
 print(
     f'Wrote {len(features)} supplemental USGS Terra Trail segments from {source_name}; '
-    f'removed {official_like_removed} official-overlap and {osm_duplicate_removed} OSM-duplicate segments.'
+    f'removed {state_park_like_removed} State-Park-overlap, {official_like_removed} Forest-Service-overlap, and {osm_duplicate_removed} OSM-duplicate segments.'
 )
 print('Reference point audit:')
 for item in reference_nearest[:8]:

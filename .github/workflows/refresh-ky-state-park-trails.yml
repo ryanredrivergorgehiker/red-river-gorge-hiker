@@ -3,7 +3,7 @@ name: Refresh Kentucky State Park trails cache
 on:
   workflow_dispatch:
   schedule:
-    - cron: '47 10 * * 1'
+    - cron: '47 8 * * 1'
   push:
     branches:
       - staging/routes-tracks-interactive-map

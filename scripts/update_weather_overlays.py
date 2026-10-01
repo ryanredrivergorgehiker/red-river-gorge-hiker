@@ -37,8 +37,11 @@ def get_json(url,params):
     with urllib.request.urlopen(req,timeout=90) as response:
         return json.load(response)
 
-def get_bytes(url):
-    req=urllib.request.Request(url,headers={'User-Agent':UA})
+def get_bytes(url,params):
+    req=urllib.request.Request(
+        url+'?'+urllib.parse.urlencode(params),
+        headers={'User-Agent':UA},
+    )
     with urllib.request.urlopen(req,timeout=120) as response:
         return response.read(),response.headers.get_content_type()
 
@@ -60,7 +63,7 @@ manifest={
     'products':{},
 }
 for product_id,product in PRODUCTS.items():
-    export=get_json(product['service']+'/export',{
+    export_params={
         'bbox':','.join(str(v) for v in BOUNDS),
         'bboxSR':'4326',
         'imageSR':'3857',
@@ -68,12 +71,9 @@ for product_id,product in PRODUCTS.items():
         'format':'png32',
         'transparent':'true',
         'layers':f"show:{product['layer']}",
-        'f':'json',
-    })
-    href=export.get('href')
-    if not href:
-        raise RuntimeError(f"{product_id}: NOAA export returned no image href: {export}")
-    raw,content_type=get_bytes(href)
+        'f':'image',
+    }
+    raw,content_type=get_bytes(product['service']+'/export',export_params)
     if not raw.startswith(b'\x89PNG\r\n\x1a\n'):
         raise RuntimeError(f"{product_id}: NOAA export was not PNG ({content_type}, {len(raw)} bytes)")
     path=OUT/product['file']
