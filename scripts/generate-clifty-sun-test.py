@@ -124,6 +124,8 @@ def cached_trail_geometry(term: str):
 
 
 def longest_line(geometry):
+    if geometry.geom_type == "LineString":
+        return geometry
     merged = linemerge(geometry)
     if merged.geom_type == "LineString":
         return merged
@@ -156,7 +158,7 @@ def build_test_scope():
     wilderness_features = query_geojson(WILDERNESS_SERVICE, "wildernessname,areaid,gis_acres,boundarystatus")
     clifty = select_geometry(wilderness_features, ("clifty",), "Clifty Wilderness")
 
-    trail_features = query_geojson(TRAIL_SERVICE, "trail_name,trail_no,trail_class,admin_org")
+    trail_features = query_geojson(TRAIL_SERVICE, "trail_name,trail_no,trail_class,attributesubset")
     try:
         douglas = select_geometry(trail_features, ("douglas",), "Douglas Trail")
         douglas_source = "USDA Forest Service NFS Trails"
