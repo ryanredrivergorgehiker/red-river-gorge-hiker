@@ -929,7 +929,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(meta.get('bbox'), [37.45, -83.93, 38.05, -83.25])
         classifications = {feature.get('properties', {}).get('rrgh_classification') for feature in OSM_CACHE['features']}
         self.assertIn('community-candidate', classifications)
-        self.assertTrue(meta.get('state_park_boundary_filtered'))
+        self.assertNotIn('state_park_boundary_filtered', meta)
         self.assertTrue(str(meta.get('state_park_boundary_layer', '')).endswith('/MapServer/8'))
         self.assertEqual(meta.get('state_park_match_buffer_m'), 45)
         self.assertEqual(meta.get('state_park_overlap_exclusion_ratio'), 0.5)
@@ -1149,7 +1149,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn("STATE_PARK_BOUNDARY_LAYER", USGS_TRAILS_GENERATOR)
         self.assertIn('USGS StreamStats', PRIVACY)
         self.assertIn('Snow / recent precipitation', PRIVACY)
-        self.assertIn('validated Natural Bridge State Resort Park boundary', TERMS)
+        self.assertIn('validated Kentucky State Parks boundary record identified as Abbrev=NB', TERMS)
         osm_ids = {feature.get('properties', {}).get('osm_id') for feature in OSM_CACHE.get('features', [])}
         self.assertIn(772984506, osm_ids, "Hanson's Point Trail must survive State Park de-duplication")
         self.assertIn(1341563278, osm_ids, "Pinch-em-Tight community geometry must survive State Park de-duplication")
