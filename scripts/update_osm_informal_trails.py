@@ -20,6 +20,7 @@ ENDPOINTS=[
   'https://overpass.maprva.org/api/interpreter',
 ]
 HEADERS={'User-Agent':'RedRiverGorgeHiker/1.0 (+https://redrivergorgehiker.com/)','Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}
+to_utm=Transformer.from_crs('EPSG:4326','EPSG:32617',always_xy=True).transform
 
 def post_json(endpoint, query):
     req=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers=HEADERS,method='POST')
@@ -41,6 +42,51 @@ def valid_for_tile(data,tile):
     south,west,north,east=tile
     inside=sum(1 for lat,lon in pts if south-0.1<=lat<=north+0.1 and west-0.1<=lon<=east+0.1)
     return inside/len(pts) >= 0.25
+
+def prefilter_existing_state_park_overlaps():
+    if not CACHE_PATH.exists() or not STATE_PARK_CACHE_PATH.exists():
+        return 0
+    try:
+        cached=json.loads(CACHE_PATH.read_text(encoding='utf-8'))
+        state_park=json.loads(STATE_PARK_CACHE_PATH.read_text(encoding='utf-8'))
+        park_lines=[]
+        for feat in state_park.get('features',[]):
+            geom=shape(feat.get('geometry'))
+            if not geom.is_empty:
+                park_lines.append(transform(to_utm,geom))
+        if not park_lines:
+            return 0
+        park_buffer=unary_union(park_lines).buffer(30)
+        kept=[]
+        removed=0
+        for feat in cached.get('features',[]):
+            try:
+                geom=shape(feat.get('geometry'))
+                line_utm=transform(to_utm,geom)
+                ratio=line_utm.intersection(park_buffer).length/line_utm.length if line_utm.length>0 else 0.0
+            except Exception:
+                ratio=0.0
+            if ratio>=0.65:
+                removed+=1
+                continue
+            props=feat.setdefault('properties',{})
+            props['rrgh_state_park_overlap_ratio']=round(ratio,3)
+            kept.append(feat)
+        if removed:
+            cached['features']=kept
+            meta=cached.setdefault('rrgh_cache',{})
+            meta['state_park_like_removed']=int(meta.get('state_park_like_removed') or 0)+removed
+            meta['state_park_match_buffer_m']=30
+            meta['state_park_overlap_exclusion_ratio']=0.65
+            meta['method']='Hosted OSM path/footway candidates with authoritative Kentucky State Park overlaps removed; '+str(meta.get('method') or '')
+            CACHE_PATH.write_text(json.dumps(cached,separators=(',',':'))+'\n',encoding='utf-8')
+            print(f'Prefiltered {removed} authoritative State Park overlap(s) from the existing hosted OSM cache.')
+        return removed
+    except Exception as exc:
+        print(f'WARNING: could not prefilter existing OSM cache against State Park trails: {exc}')
+        return 0
+
+prefilter_existing_state_park_overlaps()
 
 elements_by_id={}
 used_sources=[]
@@ -93,7 +139,6 @@ req=urllib.request.Request(service+'?'+urllib.parse.urlencode(params),headers={'
 with urllib.request.urlopen(req,timeout=90) as response:
     fs=json.load(response)
 
-to_utm=Transformer.from_crs('EPSG:4326','EPSG:32617',always_xy=True).transform
 official_lines=[]
 for feat in fs.get('features',[]):
     try:
