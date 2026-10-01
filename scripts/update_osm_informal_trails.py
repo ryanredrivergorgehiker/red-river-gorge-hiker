@@ -116,6 +116,14 @@ def load_natural_bridge_boundary():
 state_park_buffer=load_state_park_trail_buffer()
 natural_bridge_boundary=load_natural_bridge_boundary()
 
+bootstrap_filter_only=False
+if CACHE_PATH.exists():
+    try:
+        bootstrap_meta=json.loads(CACHE_PATH.read_text(encoding='utf-8')).get('rrgh_cache',{})
+        bootstrap_filter_only=bootstrap_meta.get('natural_bridge_filter_version')!='nb-v1'
+    except Exception:
+        bootstrap_filter_only=True
+
 def filter_cached_state_park_conflicts():
     if not CACHE_PATH.exists():
         return
@@ -154,6 +162,7 @@ def filter_cached_state_park_conflicts():
     meta['natural_bridge_boundary_layer']=NATURAL_BRIDGE_BOUNDARY_QUERY.rsplit('/query',1)[0]
     meta['natural_bridge_boundary_where']=NATURAL_BRIDGE_WHERE
     meta['natural_bridge_boundary_filtered']=natural_bridge_boundary is not None
+    meta['natural_bridge_filter_version']='nb-v1'
     meta['natural_bridge_boundary_clipped_features']=boundary_clipped
     meta['state_park_match_buffer_m']=30
     meta['state_park_overlap_exclusion_ratio']=0.65
@@ -164,6 +173,10 @@ def filter_cached_state_park_conflicts():
     print(f'Filtered hosted OSM cache: {removed} State Park trail duplicate part(s) removed; {boundary_clipped} feature(s) clipped by the validated Natural Bridge boundary.')
 
 filter_cached_state_park_conflicts()
+
+if bootstrap_filter_only:
+    print("Natural Bridge filter bootstrap complete; preserving the restored full hosted cache and skipping the live Overpass refresh on this run.")
+    raise SystemExit(0)
 
 existing_meta={}
 if CACHE_PATH.exists():
