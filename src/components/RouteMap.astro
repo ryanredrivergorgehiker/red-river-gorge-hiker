@@ -261,12 +261,6 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-sunset-potential" aria-hidden="true"></span>
             <span>Sunset Potential</span>
           </label>
-          <label class="route-layer-toggle-row route-layer-toggle-child" title="Staging-only comparison. The accepted six-band sunlight layer is unchanged.">
-            <input type="checkbox" data-map-layer="rrg-lidar-sun-raster-test" />
-            <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
-            <span><strong>TEST</strong> — Smooth sunlight gradient (continuous)</span>
-          </label>
-          <p class="route-layer-source-note">Off by default. Same accepted 1,100+ terrain model, cutoff, colors, and hard rim lip. The fade itself is rendered as continuous transparent raster instead of stepped vector polygons. Turn the accepted sunlight layer off for a clean comparison.</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -1154,21 +1148,27 @@ const enabledSources = enabledBrowserMapSources;
 
     const gorgeLayerId = 'rrg-lidar-sun';
     const gorgeLayer = L.layerGroup();
-    const gorgeSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset'; strength: number; hard: boolean }> = [];
+    const gorgeSunImages: Array<{ overlay: any; kind: 'sunrise' | 'sunset' }> = [];
+    const gorgeSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset' }> = [];
     const loadedGorgeSectorIds = new Set<string>();
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
-    let gorgeFeatureCount = 0;
+    let gorgeHardFeatureCount = 0;
 
     const sunKindToggle = (kind: 'sunrise' | 'sunset') =>
       shell.querySelector<HTMLInputElement>('[data-sun-kind-toggle="' + kind + '"]');
     const sunKindEnabled = (kind: 'sunrise' | 'sunset') => sunKindToggle(kind)?.checked ?? false;
+
     const syncSunPotentialStyles = (value = opacity(gorgeLayerId)) => {
+      gorgeSunImages.forEach((item) => {
+        item.overlay.setOpacity(sunKindEnabled(item.kind) ? value : 0);
+      });
       gorgeSunPaths.forEach((item) => {
         const multiplier = sunKindEnabled(item.kind) ? value : 0;
-        item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, multiplier));
+        item.layer.setStyle(sunPotentialStyle(item.kind, 1, true, multiplier));
       });
     };
+
     const syncSunPotentialControls = () => {
       const sunrise = sunKindEnabled('sunrise');
       const sunset = sunKindEnabled('sunset');
@@ -1193,6 +1193,7 @@ const enabledSources = enabledBrowserMapSources;
       syncSunPotentialStyles();
       if (any) void loadVisibleGorgeSectors();
     };
+
     const setSunKinds = (enabled: boolean) => {
       const sunrise = sunKindToggle('sunrise');
       const sunset = sunKindToggle('sunset');
@@ -1208,12 +1209,23 @@ const enabledSources = enabledBrowserMapSources;
     const loadGorgeManifest = async () => {
       if (gorgeManifest) return gorgeManifest;
       if (!gorgeManifestPromise) {
-        gorgeManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-manifest.json', {
+        gorgeManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-continuous-manifest.json', {
           credentials: 'same-origin',
           cache: 'no-cache'
         }).then(async (response) => {
-          if (!response.ok) throw new Error('Gorge LiDAR manifest HTTP ' + response.status);
+          if (!response.ok) throw new Error('Gorge continuous sunlight manifest HTTP ' + response.status);
           gorgeManifest = await response.json();
+          if (
+            gorgeManifest?.version !== 'lidar-continuous-gradient-v1' ||
+            Number(gorgeManifest?.minimumElevationFeet) !== 1100 ||
+            gorgeManifest?.rendering?.gradient !== 'continuous raster alpha WebP' ||
+            gorgeManifest?.rendering?.separateSunriseSunsetRasters !== true ||
+            gorgeManifest?.rendering?.terrainQualificationChanged !== false ||
+            gorgeManifest?.rendering?.hardLipGeometryChanged !== false ||
+            gorgeManifest?.rendering?.acceptedHardLipReusedVerbatim !== true
+          ) {
+            throw new Error('Gorge continuous sunlight manifest failed rendering contract.');
+          }
           container.dataset.rrgLidarSunSectorCount = String(Array.isArray(gorgeManifest?.sectors) ? gorgeManifest.sectors.length : 0);
           return gorgeManifest;
         });
@@ -1230,46 +1242,70 @@ const enabledSources = enabledBrowserMapSources;
         for (const sector of sectors) {
           const id = String(sector?.id ?? '');
           const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
-          const file = String(sector?.file ?? '');
-          if (!id || bounds.length !== 4 || !file || loadedGorgeSectorIds.has(id)) continue;
+          const sunriseRasterFile = String(sector?.sunriseRasterFile ?? '');
+          const sunsetRasterFile = String(sector?.sunsetRasterFile ?? '');
+          const hardFile = String(sector?.hardFile ?? '');
+          if (!id || bounds.length !== 4 || !sunriseRasterFile || !sunsetRasterFile || !hardFile || loadedGorgeSectorIds.has(id)) continue;
           const [west, south, east, north] = bounds.map(Number);
           const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
           if (!view.intersects(sectorBounds)) continue;
 
           loadedGorgeSectorIds.add(id);
           try {
-            const response = await fetch(import.meta.env.BASE_URL + file, {
+            const sunriseOverlay = L.imageOverlay(
+              import.meta.env.BASE_URL + sunriseRasterFile,
+              sectorBounds,
+              {
+                pane: 'lidarSun',
+                opacity: sunKindEnabled('sunrise') ? opacity(gorgeLayerId) : 0,
+                interactive: false
+              }
+            );
+            sunriseOverlay.addTo(gorgeLayer);
+            gorgeSunImages.push({ overlay: sunriseOverlay, kind: 'sunrise' });
+
+            const sunsetOverlay = L.imageOverlay(
+              import.meta.env.BASE_URL + sunsetRasterFile,
+              sectorBounds,
+              {
+                pane: 'lidarSun',
+                opacity: sunKindEnabled('sunset') ? opacity(gorgeLayerId) : 0,
+                interactive: false
+              }
+            );
+            sunsetOverlay.addTo(gorgeLayer);
+            gorgeSunImages.push({ overlay: sunsetOverlay, kind: 'sunset' });
+
+            const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
               credentials: 'same-origin',
               cache: 'no-cache'
             });
-            if (!response.ok) throw new Error('Gorge LiDAR sector ' + id + ' HTTP ' + response.status);
-            const data = await response.json();
-            const sectorLayer = L.geoJSON(data, {
+            if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
+            const hardData = await hardResponse.json();
+            const hardLayer = L.geoJSON(hardData, {
               pane: 'lidarSun',
               interactive: false,
               style: (feature: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                const strength = Number(feature?.properties?.strength ?? 0);
-                const hard = feature?.properties?.hard === true;
-                return sunPotentialStyle(kind, strength, hard, sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0);
+                return sunPotentialStyle(kind, 1, true, sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0);
               },
               onEachFeature: (feature: any, layer: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                const strength = Number(feature?.properties?.strength ?? 0);
-                const hard = feature?.properties?.hard === true;
-                gorgeSunPaths.push({ layer, kind, strength, hard });
+                gorgeSunPaths.push({ layer, kind });
               }
             });
-            sectorLayer.addTo(gorgeLayer);
-            gorgeFeatureCount += Array.isArray(data?.features) ? data.features.length : 0;
+            hardLayer.addTo(gorgeLayer);
+            gorgeHardFeatureCount += Array.isArray(hardData?.features) ? hardData.features.length : 0;
           } catch (error) {
             loadedGorgeSectorIds.delete(id);
             throw error;
           }
         }
         container.dataset.rrgLidarSunLoadedSectors = String(loadedGorgeSectorIds.size);
-        container.dataset.rrgLidarSunFeatureCount = String(gorgeFeatureCount);
+        container.dataset.rrgLidarSunImageCount = String(gorgeSunImages.length);
+        container.dataset.rrgLidarSunHardFeatureCount = String(gorgeHardFeatureCount);
         syncVisibility(gorgeLayerId);
+        syncSunPotentialStyles();
       } catch (error) {
         console.error(error);
         container.dataset.rrgLidarSunLoadError = 'true';
@@ -1284,130 +1320,6 @@ const enabledSources = enabledBrowserMapSources;
     });
     map.on('moveend', () => {
       if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
-    });
-
-    // Staging-only owner UAT: continuous-raster presentation duplicate of the
-    // accepted 1,100+ sunlight model. The accepted six-band vector layer remains
-    // untouched; this test reuses its hard rim-lip vectors verbatim.
-    const rasterSunTestLayerId = 'rrg-lidar-sun-raster-test';
-    const rasterSunTestLayer = L.layerGroup();
-    const rasterSunTestImages: any[] = [];
-    const rasterSunTestHardPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset' }> = [];
-    const loadedRasterSunTestSectorIds = new Set<string>();
-    let rasterSunTestManifest: any = null;
-    let rasterSunTestManifestPromise: Promise<any> | null = null;
-    let rasterSunTestHardFeatureCount = 0;
-
-    const syncRasterSunTestOpacity = (value = opacity(rasterSunTestLayerId)) => {
-      rasterSunTestImages.forEach((overlay) => overlay.setOpacity(value));
-      rasterSunTestHardPaths.forEach((item) => {
-        item.layer.setStyle(sunPotentialStyle(item.kind, 1, true, value));
-      });
-    };
-
-    mapLayers.set(rasterSunTestLayerId, rasterSunTestLayer);
-    opacitySetters.set(rasterSunTestLayerId, (value) => syncRasterSunTestOpacity(value));
-    syncVisibility(rasterSunTestLayerId);
-
-    const loadRasterSunTestManifest = async () => {
-      if (rasterSunTestManifest) return rasterSunTestManifest;
-      if (!rasterSunTestManifestPromise) {
-        rasterSunTestManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-raster-test-manifest.json', {
-          credentials: 'same-origin',
-          cache: 'no-cache'
-        }).then(async (response) => {
-          if (!response.ok) throw new Error('Continuous sunlight TEST manifest HTTP ' + response.status);
-          rasterSunTestManifest = await response.json();
-          if (
-            rasterSunTestManifest?.acceptedLayerModified !== false ||
-            rasterSunTestManifest?.defaultEnabled !== false ||
-            Number(rasterSunTestManifest?.minimumElevationFeet) !== 1100 ||
-            rasterSunTestManifest?.presentationOnlyChange?.testRendering !== 'continuous raster alpha WebP' ||
-            rasterSunTestManifest?.presentationOnlyChange?.terrainQualificationChanged !== false ||
-            rasterSunTestManifest?.presentationOnlyChange?.hardLipGeometryChanged !== false ||
-            rasterSunTestManifest?.presentationOnlyChange?.acceptedHardLipReusedVerbatim !== true
-          ) {
-            throw new Error('Continuous sunlight TEST manifest failed isolation contract.');
-          }
-          container.dataset.rasterSunTestSectorCount = String(Array.isArray(rasterSunTestManifest?.sectors) ? rasterSunTestManifest.sectors.length : 0);
-          return rasterSunTestManifest;
-        });
-      }
-      return rasterSunTestManifestPromise;
-    };
-
-    const loadVisibleRasterSunTestSectors = async () => {
-      if (!checked(rasterSunTestLayerId)) return;
-      try {
-        const manifest = await loadRasterSunTestManifest();
-        const view = map.getBounds().pad(0.35);
-        const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
-        for (const sector of sectors) {
-          const id = String(sector?.id ?? '');
-          const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
-          const rasterFile = String(sector?.rasterFile ?? '');
-          const hardFile = String(sector?.hardFile ?? '');
-          if (!id || bounds.length !== 4 || !rasterFile || !hardFile || loadedRasterSunTestSectorIds.has(id)) continue;
-          const [west, south, east, north] = bounds.map(Number);
-          const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
-          if (!view.intersects(sectorBounds)) continue;
-
-          loadedRasterSunTestSectorIds.add(id);
-          try {
-            const overlay = L.imageOverlay(
-              import.meta.env.BASE_URL + rasterFile,
-              sectorBounds,
-              {
-                pane: 'lidarSun',
-                opacity: opacity(rasterSunTestLayerId),
-                interactive: false
-              }
-            );
-            overlay.addTo(rasterSunTestLayer);
-            rasterSunTestImages.push(overlay);
-
-            const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
-              credentials: 'same-origin',
-              cache: 'no-cache'
-            });
-            if (!hardResponse.ok) throw new Error('Continuous sunlight TEST hard sector ' + id + ' HTTP ' + hardResponse.status);
-            const hardData = await hardResponse.json();
-            const hardLayer = L.geoJSON(hardData, {
-              pane: 'lidarSun',
-              interactive: false,
-              style: (feature: any) => {
-                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                return sunPotentialStyle(kind, 1, true, opacity(rasterSunTestLayerId));
-              },
-              onEachFeature: (feature: any, layer: any) => {
-                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                rasterSunTestHardPaths.push({ layer, kind });
-              }
-            });
-            hardLayer.addTo(rasterSunTestLayer);
-            rasterSunTestHardFeatureCount += Array.isArray(hardData?.features) ? hardData.features.length : 0;
-          } catch (error) {
-            loadedRasterSunTestSectorIds.delete(id);
-            throw error;
-          }
-        }
-        container.dataset.rasterSunTestLoadedSectors = String(loadedRasterSunTestSectorIds.size);
-        container.dataset.rasterSunTestImageCount = String(rasterSunTestImages.length);
-        container.dataset.rasterSunTestHardFeatureCount = String(rasterSunTestHardFeatureCount);
-        syncVisibility(rasterSunTestLayerId);
-        syncRasterSunTestOpacity();
-      } catch (error) {
-        console.error(error);
-        container.dataset.rasterSunTestLoadError = 'true';
-      }
-    };
-
-    void loadRasterSunTestManifest().catch((error) => {
-      console.error(error);
-      container.dataset.rasterSunTestLoadError = 'true';
-    });
-    map.on('moveend', () => {
-      if (checked(rasterSunTestLayerId)) void loadVisibleRasterSunTestSectors();
     });
 
     const oilGasLayerId = 'kgs-oil-gas-wells';
@@ -3758,8 +3670,6 @@ const enabledSources = enabledBrowserMapSources;
 
     const applyPreset = (name: string) => {
       clearPresetState();
-      // Experimental comparison layers never carry across presets.
-      setLayerControl(rasterSunTestLayerId, false);
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
       if (stage && name === 'sunlight') stage.dataset.sunlightMode = 'true';
 
@@ -3851,9 +3761,6 @@ const enabledSources = enabledBrowserMapSources;
 
         if (id === gorgeLayerId) {
           setSunKinds(checkbox.checked);
-        } else if (id === rasterSunTestLayerId) {
-          syncVisibility(id);
-          if (checkbox.checked) await loadVisibleRasterSunTestSectors();
         } else if (id === oilGasLayerId) {
           setOilGasKinds(checkbox.checked);
         } else if (id === localRoadLayerId) {
