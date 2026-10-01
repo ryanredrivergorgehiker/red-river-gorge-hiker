@@ -104,7 +104,8 @@ def select_geometry(features: Iterable[dict], terms: tuple[str, ...], label: str
                     matches.append(parsed)
     if not matches:
         raise RuntimeError(f"No {label} geometry matched terms {terms}")
-    return unary_union(matches).buffer(0)
+    merged = unary_union(matches)
+    return merged.buffer(0) if merged.geom_type in ("Polygon", "MultiPolygon") else merged
 
 
 def cached_trail_geometry(term: str):
@@ -120,7 +121,10 @@ def cached_trail_geometry(term: str):
             parsed = shape(geom)
             if not parsed.is_empty:
                 matches.append(parsed)
-    return unary_union(matches).buffer(0) if matches else None
+    if not matches:
+        return None
+    merged = unary_union(matches)
+    return merged.buffer(0) if merged.geom_type in ("Polygon", "MultiPolygon") else merged
 
 
 def longest_line(geometry):
