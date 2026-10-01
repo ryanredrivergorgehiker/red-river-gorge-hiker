@@ -1,0 +1,1270 @@
+{
+  "acceptedGeneratorSha256": "8555cd078ca90a985f53181bfc79229b245d23caf5dd1a4a463ad6c9d20860f1",
+  "acceptedLayerModified": false,
+  "acceptedOverlayFingerprintSha256": "f4c6cd3bef1f606c10a4cd5082863e9c2dfde281b49c992e46130dafdec827c1",
+  "area": "Red River Gorge default/Home map extent",
+  "boundsWgs84": [
+    -83.745,
+    37.73,
+    -83.475,
+    37.93
+  ],
+  "counts": {
+    "features": 228502,
+    "sectors": 30,
+    "sunriseHardCells": 798241,
+    "sunsetHardCells": 776939
+  },
+  "defaultEnabled": false,
+  "disclaimer": "Staging owner-UAT presentation test only. It uses the accepted 1,100+ terrain model and changes only the number of vector fade bands from six to twelve.",
+  "minimumElevationFeet": 1100.0,
+  "presentationOnlyChange": {
+    "acceptedFullStrengthThreshold": 0.85,
+    "acceptedGradientBands": 6,
+    "acceptedOuterAlphaCutoff": 0.15,
+    "bandStrengths": [
+      0.2,
+      0.272727,
+      0.345455,
+      0.418182,
+      0.490909,
+      0.563636,
+      0.636364,
+      0.709091,
+      0.781818,
+      0.854545,
+      0.927273,
+      1.0
+    ],
+    "bandThresholds": [
+      0.15,
+      0.213636,
+      0.277273,
+      0.340909,
+      0.404545,
+      0.468182,
+      0.531818,
+      0.595455,
+      0.659091,
+      0.722727,
+      0.786364,
+      0.85
+    ],
+    "hardLipGeometryChanged": false,
+    "terrainQualificationChanged": false,
+    "testFullStrengthThreshold": 0.85,
+    "testGradientBands": 12,
+    "testOuterAlphaCutoff": 0.15
+  },
+  "processingEnvelopeNotLegalBoundary": true,
+  "sectors": [
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.89,
+        -83.7,
+        37.93
+      ],
+      "col": 1,
+      "core": false,
+      "demArraySha256": "2749df2b984077943b2a1f1c7d2c584afbfcb0d80e1f8a68ad54f1014a66bfc3",
+      "features": 9617,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c1.geojson",
+      "geojsonSha256": "4426bad504256fb9cfe08f6308a43ee3d1c0b13cbdea2153b3d2df01ea893ba4",
+      "id": "ring-r1c1",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9322630.756483,4563718.135113,-9317261.379397,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 516052,
+      "sunriseHardCells": 40643,
+      "sunsetGradientCells": 579068,
+      "sunsetHardCells": 41463
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.89,
+        -83.655,
+        37.93
+      ],
+      "col": 2,
+      "core": false,
+      "demArraySha256": "5f74859ec064e2e84925a3d0a3b08e8a34dbdccf64d6a93accec653dc6c91b7e",
+      "features": 12888,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c2.geojson",
+      "geojsonSha256": "7583964d8d1cacb93c298fff64cbd7405481bb7625d329f619163502ede8456b",
+      "id": "ring-r1c2",
+      "pixelSizeMeters": [
+        2.4997100027926695,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9317621.379397,4563718.135113,-9312252.002311,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 742767,
+      "sunriseHardCells": 48521,
+      "sunsetGradientCells": 783098,
+      "sunsetHardCells": 52419
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.89,
+        -83.61,
+        37.93
+      ],
+      "col": 3,
+      "core": false,
+      "demArraySha256": "4f16f6a9de59b14dff799e66215b0a20ef2bc927bb7b4d96ce982d266c2dee38",
+      "features": 13605,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c3.geojson",
+      "geojsonSha256": "66943429bb5d278d0bd159302fbdb694e14d2c12577b53d43c8447e1c5562a7e",
+      "id": "ring-r1c3",
+      "pixelSizeMeters": [
+        2.4997100023278755,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4563718.135113,-9307242.625226,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 830796,
+      "sunriseHardCells": 46468,
+      "sunsetGradientCells": 852937,
+      "sunsetHardCells": 44379
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.89,
+        -83.565,
+        37.93
+      ],
+      "col": 4,
+      "core": false,
+      "demArraySha256": "e6eaaad78ae9c32c1a4b060712dcb5723500015391ce4f8538a5ffbcb9b99d56",
+      "features": 4831,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c4.geojson",
+      "geojsonSha256": "d7468618e1179689a2a08fc04ed456ed9a5acad19a806034415731446a5d9625",
+      "id": "ring-r1c4",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4563718.135113,-9302233.248140,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 398553,
+      "sunriseHardCells": 17073,
+      "sunsetGradientCells": 391249,
+      "sunsetHardCells": 15580
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.89,
+        -83.52000000000001,
+        37.93
+      ],
+      "col": 5,
+      "core": false,
+      "demArraySha256": "4930f8b819081d64952c29e9634c194b86df6af2a96de7711406b4cae52c23ea",
+      "features": 1217,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c5.geojson",
+      "geojsonSha256": "ae2bb2661084a3b8e21997f75a6c8f793bb6fa54b71fa2e66f49a1e1962510d2",
+      "id": "ring-r1c5",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4563718.135113,-9297223.871054,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 114301,
+      "sunriseHardCells": 4327,
+      "sunsetGradientCells": 112591,
+      "sunsetHardCells": 3935
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.89,
+        -83.47500000000001,
+        37.93
+      ],
+      "col": 6,
+      "core": false,
+      "demArraySha256": "0db4bf29a6027b0ec788dae3871f54295dee92f6a2c7010f91e8d3ad2ad5f9bd",
+      "features": 0,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r1c6.geojson",
+      "geojsonSha256": "eafc9b82deb5f3d5eec1eadae85dbc0795cb7a31a358a771f237699bfcc10516",
+      "id": "ring-r1c6",
+      "pixelSizeMeters": [
+        2.4997100023270082,
+        2.4994752098252526
+      ],
+      "rasterShape": [
+        2402,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9297583.871054,4563718.135113,-9292214.493969,4569721.874567",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2402"
+      },
+      "row": 1,
+      "sunriseGradientCells": 0,
+      "sunriseHardCells": 0,
+      "sunsetGradientCells": 0,
+      "sunsetHardCells": 0
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.85,
+        -83.7,
+        37.89
+      ],
+      "col": 1,
+      "core": false,
+      "demArraySha256": "3bb4247fdf597e5a90a814bb8d0ac23f9742a6b29781d6ec0786156b60cac62b",
+      "features": 7325,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r2c1.geojson",
+      "geojsonSha256": "13d53ba2d924c98c7858d89105fea6626fa93b82dc3d4f7ea84c60a759f4f616",
+      "id": "ring-r2c1",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9322630.756483,4558077.460986,-9317261.379397,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 345537,
+      "sunriseHardCells": 38339,
+      "sunsetGradientCells": 374888,
+      "sunsetHardCells": 40608
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.85,
+        -83.655,
+        37.89
+      ],
+      "col": 2,
+      "core": true,
+      "demArraySha256": "0dbed7ba94974b9e5b9771185497593669d14a3038cf9284e6ee8a2939f6c1d0",
+      "features": 16044,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r1c1.geojson",
+      "geojsonSha256": "97b1b92ac921fd726aed7ca2d7d8967ed9c053c36bbc870515d347b26f617130",
+      "id": "r1c1",
+      "pixelSizeMeters": [
+        2.4997100027926695,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9317621.379397,4558077.460986,-9312252.002311,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 749438,
+      "sunriseHardCells": 55533,
+      "sunsetGradientCells": 767270,
+      "sunsetHardCells": 52331
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.85,
+        -83.61,
+        37.89
+      ],
+      "col": 3,
+      "core": true,
+      "demArraySha256": "3621e2ef460eefe7bed7acd44ee2f85ce6e067baa863bcc56c164e8267af0857",
+      "features": 11381,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r1c2.geojson",
+      "geojsonSha256": "41a5d2eb46f5fd99b8fb634585aaee84553f78002f2608346dba8e94e9557131",
+      "id": "r1c2",
+      "pixelSizeMeters": [
+        2.4997100023278755,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4558077.460986,-9307242.625226,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 696764,
+      "sunriseHardCells": 39040,
+      "sunsetGradientCells": 717830,
+      "sunsetHardCells": 36841
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.85,
+        -83.565,
+        37.89
+      ],
+      "col": 4,
+      "core": true,
+      "demArraySha256": "4845bd53beee09c583ef3cca550ae960218ce00ec60e0db78124de46722f44fe",
+      "features": 8697,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r1c3.geojson",
+      "geojsonSha256": "d39a2635e58c0fe3b11bed17f32c1bcdbbe936defeccc8e94bdda331b02a18a5",
+      "id": "r1c3",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4558077.460986,-9302233.248140,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 570205,
+      "sunriseHardCells": 26498,
+      "sunsetGradientCells": 595981,
+      "sunsetHardCells": 25528
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.85,
+        -83.52000000000001,
+        37.89
+      ],
+      "col": 5,
+      "core": true,
+      "demArraySha256": "25aea482ab7395624dba21cbde274ea8332242f950a0cb6636a7b895782bad5b",
+      "features": 689,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r1c4.geojson",
+      "geojsonSha256": "db044cf80eb1dfeb3cce1f0f7404417b6b10ba5e022913c202a9efda356a8f89",
+      "id": "r1c4",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4558077.460986,-9297223.871054,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 39277,
+      "sunriseHardCells": 1092,
+      "sunsetGradientCells": 80198,
+      "sunsetHardCells": 2651
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.85,
+        -83.47500000000001,
+        37.89
+      ],
+      "col": 6,
+      "core": false,
+      "demArraySha256": "dbc1a30924a44b5a23a06e635b6197e845239b02b39bd222be2d06bc98401f9d",
+      "features": 13,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r2c6.geojson",
+      "geojsonSha256": "0d8f3d5cf8c43c53b23cea2fbc02d3f4959c78a65c5621a77c233ae1b39b7b01",
+      "id": "ring-r2c6",
+      "pixelSizeMeters": [
+        2.4997100023270082,
+        2.4992395364433087
+      ],
+      "rasterShape": [
+        2401,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9297583.871054,4558077.460986,-9292214.493969,4564078.135113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2401"
+      },
+      "row": 2,
+      "sunriseGradientCells": 0,
+      "sunriseHardCells": 0,
+      "sunsetGradientCells": 1393,
+      "sunsetHardCells": 7
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.81,
+        -83.7,
+        37.85
+      ],
+      "col": 1,
+      "core": false,
+      "demArraySha256": "9f17eb42544c4966c9999e7c87c9837e2e2a9d4da7b7dfde5537164d14efd6c9",
+      "features": 3842,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r3c1.geojson",
+      "geojsonSha256": "0bec423be4a83b464f7bf560bcf3b29b9a15d321bca4f24421b88609eaa978b9",
+      "id": "ring-r3c1",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9322630.756483,4552439.846113,-9317261.379397,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 152043,
+      "sunriseHardCells": 21252,
+      "sunsetGradientCells": 160083,
+      "sunsetHardCells": 23375
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.81,
+        -83.655,
+        37.85
+      ],
+      "col": 2,
+      "core": true,
+      "demArraySha256": "5bb942be7251de6cccfc317157aa43afa4d0f231a4f936e4ac6dd060196ca552",
+      "features": 15289,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r2c1.geojson",
+      "geojsonSha256": "ba9cfe39950b3f95c200a41e66684e635fba92588fa10fcc713d3cee467fb9c8",
+      "id": "r2c1",
+      "pixelSizeMeters": [
+        2.4997100027926695,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9317621.379397,4552439.846113,-9312252.002311,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 627303,
+      "sunriseHardCells": 61744,
+      "sunsetGradientCells": 668749,
+      "sunsetHardCells": 63233
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.81,
+        -83.61,
+        37.85
+      ],
+      "col": 3,
+      "core": true,
+      "demArraySha256": "436a6fba17ca51204014f61159aae6e4e22877533ae52331791becb1713c532c",
+      "features": 12499,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r2c2.geojson",
+      "geojsonSha256": "04d52dc5ef56db1e3f3bdc15b21c96c989b24547f156e8ca00e3cad9ea811599",
+      "id": "r2c2",
+      "pixelSizeMeters": [
+        2.4997100023278755,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4552439.846113,-9307242.625226,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 600185,
+      "sunriseHardCells": 40278,
+      "sunsetGradientCells": 570422,
+      "sunsetHardCells": 37290
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.81,
+        -83.565,
+        37.85
+      ],
+      "col": 4,
+      "core": true,
+      "demArraySha256": "22f7f08ed134f166daaf4646f9a92d74068c53911c33a0d61b635c67bad5d0c1",
+      "features": 9665,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r2c3.geojson",
+      "geojsonSha256": "02dca1183c885ba30c2bbd7560e382910342dc92765e97370a3981920d089c12",
+      "id": "r2c3",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4552439.846113,-9302233.248140,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 501087,
+      "sunriseHardCells": 24304,
+      "sunsetGradientCells": 519682,
+      "sunsetHardCells": 23747
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.81,
+        -83.52000000000001,
+        37.85
+      ],
+      "col": 5,
+      "core": true,
+      "demArraySha256": "d7c2355fd0d325c91ec3018e4b28b6ce7b19ee4ae0f1c834f461868b38dc1331",
+      "features": 331,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r2c4.geojson",
+      "geojsonSha256": "d11436beb7d0b44c021116c436505182c1a73e4ce5ca8cb536e43b2515a9e416",
+      "id": "r2c4",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4552439.846113,-9297223.871054,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 18067,
+      "sunriseHardCells": 396,
+      "sunsetGradientCells": 23822,
+      "sunsetHardCells": 525
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.81,
+        -83.47500000000001,
+        37.85
+      ],
+      "col": 6,
+      "core": false,
+      "demArraySha256": "62b286628de4b9487eff23f242a06f5c6938abe2e5e8fc8faac29dac5276a36a",
+      "features": 24,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r3c6.geojson",
+      "geojsonSha256": "e659d37513472b0f14d71478dc0b0ac32d367878ee77a4aba35256fa2c2b7f9f",
+      "id": "ring-r3c6",
+      "pixelSizeMeters": [
+        2.4997100023270082,
+        2.4990061970831206
+      ],
+      "rasterShape": [
+        2400,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9297583.871054,4552439.846113,-9292214.493969,4558437.460986",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2400"
+      },
+      "row": 3,
+      "sunriseGradientCells": 0,
+      "sunriseHardCells": 0,
+      "sunsetGradientCells": 1662,
+      "sunsetHardCells": 28
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.77,
+        -83.7,
+        37.81
+      ],
+      "col": 1,
+      "core": false,
+      "demArraySha256": "5e5361951c2f3a1d1c58e8a42aa4ab576aae06411b61bbd79ea94621372cbf15",
+      "features": 7570,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r4c1.geojson",
+      "geojsonSha256": "af14080ad278f8ec0e97a891e21f21d086266408e19694623ccd0dbce8298d00",
+      "id": "ring-r4c1",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9322630.756483,4546805.284430,-9317261.379397,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 318077,
+      "sunriseHardCells": 33526,
+      "sunsetGradientCells": 327237,
+      "sunsetHardCells": 30535
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.77,
+        -83.655,
+        37.81
+      ],
+      "col": 2,
+      "core": true,
+      "demArraySha256": "f856f619f40fd33aafcef0c6c260da3e2f0c18b84f45bc217cb562311b513ae5",
+      "features": 20111,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r3c1.geojson",
+      "geojsonSha256": "b53a42dc483353c8f32f3b91dd908f7c5cac53c0d78cb7609642a5b2ca57dfd7",
+      "id": "r3c1",
+      "pixelSizeMeters": [
+        2.4997100027926695,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9317621.379397,4546805.284430,-9312252.002311,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 891944,
+      "sunriseHardCells": 74172,
+      "sunsetGradientCells": 979523,
+      "sunsetHardCells": 76610
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.77,
+        -83.61,
+        37.81
+      ],
+      "col": 3,
+      "core": true,
+      "demArraySha256": "76e3da469bb6ff0ccb5a0a2cc8ed8edf0b4761053a548c69267aac8576793f1b",
+      "features": 18757,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r3c2.geojson",
+      "geojsonSha256": "2a2d93d8aa73837f24bc9f887c70b66f1ab4cbca7c40e1bd9f31d36fdb153e35",
+      "id": "r3c2",
+      "pixelSizeMeters": [
+        2.4997100023278755,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4546805.284430,-9307242.625226,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 988440,
+      "sunriseHardCells": 59596,
+      "sunsetGradientCells": 1000656,
+      "sunsetHardCells": 55079
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.77,
+        -83.565,
+        37.81
+      ],
+      "col": 4,
+      "core": true,
+      "demArraySha256": "89512db3c1892c78a1f7b901588fc0d0f0e858ec68ec8ae1e059be68b5672b35",
+      "features": 10588,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r3c3.geojson",
+      "geojsonSha256": "786c3fa5d25473feeee059b6371f86cff56283864c6e51223bac52d20d709f06",
+      "id": "r3c3",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4546805.284430,-9302233.248140,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 601260,
+      "sunriseHardCells": 25900,
+      "sunsetGradientCells": 573524,
+      "sunsetHardCells": 21181
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.77,
+        -83.52000000000001,
+        37.81
+      ],
+      "col": 5,
+      "core": true,
+      "demArraySha256": "0de0ebb05ad2294202e57cb392578630a3f2d7017c73739dc135bc6ff14c07cc",
+      "features": 49,
+      "file": "data/map/rrg-lidar-sun-smooth-test/r3c4.geojson",
+      "geojsonSha256": "62ad3ee4057b9432bcc365dc738039ae06373552041be7fe978af57fcc213e03",
+      "id": "r3c4",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4546805.284430,-9297223.871054,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 6003,
+      "sunriseHardCells": 198,
+      "sunsetGradientCells": 4277,
+      "sunsetHardCells": 93
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.77,
+        -83.47500000000001,
+        37.81
+      ],
+      "col": 6,
+      "core": false,
+      "demArraySha256": "1269c8fa96e27f6751d1e24f0d9612588adb32fb095134c4719fa60a4cc865d6",
+      "features": 0,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r4c6.geojson",
+      "geojsonSha256": "35960a46481eb1125efa39182bf45bc8cdd8483d776714d73ff64cd3ab898ed8",
+      "id": "ring-r4c6",
+      "pixelSizeMeters": [
+        2.4997100023270082,
+        2.4998172155963574
+      ],
+      "rasterShape": [
+        2398,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9297583.871054,4546805.284430,-9292214.493969,4552799.846113",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2398"
+      },
+      "row": 4,
+      "sunriseGradientCells": 0,
+      "sunriseHardCells": 0,
+      "sunsetGradientCells": 1164,
+      "sunsetHardCells": 54
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.73,
+        -83.7,
+        37.77
+      ],
+      "col": 1,
+      "core": false,
+      "demArraySha256": "5c7ec7d45420522b4a122e404e47dca8f4b0088c1a87c8417b1ab5f911a3c55f",
+      "features": 12016,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c1.geojson",
+      "geojsonSha256": "6df5d16a1676855a3fbbf8a79b8f5d4eeda182771ded91b90bd5c4582afe4c89",
+      "id": "ring-r5c1",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9322630.756483,4541173.769891,-9317261.379397,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 626859,
+      "sunriseHardCells": 42728,
+      "sunsetGradientCells": 640023,
+      "sunsetHardCells": 39323
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.73,
+        -83.655,
+        37.77
+      ],
+      "col": 2,
+      "core": false,
+      "demArraySha256": "a9f423a5009716630025c95be2028f1d9a4529a170454e61014de5de862ca9cb",
+      "features": 16060,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c2.geojson",
+      "geojsonSha256": "1f95e92ea14c3a005ea895af698069dd291923b76c119ec4baee8d6f15c5e5ec",
+      "id": "ring-r5c2",
+      "pixelSizeMeters": [
+        2.4997100027926695,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9317621.379397,4541173.769891,-9312252.002311,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 773733,
+      "sunriseHardCells": 49455,
+      "sunsetGradientCells": 785191,
+      "sunsetHardCells": 45744
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.73,
+        -83.61,
+        37.77
+      ],
+      "col": 3,
+      "core": false,
+      "demArraySha256": "b1a9579b69ea27c361201991acd6448edf87d44575808cbdf57d10470440c6ea",
+      "features": 10073,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c3.geojson",
+      "geojsonSha256": "2efb92808bb2b62f044d82733227a62832044f635cb35d16dfd6068b5beecbeb",
+      "id": "ring-r5c3",
+      "pixelSizeMeters": [
+        2.4997100023278755,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9312612.002311,4541173.769891,-9307242.625226,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 566880,
+      "sunriseHardCells": 31687,
+      "sunsetGradientCells": 608122,
+      "sunsetHardCells": 32336
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.73,
+        -83.565,
+        37.77
+      ],
+      "col": 4,
+      "core": false,
+      "demArraySha256": "9dfd1ca35755578bd5e06f0493e96f52239044c5638d7289f05499a80789a5ad",
+      "features": 4777,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c4.geojson",
+      "geojsonSha256": "3ec3d72b20faee0c030a0f870a3307eb63d18ffe8a01a0627e8b3b15c6844db7",
+      "id": "ring-r5c4",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9307602.625226,4541173.769891,-9302233.248140,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 310207,
+      "sunriseHardCells": 14188,
+      "sunsetGradientCells": 294244,
+      "sunsetHardCells": 11227
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.73,
+        -83.52000000000001,
+        37.77
+      ],
+      "col": 5,
+      "core": false,
+      "demArraySha256": "9055266e9b90e56c2269ee3cc5b472eb84e8c873bd9683a128c359e3d7f24496",
+      "features": 523,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c5.geojson",
+      "geojsonSha256": "3d5f6ce71bccb8eef2173c290e2cc4b81c1e05b290bc1782f87aa2b2aded754d",
+      "id": "ring-r5c5",
+      "pixelSizeMeters": [
+        2.499710002793537,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9302593.248140,4541173.769891,-9297223.871054,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 36184,
+      "sunriseHardCells": 1269,
+      "sunsetGradientCells": 23622,
+      "sunsetHardCells": 785
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.73,
+        -83.47500000000001,
+        37.77
+      ],
+      "col": 6,
+      "core": false,
+      "demArraySha256": "8c709a1e843fec696eac9e4fa8c90a80418583ee95c41e447c0b48091d57e31b",
+      "features": 21,
+      "file": "data/map/rrg-lidar-sun-smooth-test/ring-r5c6.geojson",
+      "geojsonSha256": "c59371c1b0d6a4410946f8db7f38cc7e3e54a3d52d92a74cb09ce321e1f9806e",
+      "id": "ring-r5c6",
+      "pixelSizeMeters": [
+        2.4997100023270082,
+        2.499588877346536
+      ],
+      "rasterShape": [
+        2397,
+        2148
+      ],
+      "request": {
+        "adjustAspectRatio": "false",
+        "bbox": "-9297583.871054,4541173.769891,-9292214.493969,4547165.284430",
+        "bboxSR": "3857",
+        "f": "json",
+        "format": "tiff",
+        "imageSR": "3857",
+        "interpolation": "RSP_BilinearInterpolation",
+        "pixelType": "F32",
+        "returnSquarePixels": "false",
+        "size": "2148,2397"
+      },
+      "row": 5,
+      "sunriseGradientCells": 1500,
+      "sunriseHardCells": 14,
+      "sunsetGradientCells": 827,
+      "sunsetHardCells": 32
+    }
+  ],
+  "source": {
+    "name": "KyFromAbove Phase 2 2-foot LiDAR-derived bare-earth DEM",
+    "service": "https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer",
+    "zUnits": "meters"
+  },
+  "status": "staging-owner-uat-only",
+  "targetPixelMeters": 2.5,
+  "version": "lidar-smooth-gradient-test-v1"
+}
