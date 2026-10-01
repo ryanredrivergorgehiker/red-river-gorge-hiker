@@ -14,6 +14,7 @@ PRODUCTS={
         'unit':'inches',
         'service':'https://mapservices.weather.noaa.gov/raster/rest/services/snow/NOHRSC_Snow_Analysis/MapServer',
         'layer':0,
+        'legend_layer':3,
         'file':'snow-depth.png',
     },
     'precip-10d':{
@@ -21,6 +22,7 @@ PRODUCTS={
         'unit':'inches',
         'service':'https://mapservices.weather.noaa.gov/raster/rest/services/obs/rfc_qpe/MapServer',
         'layer':57,
+        'legend_layer':60,
         'file':'precip-10d.png',
     },
     'precip-30d':{
@@ -28,6 +30,7 @@ PRODUCTS={
         'unit':'inches',
         'service':'https://mapservices.weather.noaa.gov/raster/rest/services/obs/rfc_qpe/MapServer',
         'layer':65,
+        'legend_layer':68,
         'file':'precip-30d.png',
     },
 }
@@ -45,12 +48,19 @@ def get_bytes(url,params):
     with urllib.request.urlopen(req,timeout=120) as response:
         return response.read(),response.headers.get_content_type()
 
-def legend_labels(service,layer):
+def legend_items(service,layer):
     try:
         data=get_json(service+'/legend',{'f':'json'})
         for entry in data.get('layers') or []:
             if int(entry.get('layerId',-1))==int(layer):
-                return [str(item.get('label') or '').strip() for item in entry.get('legend') or [] if str(item.get('label') or '').strip()]
+                items=[]
+                for item in entry.get('legend') or []:
+                    label=str(item.get('label') or '').strip()
+                    image_data=str(item.get('imageData') or '').strip()
+                    content_type=str(item.get('contentType') or 'image/png').strip()
+                    if label and image_data:
+                        items.append({'label':label,'imageData':image_data,'contentType':content_type})
+                return items
     except Exception as exc:
         print(f'WARNING: legend lookup failed for {service} layer {layer}: {exc}')
     return []
@@ -85,7 +95,7 @@ for product_id,product in PRODUCTS.items():
         'sourceService':product['service'],
         'sourceLayerId':product['layer'],
         'sourceAttribution':'NOAA / National Weather Service',
-        'legendLabels':legend_labels(product['service'],product['layer']),
+        'legend':legend_items(product['service'],product['legend_layer']),
         'bytes':len(raw),
     }
     print(f"{product_id}: wrote {path} ({len(raw)} bytes)")
