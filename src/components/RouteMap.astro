@@ -261,6 +261,12 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-sunset-potential" aria-hidden="true"></span>
             <span>Sunset Potential</span>
           </label>
+          <label class="route-layer-toggle-row route-layer-toggle-child">
+            <input type="checkbox" data-map-layer="clifty-sun-1000-1100-test" />
+            <span class="route-layer-swatch swatch-sun-potential" aria-hidden="true"></span>
+            <span><strong>TEST</strong> — Clifty 1,000–1,100 ft supplement</span>
+          </label>
+          <p class="route-layer-source-note">Staging test only · off by default. Adds only lower-elevation candidates in the approved Clifty test scope; the accepted 1,100+ Sunrise / Sunset Potential paint is unchanged.</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kyaerial-phase3" />
             <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
@@ -365,6 +371,7 @@ const enabledSources = enabledBrowserMapSources;
             <label><span>Terrain relief (LiDAR)</span><input type="checkbox" data-fine-tune-layer="ky-hillshade" aria-label="Toggle Terrain relief" /><input type="range" min="0" max="100" value="75" data-opacity="ky-hillshade" aria-label="Terrain relief opacity" disabled /></label>
             <label><span>Snow / precipitation</span><input type="checkbox" data-fine-tune-layer="rrgh-weather" aria-label="Toggle snow / precipitation" /><input type="range" min="0" max="100" value="35" data-opacity="rrgh-weather" aria-label="Snow / precipitation opacity" disabled /></label>
             <label><span>Sunrise / Sunset Potential</span><input type="checkbox" data-fine-tune-layer="rrg-lidar-sun" aria-label="Toggle Sunrise / Sunset Potential" /><input type="range" min="0" max="100" value="100" data-opacity="rrg-lidar-sun" aria-label="Sunrise / Sunset Potential opacity" disabled /></label>
+            <label><span>TEST — Clifty 1,000–1,100 ft</span><input type="checkbox" data-fine-tune-layer="clifty-sun-1000-1100-test" aria-label="Toggle Clifty 1,000 to 1,100 ft sunlight test supplement" /><input type="range" min="0" max="100" value="100" data-opacity="clifty-sun-1000-1100-test" aria-label="Clifty sunlight test supplement opacity" disabled /></label>
             <label><span>Leaf-on aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase3" aria-label="Toggle Leaf-on aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase3" aria-label="Leaf-on aerial imagery opacity" disabled /></label>
             <label><span>Leaf-off aerial imagery</span><input type="checkbox" data-fine-tune-layer="kyaerial-phase2-leafoff" aria-label="Toggle Leaf-off aerial imagery" /><input type="range" min="0" max="100" value="100" data-opacity="kyaerial-phase2-leafoff" aria-label="Leaf-off aerial imagery opacity" disabled /></label>
             <label><span>Oil &amp; Gas Wells</span><input type="checkbox" data-fine-tune-layer="kgs-oil-gas-wells" aria-label="Toggle Oil &amp; Gas Wells" /><input type="range" min="0" max="100" value="90" data-opacity="kgs-oil-gas-wells" aria-label="Oil &amp; Gas Wells opacity" disabled /></label>
@@ -516,7 +523,7 @@ const enabledSources = enabledBrowserMapSources;
     <div class="route-map-read-grid">
       <p><strong>Topo:</strong> contour lines connect places at the same elevation. Closer lines mean steeper terrain; wider spacing means gentler terrain.</p>
       <p><strong>Terrain relief:</strong> hillshade makes ridges, hollows and cliffs easier to recognize.</p>
-      <p><strong>Sunrise / Sunset Potential:</strong> terrain-only estimate above 1,100 ft. Solid coral/indigo starts at directional exposed rims and fades toward the local ridge crest. “Potential” means likely exposure, not guaranteed access, safety, standing room, vegetation clearance, or a usable viewpoint.</p>
+      <p><strong>Sunrise / Sunset Potential:</strong> terrain-only estimate above 1,100 ft. Solid coral/indigo starts at directional exposed rims and fades toward the local ridge crest. “Potential” means likely exposure, not guaranteed access, safety, standing room, vegetation clearance, or a usable viewpoint. The separate Clifty 1,000–1,100 ft TEST supplement is staging-only and off by default.</p>
       <p><strong>Aerial:</strong> shows visible ground features when photographed; it does not establish public access.</p>
       <p><strong>Official trails:</strong> magenta pill-dashed lines show Kentucky State Park trails; bright cyan pill-dashed lines show USDA Forest Service trails. Where the two overlap, the State Park trail is drawn on top.</p>
       <p><strong>RRGH routes:</strong> thick, individually colored highlighted lines for hikes documented by Red River Gorge Hiker.</p>
@@ -1154,11 +1161,25 @@ const enabledSources = enabledBrowserMapSources;
     let gorgeManifestPromise: Promise<any> | null = null;
     let gorgeFeatureCount = 0;
 
+    const cliftySunTestLayerId = 'clifty-sun-1000-1100-test';
+    const cliftySunTestLayer = L.layerGroup();
+    const cliftySunTestPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset'; strength: number; hard: boolean }> = [];
+    const loadedCliftySunTestSectorIds = new Set<string>();
+    let cliftySunTestManifest: any = null;
+    let cliftySunTestManifestPromise: Promise<any> | null = null;
+    let cliftySunTestFeatureCount = 0;
+
     const sunKindToggle = (kind: 'sunrise' | 'sunset') =>
       shell.querySelector<HTMLInputElement>('[data-sun-kind-toggle="' + kind + '"]');
     const sunKindEnabled = (kind: 'sunrise' | 'sunset') => sunKindToggle(kind)?.checked ?? false;
     const syncSunPotentialStyles = (value = opacity(gorgeLayerId)) => {
       gorgeSunPaths.forEach((item) => {
+        const multiplier = sunKindEnabled(item.kind) ? value : 0;
+        item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, multiplier));
+      });
+    };
+    const syncCliftySunTestStyles = (value = opacity(cliftySunTestLayerId)) => {
+      cliftySunTestPaths.forEach((item) => {
         const multiplier = sunKindEnabled(item.kind) ? value : 0;
         item.layer.setStyle(sunPotentialStyle(item.kind, item.strength, item.hard, multiplier));
       });
@@ -1185,7 +1206,9 @@ const enabledSources = enabledBrowserMapSources;
       }
       syncVisibility(gorgeLayerId);
       syncSunPotentialStyles();
+      syncCliftySunTestStyles();
       if (any) void loadVisibleGorgeSectors();
+      if (any && checked(cliftySunTestLayerId)) void loadVisibleCliftySunTestSectors();
     };
     const setSunKinds = (enabled: boolean) => {
       const sunrise = sunKindToggle('sunrise');
@@ -1198,6 +1221,9 @@ const enabledSources = enabledBrowserMapSources;
     mapLayers.set(gorgeLayerId, gorgeLayer);
     opacitySetters.set(gorgeLayerId, (value) => syncSunPotentialStyles(value));
     syncVisibility(gorgeLayerId);
+    mapLayers.set(cliftySunTestLayerId, cliftySunTestLayer);
+    opacitySetters.set(cliftySunTestLayerId, (value) => syncCliftySunTestStyles(value));
+    syncVisibility(cliftySunTestLayerId);
 
     const loadGorgeManifest = async () => {
       if (gorgeManifest) return gorgeManifest;
@@ -1278,6 +1304,86 @@ const enabledSources = enabledBrowserMapSources;
     });
     map.on('moveend', () => {
       if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
+    });
+
+    const loadCliftySunTestManifest = async () => {
+      if (cliftySunTestManifest) return cliftySunTestManifest;
+      if (!cliftySunTestManifestPromise) {
+        cliftySunTestManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/clifty-sun-1000-1100-test-manifest.json', {
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        }).then(async (response) => {
+          if (!response.ok) throw new Error('Clifty sunlight test manifest HTTP ' + response.status);
+          cliftySunTestManifest = await response.json();
+          if (cliftySunTestManifest?.acceptedLayerModified !== false) {
+            throw new Error('Clifty sunlight test manifest does not affirm accepted-layer isolation');
+          }
+          container.dataset.cliftySunTestSectorCount = String(Array.isArray(cliftySunTestManifest?.sectors) ? cliftySunTestManifest.sectors.length : 0);
+          container.dataset.cliftySunTestAcceptedLayerModified = String(cliftySunTestManifest.acceptedLayerModified);
+          return cliftySunTestManifest;
+        });
+      }
+      return cliftySunTestManifestPromise;
+    };
+
+    async function loadVisibleCliftySunTestSectors() {
+      if (!checked(cliftySunTestLayerId)) return;
+      try {
+        const manifest = await loadCliftySunTestManifest();
+        const view = map.getBounds().pad(0.35);
+        const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
+        for (const sector of sectors) {
+          const id = String(sector?.id ?? '');
+          const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
+          const file = String(sector?.file ?? '');
+          if (!id || bounds.length !== 4 || !file || loadedCliftySunTestSectorIds.has(id)) continue;
+          const [west, south, east, north] = bounds.map(Number);
+          const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
+          if (!view.intersects(sectorBounds)) continue;
+
+          loadedCliftySunTestSectorIds.add(id);
+          try {
+            const response = await fetch(import.meta.env.BASE_URL + file, {
+              credentials: 'same-origin',
+              cache: 'no-cache'
+            });
+            if (!response.ok) throw new Error('Clifty sunlight test sector ' + id + ' HTTP ' + response.status);
+            const data = await response.json();
+            const sectorLayer = L.geoJSON(data, {
+              pane: 'lidarSun',
+              interactive: false,
+              style: (feature: any) => {
+                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                const strength = Number(feature?.properties?.strength ?? 0);
+                const hard = feature?.properties?.hard === true;
+                return sunPotentialStyle(kind, strength, hard, sunKindEnabled(kind) ? opacity(cliftySunTestLayerId) : 0);
+              },
+              onEachFeature: (feature: any, layer: any) => {
+                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                const strength = Number(feature?.properties?.strength ?? 0);
+                const hard = feature?.properties?.hard === true;
+                cliftySunTestPaths.push({ layer, kind, strength, hard });
+              }
+            });
+            sectorLayer.addTo(cliftySunTestLayer);
+            cliftySunTestFeatureCount += Array.isArray(data?.features) ? data.features.length : 0;
+          } catch (error) {
+            loadedCliftySunTestSectorIds.delete(id);
+            throw error;
+          }
+        }
+        container.dataset.cliftySunTestLoadedSectors = String(loadedCliftySunTestSectorIds.size);
+        container.dataset.cliftySunTestFeatureCount = String(cliftySunTestFeatureCount);
+        syncVisibility(cliftySunTestLayerId);
+        syncCliftySunTestStyles();
+      } catch (error) {
+        console.error(error);
+        container.dataset.cliftySunTestLoadError = 'true';
+      }
+    }
+
+    map.on('moveend', () => {
+      if (checked(cliftySunTestLayerId)) void loadVisibleCliftySunTestSectors();
     });
 
 
@@ -3610,6 +3716,10 @@ const enabledSources = enabledBrowserMapSources;
         syncVisibility(id);
         syncFineTuneControl(id);
         if (enabled) void loadWeatherOverlay();
+      } else if (id === cliftySunTestLayerId) {
+        syncVisibility(id);
+        syncFineTuneControl(id);
+        if (enabled) void loadVisibleCliftySunTestSectors();
       } else if (id === localRoadLayerId) {
         syncLocalRoadLayer();
         syncFineTuneControl(id);
@@ -3641,6 +3751,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, false);
         setLayerControl(weatherLayerId, false, 35);
+        setLayerControl(cliftySunTestLayerId, false, 100);
         setSunKinds(false);
       } else if (name === 'terrain') {
         setLayerControl('kytopo', true, 25);
@@ -3652,6 +3763,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl(localRoadLayerId, true);
         if (weatherSelect) weatherSelect.value = 'precip-10d';
         setLayerControl(weatherLayerId, false, 35);
+        setLayerControl(cliftySunTestLayerId, false, 100);
         setSunKinds(false);
       } else if (name === 'aerial') {
         setLayerControl('kytopo', false, 70);
@@ -3661,6 +3773,7 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase3', true, 100);
         setLayerControl(localRoadLayerId, true);
         setLayerControl(weatherLayerId, false, 35);
+        setLayerControl(cliftySunTestLayerId, false, 100);
         setSunKinds(false);
       } else if (name === 'sunlight') {
         setLayerControl('kytopo', true, 25);
@@ -3673,6 +3786,7 @@ const enabledSources = enabledBrowserMapSources;
         if (sunOpacity) sunOpacity.value = '100';
         setLayerControl(localRoadLayerId, false);
         setLayerControl(weatherLayerId, false, 35);
+        setLayerControl(cliftySunTestLayerId, false, 100);
         setSunKinds(true);
       }
       syncAerialControlState();
@@ -3692,7 +3806,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
 
-    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff', weatherLayerId]);
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff', weatherLayerId, cliftySunTestLayerId]);
     const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
 
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
@@ -3727,6 +3841,9 @@ const enabledSources = enabledBrowserMapSources;
         } else if (id === weatherLayerId) {
           syncVisibility(id);
           if (checkbox.checked) await loadWeatherOverlay();
+        } else if (id === cliftySunTestLayerId) {
+          syncVisibility(id);
+          if (checkbox.checked) await loadVisibleCliftySunTestSectors();
         } else if (checkbox.checked && id === 'osm-informal-trails') {
           await loadInformalTrails();
         } else if (checkbox.checked && optionalLandLayerIds.has(id)) {
