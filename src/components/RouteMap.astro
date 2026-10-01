@@ -1318,8 +1318,10 @@ const enabledSources = enabledBrowserMapSources;
           if (cliftySunTestManifest?.acceptedLayerModified !== false) {
             throw new Error('Clifty sunlight test manifest does not affirm accepted-layer isolation');
           }
-          container.dataset.cliftySunTestSectorCount = String(Array.isArray(cliftySunTestManifest?.sectors) ? cliftySunTestManifest.sectors.length : 0);
-          container.dataset.cliftySunTestAcceptedLayerModified = String(cliftySunTestManifest.acceptedLayerModified);
+          if (container) {
+            container.dataset.cliftySunTestSectorCount = String(Array.isArray(cliftySunTestManifest?.sectors) ? cliftySunTestManifest.sectors.length : 0);
+            container.dataset.cliftySunTestAcceptedLayerModified = String(cliftySunTestManifest.acceptedLayerModified);
+          }
           return cliftySunTestManifest;
         });
       }
@@ -1372,13 +1374,15 @@ const enabledSources = enabledBrowserMapSources;
             throw error;
           }
         }
-        container.dataset.cliftySunTestLoadedSectors = String(loadedCliftySunTestSectorIds.size);
-        container.dataset.cliftySunTestFeatureCount = String(cliftySunTestFeatureCount);
+        if (container) {
+          container.dataset.cliftySunTestLoadedSectors = String(loadedCliftySunTestSectorIds.size);
+          container.dataset.cliftySunTestFeatureCount = String(cliftySunTestFeatureCount);
+        }
         syncVisibility(cliftySunTestLayerId);
         syncCliftySunTestStyles();
       } catch (error) {
         console.error(error);
-        container.dataset.cliftySunTestLoadError = 'true';
+        if (container) container.dataset.cliftySunTestLoadError = 'true';
       }
     }
 
