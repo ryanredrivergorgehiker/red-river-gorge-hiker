@@ -5085,13 +5085,17 @@ const enabledSources = enabledBrowserMapSources;
       planHelp.replaceChildren();
       const messages: Record<string, string[]> = {
         overview: [
-          'Measure distance: point-to-point distance with elevation change.',
+          'Measure distance: click or tap points to measure a straight-line distance.',
           'Measure area: outline a polygon for area and perimeter.',
           'Bearing / slope: choose two points for true bearing, grade and slope angle.',
           'Watershed: choose an outlet point for a USGS StreamStats drainage-basin estimate.',
-          'Build trail route: snap to mapped trails/roads or add straight off-network segments.'
+          'Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.',
+          'Use Undo / Redo as you edit, or Clear to start over.'
         ],
-        measure: ['Click or tap points to measure straight-line distance and elevation change.'],
+        measure: [
+          'Click or tap points to measure straight-line distance.',
+          'Elevation change updates from USGS 3DEP after two points.'
+        ],
         area: ['Click or tap three or more boundary points. Area and perimeter update with every point.'],
         bearing: ['Choose a start point and end point. A third click starts a new bearing measurement.'],
         watershed: ['Click a stream/outlet point. RRGH sends only that clicked coordinate to USGS StreamStats and displays its approximate basin delineation.'],
@@ -5101,7 +5105,7 @@ const enabledSources = enabledBrowserMapSources;
           'Right-click or press and hold a planned segment to delete it.'
         ]
       };
-      const items = messages[tool ?? 'overview'] ?? messages.overview;
+      const items = messages[tool ?? 'overview'] ?? messages.overview ?? [];
       const list = document.createElement(items.length === 1 ? 'p' : 'ul');
       for (const item of items) {
         if (list instanceof HTMLUListElement) {
@@ -5223,11 +5227,14 @@ const enabledSources = enabledBrowserMapSources;
       measurePoints.length > 0 || areaPoints.length > 0 || bearingPoints.length > 0 || watershedLayer.getLayers().length > 0 || planStops.length > 0 || planSegments.length > 0;
 
     const planningDeleteMessage = () => {
-      const hasMeasure = measurePoints.length > 0 || areaPoints.length > 0 || bearingPoints.length > 0 || watershedLayer.getLayers().length > 0;
+      const hasDistanceMeasurement = measurePoints.length > 0;
+      const hasAnalysis = areaPoints.length > 0 || bearingPoints.length > 0 || watershedLayer.getLayers().length > 0;
       const hasRoute = planStops.length > 0 || planSegments.length > 0;
-      if (hasMeasure && hasRoute) return 'Are you sure you want to delete your measurements, analysis, and built path?';
-      if (hasMeasure) return 'Are you sure you want to delete your measurements and analysis?';
-      return 'Are you sure you want to delete your built path?';
+      if (hasDistanceMeasurement && hasRoute && !hasAnalysis) return 'Are you sure you want to delete your measurement and built path?';
+      if (hasDistanceMeasurement && !hasRoute && !hasAnalysis) return 'Are you sure you want to delete your measurement?';
+      if (!hasDistanceMeasurement && hasRoute && !hasAnalysis) return 'Are you sure you want to delete your built path?';
+      if ((hasDistanceMeasurement || hasAnalysis) && hasRoute) return 'Are you sure you want to delete your measurements, analysis, and built path?';
+      return 'Are you sure you want to delete your measurements and analysis?';
     };
 
     const closePlanPanel = () => {
@@ -5967,6 +5974,7 @@ const enabledSources = enabledBrowserMapSources;
     container.dataset.currentZoom = String(map.getZoom());
     setTimeout(() => {
       map.invalidateSize({ pan: false });
+      if (mode === 'full' && !sharedViewApplied) setHomeView();
       syncViewportDiagnostics();
     }, 50);
     setLoadProgress(100, 'Map ready');
