@@ -3203,3 +3203,149 @@
 @media(max-width:700px){
   .route-plan-mode-buttons{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
+
+/* Mobile-only full-screen map usability refinement — 2026-10-01 */
+.route-map-mobile-fullscreen-view,
+.route-map-mobile-quickref{
+  display:none;
+}
+
+@media(max-width:700px){
+  .route-map-mobile-topbar button{
+    font-size:.72rem;
+    line-height:1.12;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-mobile-topbar button,
+  .route-map-shell:fullscreen .route-map-mobile-topbar button{
+    min-height:40px;
+    padding:.4rem .42rem;
+    font-size:.68rem;
+    line-height:1.08;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-stage,
+  .route-map-shell:fullscreen .route-map-stage{
+    height:calc(100dvh - 108px - env(safe-area-inset-bottom))!important;
+    min-height:0!important;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-mobile-bar,
+  .route-map-shell:fullscreen .route-map-mobile-bar{
+    display:grid!important;
+    position:static!important;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:.35rem;
+    margin:.38rem 0 0;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-mobile-bar button,
+  .route-map-shell:fullscreen .route-map-mobile-bar button{
+    min-height:40px;
+    padding:.42rem .42rem;
+    font-size:.7rem;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-mobile-fullscreen-view,
+  .route-map-shell:fullscreen .route-map-mobile-fullscreen-view{
+    display:block;
+    position:absolute;
+    z-index:1012;
+    top:.5rem;
+    left:.5rem;
+    margin:0;
+  }
+  .route-map-mobile-fullscreen-view select{
+    width:7.7rem;
+    min-height:34px;
+    padding:.34rem 1.55rem .34rem .55rem;
+    border:1px solid rgba(255,255,255,.5);
+    border-radius:9px;
+    background:#17372d;
+    color:#fff;
+    box-shadow:0 .14rem .45rem rgba(20,29,24,.24);
+    font:inherit;
+    font-size:.7rem;
+    font-weight:800;
+  }
+  .route-map-mobile-fullscreen-view select:disabled{
+    opacity:.5;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-mobile-quickref,
+  .route-map-shell:fullscreen .route-map-mobile-quickref{
+    display:block;
+    position:absolute;
+    z-index:1013;
+    top:.5rem;
+    right:.5rem;
+  }
+  .route-map-mobile-quickref>summary{
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    list-style:none;
+    border:1px solid rgba(255,255,255,.58);
+    border-radius:50%;
+    background:rgba(251,250,246,.96);
+    color:#17372d;
+    box-shadow:0 .14rem .45rem rgba(20,29,24,.22);
+    cursor:pointer;
+    font-size:.82rem;
+    font-weight:900;
+    line-height:1;
+  }
+  .route-map-mobile-quickref>summary::-webkit-details-marker{display:none}
+  .route-map-mobile-quickref>summary::marker{content:''}
+  .route-map-mobile-quickref[open]>summary{
+    background:#17372d;
+    color:#fff;
+  }
+  .route-map-mobile-quickref-card{
+    position:absolute;
+    top:2.25rem;
+    right:0;
+    width:min(17rem,calc(100vw - 1.9rem));
+    padding:.7rem .75rem;
+    border:1px solid rgba(23,55,45,.18);
+    border-radius:11px;
+    background:rgba(251,250,246,.98);
+    color:#26372f;
+    box-shadow:0 .25rem .9rem rgba(20,29,24,.25);
+  }
+  .route-map-mobile-quickref-card strong{
+    display:block;
+    margin-bottom:.38rem;
+    color:#17372d;
+    font-size:.78rem;
+  }
+  .route-map-mobile-quickref-card p{
+    margin:.35rem 0 0;
+    font-size:.68rem;
+    line-height:1.38;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map-activity-stack,
+  .route-map-shell:fullscreen .route-map-activity-stack{
+    top:3.2rem;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-map .leaflet-top.leaflet-left .leaflet-control-scale,
+  .route-map-shell:fullscreen .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
+    margin-top:3rem!important;
+  }
+
+  .route-map-shell[data-focus-mode="true"] .route-search-panel,
+  .route-map-shell[data-focus-mode="true"] .route-explore-panel,
+  .route-map-shell[data-focus-mode="true"] .route-plan-panel,
+  .route-map-shell[data-focus-mode="true"] .route-share-panel,
+  .route-map-shell:fullscreen .route-search-panel,
+  .route-map-shell:fullscreen .route-explore-panel,
+  .route-map-shell:fullscreen .route-plan-panel,
+  .route-map-shell:fullscreen .route-share-panel{
+    bottom:.45rem;
+    max-height:calc(100% - 1rem);
+  }
+}
+
