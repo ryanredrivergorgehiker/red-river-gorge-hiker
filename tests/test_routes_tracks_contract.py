@@ -699,6 +699,27 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn("window.scrollBy(0, mobilePageScrollGesture", MAP)
         self.assertIn("container.addEventListener('touchend'", MAP)
 
+    def test_mobile_fullscreen_keeps_core_navigation_and_quick_reference(self):
+        self.assertIn('data-mobile-map-preset', MAP)
+        self.assertIn('aria-label="Map view while in full screen"', MAP)
+        for value in ('hiking', 'terrain', 'aerial', 'sunlight'):
+            self.assertIn(f'<option value="{value}"', MAP)
+        self.assertIn('route-map-mobile-quickref', MAP)
+        self.assertIn('Full-screen quick reference', MAP)
+        self.assertIn("const mobilePresetSelect = shell.querySelector<HTMLSelectElement>('[data-mobile-map-preset]')", MAP)
+        self.assertIn("mobilePresetSelect?.addEventListener('change'", MAP)
+        self.assertIn("element instanceof HTMLSelectElement", MAP)
+        self.assertIn("if (mobilePresetSelect) mobilePresetSelect.value = 'custom';", MAP)
+        self.assertIn("mobilePresetSelect.value = name", MAP)
+        self.assertIn('Mobile-only full-screen map usability refinement — 2026-10-01', ROUTES_CSS)
+        self.assertIn('font-size:.68rem;', ROUTES_CSS)
+        self.assertIn('height:calc(100dvh - 108px - env(safe-area-inset-bottom))!important;', ROUTES_CSS)
+        self.assertIn('.route-map-shell[data-focus-mode="true"] .route-map-mobile-bar,', ROUTES_CSS)
+        self.assertIn('display:grid!important;', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-fullscreen-view select{', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-quickref>summary{', ROUTES_CSS)
+        self.assertIn('margin-top:3rem!important;', ROUTES_CSS)
+
     def test_explore_is_a_route_browser_and_plan_is_single_entry_point(self):
         self.assertIn('data-sheet-open="explore"', MAP)
         self.assertIn('data-sheet-open="plan"', MAP)
