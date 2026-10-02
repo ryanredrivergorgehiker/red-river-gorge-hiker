@@ -3202,6 +3202,8 @@
 }
 @media(max-width:700px){
   .route-plan-mode-buttons{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .route-plan-mode-buttons button[data-map-tool="plan"]{grid-column:1/-1!important}
+  .route-plan-actions{justify-content:center}
 }
 
 /* Mobile-only full-screen map usability correction — 2026-10-02 owner UAT pass */
