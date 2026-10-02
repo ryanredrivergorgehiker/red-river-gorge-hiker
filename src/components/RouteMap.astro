@@ -123,7 +123,7 @@ const enabledSources = enabledBrowserMapSources;
           <div class="route-map-mobile-quickref-card" role="note">
             <strong>Full-screen quick reference</strong>
             <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> fine-tunes what is shown.</p>
-            <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Plan</b> measures or builds a route; <b>Share</b> sends the current map view.</p>
+            <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Tools</b> measures, analyzes, or builds a route; <b>Share</b> sends the current map view.</p>
             <p><b>My location</b> centers on you. <b>Home</b> returns to the Gorge overview.</p>
           </div>
         </details>
@@ -221,7 +221,7 @@ const enabledSources = enabledBrowserMapSources;
 
     <div class="route-map-tools route-map-tools-desktop" role="toolbar" aria-label="Map tools">
       <button type="button" data-sheet-open="explore" data-ready-group="core" disabled>Explore</button>
-      <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
+      <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Tools</button>
       <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
     </div>
 
@@ -234,7 +234,7 @@ const enabledSources = enabledBrowserMapSources;
         <span class="sr-only">Search routes, landmarks, trails, roads, and places</span>
         <input type="search" data-map-search placeholder="Search Sky Bridge, Trail 214, landmarks…" autocomplete="off" />
       </label>
-      <p class="route-map-sheet-help">Searches RRGH routes and landmarks plus loaded Forest Service trails, roads, and recreation sites. Informal trails are searchable after that layer is loaded.</p>
+      <p class="route-map-sheet-help">Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, plus loaded community/informal trails.</p>
       <div class="route-search-results" data-map-search-results aria-live="polite"></div>
     </div>
 
@@ -297,8 +297,8 @@ const enabledSources = enabledBrowserMapSources;
           </p>
         </div>
 
-        <div class="route-layer-group" aria-label="Base and terrain layers">
-          <p class="route-layer-group-title">Base &amp; terrain</p>
+        <div class="route-layer-group" aria-label="Base and imagery layers">
+          <p class="route-layer-group-title">Base &amp; Imagery</p>
           <label class="route-layer-toggle-row">
             <input type="checkbox" data-map-layer="kytopo" />
             <span class="route-layer-swatch swatch-topo" aria-hidden="true"></span>
@@ -314,6 +314,20 @@ const enabledSources = enabledBrowserMapSources;
             <span class="route-layer-swatch swatch-relief" aria-hidden="true"></span>
             <span>Terrain relief (LiDAR)</span>
           </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kyaerial-phase3" />
+            <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
+            <span>Leaf-on aerial imagery</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="kyaerial-phase2-leafoff" />
+            <span class="route-layer-swatch swatch-aerial-leafoff" aria-hidden="true"></span>
+            <span>Leaf-off aerial imagery</span>
+          </label>
+        </div>
+
+        <div class="route-layer-group" aria-label="Conditions and analysis layers">
+          <p class="route-layer-group-title">Conditions &amp; Analysis</p>
           <label class="route-layer-toggle-row route-layer-toggle-master">
             <input type="checkbox" data-map-layer="rrgh-weather" />
             <span class="route-layer-swatch swatch-weather" aria-hidden="true"></span>
@@ -345,16 +359,6 @@ const enabledSources = enabledBrowserMapSources;
             <input type="checkbox" data-sun-kind-toggle="sunset" />
             <span class="route-layer-swatch swatch-sunset-potential" aria-hidden="true"></span>
             <span>Sunset Potential</span>
-          </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="kyaerial-phase3" />
-            <span class="route-layer-swatch swatch-aerial" aria-hidden="true"></span>
-            <span>Leaf-on aerial imagery</span>
-          </label>
-          <label class="route-layer-toggle-row">
-            <input type="checkbox" data-map-layer="kyaerial-phase2-leafoff" />
-            <span class="route-layer-swatch swatch-aerial-leafoff" aria-hidden="true"></span>
-            <span>Leaf-off aerial imagery</span>
           </label>
         </div>
 
@@ -471,10 +475,10 @@ const enabledSources = enabledBrowserMapSources;
 
     <div class="route-plan-panel route-map-sheet" data-map-sheet="plan" hidden>
       <div class="route-map-sheet-header">
-        <strong data-plan-panel-title>Plan</strong>
+        <strong data-plan-panel-title>Tools</strong>
         <div class="route-plan-header-actions">
-          <button type="button" data-plan-minimize aria-label="Minimize planning controls">−</button>
-          <button type="button" data-plan-close aria-label="Close planning controls">×</button>
+          <button type="button" data-plan-minimize aria-label="Minimize map tools">−</button>
+          <button type="button" data-plan-close aria-label="Close map tools">×</button>
         </div>
       </div>
       <div class="route-plan-mode-buttons">
@@ -506,7 +510,7 @@ const enabledSources = enabledBrowserMapSources;
       </div>
       <div class="route-plan-live-stats" data-plan-live-stats hidden aria-live="polite">
         <div class="route-plan-live-stats-head">
-          <strong data-plan-stats-title>Planning totals</strong>
+          <strong data-plan-stats-title>Tool results</strong>
           <span data-plan-stats-note>Elevation updates after two points.</span>
         </div>
         <div class="route-plan-live-stats-grid">
@@ -520,7 +524,7 @@ const enabledSources = enabledBrowserMapSources;
 
     <dialog class="route-plan-confirm" data-plan-confirm aria-labelledby="route-plan-confirm-title">
       <form method="dialog">
-        <h2 id="route-plan-confirm-title">Clear planning work?</h2>
+        <h2 id="route-plan-confirm-title">Clear current tool work?</h2>
         <p data-plan-confirm-message>Are you sure you want to delete your built path?</p>
         <div class="route-plan-confirm-actions">
           <button type="submit" value="cancel" data-plan-confirm-cancel>Cancel</button>
@@ -585,12 +589,12 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-bar" role="toolbar" aria-label="Mobile map controls">
     <button type="button" data-sheet-open="search" data-ready-group="core" disabled>Search</button>
     <button type="button" data-sheet-open="explore" data-ready-group="core" disabled>Explore</button>
-    <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Plan</button>
+    <button type="button" data-sheet-open="plan" data-ready-group="core" disabled>Tools</button>
     <button type="button" data-map-action="share" data-ready-group="share" disabled>Share</button>
   </div>
 
   <div class="route-map-context-strip">
-    <p><strong>Map data:</strong> Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · OpenStreetMap.</p>
+    <p><strong>Map data:</strong> Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · U.S. Census Bureau · OpenStreetMap.</p>
     <p><strong>Property boundaries are not shown; this map does not establish legal access.</strong></p>
     <p><a href={import.meta.env.BASE_URL + 'search-and-rescue/#current-conditions'}>Before you go: check closures, road access &amp; conditions →</a></p>
     <p><a href={import.meta.env.BASE_URL + 'copyright-and-terms/#outdoor-safety-location-disclaimer'}>Outdoor safety and location disclaimer →</a></p>
@@ -937,6 +941,18 @@ const enabledSources = enabledBrowserMapSources;
     }
 
     const priorOverflow = { body: document.body.style.overflow, html: document.documentElement.style.overflow };
+    let fullscreenReturnScrollY: number | null = null;
+    const rememberFullscreenReturnPosition = () => {
+      if (fullscreenReturnScrollY === null) fullscreenReturnScrollY = window.scrollY;
+    };
+    const restoreFullscreenReturnPosition = () => {
+      const scrollY = fullscreenReturnScrollY;
+      fullscreenReturnScrollY = null;
+      if (scrollY === null) return;
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' }));
+      });
+    };
     const focusModeActive = () => shell.dataset.focusMode === 'true';
     const realFullscreenActive = () => document.fullscreenElement === shell;
     const mobileFullscreenActive = () =>
@@ -970,6 +986,7 @@ const enabledSources = enabledBrowserMapSources;
       document.body.style.overflow = priorOverflow.body;
       document.documentElement.style.overflow = priorOverflow.html;
       syncFullscreenUi();
+      restoreFullscreenReturnPosition();
     };
     const toggleFullscreen = async () => {
       if (realFullscreenActive()) {
@@ -980,6 +997,7 @@ const enabledSources = enabledBrowserMapSources;
         exitFocusMode();
         return;
       }
+      rememberFullscreenReturnPosition();
       if (typeof shell.requestFullscreen === 'function') {
         try {
           await shell.requestFullscreen();
@@ -992,8 +1010,12 @@ const enabledSources = enabledBrowserMapSources;
     };
     for (const button of fullscreenButtons) button.addEventListener('click', () => { void toggleFullscreen(); });
     document.addEventListener('fullscreenchange', () => {
-      if (!realFullscreenActive() && focusModeActive()) exitFocusMode();
-      else syncFullscreenUi();
+      if (!realFullscreenActive() && focusModeActive()) {
+        exitFocusMode();
+      } else {
+        syncFullscreenUi();
+        if (!realFullscreenActive()) restoreFullscreenReturnPosition();
+      }
     });
 
     const areaLabelGroup = L.layerGroup().addTo(map);
@@ -4316,7 +4338,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!planPanel || !planMinimize) return;
       const minimized = planPanel.dataset.minimized === 'true';
       planMinimize.textContent = minimized ? '+' : '−';
-      planMinimize.setAttribute('aria-label', minimized ? 'Expand planning controls' : 'Minimize planning controls');
+      planMinimize.setAttribute('aria-label', minimized ? 'Expand map tools' : 'Minimize map tools');
       if (planPanelTitle) {
         planPanelTitle.textContent = minimized
           ? ''
@@ -4330,7 +4352,7 @@ const enabledSources = enabledBrowserMapSources;
                   ? 'Bearing / slope'
                   : activeTool === 'watershed'
                     ? 'Watershed'
-                    : 'Plan';
+                    : 'Tools';
       }
       if (planMobileHistory) {
         planMobileHistory.hidden = !(minimized && activeTool !== null && !planPanel.hidden);
@@ -5560,7 +5582,7 @@ const enabledSources = enabledBrowserMapSources;
         minimizePlanPanel();
       } else if (!vectorFailures.length && readiness.core) {
         if (planLiveStats) planLiveStats.hidden = true;
-        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Plan for terrain measurements and route building.');
+        setStatus('Drag to pan, use +/− or pinch to zoom. Right-click on desktop or press and hold on mobile for coordinates. Use Explore to browse routes or Tools for measurements, terrain analysis, and route building.');
       }
     };
 
