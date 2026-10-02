@@ -772,6 +772,16 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
         self.assertIn('bottom:3rem!important;', ROUTES_CSS)
 
+    def test_fullscreen_rehomes_only_when_transition_starts_at_home(self):
+        self.assertIn('let homeViewState = false', MAP)
+        self.assertIn('let rehomeAfterFullscreenResize = false', MAP)
+        self.assertIn('rehomeAfterFullscreenResize = homeViewState', MAP)
+        self.assertIn('if (rehomeAfterFullscreenResize)', MAP)
+        self.assertIn("container.dataset.fullscreenHomeReframed = 'true'", MAP)
+        self.assertIn("container.dataset.homeState = 'true'", MAP)
+        self.assertIn("container.dataset.homeState = homeViewState ? 'true' : 'false'", MAP)
+        self.assertNotIn("map.on('zoomend', () => setHomeView()", MAP)
+
     def test_mobile_sunlight_uses_prebuilt_bounded_rasters_without_forced_zoom(self):
         self.assertNotIn("mobileFullscreenSunMinZoom", MAP)
         self.assertNotIn("map.setView(map.getCenter(), 13", MAP)

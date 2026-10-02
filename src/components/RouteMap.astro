@@ -942,6 +942,8 @@ const enabledSources = enabledBrowserMapSources;
 
     const priorOverflow = { body: document.body.style.overflow, html: document.documentElement.style.overflow };
     let fullscreenReturnScrollY: number | null = null;
+    let homeViewState = false;
+    let rehomeAfterFullscreenResize = false;
     const rememberFullscreenReturnPosition = () => {
       if (fullscreenReturnScrollY === null) fullscreenReturnScrollY = window.scrollY;
     };
@@ -971,9 +973,19 @@ const enabledSources = enabledBrowserMapSources;
       if (!active && mobileQuickRef) mobileQuickRef.open = false;
       window.requestAnimationFrame(() => {
         map.invalidateSize({ pan: false });
-        if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId)) {
-          void loadVisibleGorgeSectors();
-        }
+        window.requestAnimationFrame(() => {
+          map.invalidateSize({ pan: false });
+          if (rehomeAfterFullscreenResize) {
+            rehomeAfterFullscreenResize = false;
+            setHomeView();
+            container.dataset.fullscreenHomeReframed = 'true';
+          } else {
+            container.dataset.fullscreenHomeReframed = 'false';
+          }
+          if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId)) {
+            void loadVisibleGorgeSectors();
+          }
+        });
       });
     };
     const enterFocusMode = () => {
@@ -990,6 +1002,7 @@ const enabledSources = enabledBrowserMapSources;
       restoreFullscreenReturnPosition();
     };
     const toggleFullscreen = async () => {
+      rehomeAfterFullscreenResize = homeViewState;
       if (realFullscreenActive()) {
         try { await document.exitFullscreen(); } catch {}
         return;
@@ -1072,6 +1085,7 @@ const enabledSources = enabledBrowserMapSources;
     const homeZoom = 13;
     const mobileHomeZoom = 11;
     const setHomeView = () => {
+      homeViewState = true;
       if (isMobileFullMap()) {
         map.setView(mobileHomeCenter, mobileHomeZoom, { animate: false });
         container.dataset.homeView = 'gorge-overview';
@@ -1080,7 +1094,20 @@ const enabledSources = enabledBrowserMapSources;
         container.dataset.homeView = 'detail';
       }
       syncAreaLabels();
+      // A Home action is semantic, not merely a coordinate comparison. Leaflet
+      // may clamp the center slightly as the map viewport changes size.
+      homeViewState = true;
+      container.dataset.homeState = 'true';
     };
+    const syncHomeViewState = () => {
+      const targetCenter = isMobileFullMap() ? mobileHomeCenter : homeCenter;
+      const targetZoom = isMobileFullMap() ? mobileHomeZoom : homeZoom;
+      homeViewState = map.getZoom() === targetZoom && map.getCenter().distanceTo(targetCenter) <= 1;
+      container.dataset.homeState = homeViewState ? 'true' : 'false';
+    };
+    map.on('moveend', syncHomeViewState);
+    map.on('zoomend', syncHomeViewState);
+
     const updateSunlightPresetTimes = () => {
       if (!sunlightPresetTimes) return;
       const today = redRiverDateParts();
@@ -1102,6 +1129,7 @@ const enabledSources = enabledBrowserMapSources;
       map.setView([37.8185, -83.5795], 14);
     }
     syncAreaLabels();
+    syncHomeViewState();
 
     const mapLayers = new Map<string, any>();
     const opacitySetters = new Map<string, (value: number) => void>();
