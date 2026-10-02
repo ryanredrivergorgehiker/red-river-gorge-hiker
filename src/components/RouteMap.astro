@@ -103,7 +103,6 @@ const enabledSources = enabledBrowserMapSources;
           <option value="terrain">Terrain view</option>
           <option value="aerial">Aerial view</option>
           <option value="sunlight">Sunlight view</option>
-          <option value="custom" disabled>Custom layers</option>
         </select>
       </label>
 
@@ -955,9 +954,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!active && mobileQuickRef) mobileQuickRef.open = false;
       window.requestAnimationFrame(() => {
         map.invalidateSize({ pan: false });
-        if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId) && map.getZoom() < 13) {
-          map.setView(map.getCenter(), 13, { animate: false });
-        } else if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId)) {
+        if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId)) {
           void loadVisibleGorgeSectors();
         }
       });
@@ -1269,7 +1266,6 @@ const enabledSources = enabledBrowserMapSources;
     const gorgeSunPaths: GorgeSunPath[] = [];
     const loadedGorgeSectorIds = new Set<string>();
     const gorgeSectorResources = new Map<string, GorgeSectorResources>();
-    const mobileFullscreenSunMinZoom = 13;
     const mobileFullscreenSunMaxSectors = 6;
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
@@ -1351,12 +1347,7 @@ const enabledSources = enabledBrowserMapSources;
       syncVisibility(gorgeLayerId);
       syncSunPotentialStyles();
       if (any) {
-        if (mobileFullscreenActive() && map.getZoom() < mobileFullscreenSunMinZoom) {
-          container.dataset.rrgLidarSunLoadState = 'zooming';
-          map.setView(map.getCenter(), mobileFullscreenSunMinZoom, { animate: false });
-        } else {
-          void loadVisibleGorgeSectors();
-        }
+        void loadVisibleGorgeSectors();
       } else {
         gorgeLoadRevision += 1;
         setMapActivity('sunlight', false);
@@ -1420,12 +1411,6 @@ const enabledSources = enabledBrowserMapSources;
 
     const loadVisibleGorgeSectors = async () => {
       if (!checked(gorgeLayerId)) return;
-      if (mobileFullscreenActive() && map.getZoom() < mobileFullscreenSunMinZoom) {
-        pruneMobileFullscreenGorgeSectors(new Set());
-        container.dataset.rrgLidarSunLoadState = 'zoom-required';
-        setMapActivity('sunlight', false);
-        return;
-      }
       const revision = ++gorgeLoadRevision;
       let activityShown = false;
       const showActivity = () => {
@@ -3935,7 +3920,7 @@ const enabledSources = enabledBrowserMapSources;
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
         button.setAttribute('aria-pressed', 'false');
       }
-      if (mobilePresetSelect) mobilePresetSelect.value = 'custom';
+      if (mobilePresetSelect) mobilePresetSelect.selectedIndex = -1;
       if (stage) delete stage.dataset.sunlightMode;
     };
 
@@ -4231,7 +4216,7 @@ const enabledSources = enabledBrowserMapSources;
       if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial', 'sunlight'].includes(sharedPreset)) {
         applyPreset(sharedPreset);
       } else if (sharedPreset === 'custom' && mobilePresetSelect) {
-        mobilePresetSelect.value = 'custom';
+        mobilePresetSelect.selectedIndex = -1;
       }
 
       const layerState = params.get('rrghLayers');
