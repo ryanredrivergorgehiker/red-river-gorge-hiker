@@ -3204,7 +3204,7 @@
   .route-plan-mode-buttons{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 
-/* Mobile-only full-screen map usability correction — 2026-10-02 */
+/* Mobile-only full-screen map usability correction — 2026-10-02 owner UAT pass */
 .route-map-mobile-fullscreen-entry,
 .route-map-mobile-fullscreen-cluster{
   display:none;
@@ -3218,13 +3218,18 @@
     font-size:.72rem;
     line-height:1.12;
   }
+  .route-map-mobile-status{
+    display:block!important;
+  }
 
+  /* Normal mobile: fullscreen lives inside the map at upper-right. */
   .route-map-mobile-fullscreen-entry{
     display:block;
     position:absolute;
     z-index:1014;
     top:.5rem;
-    left:.5rem;
+    right:.5rem;
+    left:auto;
   }
 
   .route-map-fullscreen-icon{
@@ -3263,7 +3268,7 @@
   .route-fullscreen-arrow-sw{bottom:-1px;left:-1px}
 
   .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
-    margin-top:3rem!important;
+    margin-top:.55rem!important;
   }
 
   .route-map-shell[data-focus-mode="true"],
@@ -3286,11 +3291,13 @@
     display:none;
   }
 
+  /* Full screen: normal utility buttons stay inside the map at the top,
+     with the same sizing they use outside full screen. */
   .route-map-shell[data-focus-mode="true"] .route-map-mobile-topbar,
   .route-map-shell:fullscreen .route-map-mobile-topbar{
     position:absolute!important;
-    z-index:1016;
-    top:2.72rem;
+    z-index:1020;
+    top:.45rem;
     left:.45rem;
     right:.45rem;
     display:grid!important;
@@ -3307,12 +3314,14 @@
     line-height:1.12;
   }
 
+  /* View / collapse / information cluster sits below the top utility row,
+     aligned under Layers on the right. */
   .route-map-shell[data-focus-mode="true"] .route-map-mobile-fullscreen-cluster,
   .route-map-shell:fullscreen .route-map-mobile-fullscreen-cluster{
     display:flex;
     position:absolute;
     z-index:1017;
-    top:.45rem;
+    top:3.55rem;
     right:.45rem;
     align-items:flex-start;
     justify-content:flex-end;
@@ -3401,6 +3410,8 @@
     line-height:1.36;
   }
 
+  /* Normal-page instructions stay visible. Full screen replaces them with
+     the small information control above. */
   .route-map-shell[data-focus-mode="true"] .route-map-mobile-status,
   .route-map-shell:fullscreen .route-map-mobile-status,
   .route-map-shell[data-focus-mode="true"] .route-map-context-strip,
@@ -3431,13 +3442,26 @@
     line-height:1;
   }
 
+  /* Layers opens under the three top buttons. It may cover the secondary
+     view/collapse/info cluster, but the top utility row stays exposed. */
+  .route-map-shell[data-focus-mode="true"] .route-layer-panel[open],
+  .route-map-shell:fullscreen .route-layer-panel[open]{
+    z-index:1018;
+    top:3.45rem;
+    bottom:3rem;
+    left:.45rem;
+    right:.45rem;
+    width:auto;
+    max-height:none;
+  }
+
   .route-map-shell[data-focus-mode="true"] .route-map-activity-stack,
   .route-map-shell:fullscreen .route-map-activity-stack{
-    top:5.9rem;
+    top:7.15rem;
   }
   .route-map-shell[data-focus-mode="true"] .route-map .leaflet-top.leaflet-left .leaflet-control-scale,
   .route-map-shell:fullscreen .route-map .leaflet-top.leaflet-left .leaflet-control-scale{
-    margin-top:5.8rem!important;
+    margin-top:3.55rem!important;
   }
 
   .route-map-shell[data-focus-mode="true"] .route-search-panel,
@@ -3452,4 +3476,3 @@
     max-height:calc(100% - 6.2rem);
   }
 }
-
