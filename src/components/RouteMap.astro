@@ -77,31 +77,61 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-topbar" role="toolbar" aria-label="Mobile map utilities">
     <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
     <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
-    <button type="button" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>Full screen</button>
+    <button type="button" class="route-map-fullscreen-icon" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>
+      <svg class="route-fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+        <path d="M3 8l6-6M21 8l-6-6M3 16l6 6M21 16l-6 6"></path>
+      </svg>
+      <svg class="route-fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 9H4V4M15 9h5V4M9 15H4v5M15 15h5v5"></path>
+        <path d="M4 4l6 6M20 4l-6 6M4 20l6-6M20 20l-6-6"></path>
+      </svg>
+      <span class="sr-only" data-fullscreen-label>Full screen</span>
+    </button>
     <button type="button" data-sheet-open="layers" data-ready-group="core" aria-label="Open map layers" disabled>Layers</button>
   </div>
 
   <div class="route-map-stage">
-    <label class="route-map-mobile-fullscreen-view">
-      <span class="sr-only">Map view</span>
-      <select data-mobile-map-preset data-ready-group="core" aria-label="Map view while in full screen" disabled>
-        <option value="hiking" selected>Hiking view</option>
-        <option value="terrain">Terrain view</option>
-        <option value="aerial">Aerial view</option>
-        <option value="sunlight">Sunlight view</option>
-        <option value="custom" disabled>Custom layers</option>
-      </select>
-    </label>
+    <div class="route-map-mobile-fullscreen-cluster" aria-label="Full screen map controls">
+      <label class="route-map-mobile-fullscreen-view">
+        <span class="sr-only">Map view</span>
+        <select data-mobile-map-preset data-ready-group="core" aria-label="Map view while in full screen" disabled>
+          <option value="hiking" selected>Hiking view</option>
+          <option value="terrain">Terrain view</option>
+          <option value="aerial">Aerial view</option>
+          <option value="sunlight">Sunlight view</option>
+          <option value="custom" disabled>Custom layers</option>
+        </select>
+      </label>
 
-    <details class="route-map-mobile-quickref">
-      <summary aria-label="Open full screen map quick reference"><span aria-hidden="true">i</span></summary>
-      <div class="route-map-mobile-quickref-card" role="note">
-        <strong>Full-screen quick reference</strong>
-        <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> fine-tunes what is shown.</p>
-        <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Plan</b> measures or builds a route; <b>Share</b> sends the current map view.</p>
-        <p><b>My location</b> centers on you. <b>Home</b> returns to the Gorge overview.</p>
+      <div class="route-map-mobile-fullscreen-actions">
+        <button type="button" class="route-map-fullscreen-icon" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>
+      <svg class="route-fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+        <path d="M3 8l6-6M21 8l-6-6M3 16l6 6M21 16l-6 6"></path>
+      </svg>
+      <svg class="route-fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 9H4V4M15 9h5V4M9 15H4v5M15 15h5v5"></path>
+        <path d="M4 4l6 6M20 4l-6 6M4 20l6-6M20 20l-6-6"></path>
+      </svg>
+      <span class="sr-only" data-fullscreen-label>Full screen</span>
+    </button>
+        <details class="route-map-mobile-quickref">
+          <summary aria-label="Open full screen map quick reference">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+              <circle cx="12" cy="12" r="2.5"></circle>
+            </svg>
+          </summary>
+          <div class="route-map-mobile-quickref-card" role="note">
+            <strong>Full-screen quick reference</strong>
+            <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> can be adjusted before entering full screen.</p>
+            <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Plan</b> measures or builds a route; <b>Share</b> sends the current map view.</p>
+            <p>Use the diagonal-arrow control to leave full screen.</p>
+          </div>
+        </details>
       </div>
-    </details>
+    </div>
 
     <div class="route-map-loading" data-map-loading role="status" aria-live="polite">
       <svg class="route-map-loading-trees" viewBox="0 0 220 80" aria-hidden="true">
@@ -912,16 +942,27 @@ const enabledSources = enabledBrowserMapSources;
     const priorOverflow = { body: document.body.style.overflow, html: document.documentElement.style.overflow };
     const focusModeActive = () => shell.dataset.focusMode === 'true';
     const realFullscreenActive = () => document.fullscreenElement === shell;
+    const mobileFullscreenActive = () =>
+      window.matchMedia('(max-width: 700px)').matches && (realFullscreenActive() || focusModeActive());
     const syncFullscreenUi = () => {
       const active = realFullscreenActive() || focusModeActive();
       for (const button of fullscreenButtons) {
-        button.textContent = active ? 'Exit full screen' : 'Full screen';
         button.setAttribute('aria-label', active ? 'Exit full screen map' : 'Enter full screen map');
         button.setAttribute('aria-pressed', String(active));
+        button.title = active ? 'Exit full screen' : 'Enter full screen';
+        const label = button.querySelector<HTMLElement>('[data-fullscreen-label]');
+        if (label) label.textContent = active ? 'Exit full screen' : 'Full screen';
       }
       container.dataset.fullscreenMode = realFullscreenActive() ? 'native' : focusModeActive() ? 'focus' : 'off';
       if (!active && mobileQuickRef) mobileQuickRef.open = false;
-      window.requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+      window.requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false });
+        if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId) && map.getZoom() < 13) {
+          map.setView(map.getCenter(), 13, { animate: false });
+        } else if (active && window.matchMedia('(max-width: 700px)').matches && checked(gorgeLayerId)) {
+          void loadVisibleGorgeSectors();
+        }
+      });
     };
     const enterFocusMode = () => {
       shell.dataset.focusMode = 'true';
@@ -1218,13 +1259,62 @@ const enabledSources = enabledBrowserMapSources;
 
     const gorgeLayerId = 'rrg-lidar-sun';
     const gorgeLayer = L.layerGroup();
-    const gorgeSunImages: Array<{ overlay: any; kind: 'sunrise' | 'sunset' }> = [];
-    const gorgeSunPaths: Array<{ layer: any; kind: 'sunrise' | 'sunset' }> = [];
+    type GorgeSunImage = { overlay: any; kind: 'sunrise' | 'sunset' };
+    type GorgeSunPath = { layer: any; kind: 'sunrise' | 'sunset' };
+    type GorgeSectorResources = {
+      images: GorgeSunImage[];
+      paths: GorgeSunPath[];
+      hardLayer: any;
+      hardFeatures: number;
+    };
+    const gorgeSunImages: GorgeSunImage[] = [];
+    const gorgeSunPaths: GorgeSunPath[] = [];
     const loadedGorgeSectorIds = new Set<string>();
+    const gorgeSectorResources = new Map<string, GorgeSectorResources>();
+    const mobileFullscreenSunMinZoom = 13;
+    const mobileFullscreenSunMaxSectors = 6;
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
     let gorgeHardFeatureCount = 0;
     let gorgeLoadRevision = 0;
+
+    const releaseGorgeImage = (item: GorgeSunImage) => {
+      if (gorgeLayer.hasLayer(item.overlay)) gorgeLayer.removeLayer(item.overlay);
+      const image = item.overlay.getElement?.() as HTMLImageElement | undefined;
+      if (image) {
+        image.removeAttribute('src');
+        image.removeAttribute('srcset');
+      }
+      const index = gorgeSunImages.indexOf(item);
+      if (index >= 0) gorgeSunImages.splice(index, 1);
+    };
+
+    const releaseGorgeSector = (id: string) => {
+      const resources = gorgeSectorResources.get(id);
+      if (!resources) {
+        loadedGorgeSectorIds.delete(id);
+        return;
+      }
+      for (const image of resources.images) releaseGorgeImage(image);
+      if (resources.hardLayer && gorgeLayer.hasLayer(resources.hardLayer)) gorgeLayer.removeLayer(resources.hardLayer);
+      for (const path of resources.paths) {
+        const index = gorgeSunPaths.indexOf(path);
+        if (index >= 0) gorgeSunPaths.splice(index, 1);
+      }
+      gorgeHardFeatureCount = Math.max(0, gorgeHardFeatureCount - resources.hardFeatures);
+      gorgeSectorResources.delete(id);
+      loadedGorgeSectorIds.delete(id);
+    };
+
+    const pruneMobileFullscreenGorgeSectors = (keepIds: Set<string>) => {
+      if (!mobileFullscreenActive()) return;
+      for (const id of Array.from(gorgeSectorResources.keys())) {
+        if (!keepIds.has(id)) releaseGorgeSector(id);
+      }
+      container.dataset.rrgLidarSunLoadedSectors = String(loadedGorgeSectorIds.size);
+      container.dataset.rrgLidarSunImageCount = String(gorgeSunImages.length);
+      container.dataset.rrgLidarSunHardFeatureCount = String(gorgeHardFeatureCount);
+    };
 
     const sunKindToggle = (kind: 'sunrise' | 'sunset') =>
       shell.querySelector<HTMLInputElement>('[data-sun-kind-toggle="' + kind + '"]');
@@ -1263,10 +1353,16 @@ const enabledSources = enabledBrowserMapSources;
       syncVisibility(gorgeLayerId);
       syncSunPotentialStyles();
       if (any) {
-        void loadVisibleGorgeSectors();
+        if (mobileFullscreenActive() && map.getZoom() < mobileFullscreenSunMinZoom) {
+          container.dataset.rrgLidarSunLoadState = 'zooming';
+          map.setView(map.getCenter(), mobileFullscreenSunMinZoom, { animate: false });
+        } else {
+          void loadVisibleGorgeSectors();
+        }
       } else {
         gorgeLoadRevision += 1;
         setMapActivity('sunlight', false);
+        if (mobileFullscreenActive()) pruneMobileFullscreenGorgeSectors(new Set());
         container.dataset.rrgLidarSunLoadState = 'idle';
       }
     };
@@ -1326,6 +1422,12 @@ const enabledSources = enabledBrowserMapSources;
 
     const loadVisibleGorgeSectors = async () => {
       if (!checked(gorgeLayerId)) return;
+      if (mobileFullscreenActive() && map.getZoom() < mobileFullscreenSunMinZoom) {
+        pruneMobileFullscreenGorgeSectors(new Set());
+        container.dataset.rrgLidarSunLoadState = 'zoom-required';
+        setMapActivity('sunlight', false);
+        return;
+      }
       const revision = ++gorgeLoadRevision;
       let activityShown = false;
       const showActivity = () => {
@@ -1338,17 +1440,37 @@ const enabledSources = enabledBrowserMapSources;
         if (!gorgeManifest) showActivity();
         const manifest = await loadGorgeManifest();
         if (revision !== gorgeLoadRevision || !checked(gorgeLayerId)) return;
-        const view = map.getBounds().pad(0.35);
+        const mobileGuard = mobileFullscreenActive();
+        const view = mobileGuard ? map.getBounds().pad(0.08) : map.getBounds().pad(0.35);
         const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
-        const pending = sectors.filter((sector: any) => {
+        const center = map.getCenter();
+        const intersecting = sectors.filter((sector: any) => {
           const id = String(sector?.id ?? '');
           const bounds = Array.isArray(sector?.boundsWgs84) ? sector.boundsWgs84 : [];
-          if (!id || bounds.length !== 4 || loadedGorgeSectorIds.has(id)) return false;
+          if (!id || bounds.length !== 4) return false;
           const [west, south, east, north] = bounds.map(Number);
           return view.intersects(L.latLngBounds([[south, west], [north, east]]));
         });
+        const targetSectors = mobileGuard
+          ? intersecting
+              .map((sector: any) => {
+                const [west, south, east, north] = sector.boundsWgs84.map(Number);
+                const sectorCenter = L.latLng((south + north) / 2, (west + east) / 2);
+                return { sector, distance: center.distanceTo(sectorCenter) };
+              })
+              .sort((a: any, b: any) => a.distance - b.distance)
+              .slice(0, mobileFullscreenSunMaxSectors)
+              .map((item: any) => item.sector)
+          : intersecting;
+        const keepIds = new Set<string>(targetSectors.map((sector: any) => String(sector?.id ?? '')).filter(Boolean));
+        if (mobileGuard) pruneMobileFullscreenGorgeSectors(keepIds);
+        const pending = targetSectors.filter((sector: any) => {
+          const id = String(sector?.id ?? '');
+          return id && !loadedGorgeSectorIds.has(id);
+        });
         if (!pending.length) {
           container.dataset.rrgLidarSunLoadState = 'loaded';
+          container.dataset.rrgLidarSunLoadedSectors = String(loadedGorgeSectorIds.size);
           return;
         }
         showActivity();
@@ -1366,6 +1488,10 @@ const enabledSources = enabledBrowserMapSources;
           if (!view.intersects(sectorBounds)) continue;
 
           loadedGorgeSectorIds.add(id);
+          const sectorImages: GorgeSunImage[] = [];
+          const sectorPaths: GorgeSunPath[] = [];
+          let hardLayer: any = null;
+          let hardFeatures = 0;
           try {
             const sunriseOverlay = L.imageOverlay(
               import.meta.env.BASE_URL + sunriseRasterFile,
@@ -1378,7 +1504,9 @@ const enabledSources = enabledBrowserMapSources;
             );
             const sunriseReady = waitForSunImage(sunriseOverlay, id, 'sunrise');
             sunriseOverlay.addTo(gorgeLayer);
-            gorgeSunImages.push({ overlay: sunriseOverlay, kind: 'sunrise' });
+            const sunriseItem: GorgeSunImage = { overlay: sunriseOverlay, kind: 'sunrise' };
+            gorgeSunImages.push(sunriseItem);
+            sectorImages.push(sunriseItem);
             imageLoads.push(sunriseReady);
 
             const sunsetOverlay = L.imageOverlay(
@@ -1392,7 +1520,9 @@ const enabledSources = enabledBrowserMapSources;
             );
             const sunsetReady = waitForSunImage(sunsetOverlay, id, 'sunset');
             sunsetOverlay.addTo(gorgeLayer);
-            gorgeSunImages.push({ overlay: sunsetOverlay, kind: 'sunset' });
+            const sunsetItem: GorgeSunImage = { overlay: sunsetOverlay, kind: 'sunset' };
+            gorgeSunImages.push(sunsetItem);
+            sectorImages.push(sunsetItem);
             imageLoads.push(sunsetReady);
 
             const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
@@ -1401,7 +1531,8 @@ const enabledSources = enabledBrowserMapSources;
             });
             if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
             const hardData = await hardResponse.json();
-            const hardLayer = L.geoJSON(hardData, {
+            hardFeatures = Array.isArray(hardData?.features) ? hardData.features.length : 0;
+            hardLayer = L.geoJSON(hardData, {
               pane: 'lidarSun',
               interactive: false,
               style: (feature: any) => {
@@ -1410,12 +1541,23 @@ const enabledSources = enabledBrowserMapSources;
               },
               onEachFeature: (feature: any, layer: any) => {
                 const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                gorgeSunPaths.push({ layer, kind });
+                const pathItem: GorgeSunPath = { layer, kind };
+                gorgeSunPaths.push(pathItem);
+                sectorPaths.push(pathItem);
               }
             });
             hardLayer.addTo(gorgeLayer);
-            gorgeHardFeatureCount += Array.isArray(hardData?.features) ? hardData.features.length : 0;
+            gorgeHardFeatureCount += hardFeatures;
+            gorgeSectorResources.set(id, { images: sectorImages, paths: sectorPaths, hardLayer, hardFeatures });
           } catch (error) {
+            for (const image of sectorImages) releaseGorgeImage(image);
+            if (hardLayer && gorgeLayer.hasLayer(hardLayer)) gorgeLayer.removeLayer(hardLayer);
+            for (const path of sectorPaths) {
+              const index = gorgeSunPaths.indexOf(path);
+              if (index >= 0) gorgeSunPaths.splice(index, 1);
+            }
+            gorgeHardFeatureCount = Math.max(0, gorgeHardFeatureCount - hardFeatures);
+            gorgeSectorResources.delete(id);
             loadedGorgeSectorIds.delete(id);
             throw error;
           }
@@ -1447,6 +1589,9 @@ const enabledSources = enabledBrowserMapSources;
     });
     map.on('moveend', () => {
       if (checked(gorgeLayerId)) void loadVisibleGorgeSectors();
+    });
+    map.on('zoomend', () => {
+      if (checked(gorgeLayerId) && mobileFullscreenActive()) void loadVisibleGorgeSectors();
     });
 
     const oilGasLayerId = 'kgs-oil-gas-wells';
