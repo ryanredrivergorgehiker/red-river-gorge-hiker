@@ -1293,7 +1293,6 @@ const enabledSources = enabledBrowserMapSources;
     const mobileSunRasterMaxPixelDimension = 2048;
     const mobileSunRasterMinPixelDimension = 64;
     const mobileSunRasterMaxDpr = 2;
-    const mobileSunPathRenderer = mobileMapActive() ? L.canvas({ padding: 0.1 }) : null;
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
     let gorgeHardFeatureCount = 0;
@@ -1464,12 +1463,72 @@ const enabledSources = enabledBrowserMapSources;
       return width + 'x' + height;
     };
 
+    const drawMobileSunHardRim = (
+      context: CanvasRenderingContext2D,
+      hardData: any,
+      kind: 'sunrise' | 'sunset',
+      sectorBounds: any,
+      width: number,
+      height: number
+    ) => {
+      const northWest = map.options.crs.project(sectorBounds.getNorthWest());
+      const southEast = map.options.crs.project(sectorBounds.getSouthEast());
+      const spanX = Math.max(1e-9, southEast.x - northWest.x);
+      const spanY = Math.max(1e-9, northWest.y - southEast.y);
+      const toCanvas = (coordinate: any) => {
+        const lng = Number(coordinate?.[0]);
+        const lat = Number(coordinate?.[1]);
+        const point = map.options.crs.project(L.latLng(lat, lng));
+        return {
+          x: ((point.x - northWest.x) / spanX) * width,
+          y: ((northWest.y - point.y) / spanY) * height
+        };
+      };
+      const traceRing = (ring: any[]) => {
+        if (!Array.isArray(ring) || !ring.length) return;
+        ring.forEach((coordinate: any, index: number) => {
+          const point = toCanvas(coordinate);
+          if (index === 0) context.moveTo(point.x, point.y);
+          else context.lineTo(point.x, point.y);
+        });
+        context.closePath();
+      };
+      const drawPolygon = (polygon: any[]) => {
+        if (!Array.isArray(polygon) || !polygon.length) return;
+        context.beginPath();
+        polygon.forEach((ring: any[]) => traceRing(ring));
+        context.fill('evenodd');
+        context.stroke();
+      };
+
+      const color = kind === 'sunset' ? '#4640b0' : '#f2685c';
+      const dpr = Math.max(1, Math.min(mobileSunRasterMaxDpr, window.devicePixelRatio || 1));
+      context.fillStyle = kind === 'sunset' ? 'rgba(70,64,176,.92)' : 'rgba(242,104,92,.92)';
+      context.strokeStyle = color;
+      context.lineWidth = 1.5 * dpr;
+      context.lineJoin = 'round';
+      context.lineCap = 'round';
+
+      const features = Array.isArray(hardData?.features) ? hardData.features : [];
+      for (const feature of features) {
+        const featureKind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+        if (featureKind !== kind) continue;
+        const geometry = feature?.geometry;
+        if (geometry?.type === 'Polygon') {
+          drawPolygon(geometry.coordinates);
+        } else if (geometry?.type === 'MultiPolygon') {
+          for (const polygon of geometry.coordinates || []) drawPolygon(polygon);
+        }
+      }
+    };
+
     const rasterizeMobileSunImage = async (
       file: string,
       sector: any,
       sectorBounds: any,
       id: string,
-      kind: 'sunrise' | 'sunset'
+      kind: 'sunrise' | 'sunset',
+      hardData: any
     ) => {
       const response = await fetch(import.meta.env.BASE_URL + file, {
         credentials: 'same-origin',
@@ -1518,6 +1577,8 @@ const enabledSources = enabledBrowserMapSources;
           URL.revokeObjectURL(sourceUrl);
         }
       }
+
+      drawMobileSunHardRim(context, hardData, kind, sectorBounds, width, height);
 
       const reducedBlob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
@@ -1618,7 +1679,17 @@ const enabledSources = enabledBrowserMapSources;
           const renderKey = mobileGuard ? mobileSunRenderKey(sector, sectorBounds) : 'desktop';
           try {
             if (mobileGuard) {
-              const sunriseReduced = await rasterizeMobileSunImage(sunriseRasterFile, sector, sectorBounds, id, 'sunrise');
+              const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
+                credentials: 'same-origin',
+                cache: 'force-cache'
+              });
+              if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
+              const hardData = await hardResponse.json();
+              hardFeatures = Array.isArray(hardData?.features) ? hardData.features.length : 0;
+
+              const sunriseReduced = await rasterizeMobileSunImage(
+                sunriseRasterFile, sector, sectorBounds, id, 'sunrise', hardData
+              );
               const sunriseItem: GorgeSunImage = {
                 overlay: sunriseReduced.overlay,
                 kind: 'sunrise',
@@ -1627,7 +1698,9 @@ const enabledSources = enabledBrowserMapSources;
               gorgeSunImages.push(sunriseItem);
               sectorImages.push(sunriseItem);
 
-              const sunsetReduced = await rasterizeMobileSunImage(sunsetRasterFile, sector, sectorBounds, id, 'sunset');
+              const sunsetReduced = await rasterizeMobileSunImage(
+                sunsetRasterFile, sector, sectorBounds, id, 'sunset', hardData
+              );
               const sunsetItem: GorgeSunImage = {
                 overlay: sunsetReduced.overlay,
                 kind: 'sunset',
@@ -1635,6 +1708,7 @@ const enabledSources = enabledBrowserMapSources;
               };
               gorgeSunImages.push(sunsetItem);
               sectorImages.push(sunsetItem);
+              gorgeHardFeatureCount += hardFeatures;
             } else {
               const sunriseOverlay = L.imageOverlay(
                 import.meta.env.BASE_URL + sunriseRasterFile,
@@ -1667,33 +1741,31 @@ const enabledSources = enabledBrowserMapSources;
               gorgeSunImages.push(sunsetItem);
               sectorImages.push(sunsetItem);
               imageLoads.push(sunsetReady);
-            }
 
-            const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
-              credentials: 'same-origin',
-              cache: mobileGuard ? 'force-cache' : 'no-cache'
-            });
-            if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
-            const hardData = await hardResponse.json();
-            hardFeatures = Array.isArray(hardData?.features) ? hardData.features.length : 0;
-            hardLayer = L.geoJSON(hardData, {
-              pane: 'lidarSun',
-              interactive: false,
-              renderer: mobileGuard && mobileSunPathRenderer ? mobileSunPathRenderer : undefined,
-              smoothFactor: mobileGuard ? 1.5 : 1,
-              style: (feature: any) => {
-                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                return sunPotentialStyle(kind, 1, true, sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0);
-              },
-              onEachFeature: (feature: any, layer: any) => {
-                const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-                const pathItem: GorgeSunPath = { layer, kind };
-                gorgeSunPaths.push(pathItem);
-                sectorPaths.push(pathItem);
-              }
-            });
-            hardLayer.addTo(gorgeLayer);
-            gorgeHardFeatureCount += hardFeatures;
+              const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
+                credentials: 'same-origin',
+                cache: 'no-cache'
+              });
+              if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
+              const hardData = await hardResponse.json();
+              hardFeatures = Array.isArray(hardData?.features) ? hardData.features.length : 0;
+              hardLayer = L.geoJSON(hardData, {
+                pane: 'lidarSun',
+                interactive: false,
+                style: (feature: any) => {
+                  const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                  return sunPotentialStyle(kind, 1, true, sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0);
+                },
+                onEachFeature: (feature: any, layer: any) => {
+                  const kind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
+                  const pathItem: GorgeSunPath = { layer, kind };
+                  gorgeSunPaths.push(pathItem);
+                  sectorPaths.push(pathItem);
+                }
+              });
+              hardLayer.addTo(gorgeLayer);
+              gorgeHardFeatureCount += hardFeatures;
+            }
             gorgeSectorResources.set(id, { images: sectorImages, paths: sectorPaths, hardLayer, hardFeatures, renderKey });
             if (mobileGuard) {
               await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
