@@ -59,6 +59,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Princess Arch terrain elevation candidate
+        run: npm run generate:route-elevation
+
+      - name: Upload Princess Arch terrain elevation candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: princess-arch-elevation-${{ github.sha }}
+          path: public/data/routes/princess-arch.elevation.json
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Audit dependencies
         run: |
           npm audit --audit-level=critical
