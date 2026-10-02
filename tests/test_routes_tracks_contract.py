@@ -769,19 +769,36 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
         self.assertIn('bottom:3rem!important;', ROUTES_CSS)
 
-    def test_mobile_fullscreen_sunlight_uses_bounded_memory_without_forced_zoom(self):
-        self.assertIn("const mobileFullscreenSunMaxSectors = 6", MAP)
+    def test_mobile_sunlight_uses_adaptive_rasters_without_forced_zoom(self):
         self.assertNotIn("mobileFullscreenSunMinZoom", MAP)
         self.assertNotIn("map.setView(map.getCenter(), 13", MAP)
         self.assertNotIn("rrgLidarSunLoadState = 'zoom-required'", MAP)
+        self.assertNotIn("mobileFullscreenSunMaxSectors", MAP)
+        self.assertIn("const mobileMapActive = () =>", MAP)
+        self.assertIn("const mobileSunRasterMaxPixelDimension = 2048", MAP)
+        self.assertIn("const mobileSunRasterMaxDpr = 2", MAP)
+        self.assertIn("const mobileSunPathRenderer = mobileMapActive() ? L.canvas", MAP)
+        self.assertIn("const mobileSunRasterSize = (sector: any, sectorBounds: any) =>", MAP)
+        self.assertIn("const rasterizeMobileSunImage = async", MAP)
+        self.assertIn("cache: 'force-cache'", MAP)
+        self.assertIn("createImageBitmap(sourceBlob", MAP)
+        self.assertIn("canvas.toBlob", MAP)
+        self.assertIn("URL.revokeObjectURL(item.objectUrl)", MAP)
         self.assertIn("const gorgeSectorResources = new Map<string, GorgeSectorResources>()", MAP)
         self.assertIn("const releaseGorgeSector = (id: string) =>", MAP)
-        self.assertIn("const pruneMobileFullscreenGorgeSectors = (keepIds: Set<string>) =>", MAP)
+        self.assertIn("const pruneMobileGorgeSectors = (keepIds: Set<string>) =>", MAP)
+        self.assertIn("const mobileGuard = mobileMapActive()", MAP)
         self.assertIn("map.getBounds().pad(0.08)", MAP)
         self.assertIn("map.getBounds().pad(0.35)", MAP)
-        self.assertIn(".slice(0, mobileFullscreenSunMaxSectors)", MAP)
+        self.assertIn("renderer: mobileGuard && mobileSunPathRenderer ? mobileSunPathRenderer : undefined", MAP)
         self.assertIn("image.removeAttribute('src')", MAP)
         self.assertIn("gorgeSectorResources.set(id", MAP)
+
+    def test_mobile_tools_layout_spans_build_route_and_centers_actions(self):
+        self.assertIn('.route-plan-mode-buttons button[data-map-tool="plan"]{grid-column:1/-1!important}', ROUTES_CSS)
+        self.assertIn('.route-plan-actions{justify-content:center}', ROUTES_CSS)
+        self.assertIn('@media(min-width:701px)', ROUTES_CSS)
+        self.assertIn('.route-plan-mode-buttons button:last-child{grid-column:1/-1}', ROUTES_CSS)
 
     def test_explore_is_a_route_browser_and_plan_is_single_entry_point(self):
         self.assertIn('data-sheet-open="explore"', MAP)
