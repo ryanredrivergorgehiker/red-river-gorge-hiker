@@ -1,0 +1,1796 @@
+{
+  "acceptedHardLipReusedVerbatim": true,
+  "counts": {
+    "bytes": 3760416,
+    "files": 120,
+    "hardFeatures": 59517,
+    "sectors": 30
+  },
+  "hardLipGeometryChanged": false,
+  "minimumElevationFeet": 1100.0,
+  "presentation": {
+    "detailMinZoom": 13,
+    "detailSectorWidthPx": 768,
+    "hardRimsPrecomposited": true,
+    "overviewMaxZoom": 12,
+    "overviewSectorWidthPx": 256,
+    "separateSunriseSunsetRasters": true
+  },
+  "sectors": [
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.89,
+        -83.7,
+        37.93
+      ],
+      "hardFeatures": 2552,
+      "id": "ring-r1c1",
+      "sourceHardSha256": "a5cffa51db0079592235488fa08bba07538e526d51bb4fcb16791257cb3a784a",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "bf726e1acee70be94dfbc8081c46c361c8d09fdb717b5d161d13b56a87719f5e",
+      "sourceSunsetSha256": "b9d3a0c6b92e6491f04a6090e5bc1e5aa1448c3dfbe7a4e3034ffe02e9c69283",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 61798,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c1-sunrise-detail.webp",
+            "sha256": "26a186d995435d374b20ada4ccbd4a9ffbbcdc204d09e178ce397e1b568293f4",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 70308,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c1-sunset-detail.webp",
+            "sha256": "72bcf1a445d9c385265b4ca8c41b691ac3b0ab6dcae52b45c51cdf0ce40fcc02",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 10562,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c1-sunrise-overview.webp",
+            "sha256": "5d6960ab912ac68b3b2f3a479ad0410975a9664b0f0813e8112d79596e6554cd",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 11890,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c1-sunset-overview.webp",
+            "sha256": "910f3b77bd4b79f0776a40589ad345d390bf7591b8a2236bffcfa5a8d2062b75",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.89,
+        -83.655,
+        37.93
+      ],
+      "hardFeatures": 3460,
+      "id": "ring-r1c2",
+      "sourceHardSha256": "c1fdfbd791d5084996daae7a5e61ee7a3a7fd2d9345a7b991b7c96b6b2681ef4",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "736990a4a4336d1749c9e516c1454aec22ae00e02ba2fb6230eebace395e4a45",
+      "sourceSunsetSha256": "0042b8d4663e374aa47679371f8ec616feb5a2361a6f25edc9e3747415160e2e",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 93118,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c2-sunrise-detail.webp",
+            "sha256": "1ab8b15de0f69ce80c6e48b7909013b50e0952c08ec31ee4eef532e0bb1d19bd",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 95304,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c2-sunset-detail.webp",
+            "sha256": "79a96bf5d9d94c99f6ac523764240ad9393d69970d274208a25e48037e71da95",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 15366,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c2-sunrise-overview.webp",
+            "sha256": "d919905f314bd79994b8f15825344cac332d3c3d23adfcd36e7e1a0b2d60f69a",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 15702,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c2-sunset-overview.webp",
+            "sha256": "00b0b5e8d9194a88dc67f9bd980f3418f2d94306042a6798b0da61bab48f1fc3",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.89,
+        -83.61,
+        37.93
+      ],
+      "hardFeatures": 3200,
+      "id": "ring-r1c3",
+      "sourceHardSha256": "75d9a0138ff32b4744435fd0fadd57bcc7d676ebdab0125fb92726b75711c566",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "697768db954ed543bc57155d59d32d5ba92fa90edabc2e236c3bd4aa8446984e",
+      "sourceSunsetSha256": "283e2b72c6211ab2494603f155acd310aa045fc3a3f1e24c019572a3a33fa923",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 111886,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c3-sunrise-detail.webp",
+            "sha256": "c9a3f1ddf1db8df3ba284e394b28ccef9f1891ecd41b83de5e438aa62284393c",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 110620,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c3-sunset-detail.webp",
+            "sha256": "5b6fbfb6ad433b18ecba380a633aa347ce5a958343a908b488837d8b5d08682d",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 18882,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c3-sunrise-overview.webp",
+            "sha256": "8527bf2a6015019852ed554458f80f25ebf3b0a6a8506e3d089eb2f8ea681334",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 18864,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c3-sunset-overview.webp",
+            "sha256": "17ca38ad7da1b211bc86002ce0007a5de6fa6c7016b1eda94916ac0c459c3376",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.89,
+        -83.565,
+        37.93
+      ],
+      "hardFeatures": 792,
+      "id": "ring-r1c4",
+      "sourceHardSha256": "99fd2814194f7c7bfb580ac6568a160d3a4791d96fa53ece9971150f5c03848c",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "d1fc36cacb7278277112a75eaaafeda36422159afccecd6015f2c1968f5a336f",
+      "sourceSunsetSha256": "967d9e59d33683decad9c318799b6857f61b0efd5df53b5953c213eefb3294cc",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 49114,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c4-sunrise-detail.webp",
+            "sha256": "0bf69281f31186a4d887029fbb75e9e193f40b5633c9dc1f688945e55ef6448d",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 48784,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c4-sunset-detail.webp",
+            "sha256": "f01afcbe562c23e085b0488acf01d8d751f71f53727d6709927eacb1ee224ab1",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 9106,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c4-sunrise-overview.webp",
+            "sha256": "c0ae90464031b27e0343c1be26a9c2ba3a3b064d390406353107e5893df3e662",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 9132,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c4-sunset-overview.webp",
+            "sha256": "72e72dac8e7ec0ce3d488f1db0ae291cd7ed8036beb8deb30dd3c99ce75111b3",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.89,
+        -83.52000000000001,
+        37.93
+      ],
+      "hardFeatures": 199,
+      "id": "ring-r1c5",
+      "sourceHardSha256": "07591a0d90a9c6b983134a45e8111491f4f0b0ac2d40fcd48ce9a6c58200dfd0",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "f7cd10aec225bf7f3b62bb0c898f4576695abcdb2f759ea0886c210a790bdf3c",
+      "sourceSunsetSha256": "99c59c257ebd23b59c3ed346cc09269ede0f70c0249b5ac702945040015df18c",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 12542,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c5-sunrise-detail.webp",
+            "sha256": "7c104eb53b2fff6fcf218dad26a3126e29cb691096e1d97a3b5cf00d30569bdd",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 14936,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c5-sunset-detail.webp",
+            "sha256": "a125fa8dc5aee365ddc962971f5e0d1344a186bdcd6e845be5008faa528016ff",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 2464,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c5-sunrise-overview.webp",
+            "sha256": "8facc531e39657155b1716e6e5b53d1d05d106a8ff0817a7bc6f8d79c086798b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 2962,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c5-sunset-overview.webp",
+            "sha256": "59c2105b2d2edd9777a52b1926b0f4d362f122911153af9a94fd8e97b8af3ac5",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.89,
+        -83.47500000000001,
+        37.93
+      ],
+      "hardFeatures": 0,
+      "id": "ring-r1c6",
+      "sourceHardSha256": "738f3ef752a154ce230a43cc883a789adca9a65eaaf633a059fd3f3422732786",
+      "sourceRasterShape": [
+        2258,
+        2004
+      ],
+      "sourceSunriseSha256": "308303e0fc823c6eff8a14ca6ef7709ba836ce59cfb7a560b5af4c86d779381c",
+      "sourceSunsetSha256": "308303e0fc823c6eff8a14ca6ef7709ba836ce59cfb7a560b5af4c86d779381c",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c6-sunrise-detail.webp",
+            "sha256": "cc6e9bba5648f282020770c4367f9cbefe302c04c42cf482956bb6fb7bd0bc0f",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c6-sunset-detail.webp",
+            "sha256": "cc6e9bba5648f282020770c4367f9cbefe302c04c42cf482956bb6fb7bd0bc0f",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c6-sunrise-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r1c6-sunset-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.85,
+        -83.7,
+        37.89
+      ],
+      "hardFeatures": 2725,
+      "id": "ring-r2c1",
+      "sourceHardSha256": "7b179258fe8edbefe53706818085f0e08af4221603f5634d11bc735dd61e0663",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "f501ad9820cecad381c9e44b7d68847590667c42c84f18c594d7d260dc1d1cc7",
+      "sourceSunsetSha256": "749edf2c0300267acb45ac94d1615a1e094d8fdcc1a140342a34641baf364704",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 42452,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c1-sunrise-detail.webp",
+            "sha256": "b8cec1ed11c4ffc063c000b18b1424e29fe50af68829fbf8b704a044c3267553",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 44448,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c1-sunset-detail.webp",
+            "sha256": "3362dea9c3a12d7d712005c692674c97e078618a1dd1d7e0827101a9cd314baa",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 7180,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c1-sunrise-overview.webp",
+            "sha256": "d7f2448bf4a4126af4e353cb0748095edcb3a296180feacf067e942afa9f80a8",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 7614,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c1-sunset-overview.webp",
+            "sha256": "14c7991480a3c224b6609a50cc1487c971018c5e15bd7b2b35b96672b353337b",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.85,
+        -83.655,
+        37.89
+      ],
+      "hardFeatures": 4569,
+      "id": "r1c1",
+      "sourceHardSha256": "90097b3deecce3178a219265d5e37c476e9b92f1225badbe06bd4d15fff25312",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "c92f499d1bdb6efed8fbc3ba985630eddb3f66d8074913b784aaf634feb408f9",
+      "sourceSunsetSha256": "8037ebaf0b00328f509afc639a546b48e6a66d9916fba7e195e6c81f884fe2f5",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 102428,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c1-sunrise-detail.webp",
+            "sha256": "48b367985a090cdaba237b6d93d32d7c307acde8986bd7b91d299b86e77cfbcd",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 107008,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c1-sunset-detail.webp",
+            "sha256": "52021330ee5258fd4110f1c78411bfe18e09cb7054f94bceef5473e898e5f6f6",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 16804,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c1-sunrise-overview.webp",
+            "sha256": "09b2c9dcff73937f9d6ae61d1cb27f6d269fca1dd6c2b1192047acac92a55226",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 17428,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c1-sunset-overview.webp",
+            "sha256": "75c20b977f74f47a91571cb489aa9b01c17882a4497e41b7f5ab6179b85708fc",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.85,
+        -83.61,
+        37.89
+      ],
+      "hardFeatures": 2672,
+      "id": "r1c2",
+      "sourceHardSha256": "87ad5a5d1a29104e7743b7a73abdb6fe5111d8cde5643a964e4c4f232c06ce88",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "62f8b2be0c0e1bef759ca886b6a609a8b374a860d2821671668e1432265d4e7d",
+      "sourceSunsetSha256": "0ddd7ddac9bc672ad8004050d9d6271ea5bc146003c2aaeb4e4c8961d7e84f7a",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 89982,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c2-sunrise-detail.webp",
+            "sha256": "526359045fe14cac215f8f1755455aa64a211b3189278b6a90377cf4ecac396b",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 95384,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c2-sunset-detail.webp",
+            "sha256": "7a64310e9836c1548a776ef15af01a330afe0fd351bf66ec44f046b96416b7fa",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 15722,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c2-sunrise-overview.webp",
+            "sha256": "a60aecdf946cba75ac84413840f3f6c9d4f75ef444d6c7578dc33cc3ac10b08e",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 16186,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c2-sunset-overview.webp",
+            "sha256": "7518d35e12c2e4fde1a3a90e8c08598fe444ad373135bc9c09e19dadabda2114",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.85,
+        -83.565,
+        37.89
+      ],
+      "hardFeatures": 1654,
+      "id": "r1c3",
+      "sourceHardSha256": "49aaebc58ed26594b4b4cbc7781e701c0fa289d833810974c61ef080fc176322",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "0f886016890300ec1e46a0a79d45af99d86774ecb447baccae63318fd3c138a9",
+      "sourceSunsetSha256": "5b73d859b983e024d2f128547113a3f18b8973bc37153707e807e70443ff8352",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 79448,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c3-sunrise-detail.webp",
+            "sha256": "f23053544ee61c5df43368d996416177fa03bc95597226e9525142ecad82be1a",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 78998,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c3-sunset-detail.webp",
+            "sha256": "fd8fb2567eeede355ca65b1a49b35da1db7a5d9bf297fb9fc7bdde56beffca3f",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 14440,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c3-sunrise-overview.webp",
+            "sha256": "e07319920f19d31a0a99d556827f3aa0b0a25f6830634202169c2a860d829af4",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 14712,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c3-sunset-overview.webp",
+            "sha256": "70e75ee23702ede99a1cc10975d9b898d4590ba8bce9efd2cfe9e4bdbd82dfd1",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.85,
+        -83.52000000000001,
+        37.89
+      ],
+      "hardFeatures": 77,
+      "id": "r1c4",
+      "sourceHardSha256": "11cd0c18fbac72e28aebc694b399e8cd5feb32fe8fad29a2d9c7053994676d29",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "367886f7b5cdd553623529c4c4f3fb710bdec2a01282fcc50548a81d26d0691b",
+      "sourceSunsetSha256": "18ea84d093e1329ed19bd7b0e1a2e2e6f250f46da3cac5ecbfe8238bd6beb487",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 5512,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c4-sunrise-detail.webp",
+            "sha256": "c9a019b06dd9149c455d4c4620461dd1fbdd33d24f58fe8ddbb652b2f57448a6",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 9398,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c4-sunset-detail.webp",
+            "sha256": "a17d18d827d6a088f7cf70803530e3fa5116d7cab5d1d4cdac5bbe0fca7fcc7a",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 1250,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c4-sunrise-overview.webp",
+            "sha256": "3713315c57c09d29e0ef2570436b52439410077b85ca9e7e55e46d3f58eb530b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 1910,
+            "file": "data/map/rrg-lidar-sun-mobile/r1c4-sunset-overview.webp",
+            "sha256": "b6a0560d58038f94da7dc8f746b56d079e40b86cebba2b4b4d42790f2b451088",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.85,
+        -83.47500000000001,
+        37.89
+      ],
+      "hardFeatures": 1,
+      "id": "ring-r2c6",
+      "sourceHardSha256": "15fa10f288034980f701ae400daf7bc81b46baf4addb3c25dab36fe3cda4319d",
+      "sourceRasterShape": [
+        2257,
+        2004
+      ],
+      "sourceSunriseSha256": "c44f1fef594ea6327cfef8c37390000394813a30053585894decd29ab1f774fd",
+      "sourceSunsetSha256": "385fe650dacf78ae65a3ba77343ae0f96472db8b9d3493f6dad54c7c8b52b6e2",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c6-sunrise-detail.webp",
+            "sha256": "cc6e9bba5648f282020770c4367f9cbefe302c04c42cf482956bb6fb7bd0bc0f",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 700,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c6-sunset-detail.webp",
+            "sha256": "db472f886575def29c98dc4b71eca9148d0e9b16a06383432b2e3f73504ab446",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c6-sunrise-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 220,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r2c6-sunset-overview.webp",
+            "sha256": "b2ea8d27d1138408588037353d898cc9771e9f4e89f068140ddfd56a06d99a32",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.81,
+        -83.7,
+        37.85
+      ],
+      "hardFeatures": 1831,
+      "id": "ring-r3c1",
+      "sourceHardSha256": "6c21890ea6d25f6f7fb413a74d1d024aa4fb0445f2c19d1e6c5fdb87bdbc272c",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "b8a9446c13c94f6157d28ad5df4a8c830eaed4ffb8ee001afcaa5b83c7f27773",
+      "sourceSunsetSha256": "899eb2f0af035526e74ef99371441c32ad1f6ce7594be9e45c0dc12d46bfc769",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 20722,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c1-sunrise-detail.webp",
+            "sha256": "b6c049f96211cebf345e1455bac9d83c2edf93651c863ad285ed7dc48001f3f8",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 21030,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c1-sunset-detail.webp",
+            "sha256": "138c1274551248c7da4eeb075aad55a5de58e1402dfe52eeda78a82bd05600e5",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 3864,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c1-sunrise-overview.webp",
+            "sha256": "38bc9f59fc4956f91db98410e41d334b2471431d1b9b1a275ba8de30435debeb",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 3744,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c1-sunset-overview.webp",
+            "sha256": "9a520d1e3e158d550203c6ab5bd3665bebf2d896328c551aa5bc67a6ba23d870",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.81,
+        -83.655,
+        37.85
+      ],
+      "hardFeatures": 4765,
+      "id": "r2c1",
+      "sourceHardSha256": "d9dc1967fa28f0bbc08bbf8e49b26f7789ce31856f55044c115ce1282add2f64",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "8dee4b4e952ac9eb673b676b0c4f9d9f1f15a4b5a31c4108f0aac008a92dafe8",
+      "sourceSunsetSha256": "8407625fffeb0ca49a5df71f4d146bb23f24c4d35f0a68cefa21ca5b9b27cd8f",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 83296,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c1-sunrise-detail.webp",
+            "sha256": "110917ef0bc8bfae2a3898ef06954fc81ad829c33bde8eacd560836419a9940e",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 91402,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c1-sunset-detail.webp",
+            "sha256": "96ea09050a5340e97681d7258f50266f0837028ff87c0fed151dbddc97662082",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 13630,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c1-sunrise-overview.webp",
+            "sha256": "3219674aa7662dcd450264ffe0aa83c5df2a485ebdfc063b3118cb826cfd9dfd",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 14484,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c1-sunset-overview.webp",
+            "sha256": "3e8d752eb67b50be037f5421b1812c4587f3a6c8d069d6ddf8dec0875483f052",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.81,
+        -83.61,
+        37.85
+      ],
+      "hardFeatures": 3072,
+      "id": "r2c2",
+      "sourceHardSha256": "ef2270ec16d11d429efaa0af115d4d17b4db15c519fbe92903cd4dead4cf9235",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "1e3965dd79c94f00c00fc44f30f021959cd6eb6f9aa7c272d7616995f071eef9",
+      "sourceSunsetSha256": "73347dee43460e77afb6a9da8c1d080cd910ea4d24fc471a7fa8663e9fb0107e",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 84780,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c2-sunrise-detail.webp",
+            "sha256": "1825214af1a7526ec31e30cc9d2666e2282fc09b3801c81386aaa3c76305fb45",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 81196,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c2-sunset-detail.webp",
+            "sha256": "858f489e9d4d6c76a0d32684c042625160df0465a443901f090387d1ffc2a28a",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 14422,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c2-sunrise-overview.webp",
+            "sha256": "cedadb26bb899554d652c15f77649eac43b01df37e2c5daa416c892ade6c80ae",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 13830,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c2-sunset-overview.webp",
+            "sha256": "3b957b735f50d43d085ed36e9e356cd2f12b0484242b42ebc9ae9ea3f109de17",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.81,
+        -83.565,
+        37.85
+      ],
+      "hardFeatures": 1678,
+      "id": "r2c3",
+      "sourceHardSha256": "dfb1bb24caab74751a50d9f91736138d56a7d5b0d2ae0bab64e0fb6bc557a9ef",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "5e91acc6463828349ac8b3b27915d77d222148384af2f5a1bc6b79edfbee4e7d",
+      "sourceSunsetSha256": "3988bd6466295f31f4c26d510a7986f782265b521a5043778eb62b7fb053ef52",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 72428,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c3-sunrise-detail.webp",
+            "sha256": "a6388f5484d1ee2b29546ea96cce862560e7614a11a96d6a593a14c645425629",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 73564,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c3-sunset-detail.webp",
+            "sha256": "2a3591db4c20d4352fb343e704e005e0ff469ce4bb6ebb3636d57c66259f0805",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 13464,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c3-sunrise-overview.webp",
+            "sha256": "ac2caa6fb4e40b630911f85405a7ea994597be8f3421210536a885ad0ddfbbe1",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 13680,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c3-sunset-overview.webp",
+            "sha256": "4e625f1ad93bda3dabd3a63e81b9fb6a77bd7ad7a3e07a03b0334ea57b6afef1",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.81,
+        -83.52000000000001,
+        37.85
+      ],
+      "hardFeatures": 38,
+      "id": "r2c4",
+      "sourceHardSha256": "80d044e32e5f14c7ae65f3e46d0973c672688a39666223027dc20297a3298c69",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "a90ac522862f8b5f5b2dd856366e8f34a81126141fd0c750beebc3ebb5303360",
+      "sourceSunsetSha256": "305347b1b275e35f8f3666d512f6dae972bd0c64665d4c0e2e2706fac4ec4d19",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 3690,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c4-sunrise-detail.webp",
+            "sha256": "5bb1106b6da6255dad73d69cf6cdb53aa62ecd787af1753da7345d99b5127fd9",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 3860,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c4-sunset-detail.webp",
+            "sha256": "9c5bedab94bd62cfae52f29d1f64da8e2ad141b0b3467a06877a3d449f60fa02",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 916,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c4-sunrise-overview.webp",
+            "sha256": "24af95da1fee8b24ded20dfe6dccc2518670dc0aac7ef3233c9278a219cd0820",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 892,
+            "file": "data/map/rrg-lidar-sun-mobile/r2c4-sunset-overview.webp",
+            "sha256": "1d3bf0681b9750ab3aaba7cd8d80baa69955abef117fb33827ed6873dddb8572",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.81,
+        -83.47500000000001,
+        37.85
+      ],
+      "hardFeatures": 2,
+      "id": "ring-r3c6",
+      "sourceHardSha256": "ea64eb99dba8eb94a22261f7034600014cb02cebb5fc730c6d637014187203aa",
+      "sourceRasterShape": [
+        2256,
+        2004
+      ],
+      "sourceSunriseSha256": "ec7c5bba3183f19879ec13918d6aa3ff46af9308d3f874df185494bede27c431",
+      "sourceSunsetSha256": "5ee51c0d9534af1f34abba622ce2a1a8573cd1ab55f9e14e3cbe34343a1c4f51",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c6-sunrise-detail.webp",
+            "sha256": "cc6e9bba5648f282020770c4367f9cbefe302c04c42cf482956bb6fb7bd0bc0f",
+            "shape": [
+              865,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 762,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c6-sunset-detail.webp",
+            "sha256": "6b4361a90ed5b3f5b171409a0fe01d2f65244e0486459c795c84c3ea6fd5dece",
+            "shape": [
+              865,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c6-sunrise-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 200,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r3c6-sunset-overview.webp",
+            "sha256": "6d536d481cd63f3c658e88a90a93f60288e8e98578b9cb6fd72a1bab33f6b8f5",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.77,
+        -83.7,
+        37.81
+      ],
+      "hardFeatures": 3033,
+      "id": "ring-r4c1",
+      "sourceHardSha256": "22d9c25ae71700816b6946c1208705c80b93fc5472827543517137a4c22f1fbc",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "4e2fec23cfa1a934564653bba45d7be9059e65fe3f00fe283bbc458e85f14d8a",
+      "sourceSunsetSha256": "360ed8ddb568f42f7f74e5a31716cce8700d44c77664199678d634ad730a287b",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 40060,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c1-sunrise-detail.webp",
+            "sha256": "92a4d690246bb9a8885926184555437abbaf715a6a02f3c5a29a9147456e1384",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 42812,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c1-sunset-detail.webp",
+            "sha256": "7789d3c4c5bef2c29fb6404ead662c8a6cda08d89cf5dc593716f94209ffdcc2",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 6340,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c1-sunrise-overview.webp",
+            "sha256": "ec1a5202b96bf8184bc0afe84bcb2be13d71141241601a16147ea8465054ed77",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 6786,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c1-sunset-overview.webp",
+            "sha256": "4f68002e010b8281ea7796e2213105a443f330c286b5b9d1e9611675c08dc23b",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.77,
+        -83.655,
+        37.81
+      ],
+      "hardFeatures": 5913,
+      "id": "r3c1",
+      "sourceHardSha256": "02f13abf218fa3a066b3a4d6c445ec7ea5527f9df8ca609ffd43b17ccfbcc92c",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "f184d05cbccfe109126bcacbfd1ebbacfb8877c0a6d88d34aeb3d89af988aa57",
+      "sourceSunsetSha256": "461b64a8d8066ab6cbf5f4cbd01c832073c0e0398281a1770e11eed0aa44aa16",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 115536,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c1-sunrise-detail.webp",
+            "sha256": "c5c686427110113f6365114f09e3378a9c9c13ff61359c5c5ed2a2427456c941",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 125734,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c1-sunset-detail.webp",
+            "sha256": "e72fade4b83fc9a7b4ef623af2cf15348a651c2f21cd26cf4818ad4ef9f54603",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 18220,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c1-sunrise-overview.webp",
+            "sha256": "6ebe37d118b9a2b73129b7aa92ab709e51444984611bd7870c1e2f20d389d812",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 19420,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c1-sunset-overview.webp",
+            "sha256": "6795713ba43eb87eff44de3b42b4d7ff81ecf1ea114bbc921622bded518d8fa1",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.77,
+        -83.61,
+        37.81
+      ],
+      "hardFeatures": 4582,
+      "id": "r3c2",
+      "sourceHardSha256": "472fbd465dec52026705929f988c76fcc252f4bdeeb9f9805f402732178a1304",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "acb0f9c132bebabaf76d2a703c98772b701f4e9e0170565c5a6272d8ccd9b11d",
+      "sourceSunsetSha256": "ecfc3ec8cad15cdc92680d9c88299f275f269c6b08eff3d99ac28ef8020c997e",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 124546,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c2-sunrise-detail.webp",
+            "sha256": "526b336101f64d82da05d81030142f1301deff4d6cd701131573b33e3bded6ae",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 126434,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c2-sunset-detail.webp",
+            "sha256": "a35afc55f2a2a6be9bbb44c88f43e7d50b78a53d0795f0c6d31bef74ab79bee1",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 20664,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c2-sunrise-overview.webp",
+            "sha256": "a10267a9f73795df90ec1f534e2a2b2360e2569f50350a49c769b7832c955f59",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 21078,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c2-sunset-overview.webp",
+            "sha256": "a13e8e671fc552b0e6c0429716610602e70c2c50788d7ea9566749dfc5e4e3eb",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.77,
+        -83.565,
+        37.81
+      ],
+      "hardFeatures": 1817,
+      "id": "r3c3",
+      "sourceHardSha256": "b67ae26019f80cfdb87faa1263b279bfce996ac9e1a4638bcea8283417c3c08e",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "51fec71461f4fe611513e79cbc55255700b6b6629f180126bd9a0a3a45d365b7",
+      "sourceSunsetSha256": "3f8bd1085421a8127dbe33ab8a477d38bd0bb2a39c5cea262fea08660988fe21",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 81654,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c3-sunrise-detail.webp",
+            "sha256": "7e8494de48261fdf7638d541420288576f9beb3d30b251441dabd3a04bceb827",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 75170,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c3-sunset-detail.webp",
+            "sha256": "845e2494606bf9e9e89a4f33152f6d6766e6123d08c4813bd4e22d48ce8b578f",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 15000,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c3-sunrise-overview.webp",
+            "sha256": "bd5f20539bd8914a9f0c8f7b7e33a1247a5a1a350a2c3c4407321f50d9ce4864",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 14366,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c3-sunset-overview.webp",
+            "sha256": "58004ca988b6c1718d713f6cff27b473ac0ec11d7e45050f32c630750161e25b",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.77,
+        -83.52000000000001,
+        37.81
+      ],
+      "hardFeatures": 6,
+      "id": "r3c4",
+      "sourceHardSha256": "6b92e376fb74d0b092be6caa215ed917e5f933e2c355c0b69d99ba5408430d13",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "94ee990dd02786876c0694ca40d6684059231089281264cd8afd4af368a7f8af",
+      "sourceSunsetSha256": "1ff689963ae1a8e710c5cca221d2b87b6dbaa67842ab8c1a4bba4ffa3582fe11",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 1052,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c4-sunrise-detail.webp",
+            "sha256": "ac261d91ec6845b6c6b3394d783e6d785b656d6a0589f4b2bb8fc843e1298fc2",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 786,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c4-sunset-detail.webp",
+            "sha256": "2d1f5582f0844d07d9a28cf3e413a029cf2b3277cc276efe44c1ad658f46d3d4",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 292,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c4-sunrise-overview.webp",
+            "sha256": "34ff16facc009a135ff6c3cb7d5116caad0241499fda4569334a08e6ef7e001c",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 242,
+            "file": "data/map/rrg-lidar-sun-mobile/r3c4-sunset-overview.webp",
+            "sha256": "2d312bc7f2bc8b02d52dbbed01a2a6e4e993689e7bd779a094942eeee7d68296",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.77,
+        -83.47500000000001,
+        37.81
+      ],
+      "hardFeatures": 0,
+      "id": "ring-r4c6",
+      "sourceHardSha256": "6f4e1aa8a7ea6da6afa0234af6c99c658128c70f6f7c0e51fe41fd7759f77501",
+      "sourceRasterShape": [
+        2254,
+        2004
+      ],
+      "sourceSunriseSha256": "41bc0d1c57c8f89038d44bb3c54d132224fb85515c753c60c0c9feadb697bdeb",
+      "sourceSunsetSha256": "41bc0d1c57c8f89038d44bb3c54d132224fb85515c753c60c0c9feadb697bdeb",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c6-sunrise-detail.webp",
+            "sha256": "51ca357ec23b0cafdf3488990c3df0f94eb8a2e565eca60a7f2b40185d9dd785",
+            "shape": [
+              864,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 68,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c6-sunset-detail.webp",
+            "sha256": "51ca357ec23b0cafdf3488990c3df0f94eb8a2e565eca60a7f2b40185d9dd785",
+            "shape": [
+              864,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c6-sunrise-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 46,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r4c6-sunset-overview.webp",
+            "sha256": "7aa8d2bb9a908db5c2698eac78989b7cb3949f3a4db873b78279ab62682f970b",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.745,
+        37.73,
+        -83.7,
+        37.77
+      ],
+      "hardFeatures": 3366,
+      "id": "ring-r5c1",
+      "sourceHardSha256": "a24a0fcd1031e607feebbeb5c935d4bc2ba59533ef77cfb87335eb392e769474",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "e227cc5959690547ba5b2c8f9619874796465befc7718fb263dbfc2b24745a5d",
+      "sourceSunsetSha256": "0e2c0a88a34011b7aee3ee55c2d5514946da0a28d1b690730bc2166f240dbc3a",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 78524,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c1-sunrise-detail.webp",
+            "sha256": "1996c5f088f1353d2b66567d6273db135310d21c47a307ce1e2afa6cbfa029b2",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 81612,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c1-sunset-detail.webp",
+            "sha256": "e789d14b14a4cec6df30fb55219e912adb2a8b5036a8f4f7f17b759daff5ac22",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 12912,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c1-sunrise-overview.webp",
+            "sha256": "0400d610e2dbe017d141722e0c3a60dc329c045d316d59da82585175ec63a7c7",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 13524,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c1-sunset-overview.webp",
+            "sha256": "7dbd1dbbf343339176c20bab5b919085e9796fb986f5817b10d0c644b14be97d",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.7,
+        37.73,
+        -83.655,
+        37.77
+      ],
+      "hardFeatures": 4161,
+      "id": "ring-r5c2",
+      "sourceHardSha256": "fdca52eaf3000710d06401c1d3cd5b9d987ecb4d3e2be995030c3391ad7afba6",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "ff8746277d72e15bd8e96e66d799db91a8a90b73a5d0ff49c1665f884d25e659",
+      "sourceSunsetSha256": "7d62ea38f9cdff9ddc8604a6d93e7360f286f5f907045acb5239459783af0f1a",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 105230,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c2-sunrise-detail.webp",
+            "sha256": "7801fae0385cc620cfaf5be9d12407ffb7b0e921580141b1a7640bae822950f8",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 104876,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c2-sunset-detail.webp",
+            "sha256": "3badb125a5a57a57dc4e1c088f9a3215c9f33ca9c2860838c5dfff28e606ffe4",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 17980,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c2-sunrise-overview.webp",
+            "sha256": "92d9c28b0346440811614a1cbb27269c35f5af26678749ebf15388407b2e6219",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 18184,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c2-sunset-overview.webp",
+            "sha256": "df7b4c8d97fe39d956f82116b102b8db30a2134789e66e87d749ed7b21ae7b70",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.655,
+        37.73,
+        -83.61,
+        37.77
+      ],
+      "hardFeatures": 2388,
+      "id": "ring-r5c3",
+      "sourceHardSha256": "a0ad2bc6d368a9a9a1a5d22f0bfec5396c6a363de900893f49bd86b311a7aceb",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "a6d0e91268a7af8cdcd018f2eac34c97ee897dae17f5b6c5b1a22d5404ea84e3",
+      "sourceSunsetSha256": "87cef1b069aa653648ac0ff4ce1914ea3c42de422ba84e9017e01637a9cf8a43",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 76564,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c3-sunrise-detail.webp",
+            "sha256": "7bd6336fc3d36a979463115c09c5316b495287fe2351f5b4dcbed7bfba5c35dc",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 80220,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c3-sunset-detail.webp",
+            "sha256": "10f1a1a6b3ed1810b80bcb5fb3debc1c838087eb345c41ce8f259132626246ea",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 13564,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c3-sunrise-overview.webp",
+            "sha256": "5f03ff4ffbe25e2c983b8273fe6554c71a9aa744394778c736ce3178976b3d32",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 14212,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c3-sunset-overview.webp",
+            "sha256": "625c59402dcedaca4b0781823979d65db88bd409806cc42c6c9482ce169ef650",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.61,
+        37.73,
+        -83.565,
+        37.77
+      ],
+      "hardFeatures": 889,
+      "id": "ring-r5c4",
+      "sourceHardSha256": "e1134b329ca0a322c4be2c6234dad4941202326a25052af0f46f4a66ec1e09b6",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "d40ed6ad2f6d273e1382e0a769e7abfaa6ba2fcc21988bd8ec53864ab5523600",
+      "sourceSunsetSha256": "8c364f238b0d8bed2097281da52c514b7f6fe38beb950ac9c88a73bcb9a338f3",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 39706,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c4-sunrise-detail.webp",
+            "sha256": "c8770c741552fa57c58e93dd55c2cabbb05a8dc2d37dbe4c5acdb4fc089f0204",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 36370,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c4-sunset-detail.webp",
+            "sha256": "f794ea78ebdefd61503b7d459913d84d56231322d178cf37271ffbf51a1128d8",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 7544,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c4-sunrise-overview.webp",
+            "sha256": "7892c1b13daf916c5131c76e58cdeb9c6da44b0516cb70d997667b9453bfb4e5",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 7012,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c4-sunset-overview.webp",
+            "sha256": "fe868aa0566cb21c14cae74b553cfbc070191cbc8ac9af0b77d4d704a73189ed",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.565,
+        37.73,
+        -83.52000000000001,
+        37.77
+      ],
+      "hardFeatures": 71,
+      "id": "ring-r5c5",
+      "sourceHardSha256": "de8739a6141e99013922810135e74decbb89e1d2563c251fbf4888badde46b9e",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "547214bae77e4b33e4ca6ef2cc334402003a56c1c797a20b60a8c9dd7c96e996",
+      "sourceSunsetSha256": "a3d952963c06685ba2aad744bad840929eea6514ea15aa43e9219fbe5b519570",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 5444,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c5-sunrise-detail.webp",
+            "sha256": "5d86e752f3890d3f4a9d387c44765765d806f948c5bca3bc8b892dfff6ba9043",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 3852,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c5-sunset-detail.webp",
+            "sha256": "495e1ba9d125e6b825d958cd12e4102321f45a59de6472b5d849a8608b9249e3",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 1258,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c5-sunrise-overview.webp",
+            "sha256": "9492abba0e7fa004db005b993d1a0e8a5a68a3160df2db921311f9c424212eed",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 874,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c5-sunset-overview.webp",
+            "sha256": "f2797d6927828a20f410438b5b381531b4e4ed8ed5e73351dcc7ecbaf09b3bfe",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    },
+    {
+      "boundsWgs84": [
+        -83.52000000000001,
+        37.73,
+        -83.47500000000001,
+        37.77
+      ],
+      "hardFeatures": 4,
+      "id": "ring-r5c6",
+      "sourceHardSha256": "cbbb8deb712ea916ed9b46552e36f87cbfab3ccebbad77b7b10c68859c5ac9c5",
+      "sourceRasterShape": [
+        2253,
+        2004
+      ],
+      "sourceSunriseSha256": "17628bc735338864ae83beacae1a9fa3103c58b172d34b13a35fcb6c1dd82a08",
+      "sourceSunsetSha256": "ae61ccf1a5238dbbd279f7d8aed9cc19982ba33b2dbf2dff0319dd070491752a",
+      "variants": {
+        "detail": {
+          "sunrise": {
+            "bytes": 716,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c6-sunrise-detail.webp",
+            "sha256": "bf996ee0f7609cb3e7250a96ea42d7dece03dad2edf414d238c140bf33ba4c27",
+            "shape": [
+              863,
+              768
+            ]
+          },
+          "sunset": {
+            "bytes": 574,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c6-sunset-detail.webp",
+            "sha256": "f013615fcead8af868edd1fbbb3f40a83621115e3d13c5636692b44139452f74",
+            "shape": [
+              863,
+              768
+            ]
+          }
+        },
+        "overview": {
+          "sunrise": {
+            "bytes": 210,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c6-sunrise-overview.webp",
+            "sha256": "957fdd38c188901422e67ec49b156cdd67751bc12f44b96a79227945972d40d8",
+            "shape": [
+              288,
+              256
+            ]
+          },
+          "sunset": {
+            "bytes": 158,
+            "file": "data/map/rrg-lidar-sun-mobile/ring-r5c6-sunset-overview.webp",
+            "sha256": "73a446affd72057aaa53d1ccf16dd01f9c82aa0c7a3c573054cb90040a79987e",
+            "shape": [
+              288,
+              256
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "sourceAcceptedOverlayFingerprintSha256": "f4c6cd3bef1f606c10a4cd5082863e9c2dfde281b49c992e46130dafdec827c1",
+  "sourceContinuousManifestSha256": "040d30fd180bdbfec2fadc273081ec4cb479da40e305149711223671d32015b1",
+  "sourceContinuousVersion": "lidar-continuous-gradient-v1",
+  "terrainQualificationChanged": false,
+  "version": "lidar-continuous-mobile-v1"
+}
