@@ -2,6 +2,7 @@
 import 'leaflet/dist/leaflet.css';
 import '../styles/routes.css';
 import { enabledBrowserMapSources } from '../data/map/layers';
+import placesSnapshot from '../data/places/places.generated.json';
 
 interface PublicRouteMapItem {
   routeId: string;
@@ -26,6 +27,7 @@ interface Props {
 const { routes, mode = 'embedded' } = Astro.props;
 const mapId = 'route-map-' + Math.random().toString(36).slice(2, 9);
 const enabledSources = enabledBrowserMapSources;
+const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiEligible);
 ---
 <section
   class:list={['route-map-shell', { 'route-map-shell-full': mode === 'full' }]}
@@ -184,6 +186,7 @@ const enabledSources = enabledBrowserMapSources;
       class:list={['route-map', { 'route-map-full': mode === 'full' }]}
       data-rrgh-route-map
       data-routes={JSON.stringify(routes)}
+      data-places={JSON.stringify(mapPlaces)}
       data-mode={mode}
       tabindex="0"
       aria-label={mode === 'full' ? 'Interactive Red River Gorge planning map' : 'Interactive route map'}
@@ -232,9 +235,9 @@ const enabledSources = enabledBrowserMapSources;
       </div>
       <label class="route-search-label">
         <span class="sr-only">Search routes, landmarks, trails, roads, and places</span>
-        <input type="search" data-map-search placeholder="Search Sky Bridge, Trail 214, landmarks…" autocomplete="off" />
+        <input type="search" data-map-search placeholder="Search routes, trails, amenities…" autocomplete="off" />
       </label>
-      <p class="route-map-sheet-help">Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, plus loaded community/informal trails.</p>
+      <p class="route-map-sheet-help">Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, local amenities, plus loaded community/informal trails.</p>
       <div class="route-search-results" data-map-search-results aria-live="polite"></div>
     </div>
 
@@ -294,6 +297,23 @@ const enabledSources = enabledBrowserMapSources;
           </label>
           <p class="route-layer-source-note" data-local-roads-status>
             Available in every Map View. Off by default in Hiking and Sunlight; Terrain and Aerial turn it on by default. Status uncertain: may include active local roads, old or abandoned roadbeds, gated or closed segments, or roads no longer passable. These are roads, not trails.
+          </p>
+        </div>
+
+        <div class="route-layer-group route-layer-group-amenities" aria-label="Local amenities">
+          <p class="route-layer-group-title">LOCAL AMENITIES</p>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="around-the-gorge" checked />
+            <span class="route-layer-swatch swatch-place-around" aria-hidden="true"></span>
+            <span>Around the Gorge</span>
+          </label>
+          <label class="route-layer-toggle-row">
+            <input type="checkbox" data-map-layer="hiker-services" checked />
+            <span class="route-layer-swatch swatch-place-hiker" aria-hidden="true"></span>
+            <span>Hiker Services</span>
+          </label>
+          <p class="route-layer-source-note">
+            One canonical place can belong to either or both layers. A gold-ring marker means <strong>RRGH Presence</strong>; it is a relationship disclosure, not a partnership claim.
           </p>
         </div>
 
@@ -760,6 +780,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const mode = container.dataset.mode ?? 'embedded';
     const routeConfigs = JSON.parse(container.dataset.routes ?? '[]');
+    const placeConfigs = JSON.parse(container.dataset.places ?? '[]');
     const status = shell.querySelector<HTMLElement>('[data-map-status]');
     const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]');
     const stage = shell.querySelector<HTMLElement>('.route-map-stage');
@@ -928,6 +949,7 @@ const enabledSources = enabledBrowserMapSources;
       routes: 440,
       recreation: 450,
       routeStarts: 460,
+      places: 465,
       landmarks: 470,
       mapPoint: 485,
       planning: 490
@@ -1215,6 +1237,143 @@ const enabledSources = enabledBrowserMapSources;
       syncVisibility(source.id);
     }
     setLoadProgress(18, 'Base map ready…');
+
+    const aroundPlacesLayerId = 'around-the-gorge';
+    const hikerServicesLayerId = 'hiker-services';
+    const placesLayerGroup = L.layerGroup().addTo(map);
+    const placeMarkerRecords: Array<{ place: any; marker: any }> = [];
+    const meaningfulPlaceText = (value: unknown) => typeof value === 'string' && value.trim() && value.trim() !== '29' ? value.trim() : '';
+    const meaningfulPlaceList = (value: unknown) => Array.isArray(value)
+      ? value.map((item) => meaningfulPlaceText(item)).filter(Boolean)
+      : [];
+    const placeVisible = (place: any) =>
+      (Boolean(place.aroundTheGorge) && checked(aroundPlacesLayerId))
+      || (Boolean(place.hikerServices) && checked(hikerServicesLayerId));
+    const syncPlacesLayer = () => {
+      placesLayerGroup.clearLayers();
+      let visibleCount = 0;
+      for (const record of placeMarkerRecords) {
+        if (!placeVisible(record.place)) continue;
+        record.marker.addTo(placesLayerGroup);
+        visibleCount += 1;
+      }
+      container.dataset.placePoiCount = String(placeMarkerRecords.length);
+      container.dataset.visiblePlacePoiCount = String(visibleCount);
+      container.dataset.aroundPlaceCount = String(placeConfigs.filter((place: any) => Boolean(place.aroundTheGorge)).length);
+      container.dataset.hikerServicePlaceCount = String(placeConfigs.filter((place: any) => Boolean(place.hikerServices)).length);
+      container.dataset.dualPlaceCount = String(placeConfigs.filter((place: any) => Boolean(place.aroundTheGorge) && Boolean(place.hikerServices)).length);
+      container.dataset.rrghPresenceCount = String(placeConfigs.filter((place: any) => Boolean(place.rrghPresence)).length);
+    };
+    const enablePlaceForSearch = (place: any) => {
+      if (placeVisible(place)) return;
+      const preferredId = place.aroundTheGorge ? aroundPlacesLayerId : hikerServicesLayerId;
+      const toggle = shell.querySelector<HTMLInputElement>('[data-map-layer="' + preferredId + '"]');
+      if (toggle) toggle.checked = true;
+      syncPlacesLayer();
+    };
+
+    for (const place of placeConfigs) {
+      const lat = Number(place.latitude);
+      const lng = Number(place.longitude);
+      const name = meaningfulPlaceText(place.publicName);
+      if (!place?.mapPoiEligible || !name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const around = Boolean(place.aroundTheGorge);
+      const hiker = Boolean(place.hikerServices);
+      const presence = Boolean(place.rrghPresence);
+      const markerClass = [
+        'rrgh-place-marker',
+        around && hiker ? 'is-dual' : around ? 'is-around' : 'is-hiker',
+        presence ? 'is-presence' : ''
+      ].filter(Boolean).join(' ');
+      const marker = L.marker([lat, lng], {
+        pane: 'places',
+        keyboard: true,
+        title: name,
+        icon: L.divIcon({
+          className: 'rrgh-place-marker-host',
+          html: '<span class="' + markerClass + '"><span class="rrgh-place-marker-core" aria-hidden="true"></span>' + (presence ? '<span class="rrgh-place-presence-dot" aria-hidden="true">R</span>' : '') + '</span>',
+          iconSize: presence ? [26, 26] : [22, 22],
+          iconAnchor: presence ? [13, 13] : [11, 11],
+          popupAnchor: [0, -12]
+        })
+      });
+
+      const popup = document.createElement('div');
+      popup.className = 'rrgh-place-popup';
+      const heading = document.createElement('strong');
+      heading.textContent = name;
+      popup.append(heading);
+
+      const classifications: string[] = [];
+      if (around) classifications.push('Around the Gorge' + (meaningfulPlaceText(place.aroundCategory) ? ' · ' + meaningfulPlaceText(place.aroundCategory) : ''));
+      const serviceTypes = meaningfulPlaceList(place.hikerServiceTypes);
+      if (hiker) classifications.push('Hiker Services' + (serviceTypes.length ? ' · ' + serviceTypes.join('; ') : ''));
+      const meta = document.createElement('p');
+      meta.className = 'route-map-popup-meta';
+      meta.textContent = classifications.join(' · ');
+      popup.append(meta);
+
+      const description = meaningfulPlaceText(place.shortDescription);
+      if (description) {
+        const body = document.createElement('p');
+        body.textContent = description;
+        popup.append(body);
+      }
+
+      if (presence) {
+        const presenceBlock = document.createElement('p');
+        presenceBlock.className = 'rrgh-place-presence-copy';
+        const label = document.createElement('strong');
+        label.textContent = 'RRGH Presence';
+        presenceBlock.append(label);
+        const relationship = meaningfulPlaceText(place.relationshipDisclosure);
+        if (relationship) presenceBlock.append(document.createTextNode(' — ' + relationship));
+        popup.append(presenceBlock);
+      }
+
+      const nearbyContext = meaningfulPlaceText(place.nearbyRouteContext);
+      if (place.nearbyRrghPickEligible && nearbyContext) {
+        const nearby = document.createElement('p');
+        nearby.className = 'route-map-popup-meta';
+        nearby.textContent = 'Nearby RRGH Pick · ' + nearbyContext;
+        popup.append(nearby);
+      }
+
+      const location = meaningfulPlaceText(place.locationContext);
+      if (location) {
+        const locationLine = document.createElement('p');
+        locationLine.textContent = location;
+        popup.append(locationLine);
+      }
+
+      const footer = document.createElement('p');
+      footer.className = 'route-map-popup-meta';
+      const verified = meaningfulPlaceText(place.lastVerified);
+      footer.textContent = verified ? 'Last verified ' + verified + '. ' : '';
+      const sourceUrl = meaningfulPlaceText(place.officialSourceUrl);
+      if (sourceUrl) {
+        const link = document.createElement('a');
+        link.href = sourceUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Check current source';
+        footer.append(link);
+      }
+      popup.append(footer);
+      marker.bindPopup(popup, { maxWidth: 360 });
+
+      placeMarkerRecords.push({ place, marker });
+      searchItems.push({
+        label: name,
+        detail: classifications.join(' · '),
+        latlng: L.latLng(lat, lng),
+        open: () => {
+          enablePlaceForSearch(place);
+          marker.openPopup();
+        }
+      });
+    }
+    syncPlacesLayer();
 
     const weatherLayerId = 'rrgh-weather';
     const weatherLayer = L.layerGroup();
@@ -4083,6 +4242,8 @@ const enabledSources = enabledBrowserMapSources;
       } else if (id === localRoadLayerId) {
         syncLocalRoadLayer();
         syncFineTuneControl(id);
+      } else if (id === aroundPlacesLayerId || id === hikerServicesLayerId) {
+        syncPlacesLayer();
       } else {
         syncVisibility(id);
         syncFineTuneControl(id);
@@ -4112,6 +4273,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, false);
+        setLayerControl(aroundPlacesLayerId, true);
+        setLayerControl(hikerServicesLayerId, true);
         setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'terrain') {
@@ -4122,6 +4285,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('usfs-wilderness', true);
         setLayerControl(localRoadLayerId, true);
+        setLayerControl(aroundPlacesLayerId, false);
+        setLayerControl(hikerServicesLayerId, false);
         if (weatherSelect) weatherSelect.value = 'precip-10d';
         setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
@@ -4132,6 +4297,8 @@ const enabledSources = enabledBrowserMapSources;
         setLayerControl('kyaerial-phase2-leafoff', false, 100);
         setLayerControl('kyaerial-phase3', true, 100);
         setLayerControl(localRoadLayerId, true);
+        setLayerControl(aroundPlacesLayerId, false);
+        setLayerControl(hikerServicesLayerId, false);
         setLayerControl(weatherLayerId, false, 35);
         setSunKinds(false);
       } else if (name === 'sunlight') {
@@ -4144,6 +4311,8 @@ const enabledSources = enabledBrowserMapSources;
         const sunOpacity = shell.querySelector<HTMLInputElement>('[data-opacity="' + gorgeLayerId + '"]');
         if (sunOpacity) sunOpacity.value = '100';
         setLayerControl(localRoadLayerId, false);
+        setLayerControl(aroundPlacesLayerId, false);
+        setLayerControl(hikerServicesLayerId, false);
         setLayerControl(weatherLayerId, false, 35);
         setSunKinds(true);
       }
@@ -4164,7 +4333,7 @@ const enabledSources = enabledBrowserMapSources;
       if (!countiesVisible && map.hasLayer(countyLabelGroup)) map.removeLayer(countyLabelGroup);
     };
 
-    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff', weatherLayerId]);
+    const presetLayerIds = new Set(['kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff', weatherLayerId, aroundPlacesLayerId, hikerServicesLayerId]);
     const optionalLandLayerIds = new Set(['usfs-wilderness', 'usfs-special-management', 'usfs-land-units']);
 
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-map-layer]')) {
@@ -4196,6 +4365,8 @@ const enabledSources = enabledBrowserMapSources;
           setOilGasKinds(checkbox.checked);
         } else if (id === localRoadLayerId) {
           syncLocalRoadLayer();
+        } else if (id === aroundPlacesLayerId || id === hikerServicesLayerId) {
+          syncPlacesLayer();
         } else if (id === weatherLayerId) {
           syncVisibility(id);
           if (checkbox.checked) await loadWeatherOverlay();

@@ -13,7 +13,8 @@
     "generate:route-elevation": "node scripts/generate-route-elevation.mjs",
     "seed:route-elevation-cache": "node scripts/seed-route-elevation-cache.mjs",
     "validate:routes": "node scripts/validate-routes.mjs",
-    "build:site": "npm run validate && npm run validate:routes && astro build"
+    "build:site": "npm run validate && npm run validate:routes && npm run validate:places && astro build",
+    "validate:places": "node scripts/validate-places.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

@@ -3484,3 +3484,63 @@
     max-height:calc(100% - 6.2rem);
   }
 }
+
+
+/* Canonical Local Amenities POIs: one physical marker per Place record. */
+.swatch-place-around,
+.swatch-place-hiker{
+  width:1rem;
+  height:1rem;
+  border-radius:50%;
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px rgba(23,55,45,.45);
+}
+.swatch-place-around{background:#b65f34}
+.swatch-place-hiker{background:#2c6f8f}
+.rrgh-place-marker-host{
+  border:0!important;
+  background:transparent!important;
+}
+.rrgh-place-marker{
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:18px;
+  height:18px;
+  border:2px solid #fff;
+  border-radius:50%;
+  box-sizing:border-box;
+  box-shadow:0 1px 5px rgba(16,36,30,.5),0 0 0 1px rgba(23,55,45,.72);
+}
+.rrgh-place-marker.is-around{background:#b65f34}
+.rrgh-place-marker.is-hiker{background:#2c6f8f}
+.rrgh-place-marker.is-dual{background:linear-gradient(90deg,#b65f34 0 50%,#2c6f8f 50% 100%)}
+.rrgh-place-marker.is-presence{
+  width:22px;
+  height:22px;
+  outline:3px solid #e8bf43;
+  outline-offset:1px;
+}
+.rrgh-place-presence-dot{
+  position:absolute;
+  right:-6px;
+  bottom:-6px;
+  display:grid;
+  place-items:center;
+  width:13px;
+  height:13px;
+  border:1px solid #fff;
+  border-radius:50%;
+  background:#17372d;
+  color:#fff;
+  font-size:8px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 1px 3px rgba(16,36,30,.45);
+}
+.rrgh-place-popup p{margin:.38rem 0}
+.rrgh-place-presence-copy{
+  padding:.42rem .5rem;
+  border-left:3px solid #e8bf43;
+  background:rgba(232,191,67,.12);
+}
