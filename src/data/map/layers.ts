@@ -137,11 +137,10 @@ export const mapSources: readonly MapSource[] = [
     kind: 'vector',
     enabled: true,
     browserLoaded: true,
-    url: arcgisGeoJsonQuery(trailService, 'trail_name,trail_no,trail_class,attributesubset'),
     serviceUrl: trailService,
     attribution: 'USDA Forest Service',
     termsUrl: 'https://data.fs.usda.gov/geodata/edw/datasets.php',
-    privacyNote: 'Trail geometry is requested directly from the USDA Forest Service Enterprise Data Warehouse.',
+    privacyNote: 'Official trail geometry is refreshed from the USDA Forest Service Enterprise Data Warehouse during the website build and served to visitors from an RRGH-hosted same-origin cache. Ordinary visitors do not contact the Forest Service trail query service merely by displaying this layer.',
     opacity: 0.45
   },
   {
