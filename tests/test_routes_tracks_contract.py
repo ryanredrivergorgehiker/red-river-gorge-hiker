@@ -736,6 +736,39 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('display:block!important;', ROUTES_CSS)
         self.assertIn('bottom:calc(.45rem + env(safe-area-inset-bottom));', ROUTES_CSS)
 
+    def test_mobile_owner_uat_copy_layers_and_fullscreen_return_contract(self):
+        self.assertIn('>Tools</button>', MAP)
+        self.assertNotIn('>Plan</button>', MAP)
+        self.assertIn('<strong data-plan-panel-title>Tools</strong>', MAP)
+        self.assertIn("<b>Tools</b> measures, analyzes, or builds a route", MAP)
+        self.assertIn("Use Explore to browse routes or Tools for measurements, terrain analysis, and route building.", MAP)
+        self.assertIn('aria-label="Minimize map tools"', MAP)
+        self.assertIn('aria-label="Close map tools"', MAP)
+        self.assertIn('<strong data-plan-stats-title>Tool results</strong>', MAP)
+        self.assertIn('Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, plus loaded community/informal trails.', MAP)
+        self.assertIn('Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · U.S. Census Bureau · OpenStreetMap.', MAP)
+        self.assertIn('aria-label="Base and imagery layers"', MAP)
+        self.assertIn('>Base &amp; Imagery</p>', MAP)
+        self.assertIn('aria-label="Conditions and analysis layers"', MAP)
+        self.assertIn('>Conditions &amp; Analysis</p>', MAP)
+        base = MAP.index('aria-label="Base and imagery layers"')
+        conditions = MAP.index('aria-label="Conditions and analysis layers"')
+        oil = MAP.index('aria-label="Oil and gas layers"')
+        self.assertLess(base, conditions)
+        self.assertLess(conditions, oil)
+        base_block = MAP[base:conditions]
+        conditions_block = MAP[conditions:oil]
+        for layer in ('kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff'):
+            self.assertIn(f'data-map-layer="{layer}"', base_block)
+        for layer in ('rrgh-weather', 'rrg-lidar-sun'):
+            self.assertIn(f'data-map-layer="{layer}"', conditions_block)
+        self.assertIn('let fullscreenReturnScrollY: number | null = null', MAP)
+        self.assertIn('rememberFullscreenReturnPosition()', MAP)
+        self.assertIn('restoreFullscreenReturnPosition()', MAP)
+        self.assertIn("window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' })", MAP)
+        self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
+        self.assertIn('bottom:3rem!important;', ROUTES_CSS)
+
     def test_mobile_fullscreen_sunlight_uses_bounded_memory_without_forced_zoom(self):
         self.assertIn("const mobileFullscreenSunMaxSectors = 6", MAP)
         self.assertNotIn("mobileFullscreenSunMinZoom", MAP)
