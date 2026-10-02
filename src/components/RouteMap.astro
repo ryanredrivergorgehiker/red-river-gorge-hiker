@@ -1277,7 +1277,7 @@ const enabledSources = enabledBrowserMapSources;
 
     const gorgeLayerId = 'rrg-lidar-sun';
     const gorgeLayer = L.layerGroup();
-    type GorgeSunImage = { overlay: any; kind: 'sunrise' | 'sunset'; objectUrl?: string };
+    type GorgeSunImage = { overlay: any; kind: 'sunrise' | 'sunset' };
     type GorgeSunPath = { layer: any; kind: 'sunrise' | 'sunset' };
     type GorgeSectorResources = {
       images: GorgeSunImage[];
@@ -1290,11 +1290,12 @@ const enabledSources = enabledBrowserMapSources;
     const gorgeSunPaths: GorgeSunPath[] = [];
     const loadedGorgeSectorIds = new Set<string>();
     const gorgeSectorResources = new Map<string, GorgeSectorResources>();
-    const mobileSunRasterMaxPixelDimension = 2048;
-    const mobileSunRasterMinPixelDimension = 64;
-    const mobileSunRasterMaxDpr = 2;
+    const mobileSunOverviewMaxZoom = 12;
     let gorgeManifest: any = null;
     let gorgeManifestPromise: Promise<any> | null = null;
+    let mobileSunManifest: any = null;
+    let mobileSunManifestPromise: Promise<any> | null = null;
+    const mobileSunSectorById = new Map<string, any>();
     let gorgeHardFeatureCount = 0;
     let gorgeLoadRevision = 0;
     let mobileSunLoadInFlight = false;
@@ -1307,7 +1308,6 @@ const enabledSources = enabledBrowserMapSources;
         image.removeAttribute('src');
         image.removeAttribute('srcset');
       }
-      if (item.objectUrl) URL.revokeObjectURL(item.objectUrl);
       const index = gorgeSunImages.indexOf(item);
       if (index >= 0) gorgeSunImages.splice(index, 1);
     };
@@ -1438,171 +1438,49 @@ const enabledSources = enabledBrowserMapSources;
         overlay.once('error', onError);
       });
 
-    const mobileSunRasterSize = (sector: any, sectorBounds: any) => {
-      const shape = Array.isArray(sector?.rasterShape) ? sector.rasterShape.map(Number) : [];
-      const sourceHeight = Number.isFinite(shape[0]) && shape[0] > 0 ? shape[0] : mobileSunRasterMaxPixelDimension;
-      const sourceWidth = Number.isFinite(shape[1]) && shape[1] > 0 ? shape[1] : mobileSunRasterMaxPixelDimension;
-      const northWest = map.latLngToContainerPoint(sectorBounds.getNorthWest());
-      const southEast = map.latLngToContainerPoint(sectorBounds.getSouthEast());
-      const dpr = Math.max(1, Math.min(mobileSunRasterMaxDpr, window.devicePixelRatio || 1));
-      const displayWidth = Math.max(1, Math.abs(southEast.x - northWest.x));
-      const displayHeight = Math.max(1, Math.abs(southEast.y - northWest.y));
-      const width = Math.max(
-        mobileSunRasterMinPixelDimension,
-        Math.min(mobileSunRasterMaxPixelDimension, sourceWidth, Math.ceil(displayWidth * dpr))
-      );
-      const height = Math.max(
-        mobileSunRasterMinPixelDimension,
-        Math.min(mobileSunRasterMaxPixelDimension, sourceHeight, Math.ceil(displayHeight * dpr))
-      );
-      return { width, height };
-    };
-
-    const mobileSunRenderKey = (sector: any, sectorBounds: any) => {
-      const { width, height } = mobileSunRasterSize(sector, sectorBounds);
-      return width + 'x' + height;
-    };
-
-    const drawMobileSunHardRim = (
-      context: CanvasRenderingContext2D,
-      hardData: any,
-      kind: 'sunrise' | 'sunset',
-      sectorBounds: any,
-      width: number,
-      height: number
-    ) => {
-      const northWest = map.options.crs.project(sectorBounds.getNorthWest());
-      const southEast = map.options.crs.project(sectorBounds.getSouthEast());
-      const spanX = Math.max(1e-9, southEast.x - northWest.x);
-      const spanY = Math.max(1e-9, northWest.y - southEast.y);
-      const toCanvas = (coordinate: any) => {
-        const lng = Number(coordinate?.[0]);
-        const lat = Number(coordinate?.[1]);
-        const point = map.options.crs.project(L.latLng(lat, lng));
-        return {
-          x: ((point.x - northWest.x) / spanX) * width,
-          y: ((northWest.y - point.y) / spanY) * height
-        };
-      };
-      const traceRing = (ring: any[]) => {
-        if (!Array.isArray(ring) || !ring.length) return;
-        ring.forEach((coordinate: any, index: number) => {
-          const point = toCanvas(coordinate);
-          if (index === 0) context.moveTo(point.x, point.y);
-          else context.lineTo(point.x, point.y);
+    const loadMobileSunManifest = async () => {
+      if (mobileSunManifest) return mobileSunManifest;
+      if (!mobileSunManifestPromise) {
+        mobileSunManifestPromise = fetch(import.meta.env.BASE_URL + 'data/map/rrg-lidar-sun-mobile-manifest.json', {
+          credentials: 'same-origin',
+          cache: 'no-cache'
+        }).then(async (response) => {
+          if (!response.ok) throw new Error('Mobile sunlight manifest HTTP ' + response.status);
+          const manifest = await response.json();
+          if (
+            manifest?.version !== 'lidar-continuous-mobile-v1' ||
+            Number(manifest?.minimumElevationFeet) !== 1100 ||
+            manifest?.terrainQualificationChanged !== false ||
+            manifest?.hardLipGeometryChanged !== false ||
+            manifest?.acceptedHardLipReusedVerbatim !== true ||
+            manifest?.presentation?.hardRimsPrecomposited !== true ||
+            manifest?.presentation?.separateSunriseSunsetRasters !== true ||
+            Number(manifest?.presentation?.overviewMaxZoom) !== mobileSunOverviewMaxZoom ||
+            Number(manifest?.presentation?.overviewSectorWidthPx) !== 256 ||
+            Number(manifest?.presentation?.detailMinZoom) !== mobileSunOverviewMaxZoom + 1 ||
+            Number(manifest?.presentation?.detailSectorWidthPx) !== 768 ||
+            Number(manifest?.counts?.sectors) !== 30
+          ) {
+            throw new Error('Mobile sunlight manifest failed rendering contract.');
+          }
+          mobileSunSectorById.clear();
+          for (const sector of Array.isArray(manifest?.sectors) ? manifest.sectors : []) {
+            const id = String(sector?.id ?? '');
+            if (id) mobileSunSectorById.set(id, sector);
+          }
+          if (mobileSunSectorById.size !== 30) {
+            throw new Error('Mobile sunlight manifest sector index is incomplete.');
+          }
+          mobileSunManifest = manifest;
+          return manifest;
         });
-        context.closePath();
-      };
-      const drawPolygon = (polygon: any[]) => {
-        if (!Array.isArray(polygon) || !polygon.length) return;
-        context.beginPath();
-        polygon.forEach((ring: any[]) => traceRing(ring));
-        context.fill('evenodd');
-        context.stroke();
-      };
-
-      const color = kind === 'sunset' ? '#4640b0' : '#f2685c';
-      const dpr = Math.max(1, Math.min(mobileSunRasterMaxDpr, window.devicePixelRatio || 1));
-      context.fillStyle = kind === 'sunset' ? 'rgba(70,64,176,.92)' : 'rgba(242,104,92,.92)';
-      context.strokeStyle = color;
-      context.lineWidth = 1.5 * dpr;
-      context.lineJoin = 'round';
-      context.lineCap = 'round';
-
-      const features = Array.isArray(hardData?.features) ? hardData.features : [];
-      for (const feature of features) {
-        const featureKind: 'sunrise' | 'sunset' = feature?.properties?.kind === 'sunset' ? 'sunset' : 'sunrise';
-        if (featureKind !== kind) continue;
-        const geometry = feature?.geometry;
-        if (geometry?.type === 'Polygon') {
-          drawPolygon(geometry.coordinates);
-        } else if (geometry?.type === 'MultiPolygon') {
-          for (const polygon of geometry.coordinates || []) drawPolygon(polygon);
-        }
       }
+      return mobileSunManifestPromise;
     };
 
-    const rasterizeMobileSunImage = async (
-      file: string,
-      sector: any,
-      sectorBounds: any,
-      id: string,
-      kind: 'sunrise' | 'sunset',
-      hardData: any
-    ) => {
-      const response = await fetch(import.meta.env.BASE_URL + file, {
-        credentials: 'same-origin',
-        cache: 'force-cache'
-      });
-      if (!response.ok) throw new Error('Gorge continuous sunlight ' + kind + ' raster ' + id + ' HTTP ' + response.status);
-      const sourceBlob = await response.blob();
-      const { width, height } = mobileSunRasterSize(sector, sectorBounds);
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d', { alpha: true });
-      if (!context) throw new Error('Mobile sunlight canvas is unavailable.');
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
-
-      let drawn = false;
-      if ('createImageBitmap' in window) {
-        try {
-          const bitmap = await createImageBitmap(sourceBlob, {
-            resizeWidth: width,
-            resizeHeight: height,
-            resizeQuality: 'high'
-          } as any);
-          context.drawImage(bitmap, 0, 0, width, height);
-          bitmap.close?.();
-          drawn = true;
-        } catch (error) {
-          console.warn('Mobile sunlight bitmap resize fell back to image decode.', error);
-        }
-      }
-
-      if (!drawn) {
-        const sourceUrl = URL.createObjectURL(sourceBlob);
-        try {
-          const image = new Image();
-          image.decoding = 'async';
-          await new Promise<void>((resolve, reject) => {
-            image.onload = () => resolve();
-            image.onerror = () => reject(new Error('Mobile sunlight source image failed for sector ' + id));
-            image.src = sourceUrl;
-          });
-          context.drawImage(image, 0, 0, width, height);
-          image.removeAttribute('src');
-        } finally {
-          URL.revokeObjectURL(sourceUrl);
-        }
-      }
-
-      drawMobileSunHardRim(context, hardData, kind, sectorBounds, width, height);
-
-      const reducedBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('Mobile sunlight raster resize failed for sector ' + id));
-        }, 'image/png');
-      });
-      canvas.width = 1;
-      canvas.height = 1;
-      const objectUrl = URL.createObjectURL(reducedBlob);
-      const overlay = L.imageOverlay(
-        objectUrl,
-        sectorBounds,
-        {
-          pane: 'lidarSun',
-          opacity: sunKindEnabled(kind) ? opacity(gorgeLayerId) : 0,
-          interactive: false
-        }
-      );
-      const ready = waitForSunImage(overlay, id, kind);
-      overlay.addTo(gorgeLayer);
-      await ready;
-      return { overlay, objectUrl };
-    };
+    const mobileSunVariant = () => map.getZoom() <= mobileSunOverviewMaxZoom ? 'overview' : 'detail';
+    const mobileSunSectorFor = (id: string) => mobileSunSectorById.get(id);
+    const mobileSunRenderKey = (id: string) => mobileSunVariant() + ':' + id;
 
     const loadVisibleGorgeSectors = async () => {
       if (!checked(gorgeLayerId)) return;
@@ -1613,6 +1491,7 @@ const enabledSources = enabledBrowserMapSources;
       }
       if (mobileGuard) mobileSunLoadInFlight = true;
       const revision = ++gorgeLoadRevision;
+      delete container.dataset.rrgLidarSunLoadError;
       let activityShown = false;
       const showActivity = () => {
         if (activityShown) return;
@@ -1623,6 +1502,7 @@ const enabledSources = enabledBrowserMapSources;
       try {
         if (!gorgeManifest) showActivity();
         const manifest = await loadGorgeManifest();
+        if (mobileGuard) await loadMobileSunManifest();
         if (revision !== gorgeLoadRevision || !checked(gorgeLayerId)) return;
         const view = mobileGuard ? map.getBounds().pad(0.08) : map.getBounds().pad(0.35);
         const sectors = Array.isArray(manifest?.sectors) ? manifest.sectors : [];
@@ -1643,7 +1523,7 @@ const enabledSources = enabledBrowserMapSources;
             const [west, south, east, north] = bounds.map(Number);
             const sectorBounds = L.latLngBounds([[south, west], [north, east]]);
             const existing = gorgeSectorResources.get(id);
-            const renderKey = mobileSunRenderKey(sector, sectorBounds);
+            const renderKey = mobileSunRenderKey(id);
             if (existing && existing.renderKey !== renderKey) releaseGorgeSector(id);
           }
           pruneMobileGorgeSectors(keepIds);
@@ -1676,38 +1556,50 @@ const enabledSources = enabledBrowserMapSources;
           const sectorPaths: GorgeSunPath[] = [];
           let hardLayer: any = null;
           let hardFeatures = 0;
-          const renderKey = mobileGuard ? mobileSunRenderKey(sector, sectorBounds) : 'desktop';
+          const renderKey = mobileGuard ? mobileSunRenderKey(id) : 'desktop';
           try {
             if (mobileGuard) {
-              const hardResponse = await fetch(import.meta.env.BASE_URL + hardFile, {
-                credentials: 'same-origin',
-                cache: 'force-cache'
-              });
-              if (!hardResponse.ok) throw new Error('Gorge continuous sunlight hard sector ' + id + ' HTTP ' + hardResponse.status);
-              const hardData = await hardResponse.json();
-              hardFeatures = Array.isArray(hardData?.features) ? hardData.features.length : 0;
+              const mobileSector = mobileSunSectorFor(id);
+              const variant = mobileSunVariant();
+              const mobileVariant = mobileSector?.variants?.[variant];
+              const mobileSunriseFile = String(mobileVariant?.sunrise?.file ?? '');
+              const mobileSunsetFile = String(mobileVariant?.sunset?.file ?? '');
+              if (!mobileSector || !mobileSunriseFile || !mobileSunsetFile) {
+                throw new Error('Mobile sunlight derivative is unavailable for sector ' + id + ' (' + variant + ').');
+              }
+              hardFeatures = Number(mobileSector?.hardFeatures ?? 0);
 
-              const sunriseReduced = await rasterizeMobileSunImage(
-                sunriseRasterFile, sector, sectorBounds, id, 'sunrise', hardData
+              const sunriseOverlay = L.imageOverlay(
+                import.meta.env.BASE_URL + mobileSunriseFile,
+                sectorBounds,
+                {
+                  pane: 'lidarSun',
+                  opacity: sunKindEnabled('sunrise') ? opacity(gorgeLayerId) : 0,
+                  interactive: false
+                }
               );
-              const sunriseItem: GorgeSunImage = {
-                overlay: sunriseReduced.overlay,
-                kind: 'sunrise',
-                objectUrl: sunriseReduced.objectUrl
-              };
+              const sunriseReady = waitForSunImage(sunriseOverlay, id, 'sunrise');
+              sunriseOverlay.addTo(gorgeLayer);
+              const sunriseItem: GorgeSunImage = { overlay: sunriseOverlay, kind: 'sunrise' };
               gorgeSunImages.push(sunriseItem);
               sectorImages.push(sunriseItem);
 
-              const sunsetReduced = await rasterizeMobileSunImage(
-                sunsetRasterFile, sector, sectorBounds, id, 'sunset', hardData
+              const sunsetOverlay = L.imageOverlay(
+                import.meta.env.BASE_URL + mobileSunsetFile,
+                sectorBounds,
+                {
+                  pane: 'lidarSun',
+                  opacity: sunKindEnabled('sunset') ? opacity(gorgeLayerId) : 0,
+                  interactive: false
+                }
               );
-              const sunsetItem: GorgeSunImage = {
-                overlay: sunsetReduced.overlay,
-                kind: 'sunset',
-                objectUrl: sunsetReduced.objectUrl
-              };
+              const sunsetReady = waitForSunImage(sunsetOverlay, id, 'sunset');
+              sunsetOverlay.addTo(gorgeLayer);
+              const sunsetItem: GorgeSunImage = { overlay: sunsetOverlay, kind: 'sunset' };
               gorgeSunImages.push(sunsetItem);
               sectorImages.push(sunsetItem);
+
+              await Promise.all([sunriseReady, sunsetReady]);
               gorgeHardFeatureCount += hardFeatures;
             } else {
               const sunriseOverlay = L.imageOverlay(
