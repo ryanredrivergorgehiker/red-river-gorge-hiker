@@ -82,6 +82,27 @@ const enabledSources = enabledBrowserMapSources;
   </div>
 
   <div class="route-map-stage">
+    <label class="route-map-mobile-fullscreen-view">
+      <span class="sr-only">Map view</span>
+      <select data-mobile-map-preset data-ready-group="core" aria-label="Map view while in full screen" disabled>
+        <option value="hiking" selected>Hiking view</option>
+        <option value="terrain">Terrain view</option>
+        <option value="aerial">Aerial view</option>
+        <option value="sunlight">Sunlight view</option>
+        <option value="custom" disabled>Custom layers</option>
+      </select>
+    </label>
+
+    <details class="route-map-mobile-quickref">
+      <summary aria-label="Open full screen map quick reference"><span aria-hidden="true">i</span></summary>
+      <div class="route-map-mobile-quickref-card" role="note">
+        <strong>Full-screen quick reference</strong>
+        <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> fine-tunes what is shown.</p>
+        <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Plan</b> measures or builds a route; <b>Share</b> sends the current map view.</p>
+        <p><b>My location</b> centers on you. <b>Home</b> returns to the Gorge overview.</p>
+      </div>
+    </details>
+
     <div class="route-map-loading" data-map-loading role="status" aria-live="polite">
       <svg class="route-map-loading-trees" viewBox="0 0 220 80" aria-hidden="true">
         <path class="tree tree-a" d="M22 72V40M8 50L22 19l14 31H8Zm5 8h18L22 30 13 58Z"></path>
@@ -795,6 +816,8 @@ const enabledSources = enabledBrowserMapSources;
     const coordinateSunSource = shell.querySelector<HTMLElement>('[data-coordinate-sun-source]');
     const coordinateSunDetails = shell.querySelector<HTMLDetailsElement>('[data-coordinate-sun-details]');
     const sunlightPresetTimes = shell.querySelector<HTMLElement>('[data-sunlight-preset-times]');
+    const mobilePresetSelect = shell.querySelector<HTMLSelectElement>('[data-mobile-map-preset]');
+    const mobileQuickRef = shell.querySelector<HTMLDetailsElement>('.route-map-mobile-quickref');
 
     if (layerPanel) layerPanel.open = false;
 
@@ -803,7 +826,7 @@ const enabledSources = enabledBrowserMapSources;
     const syncReadyGroup = (group: ReadyGroup) => {
       for (const element of shell.querySelectorAll<HTMLElement>('[data-ready-group="' + group + '"]')) {
         element.dataset.ready = String(readiness[group]);
-        if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
+        if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement || element instanceof HTMLSelectElement) {
           element.disabled = !readiness[group];
         }
       }
@@ -897,6 +920,7 @@ const enabledSources = enabledBrowserMapSources;
         button.setAttribute('aria-pressed', String(active));
       }
       container.dataset.fullscreenMode = realFullscreenActive() ? 'native' : focusModeActive() ? 'focus' : 'off';
+      if (!active && mobileQuickRef) mobileQuickRef.open = false;
       window.requestAnimationFrame(() => map.invalidateSize({ pan: false }));
     };
     const enterFocusMode = () => {
@@ -3768,12 +3792,14 @@ const enabledSources = enabledBrowserMapSources;
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
         button.setAttribute('aria-pressed', 'false');
       }
+      if (mobilePresetSelect) mobilePresetSelect.value = 'custom';
       if (stage) delete stage.dataset.sunlightMode;
     };
 
     const applyPreset = (name: string) => {
       clearPresetState();
       shell.querySelector<HTMLButtonElement>('[data-map-preset="' + name + '"]')?.setAttribute('aria-pressed', 'true');
+      if (mobilePresetSelect && ['hiking', 'terrain', 'aerial', 'sunlight'].includes(name)) mobilePresetSelect.value = name;
       if (stage && name === 'sunlight') stage.dataset.sunlightMode = 'true';
 
       if (name === 'hiking') {
@@ -3944,6 +3970,10 @@ const enabledSources = enabledBrowserMapSources;
         if (name) applyPreset(name);
       });
     }
+    mobilePresetSelect?.addEventListener('change', () => {
+      const name = mobilePresetSelect.value;
+      if (['hiking', 'terrain', 'aerial', 'sunlight'].includes(name)) applyPreset(name);
+    });
 
     for (const checkbox of shell.querySelectorAll<HTMLInputElement>('[data-route-category-filter]')) {
       checkbox.addEventListener('change', syncRouteFilters);
@@ -4057,6 +4087,8 @@ const enabledSources = enabledBrowserMapSources;
 
       if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial', 'sunlight'].includes(sharedPreset)) {
         applyPreset(sharedPreset);
+      } else if (sharedPreset === 'custom' && mobilePresetSelect) {
+        mobilePresetSelect.value = 'custom';
       }
 
       const layerState = params.get('rrghLayers');
