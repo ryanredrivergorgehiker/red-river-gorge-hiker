@@ -74,17 +74,17 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertNotIn('ortho', LIDAR_SUN_GENERATOR.lower())
 
     def test_historical_pilot_is_removed_from_public_map_ui(self):
-        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
         self.assertNotIn('pinch-lidar-sun-pilot', MAP)
         self.assertNotIn('LiDAR sunrise / sunset pilot', MAP)
-        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', base_markup)
-        self.assertIn('Sunrise / Sunset Potential', base_markup)
-        self.assertIn('Sunrise Potential', base_markup)
-        self.assertIn('Sunset Potential', base_markup)
-        self.assertNotIn('<strong>Potential:</strong>', base_markup)
-        self.assertIn('data-sun-potential-master', base_markup)
-        self.assertIn('data-sun-kind-toggle="sunrise"', base_markup)
-        self.assertIn('data-sun-kind-toggle="sunset"', base_markup)
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', conditions_markup)
+        self.assertIn('Sunrise / Sunset Potential', conditions_markup)
+        self.assertIn('Sunrise Potential', conditions_markup)
+        self.assertIn('Sunset Potential', conditions_markup)
+        self.assertNotIn('<strong>Potential:</strong>', conditions_markup)
+        self.assertIn('data-sun-potential-master', conditions_markup)
+        self.assertIn('data-sun-kind-toggle="sunrise"', conditions_markup)
+        self.assertIn('data-sun-kind-toggle="sunset"', conditions_markup)
         self.assertIn('.swatch-sun-potential::before', ROUTES_CSS)
         self.assertIn('.swatch-sunrise-potential::before', ROUTES_CSS)
         self.assertIn('.swatch-sunset-potential::before', ROUTES_CSS)
@@ -154,10 +154,10 @@ class RoutesTracksContractTests(unittest.TestCase):
             self.assertEqual(sha256(sunset), sector['sunsetRasterSha256'])
             self.assertEqual(sha256(hard), sector['hardSha256'])
 
-        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
-        self.assertNotIn('TEST</strong> — Smooth sunlight gradient', base_markup)
-        self.assertNotIn('Off by default. Same accepted 1,100+', base_markup)
-        self.assertNotIn('data-map-layer="rrg-lidar-sun-raster-test"', base_markup)
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
+        self.assertNotIn('TEST</strong> — Smooth sunlight gradient', conditions_markup)
+        self.assertNotIn('Off by default. Same accepted 1,100+', conditions_markup)
+        self.assertNotIn('data-map-layer="rrg-lidar-sun-raster-test"', conditions_markup)
         self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
         self.assertIn('data/map/rrg-lidar-sun-continuous-manifest.json', MAP)
         self.assertIn('sunriseRasterFile', MAP)
@@ -168,9 +168,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("rendering?.separateSunriseSunsetRasters !== true", MAP)
 
     def test_sunrise_sunset_potential_is_off_by_default_and_sector_loaded(self):
-        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
-        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', base_markup)
-        self.assertIn('Sunrise / Sunset Potential', base_markup)
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', conditions_markup)
+        self.assertIn('Sunrise / Sunset Potential', conditions_markup)
         self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
         self.assertIn('data-fine-tune-layer="rrg-lidar-sun"', MAP)
         self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
@@ -998,7 +998,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("setLayerControl('kytopo', false, 88)", hiking_block)
         self.assertIn("setLayerControl('usgs-topo', true, 100)", hiking_block)
         self.assertIn("setLayerControl('ky-hillshade', false, 75)", hiking_block)
-        base_markup = MAP.split('aria-label="Base and terrain layers"', 1)[1].split('aria-label="Land management and context"', 1)[0]
+        base_markup = MAP.split('aria-label="Base and imagery layers"', 1)[1].split('aria-label="Conditions and analysis layers"', 1)[0]
         self.assertIn('data-map-layer="kytopo" />', base_markup)
         self.assertIn('data-map-layer="usgs-topo" checked', base_markup)
         self.assertIn('data-map-layer="ky-hillshade" />', base_markup)
