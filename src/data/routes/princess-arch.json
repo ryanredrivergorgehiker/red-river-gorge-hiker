@@ -37,7 +37,7 @@
   "relatedContent": [],
   "approvedPublicationGpx": {
     "filename": "Princess_Arch_APPROVED_v1.gpx",
-    "publicPath": "/downloads/routes/Princess_Arch_APPROVED_v1.gpx",
+    "publicDownload": false,
     "version": "1",
     "sha256": "b2ed32a8d3648b895b4a290d3c1e5399dea2e3ce44258b301a43cb46a492cfe3",
     "trackPointCount": 82,

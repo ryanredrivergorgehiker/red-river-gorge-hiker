@@ -15,7 +15,7 @@ export async function GET() {
     navigationDifficulty: entry.data.navigationDifficulty,
     lastInformationReview: entry.data.lastInformationReview,
     geometryUrl: entry.data.webGeometry.publicPath,
-    gpxUrl: entry.data.approvedPublicationGpx.publicPath,
+    gpxUrl: entry.data.approvedPublicationGpx.publicDownload ? (entry.data.approvedPublicationGpx.publicPath ?? null) : null,
     waypointCount: entry.data.publicWaypoints.length
   }));
   return new Response(JSON.stringify(payload, null, 2) + '\n', {

@@ -15,7 +15,7 @@ interface PublicRouteMapItem {
   accessParking: string;
   geometryUrl: string;
   guideUrl: string;
-  gpxUrl: string;
+  gpxUrl?: string | null;
 }
 
 interface Props {
@@ -2955,11 +2955,14 @@ const enabledSources = enabledBrowserMapSources;
       const guide = document.createElement('a');
       guide.href = route.guideUrl;
       guide.textContent = 'View route guide';
-      const gpx = document.createElement('a');
-      gpx.href = route.gpxUrl;
-      gpx.textContent = 'Download GPX';
-      gpx.setAttribute('download', '');
-      actions.append(guide, gpx);
+      actions.append(guide);
+      if (route.gpxUrl) {
+        const gpx = document.createElement('a');
+        gpx.href = route.gpxUrl;
+        gpx.textContent = 'Download GPX';
+        gpx.setAttribute('download', '');
+        actions.append(gpx);
+      }
       popup.append(actions);
       return popup;
     };

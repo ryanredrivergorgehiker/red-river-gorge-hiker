@@ -9,6 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 ROUTE = json.loads((ROOT / 'src/data/routes/skybridge-arch.json').read_text(encoding='utf-8'))
 GPX = ROOT / 'public/downloads/routes/Skybridge_Arch_APPROVED_v1.gpx'
 GEO = ROOT / 'public/data/routes/skybridge-arch-v1.geojson'
+PRINCESS_ROUTE = json.loads((ROOT / 'src/data/routes/princess-arch.json').read_text(encoding='utf-8'))
+PRINCESS_GEO = ROOT / 'public/data/routes/princess-arch-v1.geojson'
+PRINCESS_CACHE = json.loads((ROOT / '.ci-cache/princess-arch.elevation.json').read_text(encoding='utf-8'))
+CACHE_SEEDER = (ROOT / 'scripts/seed-route-elevation-cache.mjs').read_text(encoding='utf-8')
 CONTENT_CONFIG = (ROOT / 'src/content.config.ts').read_text(encoding='utf-8')
 LAYERS = (ROOT / 'src/data/map/layers.ts').read_text(encoding='utf-8')
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
@@ -208,6 +212,40 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertEqual(ROUTE['distanceMi'], 0.784)
         self.assertEqual(sha256(GPX), '2469c85ebaddd3e701ba6dc8eea3664d90a0667dcd86f2aab43ae1445986830d')
         self.assertEqual(sha256(GEO), '123fdb57e1142299f86c714367cc466b70f18fa90cfbaabb92b0d9ced157dc66')
+
+    def test_princess_arch_is_exact_approved_geometry_without_public_gpx(self):
+        self.assertEqual(PRINCESS_ROUTE['routeId'], 'RTE-0002')
+        self.assertEqual(PRINCESS_ROUTE['publicationClass'], 'A')
+        self.assertEqual(PRINCESS_ROUTE['routeCategory'], 'day-hike')
+        self.assertEqual(PRINCESS_ROUTE['shape'], 'out-and-back')
+        self.assertEqual(PRINCESS_ROUTE['distanceMi'], 0.571)
+        self.assertFalse(PRINCESS_ROUTE['approvedPublicationGpx']['publicDownload'])
+        self.assertNotIn('publicPath', PRINCESS_ROUTE['approvedPublicationGpx'])
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['sha256'], 'b2ed32a8d3648b895b4a290d3c1e5399dea2e3ce44258b301a43cb46a492cfe3')
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['trackPointCount'], 82)
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['waypointCount'], 1)
+        self.assertFalse((ROOT / 'public/downloads/routes/Princess_Arch_APPROVED_v1.gpx').exists())
+        self.assertEqual(sha256(PRINCESS_GEO), 'ced314bb34392750b0f823c9a11bc95a48e6fa52c59830d4ee83619f615d6602')
+        geo = json.loads(PRINCESS_GEO.read_text(encoding='utf-8'))
+        lines = [f for f in geo['features'] if f['geometry']['type'] == 'LineString']
+        points = [f for f in geo['features'] if f['geometry']['type'] == 'Point']
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(len(lines[0]['geometry']['coordinates']), 82)
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]['properties']['waypointId'], 'WP-0003')
+        self.assertEqual(points[0]['geometry']['coordinates'], [-83.61963, 37.82733])
+        self.assertEqual(PRINCESS_CACHE['inputFingerprint'], '8cdae886a1c34917df6fd30b7006fca98dde0c50a9b45f8741350a321ba52084')
+        self.assertEqual(PRINCESS_CACHE['stats'], {'ascentFt': 127, 'descentFt': 128, 'minElevationFt': 1117, 'maxElevationFt': 1215})
+        self.assertEqual(PRINCESS_CACHE['sampleCount'], 100)
+        self.assertEqual(len(PRINCESS_CACHE['points']), 100)
+
+    def test_route_download_policy_and_elevation_cache_are_generic(self):
+        self.assertIn("publicDownload: z.boolean()", CONTENT_CONFIG)
+        self.assertIn("publicPath: z.string().startsWith('/').optional()", CONTENT_CONFIG)
+        self.assertIn("if (route.gpxUrl)", MAP)
+        self.assertIn("controlled GPX leaked into public downloads", CACHE_SEEDER)
+        self.assertIn("elevationInputFingerprint", CACHE_SEEDER)
+        self.assertNotIn("skybridge-arch", CACHE_SEEDER)
 
     def test_approved_gpx_is_public_hygiene_only(self):
         text = GPX.read_text(encoding='utf-8')

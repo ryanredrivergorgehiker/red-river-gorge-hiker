@@ -21,9 +21,11 @@ const base = import.meta.env.BASE_URL;
 const elevationFile = join(process.cwd(), 'public', data.elevation.publicPath.replace(/^\//, ''));
 const elevation = JSON.parse(readFileSync(elevationFile, 'utf8'));
 const geometryUrl = base + data.webGeometry.publicPath.replace(/^\//, '');
-const gpxUrl = base + data.approvedPublicationGpx.publicPath.replace(/^\//, '');
+const gpxUrl = data.approvedPublicationGpx.publicDownload && data.approvedPublicationGpx.publicPath
+  ? base + data.approvedPublicationGpx.publicPath.replace(/^\//, '')
+  : null;
 const titleTag = data.title + ' — Hike & Route Guide | Red River Gorge Hiker';
-const description = data.title + ' route guide: ' + data.distanceMi.toFixed(2) + '-mile ' + data.shape + ' with downloadable GPX, interactive map, elevation profile, access notes, hazards, and land-manager resources.';
+const description = data.title + ' route guide: ' + data.distanceMi.toFixed(2) + '-mile ' + data.shape + ' with interactive map, elevation profile, access notes, hazards, and land-manager resources.';
 const routeCategoryLabel = ({
   'day-hike': 'Day hike',
   backpacking: 'Backpacking',
@@ -39,7 +41,7 @@ const breadcrumbSchema = {
     { '@type': 'ListItem', position: 3, name: data.title, item: absolute(base + 'routes/' + slug + '/') }
   ]
 };
-const datasetSchema = {
+const datasetSchema = gpxUrl ? {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   name: data.title + ' GPX route',
@@ -51,11 +53,11 @@ const datasetSchema = {
     encodingFormat: 'application/gpx+xml',
     contentUrl: absolute(gpxUrl)
   }
-};
+} : null;
 ---
 <Base title={data.title} titleTag={titleTag} description={description} canonicalPath={'/routes/' + slug + '/'}>
   <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)}></script>
-  <script is:inline type="application/ld+json" set:html={JSON.stringify(datasetSchema)}></script>
+  {datasetSchema ? <script is:inline type="application/ld+json" set:html={JSON.stringify(datasetSchema)}></script> : null}
   <article class="page route-page">
     <nav class="route-breadcrumbs" aria-label="Breadcrumb">
       <a href={base + 'explore/'}>Explore</a><span aria-hidden="true">/</span>
@@ -67,7 +69,7 @@ const datasetSchema = {
       <p class="eyebrow">{routeCategoryLabel} · {data.internalTrailContext}</p>
       <h1>{data.title}</h1>
       <p class="route-lede">
-        A mapped {data.distanceMi.toFixed(2)}-mile {data.shape} with a downloadable GPX, interactive planning map,
+        A mapped {data.distanceMi.toFixed(2)}-mile {data.shape} with an interactive planning map,
         elevation profile, access notes, hazards, and current land-manager resources.
       </p>
     </header>
@@ -123,7 +125,7 @@ const datasetSchema = {
       <section>
         <h2>Route &amp; terrain</h2>
         <p>
-          This route is a {data.shape}. Trail context: {data.internalTrailContext}. Use the mapped line and GPX
+          This route is a {data.shape}. Trail context: {data.internalTrailContext}. Use the mapped line
           together with current trail signs, conditions, closures, and land-manager information.
         </p>
       </section>
@@ -161,11 +163,11 @@ const datasetSchema = {
       </ul>
     </section>
 
-    <GpxDownload href={gpxUrl} filename={data.approvedPublicationGpx.filename} />
+    {gpxUrl ? <GpxDownload href={gpxUrl} filename={data.approvedPublicationGpx.filename} /> : null}
 
     <details class="route-source-panel">
       <summary><strong>Map &amp; route data sources</strong></summary>
-      <p>The route line and downloadable GPX use the current RRGH route dataset for {data.title}.</p>
+      <p>{gpxUrl ? 'The route line and downloadable GPX use' : 'The route line uses'} the current RRGH route dataset for {data.title}.</p>
       <p>Elevation is generated from USGS 3DEP terrain data.</p>
       <p>Map, trail, road, and county sources are identified in the interactive map’s attribution and source panel.</p>
     </details>

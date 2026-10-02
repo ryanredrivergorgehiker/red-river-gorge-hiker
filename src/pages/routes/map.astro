@@ -18,7 +18,9 @@ const routes = entries.map((entry) => ({
   accessParking: entry.data.accessParking,
   geometryUrl: base + entry.data.webGeometry.publicPath.replace(/^\//, ''),
   guideUrl: base + 'routes/' + entry.id + '/',
-  gpxUrl: base + entry.data.approvedPublicationGpx.publicPath.replace(/^\//, '')
+  gpxUrl: entry.data.approvedPublicationGpx.publicDownload && entry.data.approvedPublicationGpx.publicPath
+    ? base + entry.data.approvedPublicationGpx.publicPath.replace(/^\//, '')
+    : null
 }));
 ---
 <Base

@@ -1,6 +1,7 @@
 {
   "routeId": "RTE-0001",
   "slug": "skybridge-arch",
+  "inputFingerprint": "bf87100605aaef30122e1f4e1752b7f8bd97b0f9763f9add45d89466c1a3ad45",
   "source": {
     "id": "usgs-3dep-bare-earth-dem",
     "name": "USGS 3DEP Bare Earth DEM — 3DEPElevation ImageServer",

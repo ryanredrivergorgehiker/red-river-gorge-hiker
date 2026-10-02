@@ -1,11 +1,23 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const ROUTES_DIR = path.join(process.cwd(), 'src', 'data', 'routes');
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const SERVICE = 'https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/getSamples';
 const METERS_TO_FEET = 3.280839895013123;
 const EARTH_RADIUS_M = 6371008.8;
+
+const elevationInputFingerprint = (route) => crypto.createHash('sha256').update(JSON.stringify({
+  routeId: route.routeId,
+  webGeometrySha256: route.webGeometry.sha256,
+  approvedPublicationGpxSha256: route.approvedPublicationGpx.sha256,
+  trackPointCount: route.approvedPublicationGpx.trackPointCount,
+  waypointCount: route.approvedPublicationGpx.waypointCount,
+  sourceId: route.elevation.sourceId,
+  sampleCount: route.elevation.sampleCount,
+  method: route.elevation.method
+})).digest('hex');
 
 const radians = (value) => value * Math.PI / 180;
 const haversineMeters = ([lon1, lat1], [lon2, lat2]) => {
@@ -116,6 +128,7 @@ async function generateForRoute(route) {
   const output = {
     routeId: route.routeId,
     slug: route.id,
+    inputFingerprint: elevationInputFingerprint(route),
     source: {
       id: route.elevation.sourceId,
       name: 'USGS 3DEP Bare Earth DEM — 3DEPElevation ImageServer',

@@ -34,28 +34,40 @@ for (const filename of routeFiles) {
   if (typeof route.internalTrailContext !== 'string' || !route.internalTrailContext.trim()) fail(`${slug}: internalTrailContext is required`);
   if (!Array.isArray(route.publicWaypoints)) fail(`${slug}: publicWaypoints must be an array`);
 
-  const gpxPath = path.join(PUBLIC_DIR, route.approvedPublicationGpx.publicPath.replace(/^\//, ''));
+  const gpxMeta = route.approvedPublicationGpx;
+  if (typeof gpxMeta.publicDownload !== 'boolean') fail(`${slug}: approved GPX publicDownload policy is required`);
   const geoPath = path.join(PUBLIC_DIR, route.webGeometry.publicPath.replace(/^\//, ''));
   const elevationPath = path.join(PUBLIC_DIR, route.elevation.publicPath.replace(/^\//, ''));
-  for (const required of [gpxPath, geoPath, elevationPath]) {
+  for (const required of [geoPath, elevationPath]) {
     if (!fs.existsSync(required)) fail(`${slug}: missing required public artifact ${required}`);
   }
 
-  const gpx = fs.readFileSync(gpxPath);
-  const geo = fs.readFileSync(geoPath);
-  if (sha256(gpx) !== route.approvedPublicationGpx.sha256) fail(`${slug}: approved GPX hash mismatch`);
-  if (sha256(geo) !== route.webGeometry.sha256) fail(`${slug}: approved GeoJSON hash mismatch`);
+  let gpxText = '';
+  if (gpxMeta.publicDownload) {
+    if (!gpxMeta.publicPath) fail(`${slug}: public GPX download requires publicPath`);
+    const gpxPath = path.join(PUBLIC_DIR, gpxMeta.publicPath.replace(/^\//, ''));
+    if (!fs.existsSync(gpxPath)) fail(`${slug}: missing required public GPX ${gpxPath}`);
+    const gpx = fs.readFileSync(gpxPath);
+    if (sha256(gpx) !== gpxMeta.sha256) fail(`${slug}: approved GPX hash mismatch`);
+    gpxText = gpx.toString('utf8');
+    if (!gpxText.includes('version="1.1"')) fail(`${slug}: GPX is not 1.1`);
+    if ((gpxText.match(/<trkpt\b/g) || []).length !== gpxMeta.trackPointCount) fail(`${slug}: GPX track-point count mismatch`);
+    if ((gpxText.match(/<wpt\b/g) || []).length !== gpxMeta.waypointCount) fail(`${slug}: GPX waypoint count mismatch`);
+    if (/<time>|<ele>|Gaia/i.test(gpxText)) fail(`${slug}: GPX contains prohibited recording/elevation metadata`);
+  } else {
+    if (gpxMeta.publicPath) fail(`${slug}: controlled GPX must not define publicPath`);
+    const accidentallyPublic = path.join(PUBLIC_DIR, 'downloads', 'routes', gpxMeta.filename);
+    if (fs.existsSync(accidentallyPublic)) fail(`${slug}: controlled GPX leaked into public downloads`);
+  }
 
-  const gpxText = gpx.toString('utf8');
-  if (!gpxText.includes('version="1.1"')) fail(`${slug}: GPX is not 1.1`);
-  if ((gpxText.match(/<trkpt\b/g) || []).length !== route.approvedPublicationGpx.trackPointCount) fail(`${slug}: GPX track-point count mismatch`);
-  if ((gpxText.match(/<wpt\b/g) || []).length !== route.approvedPublicationGpx.waypointCount) fail(`${slug}: GPX waypoint count mismatch`);
-  if (/<time>|<ele>|Gaia/i.test(gpxText)) fail(`${slug}: GPX contains prohibited recording/elevation metadata`);
+  const geo = fs.readFileSync(geoPath);
+  if (sha256(geo) !== route.webGeometry.sha256) fail(`${slug}: approved GeoJSON hash mismatch`);
 
   const geojson = JSON.parse(geo.toString('utf8'));
   const line = geojson.features.filter((f) => f.geometry?.type === 'LineString');
   const points = geojson.features.filter((f) => f.geometry?.type === 'Point');
   if (line.length !== 1) fail(`${slug}: expected exactly one approved route LineString`);
+  if (!Array.isArray(line[0].geometry?.coordinates) || line[0].geometry.coordinates.length !== route.approvedPublicationGpx.trackPointCount) fail(`${slug}: approved web geometry point count does not match approved GPX lineage`);
   if (points.length !== route.publicWaypoints.length) fail(`${slug}: public waypoint count does not match approved package`);
   for (const waypoint of route.publicWaypoints) {
     const feature = points.find((f) => f.properties?.waypointId === waypoint.waypointId);

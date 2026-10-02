@@ -18,6 +18,14 @@ const publicArtifactSchema = z.object({
   sha256: z.string().regex(/^[a-f0-9]{64}$/)
 });
 
+const approvedGpxSchema = z.object({
+  filename: z.string().min(1),
+  publicDownload: z.boolean(),
+  publicPath: z.string().startsWith('/').optional(),
+  version: z.string().min(1),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/)
+});
+
 const routes = defineCollection({
   loader: glob({ pattern: '**/*.json', base: './src/data/routes' }),
   schema: z.object({
@@ -42,7 +50,7 @@ const routes = defineCollection({
     landAccessReview: z.string().min(1),
     publicWaypoints: z.array(waypointSchema),
     relatedContent: z.array(z.object({ label: z.string(), href: z.string() })),
-    approvedPublicationGpx: publicArtifactSchema.extend({
+    approvedPublicationGpx: approvedGpxSchema.extend({
       trackPointCount: z.number().int().positive(),
       waypointCount: z.number().int().nonnegative()
     }),
