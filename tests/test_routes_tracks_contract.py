@@ -44,6 +44,9 @@ RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(enc
 CONTINUOUS_SUN_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-continuous-manifest.json'
 CONTINUOUS_SUN_MANIFEST = json.loads(CONTINUOUS_SUN_MANIFEST_PATH.read_text(encoding='utf-8'))
 CONTINUOUS_SUN_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-continuous.py').read_text(encoding='utf-8')
+MOBILE_SUN_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-mobile-manifest.json'
+MOBILE_SUN_MANIFEST = json.loads(MOBILE_SUN_MANIFEST_PATH.read_text(encoding='utf-8'))
+MOBILE_SUN_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-mobile.py').read_text(encoding='utf-8')
 SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
 
 
@@ -769,33 +772,83 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
         self.assertIn('bottom:3rem!important;', ROUTES_CSS)
 
-    def test_mobile_sunlight_uses_adaptive_rasters_without_forced_zoom(self):
+    def test_mobile_sunlight_uses_prebuilt_bounded_rasters_without_forced_zoom(self):
         self.assertNotIn("mobileFullscreenSunMinZoom", MAP)
         self.assertNotIn("map.setView(map.getCenter(), 13", MAP)
         self.assertNotIn("rrgLidarSunLoadState = 'zoom-required'", MAP)
         self.assertNotIn("mobileFullscreenSunMaxSectors", MAP)
         self.assertIn("const mobileMapActive = () =>", MAP)
-        self.assertIn("const mobileSunRasterMaxPixelDimension = 2048", MAP)
-        self.assertIn("const mobileSunRasterMaxDpr = 2", MAP)
-        self.assertIn("const drawMobileSunHardRim = (", MAP)
-        self.assertIn("context.fill('evenodd')", MAP)
-        self.assertIn("const mobileSunRasterSize = (sector: any, sectorBounds: any) =>", MAP)
-        self.assertIn("const rasterizeMobileSunImage = async", MAP)
-        self.assertIn("cache: 'force-cache'", MAP)
-        self.assertIn("createImageBitmap(sourceBlob", MAP)
-        self.assertIn("canvas.toBlob", MAP)
-        self.assertIn("URL.revokeObjectURL(item.objectUrl)", MAP)
-        self.assertIn("const gorgeSectorResources = new Map<string, GorgeSectorResources>()", MAP)
-        self.assertIn("const releaseGorgeSector = (id: string) =>", MAP)
-        self.assertIn("const pruneMobileGorgeSectors = (keepIds: Set<string>) =>", MAP)
+        self.assertIn("const mobileSunOverviewMaxZoom = 12", MAP)
+        self.assertIn("data/map/rrg-lidar-sun-mobile-manifest.json", MAP)
+        self.assertIn("const loadMobileSunManifest = async () =>", MAP)
+        self.assertIn("const mobileSunVariant = () =>", MAP)
+        self.assertIn("mobileSunVariant() + ':' + id", MAP)
         self.assertIn("const mobileGuard = mobileMapActive()", MAP)
         self.assertIn("map.getBounds().pad(0.08)", MAP)
         self.assertIn("map.getBounds().pad(0.35)", MAP)
-        self.assertIn("drawMobileSunHardRim(context, hardData, kind, sectorBounds, width, height)", MAP)
-        self.assertIn("const hardData = await hardResponse.json()", MAP)
-        self.assertNotIn("mobileSunPathRenderer", MAP)
+        self.assertIn("const mobileVariant = mobileSector?.variants?.[variant]", MAP)
+        self.assertIn("await Promise.all([sunriseReady, sunsetReady])", MAP)
+        self.assertIn("const gorgeSectorResources = new Map<string, GorgeSectorResources>()", MAP)
+        self.assertIn("const releaseGorgeSector = (id: string) =>", MAP)
+        self.assertIn("const pruneMobileGorgeSectors = (keepIds: Set<string>) =>", MAP)
         self.assertIn("image.removeAttribute('src')", MAP)
         self.assertIn("gorgeSectorResources.set(id", MAP)
+        self.assertNotIn("createImageBitmap(sourceBlob", MAP)
+        self.assertNotIn("canvas.toBlob", MAP)
+        self.assertNotIn("rasterizeMobileSunImage", MAP)
+        self.assertNotIn("drawMobileSunHardRim", MAP)
+        self.assertNotIn("URL.createObjectURL(sourceBlob)", MAP)
+
+        mobile_branch = MAP.split("            if (mobileGuard) {", 1)[1].split("            } else {", 1)[0]
+        self.assertNotIn("hardResponse", mobile_branch)
+        self.assertNotIn("hardData", mobile_branch)
+        self.assertNotIn("canvas", mobile_branch)
+        self.assertIn("mobileSunriseFile", mobile_branch)
+        self.assertIn("mobileSunsetFile", mobile_branch)
+
+        self.assertEqual(MOBILE_SUN_MANIFEST['version'], 'lidar-continuous-mobile-v1')
+        self.assertEqual(MOBILE_SUN_MANIFEST['minimumElevationFeet'], 1100.0)
+        self.assertFalse(MOBILE_SUN_MANIFEST['terrainQualificationChanged'])
+        self.assertFalse(MOBILE_SUN_MANIFEST['hardLipGeometryChanged'])
+        self.assertTrue(MOBILE_SUN_MANIFEST['acceptedHardLipReusedVerbatim'])
+        presentation = MOBILE_SUN_MANIFEST['presentation']
+        self.assertTrue(presentation['hardRimsPrecomposited'])
+        self.assertTrue(presentation['separateSunriseSunsetRasters'])
+        self.assertEqual(presentation['overviewMaxZoom'], 12)
+        self.assertEqual(presentation['overviewSectorWidthPx'], 256)
+        self.assertEqual(presentation['detailMinZoom'], 13)
+        self.assertEqual(presentation['detailSectorWidthPx'], 768)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['sectors'], 30)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['files'], 120)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['hardFeatures'], CONTINUOUS_SUN_MANIFEST['counts']['hardFeatures'])
+        self.assertLess(MOBILE_SUN_MANIFEST['counts']['bytes'], CONTINUOUS_SUN_MANIFEST['counts']['rasterBytes'])
+
+        continuous_by_id = {sector['id']: sector for sector in CONTINUOUS_SUN_MANIFEST['sectors']}
+        self.assertEqual(len(MOBILE_SUN_MANIFEST['sectors']), 30)
+        for sector in MOBILE_SUN_MANIFEST['sectors']:
+            source = continuous_by_id[sector['id']]
+            self.assertEqual(sector['sourceSunriseSha256'], source['sunriseRasterSha256'])
+            self.assertEqual(sector['sourceSunsetSha256'], source['sunsetRasterSha256'])
+            self.assertEqual(sector['sourceHardSha256'], source['hardSha256'])
+            self.assertEqual(sector['hardFeatures'], source['hardFeatures'])
+            for variant, width in (('overview', 256), ('detail', 768)):
+                pair = sector['variants'][variant]
+                for kind in ('sunrise', 'sunset'):
+                    item = pair[kind]
+                    path = ROOT / 'public' / item['file']
+                    self.assertTrue(path.is_file(), item['file'])
+                    self.assertEqual(sha256(path), item['sha256'])
+                    self.assertEqual(item['shape'][1], width)
+
+        desktop_branch = MAP.split("            } else {", 1)[1].split("            }\n            gorgeSectorResources.set", 1)[0]
+        self.assertIn("sunriseRasterFile", desktop_branch)
+        self.assertIn("sunsetRasterFile", desktop_branch)
+        self.assertIn("const hardResponse = await fetch", desktop_branch)
+        self.assertIn("L.geoJSON(hardData", desktop_branch)
+
+        self.assertIn("OVERVIEW_WIDTH = 256", MOBILE_SUN_GENERATOR)
+        self.assertIn("DETAIL_WIDTH = 768", MOBILE_SUN_GENERATOR)
+        self.assertIn("Hard-rim geometry is precomposited", MOBILE_SUN_GENERATOR)
 
     def test_mobile_tools_layout_spans_build_route_and_centers_actions(self):
         self.assertIn('.route-plan-mode-buttons button[data-map-tool="plan"]{grid-column:1/-1!important}', ROUTES_CSS)
