@@ -1,0 +1,67 @@
+import hashlib
+import json
+import pathlib
+import unittest
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+PLACES = ROOT / 'src/data/places/places.generated.json'
+MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
+EXPECTED_SHA = 'e6afebfbbd250eee4de3e0f47db2a91e7ae053fff6659f6fc0d312caf75034b3'
+
+class PlacesContractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.raw = PLACES.read_bytes()
+        cls.data = json.loads(cls.raw)
+
+    def test_exact_verification_cleared_snapshot(self):
+        self.assertEqual(hashlib.sha256(self.raw).hexdigest(), EXPECTED_SHA)
+        self.assertEqual(self.data['metadata']['sourceRegisterId'], '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4')
+        self.assertEqual(self.data['metadata']['verificationState'], 'verification-cleared')
+
+    def test_integrity_counts_and_canonical_identity(self):
+        places = self.data['activePlaces']
+        self.assertEqual(len(places), 29)
+        self.assertEqual(len({p['placeId'] for p in places}), 29)
+        self.assertEqual(sum(bool(p['aroundTheGorge']) for p in places), 23)
+        self.assertEqual(sum(bool(p['hikerServices']) for p in places), 10)
+        self.assertEqual(sum(bool(p['aroundTheGorge']) and bool(p['hikerServices']) for p in places), 4)
+        self.assertEqual(sum(bool(p['rrghPresence']) for p in places), 3)
+        self.assertEqual(sum(bool(p['mapPoiEligible']) for p in places), 29)
+        self.assertEqual(len(self.data['excludedAndSuperseded']), 10)
+        self.assertTrue(all(isinstance(p['latitude'], (int,float)) and isinstance(p['longitude'], (int,float)) for p in places))
+        by_id = {p['placeId']:p for p in places}
+        self.assertEqual(by_id['PLC-021']['publicName'], 'The Brick at the Red River Gorge')
+        self.assertEqual(by_id['PLC-026']['publicName'], 'Trails Liquor, Souvenir, & General Store')
+        self.assertEqual(by_id['PLC-016']['publicName'], 'Southeast Mountain Guides')
+        self.assertEqual(by_id['PLC-025']['publicName'], 'Park N Save')
+        self.assertTrue(by_id['PLC-010']['nearbyRrghPickEligible'])
+        self.assertEqual(by_id['PLC-010']['nearbyRouteContext'], 'Motherlode area')
+
+    def test_one_poi_shared_selectors_and_presence_contract(self):
+        self.assertIn('data-map-layer="around-the-gorge" checked', MAP)
+        self.assertIn('data-map-layer="hiker-services" checked', MAP)
+        self.assertIn('const placesLayerGroup = L.layerGroup().addTo(map)', MAP)
+        self.assertIn('placeMarkerRecords.push({ place, marker })', MAP)
+        self.assertIn('Boolean(place.aroundTheGorge) && checked(aroundPlacesLayerId)', MAP)
+        self.assertIn('Boolean(place.hikerServices) && checked(hikerServicesLayerId)', MAP)
+        self.assertIn("'rrgh-place-marker'", MAP)
+        self.assertIn("'is-presence'", MAP)
+        self.assertIn("label.textContent = 'RRGH Presence'", MAP)
+        self.assertNotIn("'partner'", MAP.lower())
+
+    def test_preset_defaults_and_route_waypoint_separation(self):
+        hiking = MAP.split("if (name === 'hiking')",1)[1].split("} else if (name === 'terrain')",1)[0]
+        terrain = MAP.split("} else if (name === 'terrain')",1)[1].split("} else if (name === 'aerial')",1)[0]
+        aerial = MAP.split("} else if (name === 'aerial')",1)[1].split("} else if (name === 'sunlight')",1)[0]
+        sunlight = MAP.split("} else if (name === 'sunlight')",1)[1].split("syncAerialControlState()",1)[0]
+        self.assertIn("setLayerControl(aroundPlacesLayerId, true)", hiking)
+        self.assertIn("setLayerControl(hikerServicesLayerId, true)", hiking)
+        for block in (terrain,aerial,sunlight):
+            self.assertIn("setLayerControl(aroundPlacesLayerId, false)", block)
+            self.assertIn("setLayerControl(hikerServicesLayerId, false)", block)
+        self.assertIn("places: 465", MAP)
+        self.assertIn("landmarks: 470", MAP)
+
+if __name__ == '__main__':
+    unittest.main()

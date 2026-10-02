@@ -786,7 +786,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('aria-label="Minimize map tools"', MAP)
         self.assertIn('aria-label="Close map tools"', MAP)
         self.assertIn('<strong data-plan-stats-title>Tool results</strong>', MAP)
-        self.assertIn('Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, plus loaded community/informal trails.', MAP)
+        self.assertIn('Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, local amenities, plus loaded community/informal trails.', MAP)
         self.assertIn('Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · U.S. Census Bureau · OpenStreetMap.', MAP)
         self.assertIn('aria-label="Base and imagery layers"', MAP)
         self.assertIn('>Base &amp; Imagery</p>', MAP)

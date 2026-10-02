@@ -3470,7 +3470,16 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
     setLoadProgress(47, 'Official State Park trails ready…');
 
     try {
-      const trails = await fetchGeoJson('usfs-trails');
+      const response = await fetch(import.meta.env.BASE_URL + 'data/map/usfs-trails.geojson', {
+        credentials: 'same-origin',
+        cache: 'no-cache'
+      });
+      if (!response.ok) throw new Error('Forest Service trail cache HTTP ' + response.status);
+      const trails = await response.json();
+      if (trails?.type !== 'FeatureCollection' || !Array.isArray(trails?.features) || trails.features.length < 10) {
+        throw new Error('Forest Service trail cache is invalid.');
+      }
+      container.dataset.usfsTrailSource = 'rrgh-cache';
       indexGeometry(trails);
       const seenLabels = new Set<string>();
       const trailCasingLayer = L.geoJSON(trails, {
