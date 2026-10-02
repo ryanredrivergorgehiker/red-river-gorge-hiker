@@ -3442,6 +3442,12 @@
     line-height:1;
   }
 
+  .route-map-shell[data-focus-mode="true"] .route-plan-panel[data-minimized="true"],
+  .route-map-shell:fullscreen .route-plan-panel[data-minimized="true"]{
+    bottom:3rem!important;
+    z-index:1015;
+  }
+
   /* Layers opens under the three top buttons. It may cover the secondary
      view/collapse/info cluster, but the top utility row stays exposed. */
   .route-map-shell[data-focus-mode="true"] .route-layer-panel[open],
