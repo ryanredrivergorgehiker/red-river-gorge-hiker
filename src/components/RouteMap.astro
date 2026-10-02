@@ -77,21 +77,24 @@ const enabledSources = enabledBrowserMapSources;
   <div class="route-map-mobile-topbar" role="toolbar" aria-label="Mobile map utilities">
     <button type="button" data-map-action="locate" data-ready-group="core" aria-label="Show my location" disabled>My location</button>
     <button type="button" data-map-action="home" data-ready-group="core" aria-label="Reset map view" disabled>Home</button>
-    <button type="button" class="route-map-fullscreen-icon" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>
-      <svg class="route-fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
-        <path d="M3 8l6-6M21 8l-6-6M3 16l6 6M21 16l-6 6"></path>
-      </svg>
-      <svg class="route-fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 9H4V4M15 9h5V4M9 15H4v5M15 15h5v5"></path>
-        <path d="M4 4l6 6M20 4l-6 6M4 20l6-6M20 20l-6-6"></path>
-      </svg>
-      <span class="sr-only" data-fullscreen-label>Full screen</span>
-    </button>
     <button type="button" data-sheet-open="layers" data-ready-group="core" aria-label="Open map layers" disabled>Layers</button>
   </div>
 
   <div class="route-map-stage">
+    <div class="route-map-mobile-fullscreen-entry">
+      <button type="button" class="route-map-fullscreen-icon" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>
+      <span class="route-fullscreen-arrows route-fullscreen-arrows-expand" aria-hidden="true">
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-ne">↗</span>
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-sw">↙</span>
+      </span>
+      <span class="route-fullscreen-arrows route-fullscreen-arrows-collapse" aria-hidden="true">
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-ne">↙</span>
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-sw">↗</span>
+      </span>
+      <span class="sr-only" data-fullscreen-label>Full screen</span>
+    </button>
+    </div>
+
     <div class="route-map-mobile-fullscreen-cluster" aria-label="Full screen map controls">
       <label class="route-map-mobile-fullscreen-view">
         <span class="sr-only">Map view</span>
@@ -106,28 +109,23 @@ const enabledSources = enabledBrowserMapSources;
 
       <div class="route-map-mobile-fullscreen-actions">
         <button type="button" class="route-map-fullscreen-icon" data-map-action="fullscreen" data-ready-group="core" aria-label="Enter full screen map" aria-pressed="false" disabled>
-      <svg class="route-fullscreen-enter-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
-        <path d="M3 8l6-6M21 8l-6-6M3 16l6 6M21 16l-6 6"></path>
-      </svg>
-      <svg class="route-fullscreen-exit-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 9H4V4M15 9h5V4M9 15H4v5M15 15h5v5"></path>
-        <path d="M4 4l6 6M20 4l-6 6M4 20l6-6M20 20l-6-6"></path>
-      </svg>
+      <span class="route-fullscreen-arrows route-fullscreen-arrows-expand" aria-hidden="true">
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-ne">↗</span>
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-sw">↙</span>
+      </span>
+      <span class="route-fullscreen-arrows route-fullscreen-arrows-collapse" aria-hidden="true">
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-ne">↙</span>
+        <span class="route-fullscreen-arrow route-fullscreen-arrow-sw">↗</span>
+      </span>
       <span class="sr-only" data-fullscreen-label>Full screen</span>
     </button>
         <details class="route-map-mobile-quickref">
-          <summary aria-label="Open full screen map quick reference">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
-              <circle cx="12" cy="12" r="2.5"></circle>
-            </svg>
-          </summary>
+          <summary aria-label="Open full screen map quick reference"><span aria-hidden="true">i</span></summary>
           <div class="route-map-mobile-quickref-card" role="note">
             <strong>Full-screen quick reference</strong>
-            <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> can be adjusted before entering full screen.</p>
+            <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> fine-tunes what is shown.</p>
             <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Plan</b> measures or builds a route; <b>Share</b> sends the current map view.</p>
-            <p>Use the diagonal-arrow control to leave full screen.</p>
+            <p><b>My location</b> centers on you. <b>Home</b> returns to the Gorge overview.</p>
           </div>
         </details>
       </div>
