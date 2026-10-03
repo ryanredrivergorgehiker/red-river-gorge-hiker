@@ -313,12 +313,15 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
             <span>Hiker Services</span>
           </label>
           <div class="route-layer-presence-key" aria-label="RRGH Presence marker key">
-            <span class="swatch-place-presence" aria-hidden="true"><span>RRGH</span></span>
+            <span class="route-layer-presence-spacer" aria-hidden="true"></span>
+            <span class="route-layer-presence-icon-wrap" aria-hidden="true">
+              <span class="rrgh-place-marker is-around is-presence route-layer-presence-example">
+                <span class="rrgh-place-marker-core"></span>
+                <span class="rrgh-place-presence-badge">RRGH</span>
+              </span>
+            </span>
             <span><strong>RRGH Presence</strong></span>
           </div>
-          <p class="route-layer-source-note">
-            Around the Gorge and Hiker Services can classify the same place without creating duplicate POIs. The gold RRGH tag marks an RRGH display or retail presence; relationship details appear in the place popup.
-          </p>
         </div>
 
         <div class="route-layer-group" aria-label="Base and imagery layers">
@@ -1246,7 +1249,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
     const hikerServicesLayerId = 'hiker-services';
     const placesLayerGroup = L.layerGroup().addTo(map);
     const placeMarkerRecords: Array<{ place: any; marker: any }> = [];
-    const meaningfulPlaceText = (value: unknown) => typeof value === 'string' && value.trim() && value.trim() !== '29' ? value.trim() : '';
+    const meaningfulPlaceText = (value: unknown) => typeof value === 'string' && value.trim() ? value.trim() : '';
     const meaningfulPlaceList = (value: unknown) => Array.isArray(value)
       ? value.map((item) => meaningfulPlaceText(item)).filter(Boolean)
       : [];
@@ -1276,6 +1279,16 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       syncPlacesLayer();
     };
 
+    const placeCoordinateKey = (place: any) => Number.isFinite(Number(place?.latitude)) && Number.isFinite(Number(place?.longitude))
+      ? Number(place.latitude).toFixed(6) + ',' + Number(place.longitude).toFixed(6)
+      : '';
+    const placeCoordinateCounts = new Map<string, number>();
+    for (const place of placeConfigs) {
+      const key = placeCoordinateKey(place);
+      if (key) placeCoordinateCounts.set(key, (placeCoordinateCounts.get(key) ?? 0) + 1);
+    }
+    const placeCoordinateSeen = new Map<string, number>();
+
     for (const place of placeConfigs) {
       const lat = Number(place.latitude);
       const lng = Number(place.longitude);
@@ -1289,6 +1302,12 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
         around && hiker ? 'is-dual' : around ? 'is-around' : 'is-hiker',
         presence ? 'is-presence' : ''
       ].filter(Boolean).join(' ');
+      const coordinateKey = placeCoordinateKey(place);
+      const coLocatedCount = coordinateKey ? (placeCoordinateCounts.get(coordinateKey) ?? 1) : 1;
+      const coLocatedIndex = coordinateKey ? (placeCoordinateSeen.get(coordinateKey) ?? 0) : 0;
+      if (coordinateKey) placeCoordinateSeen.set(coordinateKey, coLocatedIndex + 1);
+      const visualOffsetX = coLocatedCount > 1 ? (coLocatedIndex - (coLocatedCount - 1) / 2) * 10 : 0;
+      const baseAnchorX = presence ? 15 : 12;
       const marker = L.marker([lat, lng], {
         pane: 'places',
         keyboard: true,
@@ -1297,8 +1316,8 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
           className: 'rrgh-place-marker-host',
           html: '<span class="' + markerClass + '"><span class="rrgh-place-marker-core" aria-hidden="true"></span>' + (presence ? '<span class="rrgh-place-presence-badge" aria-hidden="true">RRGH</span>' : '') + '</span>',
           iconSize: presence ? [42, 30] : [24, 24],
-          iconAnchor: presence ? [15, 15] : [12, 12],
-          popupAnchor: [0, -14]
+          iconAnchor: [baseAnchorX + visualOffsetX, presence ? 15 : 12],
+          popupAnchor: [-visualOffsetX, -14]
         })
       });
 
@@ -1354,14 +1373,24 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       footer.className = 'route-map-popup-meta';
       const verified = meaningfulPlaceText(place.lastVerified);
       footer.textContent = verified ? 'Last verified ' + verified + '. ' : '';
+      const googleMapsUrl = meaningfulPlaceText(place.googleMapsUrl);
       const sourceUrl = meaningfulPlaceText(place.officialSourceUrl);
+      if (googleMapsUrl) {
+        const mapLink = document.createElement('a');
+        mapLink.href = googleMapsUrl;
+        mapLink.target = '_blank';
+        mapLink.rel = 'noopener noreferrer';
+        mapLink.textContent = 'Open in Google Maps';
+        footer.append(mapLink);
+      }
       if (sourceUrl) {
-        const link = document.createElement('a');
-        link.href = sourceUrl;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = 'Check current source';
-        footer.append(link);
+        if (googleMapsUrl) footer.append(document.createTextNode(' · '));
+        const sourceLink = document.createElement('a');
+        sourceLink.href = sourceUrl;
+        sourceLink.target = '_blank';
+        sourceLink.rel = 'noopener noreferrer';
+        sourceLink.textContent = 'Official site';
+        footer.append(sourceLink);
       }
       popup.append(footer);
       marker.bindPopup(popup, { maxWidth: 360 });

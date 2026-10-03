@@ -1,25 +1,25 @@
 {
   "metadata": {
-    "schemaVersion": "1.0",
+    "schemaVersion": "1.1",
     "sourceRegisterId": "1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4",
     "snapshotDate": "2026-10-02",
-    "verificationState": "verification-cleared",
-    "sourceRecordCount": 29,
-    "activePlaceCount": 29,
+    "verificationState": "owner-uat-reconciled",
+    "sourceRecordCount": 30,
+    "activePlaceCount": 30,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-02T23:32:00Z"
+    "generatedAt": "2026-10-03T00:25:00Z"
   },
   "integrity": {
-    "activePlaceCount": 29,
-    "aroundTheGorgeCount": 23,
+    "activePlaceCount": 30,
+    "aroundTheGorgeCount": 24,
     "hikerServicesCount": 10,
     "dualMembershipCount": 4,
     "rrghPresenceCount": 3,
-    "mapPoiEligibleCount": 29,
-    "offlineAppPoiEligibleCount": 29,
-    "nearbyRrghPickEligibleCount": 23,
-    "coordinateCompleteCount": 29,
-    "sourceCompleteCount": 29,
+    "mapPoiEligibleCount": 30,
+    "offlineAppPoiEligibleCount": 30,
+    "nearbyRrghPickEligibleCount": 24,
+    "coordinateCompleteCount": 30,
+    "sourceCompleteCount": 30,
     "excludedAndSupersededCount": 10
   },
   "activePlaces": [
@@ -29,24 +29,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Gorge-area pizza and visitor/outdoor-community stop.",
       "officialSourceUrl": "https://miguelspizza.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Miguel%E2%80%99s%20Pizza%201890%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
@@ -54,7 +51,7 @@
       "locationContext": "1890 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.783085,
       "longitude": -83.683013,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-002",
@@ -62,33 +59,30 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": true,
       "rrghPresenceSubtype": "photo-display-sales",
       "relationshipDisclosure": "Original Red River Gorge Hiker photography is displayed and available for purchase here. Inclusion is editorial and is not purchased placement.",
-      "aliases": [
-        "29"
-      ],
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Local restaurant and RRGH physical-presence location.",
       "officialSourceUrl": "https://www.redriverrockhouse.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Rockhouse%204000%20KY-11%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical RRGH Presence relationship remains unchanged.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical RRGH Presence relationship remains unchanged. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
         "rrgh-presence"
       ],
-      "locationContext": "4000 KY Route 11, Campton, KY 41301",
+      "locationContext": "4000 KY-11, Campton, KY 41301",
       "latitude": 37.73944,
       "longitude": -83.65616,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-003",
@@ -96,32 +90,29 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Natural Bridge-area sit-down restaurant.",
       "officialSourceUrl": "https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sandstone%20Arches%20Restaurant%202135%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376%20",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current Sandstone Arches Restaurant operation within Hemlock Lodge / Natural Bridge State Resort Park checked.",
+      "verificationStatus": "Verified 2026-10-02 — current Sandstone Arches Restaurant operation within Hemlock Lodge / Natural Bridge State Resort Park checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
       ],
-      "locationContext": "Hemlock Lodge, Natural Bridge State Resort Park, 2135 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "2135 Natural Bridge Road, Slade, KY 40376 (Hemlock Lodge)",
       "latitude": 37.776054,
       "longitude": -83.680638,
-      "geoVerificationStatus": "Verified 2026-10-02 — Hemlock Lodge complex coordinate; Sandstone Arches Restaurant is inside the lodge."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current map/business evidence confirms Sandstone Arches Restaurant is inside Hemlock Lodge; public POI uses the shared lodge-building coordinate 37.776054,-83.680638."
     },
     {
       "placeId": "PLC-004",
@@ -137,17 +128,16 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Gorge-specific food stop with limited practical visitor utility.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Food, lodging, and limited visitor supplies.",
       "officialSourceUrl": "https://www.facebook.com/SkyBridgeStation/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sky%20Bridge%20Station%208%20KY-715%2C%20Pine%20Ridge%2C%20KY%2041360",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — identity/address/classification retained; prior published coordinate rejected after owner map UAT and current location relationship cross-check.",
+      "verificationStatus": "Verified 2026-10-02 — identity/address/classification retained; prior published coordinate rejected after owner map UAT and current location relationship cross-check. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
@@ -157,7 +147,7 @@
       "locationContext": "8 KY-715, Pine Ridge, KY 41360",
       "latitude": 37.7634,
       "longitude": -83.6126,
-      "geoVerificationStatus": "Owner-corrected 2026-10-02 — 8 KY-715 / Sky Bridge Road site cross-checked against current map/business sources and the documented across-the-street relationship to The Brick. Corrected public venue coordinate 37.7634,-83.6126; prior 37.799868,-83.5909771 coordinate is superseded."
+      "geoVerificationStatus": "Owner-corrected and re-audited 2026-10-02 — current map/business address confirmed at 8 KY-715; corrected public venue coordinate remains 37.7634,-83.6126; prior 37.799868,-83.5909771 is superseded."
     },
     {
       "placeId": "PLC-005",
@@ -165,24 +155,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Local restaurant included in the curated Around the Gorge set.",
       "officialSourceUrl": "https://www.hopsfarmtotable.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hop%E2%80%99s%202613%20KY-11%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
@@ -190,7 +177,7 @@
       "locationContext": "2613 KY-11, Campton, KY 41301",
       "latitude": 37.7338,
       "longitude": -83.6589,
-      "geoVerificationStatus": "Verified 2026-10-02 — public venue/map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-006",
@@ -198,24 +185,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Local barbecue stop included in the curated Around the Gorge set.",
       "officialSourceUrl": "https://www.redpointbbq.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=RedPoint%20BBQ%20356%20Jim%20Smith%20Road%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
@@ -223,7 +207,7 @@
       "locationContext": "356 Jim Smith Road, Campton, KY 41301",
       "latitude": 37.713974,
       "longitude": -83.647988,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-007",
@@ -231,24 +215,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Slade-area Mexican restaurant included in the curated Around the Gorge set.",
       "officialSourceUrl": "https://lacabanaofslade.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=La%20Caba%C3%B1a%20Mexican%20Restaurant%201289%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and year-round operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and year-round operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
@@ -256,7 +237,7 @@
       "locationContext": "1289 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7848043,
       "longitude": -83.6914935,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-008",
@@ -272,17 +253,16 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Food/coffee stop that also solves practical pass/provisions needs.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Coffee/food stop with backcountry-pass sales and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Daniel%20Boone%20Coffee%20Shop%20%26%20Deli%20769%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address plus Powell County backcountry/overnight pass-vendor status checked; provisions utility retained.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address plus Powell County backcountry/overnight pass-vendor status checked; provisions utility retained. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
@@ -293,7 +273,7 @@
       "locationContext": "769 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.789598,
       "longitude": -83.696641,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-009",
@@ -301,24 +281,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": true,
       "rrghPresenceSubtype": "donated-display",
       "relationshipDisclosure": "Home of a donated Red River Gorge Hiker Double Rainbow display. Inclusion is editorial and is not purchased placement.",
-      "aliases": [
-        "29"
-      ],
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Restaurant and RRGH donated-display location.",
       "officialSourceUrl": "https://hungryhiker.org/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hungry%20Hiker%20Bar%20%26%20Grill%201255%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical donated-display RRGH Presence relationship remains unchanged.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical donated-display RRGH Presence relationship remains unchanged. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
@@ -326,8 +303,8 @@
       ],
       "locationContext": "1255 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7845241,
-      "longitude": -83.6910123,
-      "geoVerificationStatus": "Verified 2026-10-02 — coordinate resolved from the current official-site directions destination."
+      "longitude": -83.6914935,
+      "geoVerificationStatus": "Owner-corrected 2026-10-02 after map UAT — current Google/business address confirmed at 1255 Natural Bridge Road; map point moved to the correct side of Natural Bridge Road at the 1255 parcel. Prior longitude -83.6910123 is superseded."
     },
     {
       "placeId": "PLC-010",
@@ -335,24 +312,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Eat & Drink",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
       "nearbyRouteContext": "Motherlode area",
       "shortDescription": "Beattyville pizza stop with useful proximity/context for the Motherlode community/informal-trail area.",
       "officialSourceUrl": "https://redrivergorgetourism.com/listings/hill-top-pizza/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hill%20Top%20Pizza%202034%20KY-11%2C%20Beattyville%2C%20KY%2041311",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation verified; exact public POI coordinate confirmed by Ryan-supplied Google Maps pin.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation verified; exact public POI coordinate confirmed by Ryan-supplied Google Maps pin. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
@@ -361,7 +335,7 @@
       "locationContext": "2034 KY-11, Beattyville, KY 41311",
       "latitude": 37.5953961,
       "longitude": -83.6936931,
-      "geoVerificationStatus": "Verified 2026-10-02 — Ryan-supplied Google Maps dropped pin at Hill Top Pizza, 2034 KY-11, Beattyville."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-011",
@@ -369,24 +343,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Distinctive educational/family attraction.",
       "officialSourceUrl": "https://www.kyreptilezoo.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Kentucky%20Reptile%20Zoo%20200%20L%26E%20Railroad%20Place%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
@@ -394,7 +365,7 @@
       "locationContext": "200 L&E Railroad Place, Slade, KY 40376",
       "latitude": 37.793234,
       "longitude": -83.703933,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current attraction."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-012",
@@ -402,32 +373,29 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Underground paddling/adventure attraction.",
       "officialSourceUrl": "https://gorgeunderground.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Gorge%20Underground%202478%20Glencairn%20Road%2C%20Rogers%2C%20KY%2041365",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
       ],
       "locationContext": "2478 Glencairn Road, Rogers, KY 41365",
-      "latitude": 37.76005,
-      "longitude": -83.66492,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current attraction."
+      "latitude": 37.760036,
+      "longitude": -83.664893,
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current business and recent location evidence confirm the 2478 Glencairn Road Gorge Underground campus; normalized public coordinate 37.760036,-83.664893."
     },
     {
       "placeId": "PLC-013",
@@ -435,24 +403,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Adventure attraction complementary to hiking.",
       "officialSourceUrl": "https://redrivergorgezipline.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Ziplines%20455%20Cliffview%20Road%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; current availability remains source-controlled.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; current availability remains source-controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
@@ -460,7 +425,7 @@
       "locationContext": "455 Cliffview Road, Campton, KY 41301",
       "latitude": 37.70545,
       "longitude": -83.65881,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current attraction."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-014",
@@ -468,24 +433,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": true,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Outdoor miniature-golf / recreation attraction; availability can vary.",
       "officialSourceUrl": "https://thrillsvilleadventuregolf.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Thrillsville%20Adventure%20Golf%20693%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity, address and seasonal/weather-dependent operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity, address and seasonal/weather-dependent operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do",
@@ -494,7 +456,7 @@
       "locationContext": "693 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7910855,
       "longitude": -83.6986256,
-      "geoVerificationStatus": "Verified 2026-10-02 — 693 Natural Bridge Road shared-site coordinate; Thrillsville and the Gift Shop remain distinct co-located canonical records."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-015",
@@ -502,33 +464,30 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Outdoor climbing/hiking preserve included in Around the Gorge.",
       "officialSourceUrl": "https://muirvalley.org/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Muir%20Valley%20Nature%20Preserve%2048%20Muir%20Rd%2C%20Rogers%2C%20KY%2041365",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/location and preserve operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/location and preserve operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do",
         "outdoor-destination"
       ],
-      "locationContext": "48 Muir Valley Road, Rogers, KY 41365",
+      "locationContext": "48 Muir Rd, Rogers, KY 41365",
       "latitude": 37.724486,
       "longitude": -83.63442,
-      "geoVerificationStatus": "Verified 2026-10-02 — published Muir Valley parking/arrival coordinate used for the public POI."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/business address is 48 Muir Rd, Rogers, KY 41365; retained verified preserve arrival coordinate."
     },
     {
       "placeId": "PLC-016",
@@ -536,24 +495,23 @@
       "aroundTheGorge": true,
       "aroundCategory": "Things to Do",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
       "aliases": [
         "Torrent Falls Climbing Adventure"
       ],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Guided climbing / Via Ferrata / rappelling operation; canonical record for the former Torrent Falls Climbing Adventure identity.",
       "officialSourceUrl": "https://www.southeastmountainguides.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Southeast%20Mountain%20Guides%201617%20KY-11%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current canonical identity, address and operation checked; Torrent Falls Climbing Adventure remains alias/former identity only.",
+      "verificationStatus": "Verified 2026-10-02 — current canonical identity, address and operation checked; Torrent Falls Climbing Adventure remains alias/former identity only. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do",
@@ -562,7 +520,7 @@
       "locationContext": "1617 KY-11, Campton, KY 41301",
       "latitude": 37.7196121,
       "longitude": -83.6621551,
-      "geoVerificationStatus": "Verified 2026-10-02 — coordinate resolved from the current official-site map destination."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-017",
@@ -578,17 +536,16 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": true,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Historic campground and paddling/camping logistics stop on the Red River.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Campground with paddling access and overnight-trip logistics.",
       "officialSourceUrl": "https://thedyrt.com/camping/kentucky/john-swift-s-lost-silvermine",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=John%20Swift%E2%80%99s%20Lost%20Silver%20Mine%20Historic%20Campground%2045%20KY-715%2C%20Frenchburg%2C%20KY%2040322",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current campground identity/location and camping/paddling utility checked from current public operator/listing evidence; volatile service availability remains source-controlled.",
+      "verificationStatus": "Verified 2026-10-02 — current campground identity/location and camping/paddling utility checked from current public operator/listing evidence; volatile service availability remains source-controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do",
@@ -599,7 +556,7 @@
       "locationContext": "45 KY-715, Frenchburg, KY 40322",
       "latitude": 37.83325576,
       "longitude": -83.64759155,
-      "geoVerificationStatus": "Verified 2026-10-02 — current public campground coordinate cross-checked."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-018",
@@ -607,24 +564,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Local Shops & Stops",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": true,
       "rrghPresenceSubtype": "greeting-card-retail",
       "relationshipDisclosure": "Red River Gorge Hiker Double Rainbow greeting cards are available here. Inclusion is editorial and is not purchased placement.",
-      "aliases": [
-        "29"
-      ],
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Local shop and RRGH greeting-card retail-presence location.",
       "officialSourceUrl": "https://earthshopatredrivergorge.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Earth%20Shop%20888%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical greeting-card-retail RRGH Presence relationship remains unchanged.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical greeting-card-retail RRGH Presence relationship remains unchanged. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops",
@@ -633,7 +587,7 @@
       "locationContext": "888 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7891931,
       "longitude": -83.6947326,
-      "geoVerificationStatus": "Verified 2026-10-02 — coordinate resolved from the current official-site directions destination."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-019",
@@ -641,33 +595,30 @@
       "aroundTheGorge": true,
       "aroundCategory": "Local Shops & Stops",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": true,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Local growers/makers/community market.",
       "officialSourceUrl": "https://www.rrgfm.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Farmers%20Market%20607%20Skylift%20Drive%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current seasonal market identity/site and 2026 operation checked; dates/hours remain official-source controlled.",
+      "verificationStatus": "Verified 2026-10-02 — current seasonal market identity/site and 2026 operation checked; dates/hours remain official-source controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops",
         "seasonal"
       ],
-      "locationContext": "607 Skylift Drive, Slade, KY 40376 (seasonal market site)",
-      "latitude": 37.7844886779785,
-      "longitude": -83.6893615722656,
-      "geoVerificationStatus": "Verified 2026-10-02 — current seasonal market-site/property coordinate."
+      "locationContext": "Skylift Parking Lot / lawn, 607 Skylift Drive, Slade, KY 40376",
+      "latitude": 37.781217,
+      "longitude": -83.689967,
+      "geoVerificationStatus": "Corrected 2026-10-02 — current market sources place the seasonal market on the lawn/in the Skylift Parking Lot at 607 Skylift Drive. Public POI moved to the Skylift parking/lawn area at 37.781217,-83.689967; prior 37.78448868,-83.68936157 hillside/address-centroid point is superseded."
     },
     {
       "placeId": "PLC-020",
@@ -675,24 +626,21 @@
       "aroundTheGorge": true,
       "aroundCategory": "Local Shops & Stops",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Gorge-specific gift/souvenir stop.",
       "officialSourceUrl": "https://giftshopatredrivergorge.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Gift%20Shop%20693%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked.",
+      "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops"
@@ -700,7 +648,7 @@
       "locationContext": "693 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7910855,
       "longitude": -83.6986256,
-      "geoVerificationStatus": "Verified 2026-10-02 — coordinate resolved from the current official-site directions destination; distinct co-located record from Thrillsville."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-021",
@@ -708,24 +656,23 @@
       "aroundTheGorge": true,
       "aroundCategory": "Local Shops & Stops",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
       "aliases": [
         "The Brick"
       ],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Pine Ridge ice cream / coffee / pottery stop and local mainstay.",
       "officialSourceUrl": "https://discover.ky.gov/Find-a-Site/Pages/Early-Twentieth-Century-Commercial-Structure.aspx",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Brick%20at%20the%20Red%20River%20Gorge%205412%20KY-15%20N%2C%20Pine%20Ridge%2C%20KY%2041360",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current public name updated to The Brick at the Red River Gorge using current public/state evidence; exact POI coordinate confirmed by Ryan-supplied Google Maps pin.",
+      "verificationStatus": "Verified 2026-10-02 — current public name updated to The Brick at the Red River Gorge using current public/state evidence; exact POI coordinate confirmed by Ryan-supplied Google Maps pin. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops",
@@ -736,7 +683,7 @@
       "locationContext": "5412 KY-15 N, Pine Ridge, KY 41360",
       "latitude": 37.7637655,
       "longitude": -83.6130602,
-      "geoVerificationStatus": "Verified 2026-10-02 — Ryan-supplied Google Maps dropped pin at 5412 KY-15 N, Pine Ridge."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-022",
@@ -752,17 +699,16 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Local store with ice cream, groceries/provisions, and hiking/camping supplies.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Groceries, hiking/camping supplies, gifts, and provisions.",
       "officialSourceUrl": "https://redrivergorgegeneralstore.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20General%20Store%201321%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation plus groceries/provisions and hiking/camping supplies utility checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation plus groceries/provisions and hiking/camping supplies utility checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops",
@@ -774,7 +720,7 @@
       "locationContext": "1321 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7843627,
       "longitude": -83.6914367,
-      "geoVerificationStatus": "Verified 2026-10-02 — coordinate resolved from the current official-site map destination."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-023",
@@ -782,40 +728,37 @@
       "aroundTheGorge": true,
       "aroundCategory": "Local Shops & Stops",
       "hikerServices": false,
-      "hikerServiceTypes": [
-        "29"
-      ],
+      "hikerServiceTypes": [],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": true,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
+      "nearbyRouteContext": "",
       "shortDescription": "Natural Bridge-area lodge/visitor stop retained in Around the Gorge without creating a separate lodging category.",
       "officialSourceUrl": "https://parks.ky.gov/explore/the-hemlock-lodge-8103",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hemlock%20Lodge%202135%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376%20",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current Hemlock Lodge identity and year-round operation checked; frozen Around category remains Local Shops & Stops.",
+      "verificationStatus": "Verified 2026-10-02 — current Hemlock Lodge identity and year-round operation checked; frozen Around category remains Local Shops & Stops. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops",
         "lodging",
         "visitor-stop"
       ],
-      "locationContext": "Hemlock Lodge, Natural Bridge State Resort Park, Slade, KY 40376",
-      "latitude": 37.776944,
-      "longitude": -83.681111,
-      "geoVerificationStatus": "Verified 2026-10-02 — official Hemlock Lodge parking/arrival coordinate used; not represented as a building-centroid survey point."
+      "locationContext": "2135 Natural Bridge Road, Slade, KY 40376 (Hemlock Lodge)",
+      "latitude": 37.776054,
+      "longitude": -83.680638,
+      "geoVerificationStatus": "Corrected 2026-10-02 — Hemlock Lodge and Sandstone Arches Restaurant occupy the same lodge building. Public POI now uses the shared lodge-building coordinate 37.776054,-83.680638; prior 37.776944,-83.681111 parking-area point is superseded."
     },
     {
       "placeId": "PLC-024",
       "publicName": "Go Time",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "backcountry/overnight pass vendor"
@@ -824,31 +767,30 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Objective hiking-logistics stop for required pass acquisition.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Go%20Time%2012056%20Campton%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; coordinate cross-checked again during owner map correction pass.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; coordinate cross-checked again during owner map correction pass. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor"
       ],
-      "locationContext": "12056 Campton Road, Powell County / Slade approach, KY",
+      "locationContext": "12056 Campton Road, Slade, KY 40376",
       "latitude": 37.7982345,
       "longitude": -83.7046152,
-      "geoVerificationStatus": "Rechecked 2026-10-02 — current Go Time / 12056 Campton Road mapped site confirmed at 37.7982345,-83.7046152."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/local-business address evidence checked; retained verified coordinate 37.7982345,-83.7046152."
     },
     {
       "placeId": "PLC-025",
       "publicName": "Park N Save",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "backcountry/overnight pass vendor",
@@ -859,33 +801,34 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
       "aliases": [
         "Natural Bridge Shell site"
       ],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Objective pass/fuel/provisions stop; canonical record for the Campton Road Shell-area location.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Park%20N%20Save%2012187%20Campton%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — canonical Park N Save identity/address/pass-vendor function retained; prior map coordinate rejected after owner map UAT and current address/source cross-check.",
+      "verificationStatus": "Verified 2026-10-02 — canonical Park N Save identity/address/pass-vendor function retained; prior map coordinate rejected after owner map UAT and current address/source cross-check. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor",
         "fuel",
         "provisions"
       ],
-      "locationContext": "12187 Campton Road, Natural Bridge / Slade approach, KY",
+      "locationContext": "12187 Campton Road, Slade, KY 40376",
       "latitude": 37.7982107,
       "longitude": -83.7026222,
-      "geoVerificationStatus": "Owner-corrected 2026-10-02 — Park N Save / Natural Bridge Shell at 12187 Campton Road cross-checked to current address/phone sources and mapped at 37.7982107,-83.7026222. Prior 37.796835,-83.694683 coordinate is superseded."
+      "geoVerificationStatus": "Owner-corrected and re-audited 2026-10-02 — Park N Save / Natural Bridge Shell address standardized to 12187 Campton Road, Slade, KY 40376; corrected coordinate remains 37.7982107,-83.7026222; prior 37.796835,-83.694683 is superseded."
     },
     {
       "placeId": "PLC-026",
       "publicName": "Trails Liquor, Souvenir, & General Store",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "backcountry/overnight pass vendor"
@@ -894,17 +837,18 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
       "aliases": [
         "Trails End Liquor Store"
       ],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Objective pass-acquisition location.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition.",
       "officialSourceUrl": "https://gopoco.org/directory/trails-liquor-souvenir-general-store/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Trails%20Liquor%2C%20Souvenir%2C%20%26%20General%20Store%20940%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — canonical Public Name updated to current Powell County Tourism name; address and pass-vendor status verified; exact POI coordinate confirmed by Ryan-supplied Google Maps pin.",
+      "verificationStatus": "Verified 2026-10-02 — canonical Public Name updated to current Powell County Tourism name; address and pass-vendor status verified; exact POI coordinate confirmed by Ryan-supplied Google Maps pin. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor"
@@ -912,13 +856,13 @@
       "locationContext": "940 Natural Bridge Road, Slade, KY 40376",
       "latitude": 37.7888265,
       "longitude": -83.6940565,
-      "geoVerificationStatus": "Verified 2026-10-02 — Ryan-supplied Google Maps dropped pin at Trails Liquor, Souvenir, & General Store, 940 Natural Bridge Road, Slade."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-027",
       "publicName": "Dave’s Minute Mart",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "real long-distance resupply"
@@ -927,32 +871,31 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Frenchburg-area resupply point for longer hiking/trail logistics.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Long-distance resupply stop with fuel, food, and provisions.",
       "officialSourceUrl": "https://www.loc8nearme.com/kentucky/frenchburg/daves-minute-mart-llc/2382724/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Dave%E2%80%99s%20Minute%20Mart%201433%20KY-36%2C%20Frenchburg%2C%20KY%2040322",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation as a convenience store checked; real long-distance resupply treatment remains conservative and does not promise specific inventory.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address/operation as a convenience store checked; real long-distance resupply treatment remains conservative and does not promise specific inventory. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "resupply",
         "long-distance"
       ],
       "locationContext": "1433 KY-36, Frenchburg, KY 40322",
-      "latitude": 37.9691009521484,
-      "longitude": -83.6124572753906,
-      "geoVerificationStatus": "Verified 2026-10-02 — current public business/map coordinate cross-checked."
+      "latitude": 37.96910095,
+      "longitude": -83.61245728,
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-028",
       "publicName": "Bear Track Grocery",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "real long-distance resupply"
@@ -961,17 +904,16 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": false,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Beattyville-area resupply point for longer hiking/trail logistics.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Long-distance grocery/provisions resupply stop.",
       "officialSourceUrl": "https://www.visitleecountyky.com/where-to-shop/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Bear%20Track%20Grocery%206944%20KY-52%2C%20Beattyville%2C%20KY%2041311",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address/grocery operation verified; conservative long-distance resupply treatment retained; exact POI coordinate confirmed by Ryan-supplied Google Maps pin.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address/grocery operation verified; conservative long-distance resupply treatment retained; exact POI coordinate confirmed by Ryan-supplied Google Maps pin. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "resupply",
@@ -980,13 +922,13 @@
       "locationContext": "6944 KY-52, Beattyville, KY 41311",
       "latitude": 37.6273454,
       "longitude": -83.7515775,
-      "geoVerificationStatus": "Verified 2026-10-02 — Ryan-supplied Google Maps dropped pin at Bear Track Grocery, 6944 KY-52, Beattyville."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
     },
     {
       "placeId": "PLC-029",
       "publicName": "Gladie Visitor Center",
       "aroundTheGorge": false,
-      "aroundCategory": "29",
+      "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
         "visitor/ranger information",
@@ -997,27 +939,61 @@
       "offlineAppPoiEligible": true,
       "nearbyRrghPickEligible": false,
       "rrghPresence": false,
-      "rrghPresenceSubtype": "29",
-      "relationshipDisclosure": "29",
-      "aliases": [
-        "29"
-      ],
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [],
       "seasonalVolatile": true,
-      "nearbyRouteContext": "29",
-      "shortDescription": "Objective visitor-information/map/land-manager resource.",
+      "nearbyRouteContext": "",
+      "shortDescription": "Visitor-information stop for maps, trip planning, and land-manager information.",
       "officialSourceUrl": "https://gofindoutdoors.org/sites/gladie/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Gladie%20Visitor%20Center%203451%20Sky%20Bridge%20Road%2C%20Stanton%2C%20KY%2040380",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current Gladie visitor-information identity/operator/location and maps/land-manager-context utility checked; current operating details remain source-controlled.",
+      "verificationStatus": "Verified 2026-10-02 — current Gladie visitor-information identity/operator/location and maps/land-manager-context utility checked; current operating details remain source-controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "visitor-info",
         "ranger-info",
         "maps"
       ],
-      "locationContext": "3451 Sky Bridge Road (KY-715), Red River Gorge Geological Area, KY",
+      "locationContext": "3451 Sky Bridge Road, Stanton, KY 40380",
       "latitude": 37.83329468,
       "longitude": -83.60774657,
-      "geoVerificationStatus": "Verified 2026-10-02 — current public/official directions coordinate cross-checked."
+      "geoVerificationStatus": "Reconciled 2026-10-02 — official/current map address standardized to 3451 Sky Bridge Road, Stanton, KY 40380; retained exact published coordinate 37.83329468,-83.60774657."
+    },
+    {
+      "placeId": "PLC-030",
+      "publicName": "SUP Kentucky",
+      "aroundTheGorge": true,
+      "aroundCategory": "Things to Do",
+      "hikerServices": false,
+      "hikerServiceTypes": [],
+      "mapPoiEligible": true,
+      "offlineAppPoiEligible": true,
+      "nearbyRrghPickEligible": true,
+      "rrghPresence": false,
+      "rrghPresenceSubtype": "",
+      "relationshipDisclosure": "",
+      "aliases": [
+        "Stand Up Paddle Kentucky"
+      ],
+      "seasonalVolatile": false,
+      "nearbyRouteContext": "",
+      "shortDescription": "Underground stand-up paddleboard and crystal-kayak glow tours.",
+      "officialSourceUrl": "https://supkentucky.com/",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=SUP%20Kentucky%202478%20Glencairn%20Road%2C%20Rogers%2C%20KY%2041365",
+      "lastVerified": "2026-10-02",
+      "verificationStatus": "Verified 2026-10-02 — current SUP Kentucky identity, operation, address and co-location with the Gorge Underground campus checked against current business/official evidence.",
+      "implementationTags": [
+        "around-the-gorge",
+        "things-to-do",
+        "paddling",
+        "sup",
+        "underground-tour"
+      ],
+      "locationContext": "2478 Glencairn Road, Rogers, KY 41365",
+      "latitude": 37.760036,
+      "longitude": -83.664893,
+      "geoVerificationStatus": "Verified 2026-10-02 — current official SUP Kentucky location is the 2478 Glencairn Road Gorge Underground campus; shared canonical coordinate 37.760036,-83.664893 retained for both experiences."
     }
   ],
   "excludedAndSuperseded": [

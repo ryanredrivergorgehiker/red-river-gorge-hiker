@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = 'ac255c2f73205579ae0d9ec64d5e99e3f0e6e6bdad95eb6369e4d074dc737c61'
+EXPECTED_SHA = '8a2a5b2725973fcaee60d640c084b3ab90d65a3aad60cbd48470bf1ebe2c3d35'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
@@ -17,17 +17,17 @@ class PlacesContractTests(unittest.TestCase):
     def test_exact_verification_cleared_snapshot(self):
         self.assertEqual(hashlib.sha256(self.raw).hexdigest(), EXPECTED_SHA)
         self.assertEqual(self.data['metadata']['sourceRegisterId'], '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4')
-        self.assertEqual(self.data['metadata']['verificationState'], 'verification-cleared')
+        self.assertEqual(self.data['metadata']['verificationState'], 'owner-uat-reconciled')
 
     def test_integrity_counts_and_canonical_identity(self):
         places = self.data['activePlaces']
-        self.assertEqual(len(places), 29)
-        self.assertEqual(len({p['placeId'] for p in places}), 29)
-        self.assertEqual(sum(bool(p['aroundTheGorge']) for p in places), 23)
+        self.assertEqual(len(places), 30)
+        self.assertEqual(len({p['placeId'] for p in places}), 30)
+        self.assertEqual(sum(bool(p['aroundTheGorge']) for p in places), 24)
         self.assertEqual(sum(bool(p['hikerServices']) for p in places), 10)
         self.assertEqual(sum(bool(p['aroundTheGorge']) and bool(p['hikerServices']) for p in places), 4)
         self.assertEqual(sum(bool(p['rrghPresence']) for p in places), 3)
-        self.assertEqual(sum(bool(p['mapPoiEligible']) for p in places), 29)
+        self.assertEqual(sum(bool(p['mapPoiEligible']) for p in places), 30)
         self.assertEqual(len(self.data['excludedAndSuperseded']), 10)
         self.assertTrue(all(isinstance(p['latitude'], (int,float)) and isinstance(p['longitude'], (int,float)) for p in places))
         by_id = {p['placeId']:p for p in places}
@@ -38,6 +38,13 @@ class PlacesContractTests(unittest.TestCase):
         self.assertEqual((by_id['PLC-004']['latitude'], by_id['PLC-004']['longitude']), (37.7634, -83.6126))
         self.assertEqual((by_id['PLC-024']['latitude'], by_id['PLC-024']['longitude']), (37.7982345, -83.7046152))
         self.assertEqual((by_id['PLC-025']['latitude'], by_id['PLC-025']['longitude']), (37.7982107, -83.7026222))
+        self.assertEqual((by_id['PLC-009']['latitude'], by_id['PLC-009']['longitude']), (37.7845241, -83.6914935))
+        self.assertEqual((by_id['PLC-019']['latitude'], by_id['PLC-019']['longitude']), (37.781217, -83.689967))
+        self.assertEqual((by_id['PLC-003']['latitude'], by_id['PLC-003']['longitude']), (by_id['PLC-023']['latitude'], by_id['PLC-023']['longitude']))
+        self.assertEqual((by_id['PLC-012']['latitude'], by_id['PLC-012']['longitude']), (by_id['PLC-030']['latitude'], by_id['PLC-030']['longitude']))
+        self.assertEqual(by_id['PLC-030']['publicName'], 'SUP Kentucky')
+        self.assertTrue(all(p['googleMapsUrl'].startswith('https://www.google.com/maps/search/?api=1&query=') for p in places))
+        self.assertNotIn('"29"', json.dumps(self.data['activePlaces']))
         self.assertTrue(by_id['PLC-010']['nearbyRrghPickEligible'])
         self.assertEqual(by_id['PLC-010']['nearbyRouteContext'], 'Motherlode area')
 
@@ -52,7 +59,10 @@ class PlacesContractTests(unittest.TestCase):
         self.assertIn("'is-presence'", MAP)
         self.assertIn('rrgh-place-presence-badge', MAP)
         self.assertIn("label.textContent = 'RRGH Presence'", MAP)
-        self.assertIn('swatch-place-presence', MAP)
+        self.assertIn('route-layer-presence-example', MAP)
+        self.assertIn('Open in Google Maps', MAP)
+        self.assertNotIn('Check current source', MAP)
+        self.assertNotIn('Around the Gorge and Hiker Services can classify the same place', MAP)
         self.assertNotIn("'partner'", MAP.lower())
 
     def test_preset_defaults_and_route_waypoint_separation(self):
