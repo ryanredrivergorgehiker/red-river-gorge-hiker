@@ -105,6 +105,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
           <option value="terrain">Terrain view</option>
           <option value="aerial">Aerial view</option>
           <option value="sunlight">Sunlight view</option>
+          <option value="custom" disabled>Custom view</option>
         </select>
       </label>
 
@@ -124,7 +125,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
           <summary aria-label="Open full screen map quick reference"><span aria-hidden="true">i</span></summary>
           <div class="route-map-mobile-quickref-card" role="note">
             <strong>Full-screen quick reference</strong>
-            <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. <b>Layers</b> fine-tunes what is shown.</p>
+            <p><b>View</b> switches Hiking, Terrain, Aerial, or Sunlight. Fine-tuning <b>Layers</b> shows <b>Custom</b> in the View menu.</p>
             <p>Drag to pan and pinch to zoom. <b>Search</b> finds places and routes; <b>Explore</b> browses RRGH routes; <b>Tools</b> measures, analyzes, or builds a route; <b>Share</b> sends the current map view.</p>
             <p><b>My location</b> centers on you. <b>Home</b> returns to the Gorge overview.</p>
           </div>
@@ -1371,16 +1372,37 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       const footer = document.createElement('p');
       footer.className = 'route-map-popup-meta';
       const verified = meaningfulPlaceText(place.lastVerified);
-      footer.textContent = verified ? 'Last verified ' + verified + '. ' : '';
-      const googleMapsUrl = meaningfulPlaceText(place.googleMapsUrl);
-      if (googleMapsUrl) {
+      if (verified) {
+        const verifiedText = document.createElement('span');
+        verifiedText.className = 'route-map-popup-verified';
+        verifiedText.textContent = 'Last verified ' + verified + '.';
+        footer.append(verifiedText);
+      }
+
+      const mapLinks = document.createElement('span');
+      mapLinks.className = 'route-map-service-links';
+      const appendMapServiceLink = (href: string, label: string) => {
         const mapLink = document.createElement('a');
-        mapLink.href = googleMapsUrl;
+        mapLink.href = href;
         mapLink.target = '_blank';
         mapLink.rel = 'noopener noreferrer';
-        mapLink.textContent = 'Current info on Google Maps';
-        footer.append(mapLink);
-      }
+        const mapIcon = document.createElement('span');
+        mapIcon.className = 'route-map-service-icon';
+        mapIcon.setAttribute('aria-hidden', 'true');
+        mapLink.append(mapIcon, document.createTextNode(label));
+        mapLinks.append(mapLink);
+      };
+
+      const googleMapsUrl = meaningfulPlaceText(place.googleMapsUrl);
+      if (googleMapsUrl) appendMapServiceLink(googleMapsUrl, 'Current info on Google Maps');
+
+      const appleMapsUrl = new URL('https://maps.apple.com/place');
+      appleMapsUrl.searchParams.set('coordinate', lat + ',' + lng);
+      appleMapsUrl.searchParams.set('name', name);
+      if (location) appleMapsUrl.searchParams.set('address', location);
+      appendMapServiceLink(appleMapsUrl.toString(), 'Current info on Apple Maps');
+
+      if (mapLinks.childElementCount) footer.append(mapLinks);
       popup.append(footer);
       marker.bindPopup(popup, { maxWidth: 360 });
 
@@ -4286,7 +4308,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       for (const button of shell.querySelectorAll<HTMLButtonElement>('[data-map-preset]')) {
         button.setAttribute('aria-pressed', 'false');
       }
-      if (mobilePresetSelect) mobilePresetSelect.selectedIndex = -1;
+      if (mobilePresetSelect) mobilePresetSelect.value = 'custom';
       if (stage) delete stage.dataset.sunlightMode;
     };
 
@@ -4592,7 +4614,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       if (sharedPreset && sharedPreset !== 'custom' && ['hiking', 'terrain', 'aerial', 'sunlight'].includes(sharedPreset)) {
         applyPreset(sharedPreset);
       } else if (sharedPreset === 'custom' && mobilePresetSelect) {
-        mobilePresetSelect.selectedIndex = -1;
+        mobilePresetSelect.value = 'custom';
       }
 
       const layerState = params.get('rrghLayers');

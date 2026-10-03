@@ -745,9 +745,10 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('aria-label="Map view while in full screen"', MAP)
         for value in ('hiking', 'terrain', 'aerial', 'sunlight'):
             self.assertIn(f'<option value="{value}"', MAP)
-        self.assertNotIn('Custom layers</option>', MAP)
-        self.assertNotIn('<option value="custom"', MAP)
-        self.assertIn("mobilePresetSelect.selectedIndex = -1", MAP)
+        self.assertIn('<option value="custom" disabled>Custom view</option>', MAP)
+        self.assertIn("mobilePresetSelect.value = 'custom'", MAP)
+        self.assertNotIn("mobilePresetSelect.selectedIndex = -1", MAP)
+        self.assertIn('Fine-tuning <b>Layers</b> shows <b>Custom</b> in the View menu.', MAP)
         self.assertEqual(MAP.count('class="route-map-fullscreen-icon" data-map-action="fullscreen"'), 2)
         self.assertIn('route-map-mobile-fullscreen-entry', MAP)
         self.assertIn('route-map-mobile-fullscreen-cluster', MAP)
@@ -776,6 +777,9 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('z-index:1018;', ROUTES_CSS)
         self.assertIn('display:block!important;', ROUTES_CSS)
         self.assertIn('bottom:calc(.45rem + env(safe-area-inset-bottom));', ROUTES_CSS)
+        self.assertIn('grid-template-columns:3rem minmax(0,1fr)', ROUTES_CSS)
+        self.assertIn('.route-map-service-links{display:flex', ROUTES_CSS)
+        self.assertIn('.route-map-service-icon{position:relative', ROUTES_CSS)
 
     def test_mobile_owner_uat_copy_layers_and_fullscreen_return_contract(self):
         self.assertIn('>Tools</button>', MAP)

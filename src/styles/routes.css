@@ -3492,8 +3492,8 @@
 .swatch-place-around,.swatch-place-hiker{width:1rem;height:1rem;border:2px solid #fff;box-shadow:0 0 0 1px rgba(23,55,45,.55);box-sizing:border-box}
 .swatch-place-around{background:#b65f34;border-radius:1px;transform:rotate(45deg) scale(.82)}
 .swatch-place-hiker{background:#2c6f8f;border-radius:3px}
-.route-layer-presence-key{display:grid;grid-template-columns:1.3rem minmax(0,1fr);column-gap:.38rem;align-items:center;min-height:30px;padding:.08rem 0;color:#33433a;font-size:.82rem;line-height:1.25}
-.route-layer-presence-icon-wrap{position:relative;display:block;width:1.3rem;height:1.3rem;overflow:visible}
+.route-layer-presence-key{display:grid;grid-template-columns:3rem minmax(0,1fr);column-gap:.45rem;align-items:center;min-height:30px;padding:.08rem 0;color:#33433a;font-size:.82rem;line-height:1.25}
+.route-layer-presence-icon-wrap{position:relative;display:block;width:3rem;height:1.3rem;overflow:visible}
 .route-layer-presence-example{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.62) rotate(45deg);transform-origin:center}
 .route-layer-presence-example .rrgh-place-presence-badge{transform:rotate(-45deg)}
 .rrgh-place-marker-host{border:0!important;background:transparent!important;overflow:visible!important}
@@ -3509,6 +3509,11 @@
 .rrgh-place-marker.is-around .rrgh-place-presence-badge{transform:rotate(-45deg)}
 
 .rrgh-place-popup p{margin:.38rem 0}
+.route-map-popup-verified{display:block}
+.route-map-service-links{display:flex;flex-wrap:wrap;gap:.28rem .72rem;margin-top:.16rem}
+.route-map-service-links a{display:inline-flex;align-items:center;gap:.3rem;white-space:nowrap}
+.route-map-service-icon{position:relative;display:inline-block;width:.68rem;height:.68rem;flex:0 0 auto;border:1.5px solid currentColor;border-radius:50% 50% 50% 0;box-sizing:border-box;transform:rotate(-45deg)}
+.route-map-service-icon::after{content:"";position:absolute;left:50%;top:50%;width:.16rem;height:.16rem;border-radius:50%;background:currentColor;transform:translate(-50%,-50%)}
 .rrgh-place-presence-copy{
   padding:.42rem .5rem;
   border-left:3px solid #e8bf43;
