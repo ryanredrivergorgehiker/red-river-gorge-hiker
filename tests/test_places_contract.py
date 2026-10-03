@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = 'e6afebfbbd250eee4de3e0f47db2a91e7ae053fff6659f6fc0d312caf75034b3'
+EXPECTED_SHA = 'ac255c2f73205579ae0d9ec64d5e99e3f0e6e6bdad95eb6369e4d074dc737c61'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
@@ -35,6 +35,9 @@ class PlacesContractTests(unittest.TestCase):
         self.assertEqual(by_id['PLC-026']['publicName'], 'Trails Liquor, Souvenir, & General Store')
         self.assertEqual(by_id['PLC-016']['publicName'], 'Southeast Mountain Guides')
         self.assertEqual(by_id['PLC-025']['publicName'], 'Park N Save')
+        self.assertEqual((by_id['PLC-004']['latitude'], by_id['PLC-004']['longitude']), (37.7634, -83.6126))
+        self.assertEqual((by_id['PLC-024']['latitude'], by_id['PLC-024']['longitude']), (37.7982345, -83.7046152))
+        self.assertEqual((by_id['PLC-025']['latitude'], by_id['PLC-025']['longitude']), (37.7982107, -83.7026222))
         self.assertTrue(by_id['PLC-010']['nearbyRrghPickEligible'])
         self.assertEqual(by_id['PLC-010']['nearbyRouteContext'], 'Motherlode area')
 
@@ -47,7 +50,9 @@ class PlacesContractTests(unittest.TestCase):
         self.assertIn('Boolean(place.hikerServices) && checked(hikerServicesLayerId)', MAP)
         self.assertIn("'rrgh-place-marker'", MAP)
         self.assertIn("'is-presence'", MAP)
+        self.assertIn('rrgh-place-presence-badge', MAP)
         self.assertIn("label.textContent = 'RRGH Presence'", MAP)
+        self.assertIn('swatch-place-presence', MAP)
         self.assertNotIn("'partner'", MAP.lower())
 
     def test_preset_defaults_and_route_waypoint_separation(self):

@@ -312,8 +312,12 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
             <span class="route-layer-swatch swatch-place-hiker" aria-hidden="true"></span>
             <span>Hiker Services</span>
           </label>
+          <div class="route-layer-presence-key" aria-label="RRGH Presence marker key">
+            <span class="swatch-place-presence" aria-hidden="true"><span>RRGH</span></span>
+            <span><strong>RRGH Presence</strong></span>
+          </div>
           <p class="route-layer-source-note">
-            One canonical place can belong to either or both layers. A gold-ring marker means <strong>RRGH Presence</strong>; it is a relationship disclosure, not a partnership claim.
+            Around the Gorge and Hiker Services can classify the same place without creating duplicate POIs. The gold RRGH tag marks an RRGH display or retail presence; relationship details appear in the place popup.
           </p>
         </div>
 
@@ -1291,10 +1295,10 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
         title: name,
         icon: L.divIcon({
           className: 'rrgh-place-marker-host',
-          html: '<span class="' + markerClass + '"><span class="rrgh-place-marker-core" aria-hidden="true"></span>' + (presence ? '<span class="rrgh-place-presence-dot" aria-hidden="true">R</span>' : '') + '</span>',
-          iconSize: presence ? [26, 26] : [22, 22],
-          iconAnchor: presence ? [13, 13] : [11, 11],
-          popupAnchor: [0, -12]
+          html: '<span class="' + markerClass + '"><span class="rrgh-place-marker-core" aria-hidden="true"></span>' + (presence ? '<span class="rrgh-place-presence-badge" aria-hidden="true">RRGH</span>' : '') + '</span>',
+          iconSize: presence ? [42, 30] : [24, 24],
+          iconAnchor: presence ? [15, 15] : [12, 12],
+          popupAnchor: [0, -14]
         })
       });
 

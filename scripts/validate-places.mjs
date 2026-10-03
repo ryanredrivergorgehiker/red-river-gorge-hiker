@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 
 const ROOT = process.cwd();
 const file = path.join(ROOT, 'src', 'data', 'places', 'places.generated.json');
-const EXPECTED_SHA = 'e6afebfbbd250eee4de3e0f47db2a91e7ae053fff6659f6fc0d312caf75034b3';
+const EXPECTED_SHA = 'ac255c2f73205579ae0d9ec64d5e99e3f0e6e6bdad95eb6369e4d074dc737c61';
 const EXPECTED_SOURCE = '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4';
 const fail = (message) => { throw new Error(message); };
 const bytes = fs.readFileSync(file);
@@ -47,6 +47,12 @@ if (places.find(p => p.placeId === 'PLC-021')?.publicName !== 'The Brick at the 
 if (places.find(p => p.placeId === 'PLC-026')?.publicName !== 'Trails Liquor, Souvenir, & General Store') fail('PLC-026 canonical name mismatch');
 if (places.find(p => p.placeId === 'PLC-016')?.publicName !== 'Southeast Mountain Guides') fail('PLC-016 canonical name mismatch');
 if (places.find(p => p.placeId === 'PLC-025')?.publicName !== 'Park N Save') fail('PLC-025 canonical name mismatch');
+const skyBridgeStation = places.find(p => p.placeId === 'PLC-004');
+if (skyBridgeStation?.latitude !== 37.7634 || skyBridgeStation?.longitude !== -83.6126) fail('PLC-004 corrected coordinate mismatch');
+const goTime = places.find(p => p.placeId === 'PLC-024');
+if (goTime?.latitude !== 37.7982345 || goTime?.longitude !== -83.7046152) fail('PLC-024 coordinate mismatch');
+const parkNSave = places.find(p => p.placeId === 'PLC-025');
+if (parkNSave?.latitude !== 37.7982107 || parkNSave?.longitude !== -83.7026222) fail('PLC-025 corrected coordinate mismatch');
 const hillTop = places.find(p => p.placeId === 'PLC-010');
 if (!hillTop?.nearbyRrghPickEligible || hillTop?.nearbyRouteContext !== 'Motherlode area') fail('Hill Top Pizza Motherlode Nearby RRGH Pick contract mismatch');
 for (const x of excluded) if (names.has(x.nameOrCandidate)) fail('Excluded/superseded record became active publicName: ' + x.nameOrCandidate);

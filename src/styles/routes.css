@@ -3486,58 +3486,27 @@
 }
 
 
-/* Canonical Local Amenities POIs: one physical marker per Place record. */
-.swatch-place-around,
-.swatch-place-hiker{
-  width:1rem;
-  height:1rem;
-  border-radius:50%;
-  border:2px solid #fff;
-  box-shadow:0 0 0 1px rgba(23,55,45,.45);
-}
-.swatch-place-around{background:#b65f34}
-.swatch-place-hiker{background:#2c6f8f}
-.rrgh-place-marker-host{
-  border:0!important;
-  background:transparent!important;
-}
-.rrgh-place-marker{
-  position:relative;
-  display:grid;
-  place-items:center;
-  width:18px;
-  height:18px;
-  border:2px solid #fff;
-  border-radius:50%;
-  box-sizing:border-box;
-  box-shadow:0 1px 5px rgba(16,36,30,.5),0 0 0 1px rgba(23,55,45,.72);
-}
-.rrgh-place-marker.is-around{background:#b65f34}
-.rrgh-place-marker.is-hiker{background:#2c6f8f}
-.rrgh-place-marker.is-dual{background:linear-gradient(90deg,#b65f34 0 50%,#2c6f8f 50% 100%)}
-.rrgh-place-marker.is-presence{
-  width:22px;
-  height:22px;
-  outline:3px solid #e8bf43;
-  outline-offset:1px;
-}
-.rrgh-place-presence-dot{
-  position:absolute;
-  right:-6px;
-  bottom:-6px;
-  display:grid;
-  place-items:center;
-  width:13px;
-  height:13px;
-  border:1px solid #fff;
-  border-radius:50%;
-  background:#17372d;
-  color:#fff;
-  font-size:8px;
-  font-weight:900;
-  line-height:1;
-  box-shadow:0 1px 3px rgba(16,36,30,.45);
-}
+/* Canonical Local Amenities POIs: one physical marker per Place record.
+   These shapes are intentionally unlike route landmarks/viewpoints. */
+.route-layer-group-amenities .route-layer-toggle-row{grid-template-columns:1rem 1.3rem minmax(0,1fr);column-gap:.38rem;min-height:28px;padding:.08rem 0}
+.route-layer-group-amenities .route-layer-source-note{margin:.28rem 0 0}
+.swatch-place-around,.swatch-place-hiker{width:1rem;height:1rem;border:2px solid #fff;box-shadow:0 0 0 1px rgba(23,55,45,.55);box-sizing:border-box}
+.swatch-place-around{background:#b65f34;border-radius:1px;transform:rotate(45deg) scale(.82)}
+.swatch-place-hiker{background:#2c6f8f;border-radius:3px}
+.route-layer-presence-key{display:grid;grid-template-columns:2.68rem minmax(0,1fr);gap:.42rem;align-items:center;margin:.18rem 0 0 1.38rem;min-height:24px;color:#33433a;font-size:.76rem;line-height:1.15}
+.swatch-place-presence{position:relative;display:block;width:1rem;height:1rem;margin-left:.12rem;border:2px solid #fff;border-radius:3px;background:#17372d;box-shadow:0 0 0 3px #e8bf43,0 0 0 4px rgba(23,55,45,.72)}
+.swatch-place-presence span{position:absolute;left:1rem;top:-.2rem;display:block;padding:.12rem .24rem;border-radius:3px;background:#e8bf43;color:#17372d;font-size:.48rem;font-weight:900;line-height:1;letter-spacing:.02em}
+.rrgh-place-marker-host{border:0!important;background:transparent!important;overflow:visible!important}
+.rrgh-place-marker{position:relative;display:grid;place-items:center;width:18px;height:18px;border:2px solid #fff;box-sizing:border-box;box-shadow:0 1px 5px rgba(16,36,30,.5),0 0 0 1px rgba(23,55,45,.72)}
+.rrgh-place-marker.is-around{background:#b65f34;border-radius:1px;transform:rotate(45deg)}
+.rrgh-place-marker.is-around .rrgh-place-marker-core{transform:rotate(-45deg)}
+.rrgh-place-marker.is-hiker{background:#2c6f8f;border-radius:4px}
+.rrgh-place-marker.is-dual{background:linear-gradient(135deg,#b65f34 0 49%,#fff 49% 53%,#2c6f8f 53% 100%);border-radius:4px}
+.rrgh-place-marker.is-presence{width:22px;height:22px;box-shadow:0 0 0 3px #e8bf43,0 0 0 5px #17372d,0 2px 7px rgba(16,36,30,.55)}
+.rrgh-place-marker.is-around.is-presence{transform:rotate(45deg)}
+.rrgh-place-presence-badge{position:absolute;left:17px;top:-8px;z-index:2;display:block;padding:2px 4px;border:1px solid #17372d;border-radius:4px;background:#e8bf43;color:#17372d;font-size:8px;font-weight:900;line-height:1;letter-spacing:.025em;white-space:nowrap;box-shadow:0 1px 3px rgba(16,36,30,.35);transform:none}
+.rrgh-place-marker.is-around .rrgh-place-presence-badge{transform:rotate(-45deg)}
+
 .rrgh-place-popup p{margin:.38rem 0}
 .rrgh-place-presence-copy{
   padding:.42rem .5rem;

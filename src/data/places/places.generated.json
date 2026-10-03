@@ -7,7 +7,7 @@
     "sourceRecordCount": 29,
     "activePlaceCount": 29,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-02T18:52:56.230091+00:00"
+    "generatedAt": "2026-10-02T23:32:00Z"
   },
   "integrity": {
     "activePlaceCount": 29,
@@ -147,7 +147,7 @@
       "shortDescription": "Gorge-specific food stop with limited practical visitor utility.",
       "officialSourceUrl": "https://www.facebook.com/SkyBridgeStation/",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked; limited visitor-utility / lodging-supplies context retained conservatively.",
+      "verificationStatus": "Verified 2026-10-02 — identity/address/classification retained; prior published coordinate rejected after owner map UAT and current location relationship cross-check.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink",
@@ -155,9 +155,9 @@
         "visitor-logistics"
       ],
       "locationContext": "8 KY-715, Pine Ridge, KY 41360",
-      "latitude": 37.799868,
-      "longitude": -83.5909771,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "latitude": 37.7634,
+      "longitude": -83.6126,
+      "geoVerificationStatus": "Owner-corrected 2026-10-02 — 8 KY-715 / Sky Bridge Road site cross-checked against current map/business sources and the documented across-the-street relationship to The Brick. Corrected public venue coordinate 37.7634,-83.6126; prior 37.799868,-83.5909771 coordinate is superseded."
     },
     {
       "placeId": "PLC-005",
@@ -834,7 +834,7 @@
       "shortDescription": "Objective hiking-logistics stop for required pass acquisition.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; coordinate cross-checked again during owner map correction pass.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor"
@@ -842,7 +842,7 @@
       "locationContext": "12056 Campton Road, Powell County / Slade approach, KY",
       "latitude": 37.7982345,
       "longitude": -83.7046152,
-      "geoVerificationStatus": "Verified 2026-10-02 — public map coordinate cross-checked to the current business."
+      "geoVerificationStatus": "Rechecked 2026-10-02 — current Go Time / 12056 Campton Road mapped site confirmed at 37.7982345,-83.7046152."
     },
     {
       "placeId": "PLC-025",
@@ -869,7 +869,7 @@
       "shortDescription": "Objective pass/fuel/provisions stop; canonical record for the Campton Road Shell-area location.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current canonical Park N Save / Natural Bridge Shell-site identity, address and pass-vendor status checked; fuel/provisions utility retained. No duplicate generic Shell POI.",
+      "verificationStatus": "Verified 2026-10-02 — canonical Park N Save identity/address/pass-vendor function retained; prior map coordinate rejected after owner map UAT and current address/source cross-check.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor",
@@ -877,9 +877,9 @@
         "provisions"
       ],
       "locationContext": "12187 Campton Road, Natural Bridge / Slade approach, KY",
-      "latitude": 37.796835,
-      "longitude": -83.694683,
-      "geoVerificationStatus": "Verified 2026-10-02 — Park N Save / Shell-site coordinate at the canonical exact-address business site."
+      "latitude": 37.7982107,
+      "longitude": -83.7026222,
+      "geoVerificationStatus": "Owner-corrected 2026-10-02 — Park N Save / Natural Bridge Shell at 12187 Campton Road cross-checked to current address/phone sources and mapped at 37.7982107,-83.7026222. Prior 37.796835,-83.694683 coordinate is superseded."
     },
     {
       "placeId": "PLC-026",
