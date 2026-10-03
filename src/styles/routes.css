@@ -3523,7 +3523,9 @@
 }
 
 @media(max-width:700px){
-  .rrgh-place-leaflet-popup .leaflet-popup-content{margin:.68rem .78rem .72rem}
+  .rrgh-place-leaflet-popup{width:286px!important;max-width:calc(100vw - 68px)!important}
+  .rrgh-place-leaflet-popup .leaflet-popup-content-wrapper{width:100%!important}
+  .rrgh-place-leaflet-popup .leaflet-popup-content{width:auto!important;margin:.68rem .78rem .72rem}
   .rrgh-place-leaflet-popup .rrgh-place-popup p{margin:.26rem 0}
   .rrgh-place-leaflet-popup .route-map-service-links{display:grid;grid-template-columns:1fr;gap:.14rem}
 }

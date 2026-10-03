@@ -1506,6 +1506,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('inset:-8px', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .route-map-service-links{display:grid', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup{width:286px!important;max-width:calc(100vw - 68px)!important}', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content-wrapper{width:100%!important}', ROUTES_CSS)
 
 if __name__ == '__main__':
     unittest.main()
