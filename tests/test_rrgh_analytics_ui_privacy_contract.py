@@ -78,7 +78,7 @@ class RrghAnalyticsUiPrivacyContract(unittest.TestCase):
         )
         self.assertIn(expected_description, PRIVACY)
         self.assertIn('id="privacy-and-analytics"', PRIVACY)
-        self.assertIn('Last updated: September 17, 2026', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
         self.assertNotIn('Pending production approval', PRIVACY)
 
     def test_privacy_page_describes_live_cross_site_preference_sharing(self):

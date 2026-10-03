@@ -32,6 +32,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Seed validated route elevation caches
+        run: npm run seed:route-elevation-cache
+
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
@@ -62,5 +65,10 @@ jobs:
           console.log('Pinterest catalog contract PASS: 46 photography-commerce items, no Gear, no paid change.');
           NODE
 
-      - name: Run checks
-        run: npm run check
+      - name: Run deterministic checks with guarded elevation artifact
+        run: |
+          npm run validate
+          npm run validate:routes
+          npx astro check
+          npm test
+          npm run build:site

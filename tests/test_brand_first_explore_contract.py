@@ -18,8 +18,22 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertNotIn('nav-explore-title',header)
         self.assertNotIn('nav-explore-choice-details',header)
         self.assertIn('grid-template-columns: repeat(4, minmax(0, 1fr));',header)
-        for title in ('Stories','Search & Rescue','Camping','Landforms','Trails','Maps & Guides','Current Conditions','Hiking Safety'):
+        for title in ('Trails and Guides','Camping','Current Conditions','Landforms','Stories','Search & Rescue','Hiking Safety'):
             self.assertIn(f"title: '{title}'", explore)
+        self.assertNotIn("title: 'Trails'", explore)
+        self.assertNotIn("title: 'Maps & Guides'", explore)
+        self.assertIn("slug: 'trails-and-guides'", explore)
+        self.assertIn("'nav-explore-section-' + section.slug", header)
+        for class_name in (
+            'nav-explore-section-trails-and-guides',
+            'nav-explore-section-camping',
+            'nav-explore-section-current-conditions',
+            'nav-explore-section-landforms',
+            'nav-explore-section-stories',
+            'nav-explore-section-search-and-rescue',
+            'nav-explore-section-hiking-safety',
+        ):
+            self.assertIn(class_name, header)
         self.assertIn("target={link.external ? '_blank' : undefined}",header)
         self.assertNotIn('View All Stories',explore)
         self.assertNotIn('Kentucky Emergency Management - Search & Rescue',explore)
@@ -113,7 +127,8 @@ class BrandFirstExploreContract(unittest.TestCase):
         self.assertIn('.site-header .desktop-nav .nav-view-all-explore {',header)
         self.assertIn('display: flex;',header)
         self.assertIn('width: fit-content;',header)
-        self.assertIn('margin-top: -1.25rem;',header)
+        self.assertIn('margin-top: 1rem;',header)
+        self.assertIn("section.slug === 'trails-and-guides'",header)
         self.assertIn('.site-header .mobile-primary-nav .nav-view-all-explore {',header)
         self.assertIn('margin-top: 1rem;',header)
         home_css=read('src/styles/home-brand.css')
