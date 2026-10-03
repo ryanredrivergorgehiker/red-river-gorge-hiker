@@ -1406,8 +1406,8 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       popup.append(footer);
       marker.bindPopup(popup, {
         className: 'rrgh-place-leaflet-popup',
-        maxWidth: mobileMapActive() ? 260 : 360,
-        minWidth: mobileMapActive() ? 200 : 220,
+        maxWidth: mobileMapActive() ? 232 : 360,
+        minWidth: mobileMapActive() ? 188 : 220,
         autoPan: true,
         keepInView: true,
         autoPanPaddingTopLeft: [16, mobileMapActive() ? 118 : 72],

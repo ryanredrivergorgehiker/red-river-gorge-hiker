@@ -1497,8 +1497,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('landmarks: 540', MAP)
         self.assertIn('mapPoint: 560', MAP)
         self.assertIn("className: 'rrgh-place-leaflet-popup'", MAP)
-        self.assertIn('maxWidth: mobileMapActive() ? 260 : 360', MAP)
-        self.assertIn('minWidth: mobileMapActive() ? 200 : 220', MAP)
+        self.assertIn('maxWidth: mobileMapActive() ? 232 : 360', MAP)
+        self.assertIn('minWidth: mobileMapActive() ? 188 : 220', MAP)
         self.assertIn('keepInView: true', MAP)
         self.assertIn('autoPanPaddingTopLeft: [16, mobileMapActive() ? 118 : 72]', MAP)
         self.assertIn('autoPanPaddingBottomRight: [16, mobileMapActive() ? 84 : 56]', MAP)
@@ -1506,7 +1506,7 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('inset:-8px', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .route-map-service-links{display:grid', ROUTES_CSS)
-        self.assertIn('.rrgh-place-leaflet-popup{width:286px!important;max-width:calc(100vw - 68px)!important}', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup{width:252px!important;max-width:calc(100vw - 92px)!important}', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content-wrapper{width:100%!important}', ROUTES_CSS)
 
 if __name__ == '__main__':
