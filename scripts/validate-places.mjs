@@ -45,6 +45,10 @@ const presenceContract = new Map(presence.map(p => [p.placeId,p.rrghPresenceSubt
 for (const [id,subtype] of [['PLC-002','photo-display-sales'],['PLC-009','donated-display'],['PLC-018','greeting-card-retail']]) {
   if (presenceContract.get(id) !== subtype) fail(id + ': RRGH Presence subtype mismatch');
 }
+const rockhouseDisclosure = places.find(p => p.placeId === 'PLC-002')?.relationshipDisclosure;
+if (rockhouseDisclosure !== "Red River Gorge Hiker photography is displayed and sold here. RRGH receives proceeds from photograph sales at this location. The business did not pay for inclusion on this map.") fail('PLC-002 relationship disclosure mismatch');
+const earthShopDisclosure = places.find(p => p.placeId === 'PLC-018')?.relationshipDisclosure;
+if (earthShopDisclosure !== "Red River Gorge Hiker greeting cards are sold here. RRGH receives proceeds from greeting-card sales at this location. The business did not pay for inclusion on this map.") fail('PLC-018 relationship disclosure mismatch');
 if (places.find(p => p.placeId === 'PLC-021')?.publicName !== 'The Brick at the Red River Gorge') fail('PLC-021 canonical name mismatch');
 if (places.find(p => p.placeId === 'PLC-026')?.publicName !== 'Trails Liquor, Souvenir, & General Store') fail('PLC-026 canonical name mismatch');
 if (places.find(p => p.placeId === 'PLC-016')?.publicName !== 'Southeast Mountain Guides') fail('PLC-016 canonical name mismatch');

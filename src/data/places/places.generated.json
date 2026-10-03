@@ -7,7 +7,7 @@
     "sourceRecordCount": 30,
     "activePlaceCount": 30,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-03T14:02:20Z"
+    "generatedAt": "2026-10-03T17:00:00Z"
   },
   "integrity": {
     "activePlaceCount": 30,
@@ -65,7 +65,7 @@
       "nearbyRrghPickEligible": true,
       "rrghPresence": true,
       "rrghPresenceSubtype": "photo-display-sales",
-      "relationshipDisclosure": "Red River Gorge Hiker photography is displayed and available for purchase here. The business did not pay for inclusion on this map.",
+      "relationshipDisclosure": "Red River Gorge Hiker photography is displayed and sold here. RRGH receives proceeds from photograph sales at this location. The business did not pay for inclusion on this map.",
       "aliases": [],
       "seasonalVolatile": false,
       "nearbyRouteContext": "",
@@ -570,7 +570,7 @@
       "nearbyRrghPickEligible": true,
       "rrghPresence": true,
       "rrghPresenceSubtype": "greeting-card-retail",
-      "relationshipDisclosure": "Red River Gorge Hiker greeting cards are available for purchase here. The business did not pay for inclusion on this map.",
+      "relationshipDisclosure": "Red River Gorge Hiker greeting cards are sold here. RRGH receives proceeds from greeting-card sales at this location. The business did not pay for inclusion on this map.",
       "aliases": [],
       "seasonalVolatile": false,
       "nearbyRouteContext": "",
