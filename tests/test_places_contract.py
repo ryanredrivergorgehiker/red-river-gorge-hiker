@@ -82,7 +82,7 @@ class PlacesContractTests(unittest.TestCase):
         "PLC-024": "Convenient stop for backcountry/overnight passes, fuel, food, drinks, and basic provisions.",
         "PLC-025": "Convenience stop for backcountry/overnight passes, fuel, food, drinks, and basic provisions.",
         "PLC-026": "Gorge-area store offering backcountry/overnight passes along with drinks, snacks, souvenirs, and general supplies.",
-        "PLC-027": "Frenchburg-area resupply stop useful for longer trips and approaches from the west.",
+        "PLC-027": "Frenchburg-area grocery and provisions stop useful for longer trips and resupply.",
         "PLC-028": "Beattyville-area grocery and provisions stop useful for longer trips and resupply.",
         "PLC-029": "Forest Service visitor center for maps, recreation information, trip planning, and Red River Gorge information.",
         "PLC-030": "Guided underground stand-up paddleboard and crystal-kayak tours in a flooded limestone mine."
