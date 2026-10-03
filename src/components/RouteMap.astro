@@ -1373,23 +1373,13 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       const verified = meaningfulPlaceText(place.lastVerified);
       footer.textContent = verified ? 'Last verified ' + verified + '. ' : '';
       const googleMapsUrl = meaningfulPlaceText(place.googleMapsUrl);
-      const sourceUrl = meaningfulPlaceText(place.officialSourceUrl);
       if (googleMapsUrl) {
         const mapLink = document.createElement('a');
         mapLink.href = googleMapsUrl;
         mapLink.target = '_blank';
         mapLink.rel = 'noopener noreferrer';
-        mapLink.textContent = 'Open in Google Maps';
+        mapLink.textContent = 'Current info on Google Maps';
         footer.append(mapLink);
-      }
-      if (sourceUrl) {
-        if (googleMapsUrl) footer.append(document.createTextNode(' · '));
-        const sourceLink = document.createElement('a');
-        sourceLink.href = sourceUrl;
-        sourceLink.target = '_blank';
-        sourceLink.rel = 'noopener noreferrer';
-        sourceLink.textContent = 'Official site';
-        footer.append(sourceLink);
       }
       popup.append(footer);
       marker.bindPopup(popup, { maxWidth: 360 });
