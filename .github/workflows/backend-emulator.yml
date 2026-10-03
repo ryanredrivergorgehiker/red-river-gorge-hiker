@@ -1,0 +1,41 @@
+name: Backend Emulator
+
+on:
+  push:
+    branches:
+      - backend/phase-2-emulator
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Use Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install backend dependencies
+        run: npm install --prefix backend/functions --no-audit --no-fund
+
+      - name: Run Firebase emulator contract tests
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --project demo-rrgh-entitlements
+          --only auth,firestore,functions
+          "npm --prefix functions test"

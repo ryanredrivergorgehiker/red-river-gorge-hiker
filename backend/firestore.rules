@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Phase 2 contract: customer clients never read or write entitlement state
+    // directly. All account/trial/entitlement/package decisions flow through
+    // trusted server operations.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
