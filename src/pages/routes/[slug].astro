@@ -31,6 +31,7 @@ const routeCategoryLabel = ({
   backpacking: 'Backpacking',
   'off-trail': 'Off-trail'
 } as const)[data.routeCategory];
+const shapeArticle = /^[aeiou]/i.test(data.shape) ? 'an' : 'a';
 const absolute = (path: string) => new URL(path, Astro.site ?? Astro.url.origin).href;
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
@@ -125,7 +126,7 @@ const datasetSchema = gpxUrl ? {
       <section>
         <h2>Route &amp; terrain</h2>
         <p>
-          This route is a {data.shape}. Trail context: {data.internalTrailContext}. Use the mapped line
+          This route is {shapeArticle} {data.shape}. Trail context: {data.internalTrailContext}. Use the mapped line
           together with current trail signs, conditions, closures, and land-manager information.
         </p>
       </section>

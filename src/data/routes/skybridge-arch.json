@@ -14,16 +14,16 @@
   "navigationDifficultyDetail": "Straightforward official-trail navigation; Ryan reports no special navigation issue not conveyed by the GPX.",
   "lastPersonallyTraveled": "2026-05-16",
   "lastInformationReview": "2026-09-23",
-  "accessParking": "Sky Bridge Picnic Area. Ryan reports ample parking and picnic facilities. There is a gate on the access road that is sometimes closed, including during winter and at other times. USDA Forest Service materials may list the developed picnic area as open all year, but that does not establish continuous road/gate access. Route copy must tell visitors to verify current DBNF alerts, road conditions, and gate/access status before departure.",
+  "accessParking": "Sky Bridge Picnic Area. Ryan reports ample parking and picnic facilities. There is a gate on the access road that is sometimes closed, including during winter and at other times. USDA Forest Service materials may list the developed picnic area as open all year, but that does not establish continuous road/gate access. Check current Daniel Boone National Forest alerts, road conditions, and gate/access status before departure.",
   "hazards": [
     "Cliff/exposure exists at Sky Bridge and overlooks.",
     "Historical USDA Forest Service Trail #214 map notes the crossing over Sky Bridge has no guardrail and cautions about falls; climbing/rappelling within 300 ft of Sky Bridge is prohibited."
   ],
   "waterCamping": [
     "Ryan reports no water on the route.",
-    "No overnight camping at the Sky Bridge picnic/parking area; Forest Service Red River Gorge rules prohibit camping in picnic/parking areas and within 300 ft of developed roads/trails. Picnic use is appropriate; grill availability remains owner-observed/not independently verified for publication."
+    "No overnight camping at the Sky Bridge picnic/parking area; Forest Service Red River Gorge rules prohibit camping in picnic/parking areas and within 300 ft of developed roads/trails."
   ],
-  "landAccessReview": "Daniel Boone National Forest / Red River Gorge Geological Area. Official Sky Bridge Trail #214 reference located. Current alerts/closures must be checked before publication/use; authoritative current land-manager information overrides RRGH.",
+  "landAccessReview": "Daniel Boone National Forest / Red River Gorge Geological Area. Sky Bridge Trail #214 is an official Forest Service trail. Check current Forest Service alerts and closures before departure, and follow current land-manager guidance.",
   "publicWaypoints": [
     {
       "waypointId": "WP-0001",

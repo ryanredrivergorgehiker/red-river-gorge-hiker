@@ -1511,5 +1511,41 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('.rrgh-place-leaflet-popup{width:252px!important;max-width:calc(100vw - 92px)!important}', ROUTES_CSS)
         self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content-wrapper{width:100%!important}', ROUTES_CSS)
 
+
+    def test_public_route_copy_is_visitor_ready(self):
+        self.assertIn('A map or GPX line may contain errors and should not be your only navigation source.', NOTICE)
+        self.assertIn('create new trails', NOTICE)
+        self.assertNotIn('may contain error and', NOTICE)
+        self.assertNotIn('create new trail,', NOTICE)
+
+        self.assertIn("const shapeArticle = /^[aeiou]/i.test(data.shape) ? 'an' : 'a';", DETAIL)
+        self.assertIn('This route is {shapeArticle} {data.shape}.', DETAIL)
+        self.assertNotIn('This route is a {data.shape}.', DETAIL)
+
+        self.assertEqual(
+            ROUTE['accessParking'],
+            'Sky Bridge Picnic Area. Ryan reports ample parking and picnic facilities. There is a gate on the access road that is sometimes closed, including during winter and at other times. USDA Forest Service materials may list the developed picnic area as open all year, but that does not establish continuous road/gate access. Check current Daniel Boone National Forest alerts, road conditions, and gate/access status before departure.'
+        )
+        self.assertIn(
+            'No overnight camping at the Sky Bridge picnic/parking area; Forest Service Red River Gorge rules prohibit camping in picnic/parking areas and within 300 ft of developed roads/trails.',
+            ROUTE['waterCamping']
+        )
+        self.assertEqual(
+            ROUTE['landAccessReview'],
+            'Daniel Boone National Forest / Red River Gorge Geological Area. Sky Bridge Trail #214 is an official Forest Service trail. Check current Forest Service alerts and closures before departure, and follow current land-manager guidance.'
+        )
+        self.assertNotIn('Route copy must tell visitors', json.dumps(ROUTE))
+        self.assertNotIn('owner-observed/not independently verified for publication', json.dumps(ROUTE))
+        self.assertNotIn('before publication/use', json.dumps(ROUTE))
+
+        self.assertEqual(
+            PRINCESS_ROUTE['navigationDifficultyDetail'],
+            "Straightforward established-trail navigation; the mapped route follows Ryan's recorded path around, beneath, and over Princess Arch."
+        )
+        self.assertIn('No water source is documented along this short day hike.', PRINCESS_ROUTE['waterCamping'])
+        self.assertNotIn('No route-specific water or camping claim is supplied.', json.dumps(PRINCESS_ROUTE))
+        self.assertNotIn("approved geometry preserves Ryan's actual movement", json.dumps(PRINCESS_ROUTE))
+
+
 if __name__ == '__main__':
     unittest.main()
