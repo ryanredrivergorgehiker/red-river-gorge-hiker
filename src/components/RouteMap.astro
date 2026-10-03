@@ -4838,6 +4838,7 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
     });
 
     const goHome = () => {
+      map.closePopup();
       setHomeView();
       setStatus(isMobileFullMap() ? 'Red River Gorge overview restored.' : 'Core Red River Gorge hiking view restored.');
     };
