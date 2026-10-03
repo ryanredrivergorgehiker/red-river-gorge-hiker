@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = '8a2a5b2725973fcaee60d640c084b3ab90d65a3aad60cbd48470bf1ebe2c3d35'
+EXPECTED_SHA = 'c2abb7344a9bda1ae26172ef401e8a3c54d44bd3e0375cfdf846ae26edbb1c2c'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
@@ -29,6 +29,9 @@ class PlacesContractTests(unittest.TestCase):
         self.assertEqual(sum(bool(p['rrghPresence']) for p in places), 3)
         self.assertEqual(sum(bool(p['mapPoiEligible']) for p in places), 30)
         self.assertEqual(len(self.data['excludedAndSuperseded']), 10)
+        ex_by_id = {x['recordId']:x for x in self.data['excludedAndSuperseded']}
+        self.assertIn('Current entity verified', ex_by_id['EX-007']['status'])
+        self.assertIn('30 L&E Railroad Place', ex_by_id['EX-007']['governingNote'])
         self.assertTrue(all(isinstance(p['latitude'], (int,float)) and isinstance(p['longitude'], (int,float)) for p in places))
         by_id = {p['placeId']:p for p in places}
         self.assertEqual(by_id['PLC-021']['publicName'], 'The Brick at the Red River Gorge')

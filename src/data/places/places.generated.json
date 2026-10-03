@@ -7,7 +7,7 @@
     "sourceRecordCount": 30,
     "activePlaceCount": 30,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-03T00:25:00Z"
+    "generatedAt": "2026-10-03T00:46:00Z"
   },
   "integrity": {
     "activePlaceCount": 30,
@@ -1036,8 +1036,8 @@
     {
       "recordId": "EX-007",
       "nameOrCandidate": "Red River Gorge Visitor Center",
-      "status": "Invalid / nonexistent candidate",
-      "governingNote": "Earlier candidate was erroneous unless a specific current entity is later identified and verified."
+      "status": "Current entity verified / not active in this owner-requested addition pass",
+      "governingNote": "Corrected 2026-10-02: Red River Gorge Visitor Center at Slade is a current Powell County Tourism operation at 30 L&E Railroad Place, Slade, KY 40376. The prior 'invalid / nonexistent' characterization is superseded. It remains outside the active Places universe in this pass because the owner explicitly requested SUP Kentucky as the new addition; future activation requires a deliberate owner scope decision."
     },
     {
       "recordId": "EX-008",

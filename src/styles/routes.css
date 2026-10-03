@@ -3505,6 +3505,7 @@
 .rrgh-place-marker.is-dual{background:linear-gradient(135deg,#b65f34 0 49%,#fff 49% 53%,#2c6f8f 53% 100%);border-radius:4px}
 .rrgh-place-marker.is-presence{width:22px;height:22px;box-shadow:0 0 0 3px #e8bf43,0 0 0 5px #17372d,0 2px 7px rgba(16,36,30,.55)}
 .rrgh-place-marker.is-around.is-presence{transform:rotate(45deg)}
+.route-layer-presence-key .route-layer-presence-example.rrgh-place-marker.is-around.is-presence{left:50%;top:50%;transform:translate(-50%,-50%) scale(.62) rotate(45deg);transform-origin:center}
 .rrgh-place-presence-badge{position:absolute;left:17px;top:-8px;z-index:2;display:block;padding:2px 4px;border:1px solid #17372d;border-radius:4px;background:#e8bf43;color:#17372d;font-size:8px;font-weight:900;line-height:1;letter-spacing:.025em;white-space:nowrap;box-shadow:0 1px 3px rgba(16,36,30,.35);transform:none}
 .rrgh-place-marker.is-around .rrgh-place-presence-badge{transform:rotate(-45deg)}
 
