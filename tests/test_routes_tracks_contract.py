@@ -697,6 +697,8 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn("const mobileHomeZoom = 11", MAP)
         self.assertIn("const mobileHomeCenter = L.latLng(37.8196836, -83.6240)", MAP)
         self.assertIn("map.setView(mobileHomeCenter, mobileHomeZoom, { animate: false })", MAP)
+        go_home_section = MAP.split('const goHome = () => {', 1)[1].split('};', 1)[0]
+        self.assertIn('map.closePopup();', go_home_section)
         self.assertIn("const syncViewportDiagnostics = () =>", MAP)
         self.assertIn("container.dataset.mapCenter", MAP)
         self.assertIn("container.dataset.mapNorthWest", MAP)
