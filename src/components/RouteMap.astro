@@ -954,11 +954,11 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
       oilGas: 495,
       areaLabels: 500,
       routes: 440,
-      recreation: 450,
-      routeStarts: 460,
-      places: 465,
-      landmarks: 470,
-      mapPoint: 485,
+      recreation: 510,
+      routeStarts: 520,
+      places: 530,
+      landmarks: 540,
+      mapPoint: 560,
       planning: 490
     };
     for (const [name, zIndex] of Object.entries(panes)) {
@@ -1404,7 +1404,15 @@ const mapPlaces = placesSnapshot.activePlaces.filter((place) => place.mapPoiElig
 
       if (mapLinks.childElementCount) footer.append(mapLinks);
       popup.append(footer);
-      marker.bindPopup(popup, { maxWidth: 360 });
+      marker.bindPopup(popup, {
+        className: 'rrgh-place-leaflet-popup',
+        maxWidth: 300,
+        minWidth: 220,
+        autoPan: true,
+        keepInView: true,
+        autoPanPaddingTopLeft: [16, mobileMapActive() ? 118 : 72],
+        autoPanPaddingBottomRight: [16, mobileMapActive() ? 84 : 56]
+      });
 
       placeMarkerRecords.push({ place, marker });
       searchItems.push({

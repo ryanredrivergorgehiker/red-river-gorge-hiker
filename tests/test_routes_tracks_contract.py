@@ -1489,5 +1489,23 @@ class RoutesTracksContractTests(unittest.TestCase):
         self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr));', ROUTES_CSS)
 
 
+
+    def test_place_marker_hit_targets_and_mobile_popup_compaction(self):
+        self.assertIn('recreation: 510', MAP)
+        self.assertIn('routeStarts: 520', MAP)
+        self.assertIn('places: 530', MAP)
+        self.assertIn('landmarks: 540', MAP)
+        self.assertIn('mapPoint: 560', MAP)
+        self.assertIn("className: 'rrgh-place-leaflet-popup'", MAP)
+        self.assertIn('maxWidth: 300', MAP)
+        self.assertIn('minWidth: 220', MAP)
+        self.assertIn('keepInView: true', MAP)
+        self.assertIn('autoPanPaddingTopLeft: [16, mobileMapActive() ? 118 : 72]', MAP)
+        self.assertIn('autoPanPaddingBottomRight: [16, mobileMapActive() ? 84 : 56]', MAP)
+        self.assertIn('.rrgh-place-marker-host::before,.route-waypoint-icon::before', ROUTES_CSS)
+        self.assertIn('inset:-8px', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .route-map-service-links{display:grid', ROUTES_CSS)
+
 if __name__ == '__main__':
     unittest.main()

@@ -3497,6 +3497,7 @@
 .route-layer-presence-example{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.62) rotate(45deg);transform-origin:center}
 .route-layer-presence-example .rrgh-place-presence-badge{transform:rotate(-45deg)}
 .rrgh-place-marker-host{border:0!important;background:transparent!important;overflow:visible!important}
+.rrgh-place-marker-host::before,.route-waypoint-icon::before{content:"";position:absolute;inset:-8px;border-radius:50%;background:transparent;pointer-events:auto}
 .rrgh-place-marker{position:relative;display:grid;place-items:center;width:18px;height:18px;border:2px solid #fff;box-sizing:border-box;box-shadow:0 1px 5px rgba(16,36,30,.5),0 0 0 1px rgba(23,55,45,.72)}
 .rrgh-place-marker.is-around{background:#b65f34;border-radius:1px;transform:rotate(45deg)}
 .rrgh-place-marker.is-around .rrgh-place-marker-core{transform:rotate(-45deg)}
@@ -3509,6 +3510,7 @@
 .rrgh-place-marker.is-around .rrgh-place-presence-badge{transform:rotate(-45deg)}
 
 .rrgh-place-popup p{margin:.38rem 0}
+.rrgh-place-leaflet-popup .leaflet-popup-content{line-height:1.35}
 .route-map-popup-verified{display:block}
 .route-map-service-links{display:flex;flex-wrap:wrap;gap:.28rem .72rem;margin-top:.16rem}
 .route-map-service-links a{display:inline-flex;align-items:center;gap:.3rem;white-space:nowrap}
@@ -3518,4 +3520,10 @@
   padding:.42rem .5rem;
   border-left:3px solid #e8bf43;
   background:rgba(232,191,67,.12);
+}
+
+@media(max-width:700px){
+  .rrgh-place-leaflet-popup .leaflet-popup-content{margin:.68rem .78rem .72rem}
+  .rrgh-place-leaflet-popup .rrgh-place-popup p{margin:.26rem 0}
+  .rrgh-place-leaflet-popup .route-map-service-links{display:grid;grid-template-columns:1fr;gap:.14rem}
 }
