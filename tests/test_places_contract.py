@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = '3d38b54cec2947ef436dc9268d957d7d7feaac4a157c58e366b0f7426770b6a8'
+EXPECTED_SHA = 'fb939c0d7325cf2bba1350799e8d2575d769f3248641fe4533f1758bd7455f77'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
