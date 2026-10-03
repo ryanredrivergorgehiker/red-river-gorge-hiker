@@ -8,7 +8,7 @@ import {
 
 const projectId = "demo-rrgh-entitlements";
 const functionUrl =
-  "http://127.0.0.1:5001/demo-rrgh-entitlements/us-central1/rrghAccountApi";
+  "http://127.0.0.1:5001/demo-rrgh-entitlements/us-east5/rrghAccountApi";
 const authBase = "http://127.0.0.1:9099";
 
 if (!process.env.FIRESTORE_EMULATOR_HOST || !process.env.FIREBASE_AUTH_EMULATOR_HOST) {
@@ -73,7 +73,7 @@ test("emulator contract enforces account-level trial and cross-store entitlement
   assert.equal(unauthenticated.response.status, 401);
   assert.equal(unauthenticated.body?.error?.status, "UNAUTHENTICATED");
 
-  const { uid, idToken } = await signUp("phase2@example.test", "Phase2-Test-Password-123!");
+  const { uid, idToken } = await signUp("phase3@example.test", "Phase3-Test-Password-123!");
 
   const initial = await callApi("getAccountState", idToken);
   assert.equal(initial.response.ok, true, JSON.stringify(initial.body));

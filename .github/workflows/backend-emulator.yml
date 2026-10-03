@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - backend/phase-2-emulator
+      - backend/phase-3-nonprod
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,9 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+
+      - name: Verify Phase 3 guardrails
+        run: node backend/scripts/phase3-readiness.mjs
 
       - name: Install backend dependencies
         run: npm install --prefix backend/functions --no-audit --no-fund

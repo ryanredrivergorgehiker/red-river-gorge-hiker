@@ -22,7 +22,20 @@ function requireAuthenticatedUid(request) {
 
 export const rrghAccountApi = onCall(
   {
+    // Phase 3 non-production cost/placement guardrails.
+    // Firestore will be provisioned in the same regional location.
+    region: "us-east5",
+    minInstances: 0,
+    maxInstances: 2,
+    memory: "256MiB",
+    cpu: "gcf_gen1",
+    timeoutSeconds: 15,
+
     cors: true,
+
+    // App Check is registered and observed before enforcement. Enforcement is
+    // deliberately false until Website/iOS/Android clients are enrolled and
+    // verified so we do not lock ourselves out during non-production setup.
     enforceAppCheck: false,
   },
   async (request) => {
