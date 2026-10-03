@@ -7,7 +7,7 @@
     "sourceRecordCount": 30,
     "activePlaceCount": 30,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-03T11:28:53Z"
+    "generatedAt": "2026-10-03T14:02:20Z"
   },
   "integrity": {
     "activePlaceCount": 30,
@@ -880,7 +880,7 @@
       "aliases": [],
       "seasonalVolatile": false,
       "nearbyRouteContext": "",
-      "shortDescription": "Frenchburg-area resupply stop useful for longer trips and approaches from the west.",
+      "shortDescription": "Frenchburg-area grocery and provisions stop useful for longer trips and resupply.",
       "officialSourceUrl": "https://www.loc8nearme.com/kentucky/frenchburg/daves-minute-mart-llc/2382724/",
       "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Dave%E2%80%99s%20Minute%20Mart%201433%20KY-36%2C%20Frenchburg%2C%20KY%2040322",
       "lastVerified": "2026-10-02",
