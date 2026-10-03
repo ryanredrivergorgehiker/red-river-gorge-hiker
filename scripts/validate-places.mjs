@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 
 const ROOT = process.cwd();
 const file = path.join(ROOT, 'src', 'data', 'places', 'places.generated.json');
-const EXPECTED_SHA = '6a9cec1dbe86081352170367827595d53f72f15a66b408a38f0301e8301d1f6f';
+const EXPECTED_SHA = '3d38b54cec2947ef436dc9268d957d7d7feaac4a157c58e366b0f7426770b6a8';
 const EXPECTED_SOURCE = '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4';
 const fail = (message) => { throw new Error(message); };
 const bytes = fs.readFileSync(file);
