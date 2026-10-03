@@ -41,14 +41,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Gorge-area pizza and visitor/outdoor-community stop.",
       "officialSourceUrl": "https://miguelspizza.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Miguel%E2%80%99s%20Pizza%201890%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Miguel%E2%80%99s%20Pizza%201890%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
       ],
-      "locationContext": "1890 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "1890 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.783085,
       "longitude": -83.683013,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -102,14 +102,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Natural Bridge-area sit-down restaurant.",
       "officialSourceUrl": "https://parks.ky.gov/explore/natural-bridge-state-resort-park-7796",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sandstone%20Arches%20Restaurant%202135%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376%20",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Sandstone%20Arches%20Restaurant%202135%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current Sandstone Arches Restaurant operation within Hemlock Lodge / Natural Bridge State Resort Park checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
       ],
-      "locationContext": "2135 Natural Bridge Road, Slade, KY 40376 (Hemlock Lodge)",
+      "locationContext": "2135 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.776054,
       "longitude": -83.680638,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current map/business evidence confirms Sandstone Arches Restaurant is inside Hemlock Lodge; public POI uses the shared lodge-building coordinate 37.776054,-83.680638."
@@ -197,14 +197,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Local barbecue stop included in the curated Around the Gorge set.",
       "officialSourceUrl": "https://www.redpointbbq.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=RedPoint%20BBQ%20356%20Jim%20Smith%20Road%2C%20Campton%2C%20KY%2041301",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=RedPoint%20BBQ%20356%20Jim%20Smith%20Rd%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
       ],
-      "locationContext": "356 Jim Smith Road, Campton, KY 41301",
+      "locationContext": "356 Jim Smith Rd, Campton, KY 41301",
       "latitude": 37.713974,
       "longitude": -83.647988,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -227,14 +227,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Slade-area Mexican restaurant included in the curated Around the Gorge set.",
       "officialSourceUrl": "https://lacabanaofslade.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=La%20Caba%C3%B1a%20Mexican%20Restaurant%201289%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=La%20Caba%C3%B1a%20Mexican%20Restaurant%201289%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and year-round operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "eat-drink"
       ],
-      "locationContext": "1289 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "1289 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7848043,
       "longitude": -83.6914935,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -260,7 +260,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Coffee/food stop with backcountry-pass sales and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Daniel%20Boone%20Coffee%20Shop%20%26%20Deli%20769%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Daniel%20Boone%20Coffee%20Shop%20%26%20Deli%20769%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current identity/address plus Powell County backcountry/overnight pass-vendor status checked; provisions utility retained. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -270,7 +270,7 @@
         "pass-vendor",
         "provisions"
       ],
-      "locationContext": "769 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "769 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.789598,
       "longitude": -83.696641,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -293,7 +293,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Restaurant and RRGH donated-display location.",
       "officialSourceUrl": "https://hungryhiker.org/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hungry%20Hiker%20Bar%20%26%20Grill%201255%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hungry%20Hiker%20Bar%20%26%20Grill%201255%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical donated-display RRGH Presence relationship remains unchanged. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -301,7 +301,7 @@
         "eat-drink",
         "rrgh-presence"
       ],
-      "locationContext": "1255 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "1255 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7845241,
       "longitude": -83.6914935,
       "geoVerificationStatus": "Owner-corrected 2026-10-02 after map UAT — current Google/business address confirmed at 1255 Natural Bridge Road; map point moved to the correct side of Natural Bridge Road at the 1255 parcel. Prior longitude -83.6910123 is superseded."
@@ -355,14 +355,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Distinctive educational/family attraction.",
       "officialSourceUrl": "https://www.kyreptilezoo.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Kentucky%20Reptile%20Zoo%20200%20L%26E%20Railroad%20Place%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Kentucky%20Reptile%20Zoo%20200%20L%26E%20Railroad%20Pl%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
       ],
-      "locationContext": "200 L&E Railroad Place, Slade, KY 40376",
+      "locationContext": "200 L&E Railroad Pl, Slade, KY 40376",
       "latitude": 37.793234,
       "longitude": -83.703933,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -385,14 +385,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Underground paddling/adventure attraction.",
       "officialSourceUrl": "https://gorgeunderground.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Gorge%20Underground%202478%20Glencairn%20Road%2C%20Rogers%2C%20KY%2041365",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Gorge%20Underground%202478%20Glencairn%20Rd%2C%20Rogers%2C%20KY%2041365",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
       ],
-      "locationContext": "2478 Glencairn Road, Rogers, KY 41365",
+      "locationContext": "2478 Glencairn Rd, Rogers, KY 41365",
       "latitude": 37.760036,
       "longitude": -83.664893,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current business and recent location evidence confirm the 2478 Glencairn Road Gorge Underground campus; normalized public coordinate 37.760036,-83.664893."
@@ -415,14 +415,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Adventure attraction complementary to hiking.",
       "officialSourceUrl": "https://redrivergorgezipline.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Ziplines%20455%20Cliffview%20Road%2C%20Campton%2C%20KY%2041301",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Ziplines%20455%20Cliffview%20Rd%2C%20Campton%2C%20KY%2041301",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; current availability remains source-controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "things-to-do"
       ],
-      "locationContext": "455 Cliffview Road, Campton, KY 41301",
+      "locationContext": "455 Cliffview Rd, Campton, KY 41301",
       "latitude": 37.70545,
       "longitude": -83.65881,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -445,7 +445,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Outdoor miniature-golf / recreation attraction; availability can vary.",
       "officialSourceUrl": "https://thrillsvilleadventuregolf.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Thrillsville%20Adventure%20Golf%20693%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Thrillsville%20Adventure%20Golf%20693%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current identity, address and seasonal/weather-dependent operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -453,7 +453,7 @@
         "things-to-do",
         "seasonal-availability"
       ],
-      "locationContext": "693 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "693 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7910855,
       "longitude": -83.6986256,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -576,7 +576,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Local shop and RRGH greeting-card retail-presence location.",
       "officialSourceUrl": "https://earthshopatredrivergorge.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Earth%20Shop%20888%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Earth%20Shop%20888%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked; canonical greeting-card-retail RRGH Presence relationship remains unchanged. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -584,7 +584,7 @@
         "local-shops-stops",
         "rrgh-presence"
       ],
-      "locationContext": "888 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "888 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7891931,
       "longitude": -83.6947326,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -607,7 +607,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Local growers/makers/community market.",
       "officialSourceUrl": "https://www.rrgfm.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Farmers%20Market%20607%20Skylift%20Drive%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Farmers%20Market%20607%20Skylift%20Dr%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current seasonal market identity/site and 2026 operation checked; dates/hours remain official-source controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -615,7 +615,7 @@
         "local-shops-stops",
         "seasonal"
       ],
-      "locationContext": "Skylift Parking Lot / lawn, 607 Skylift Drive, Slade, KY 40376",
+      "locationContext": "607 Skylift Dr, Slade, KY 40376",
       "latitude": 37.781217,
       "longitude": -83.689967,
       "geoVerificationStatus": "Corrected 2026-10-02 — current market sources place the seasonal market on the lawn/in the Skylift Parking Lot at 607 Skylift Drive. Public POI moved to the Skylift parking/lawn area at 37.781217,-83.689967; prior 37.78448868,-83.68936157 hillside/address-centroid point is superseded."
@@ -638,14 +638,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Gorge-specific gift/souvenir stop.",
       "officialSourceUrl": "https://giftshopatredrivergorge.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Gift%20Shop%20693%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20Gift%20Shop%20693%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current public identity, address and operation checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "around-the-gorge",
         "local-shops-stops"
       ],
-      "locationContext": "693 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "693 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7910855,
       "longitude": -83.6986256,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -706,7 +706,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Groceries, hiking/camping supplies, gifts, and provisions.",
       "officialSourceUrl": "https://redrivergorgegeneralstore.com/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20General%20Store%201321%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Red%20River%20Gorge%20General%20Store%201321%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current identity/address/operation plus groceries/provisions and hiking/camping supplies utility checked. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -717,7 +717,7 @@
         "provisions",
         "ice-cream"
       ],
-      "locationContext": "1321 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "1321 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7843627,
       "longitude": -83.6914367,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -740,7 +740,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Natural Bridge-area lodge/visitor stop retained in Around the Gorge without creating a separate lodging category.",
       "officialSourceUrl": "https://parks.ky.gov/explore/the-hemlock-lodge-8103",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hemlock%20Lodge%202135%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376%20",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Hemlock%20Lodge%202135%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current Hemlock Lodge identity and year-round operation checked; frozen Around category remains Local Shops & Stops. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -749,7 +749,7 @@
         "lodging",
         "visitor-stop"
       ],
-      "locationContext": "2135 Natural Bridge Road, Slade, KY 40376 (Hemlock Lodge)",
+      "locationContext": "2135 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.776054,
       "longitude": -83.680638,
       "geoVerificationStatus": "Corrected 2026-10-02 — Hemlock Lodge and Sandstone Arches Restaurant occupy the same lodge building. Public POI now uses the shared lodge-building coordinate 37.776054,-83.680638; prior 37.776944,-83.681111 parking-area point is superseded."
@@ -776,7 +776,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Go%20Time%2012056%20Campton%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Go%20Time%2012056%20Campton%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; fuel/provisions utility reconciled for consistency with the current Go Time convenience-store operation. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -785,7 +785,7 @@
         "fuel",
         "provisions"
       ],
-      "locationContext": "12056 Campton Road, Slade, KY 40376",
+      "locationContext": "12056 Campton Rd, Slade, KY 40376",
       "latitude": 37.7982345,
       "longitude": -83.7046152,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/local-business address evidence checked; retained verified coordinate 37.7982345,-83.7046152."
@@ -814,7 +814,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Park%20N%20Save%2012187%20Campton%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Park%20N%20Save%2012187%20Campton%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — canonical Park N Save identity/address/pass-vendor function retained; prior map coordinate rejected after owner map UAT and current address/source cross-check. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -823,7 +823,7 @@
         "fuel",
         "provisions"
       ],
-      "locationContext": "12187 Campton Road, Slade, KY 40376",
+      "locationContext": "12187 Campton Rd, Slade, KY 40376",
       "latitude": 37.7982107,
       "longitude": -83.7026222,
       "geoVerificationStatus": "Owner-corrected and re-audited 2026-10-02 — Park N Save / Natural Bridge Shell address standardized to 12187 Campton Road, Slade, KY 40376; corrected coordinate remains 37.7982107,-83.7026222; prior 37.796835,-83.694683 is superseded."
@@ -850,14 +850,14 @@
       "nearbyRouteContext": "",
       "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition.",
       "officialSourceUrl": "https://gopoco.org/directory/trails-liquor-souvenir-general-store/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Trails%20Liquor%2C%20Souvenir%2C%20%26%20General%20Store%20940%20Natural%20Bridge%20Road%2C%20Slade%2C%20KY%2040376",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Trails%20Liquor%2C%20Souvenir%2C%20%26%20General%20Store%20940%20Natural%20Bridge%20Rd%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — canonical Public Name updated to current Powell County Tourism name; address and pass-vendor status verified; exact POI coordinate confirmed by Ryan-supplied Google Maps pin. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
         "pass-vendor"
       ],
-      "locationContext": "940 Natural Bridge Road, Slade, KY 40376",
+      "locationContext": "940 Natural Bridge Rd, Slade, KY 40376",
       "latitude": 37.7888265,
       "longitude": -83.6940565,
       "geoVerificationStatus": "Reconciled 2026-10-02 — current Google/current-business address checked against the canonical record; existing public POI coordinate retained after no conflict was found."
@@ -950,7 +950,7 @@
       "nearbyRouteContext": "",
       "shortDescription": "Visitor-information stop for maps, trip planning, and land-manager information.",
       "officialSourceUrl": "https://gofindoutdoors.org/sites/gladie/",
-      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Gladie%20Visitor%20Center%203451%20Sky%20Bridge%20Road%2C%20Stanton%2C%20KY%2040380",
+      "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Gladie%20Visitor%20Center%203451%20Sky%20Bridge%20Rd%2C%20Stanton%2C%20KY%2040380",
       "lastVerified": "2026-10-02",
       "verificationStatus": "Verified 2026-10-02 — current Gladie visitor-information identity/operator/location and maps/land-manager-context utility checked; current operating details remain source-controlled. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
@@ -959,7 +959,7 @@
         "ranger-info",
         "maps"
       ],
-      "locationContext": "3451 Sky Bridge Road, Stanton, KY 40380",
+      "locationContext": "3451 Sky Bridge Rd, Stanton, KY 40380",
       "latitude": 37.83329468,
       "longitude": -83.60774657,
       "geoVerificationStatus": "Reconciled 2026-10-02 — official/current map address standardized to 3451 Sky Bridge Road, Stanton, KY 40380; retained exact published coordinate 37.83329468,-83.60774657."

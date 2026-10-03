@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = '6ecfaa177860c2c59620e391b7c114577c9d2c3377c748b5984a2bc5c014e149'
+EXPECTED_SHA = '2a6a68450e66512caef03f0939ba2febcc7b29047cedbd6b89079e0d930f03f3'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
@@ -52,6 +52,12 @@ class PlacesContractTests(unittest.TestCase):
         self.assertNotIn('"29"', json.dumps(self.data['activePlaces']))
         self.assertTrue(by_id['PLC-010']['nearbyRrghPickEligible'])
         self.assertEqual(by_id['PLC-010']['nearbyRouteContext'], 'Motherlode area')
+
+    def test_owner_supplied_exact_map_addresses(self):
+        expected = {"PLC-001":"1890 Natural Bridge Rd, Slade, KY 40376","PLC-002":"4000 KY-11, Campton, KY 41301","PLC-003":"2135 Natural Bridge Rd, Slade, KY 40376","PLC-004":"8 KY-715, Pine Ridge, KY 41360","PLC-005":"2613 KY-11, Campton, KY 41301","PLC-006":"356 Jim Smith Rd, Campton, KY 41301","PLC-007":"1289 Natural Bridge Rd, Slade, KY 40376","PLC-008":"769 Natural Bridge Rd, Slade, KY 40376","PLC-009":"1255 Natural Bridge Rd, Slade, KY 40376","PLC-010":"2034 KY-11, Beattyville, KY 41311","PLC-011":"200 L&E Railroad Pl, Slade, KY 40376","PLC-012":"2478 Glencairn Rd, Rogers, KY 41365","PLC-013":"455 Cliffview Rd, Campton, KY 41301","PLC-014":"693 Natural Bridge Rd, Slade, KY 40376","PLC-015":"48 Muir Rd, Rogers, KY 41365","PLC-016":"1617 KY-11, Campton, KY 41301","PLC-017":"45 KY-715, Frenchburg, KY 40322","PLC-018":"888 Natural Bridge Rd, Slade, KY 40376","PLC-019":"607 Skylift Dr, Slade, KY 40376","PLC-020":"693 Natural Bridge Rd, Slade, KY 40376","PLC-021":"5412 KY-15 N, Pine Ridge, KY 41360","PLC-022":"1321 Natural Bridge Rd, Slade, KY 40376","PLC-023":"2135 Natural Bridge Rd, Slade, KY 40376","PLC-024":"12056 Campton Rd, Slade, KY 40376","PLC-025":"12187 Campton Rd, Slade, KY 40376","PLC-026":"940 Natural Bridge Rd, Slade, KY 40376","PLC-027":"1433 KY-36, Frenchburg, KY 40322","PLC-028":"6944 KY-52, Beattyville, KY 41311","PLC-029":"3451 Sky Bridge Rd, Stanton, KY 40380"}
+        by_id = {p['placeId']:p for p in self.data['activePlaces']}
+        for place_id, address in expected.items():
+            self.assertEqual(by_id[place_id]['locationContext'], address)
 
     def test_one_poi_shared_selectors_and_presence_contract(self):
         self.assertIn('data-map-layer="around-the-gorge" checked', MAP)
