@@ -3,3 +3,6 @@ dist/
 .astro/
 .DS_Store
 *.log
+
+# Generated short-lived Google credentials from google-github-actions/auth.
+gha-creds-*.json

@@ -1,0 +1,112 @@
+name: Backend Nonproduction Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: rrgh-backend-nonproduction
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: rrgh-nonproduction
+  FUNCTION_REGION: us-east5
+  FUNCTION_NAME: rrghAccountApi
+  RRGH_DEPLOY_SERVICE_ACCOUNT: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+
+jobs:
+  deploy-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Use Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Verify Phase 3 guardrails
+        run: node backend/scripts/phase3-readiness.mjs
+
+      - name: Install backend dependencies
+        run: npm install --prefix backend/functions --no-audit --no-fund
+
+      - name: Run emulator contract
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --project demo-rrgh-entitlements
+          --only auth,firestore,functions
+          "npm --prefix functions test"
+
+      - name: Authenticate to Google Cloud without a service-account key
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+
+      - name: Verify federated identity
+        run: |
+          test "$(gcloud config get-value project)" = "rrgh-nonproduction"
+          gcloud auth list --filter=status:ACTIVE --format='value(account)'
+
+      - name: Deploy deny-all Firestore rules and account API
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 deploy
+          --project rrgh-nonproduction
+          --only firestore:rules,functions:rrgh-account:rrghAccountApi
+          --non-interactive
+
+      - name: Verify deployed Function inventory
+        working-directory: backend
+        run: |
+          npx --yes firebase-tools@15.30.2 functions:list --project rrgh-nonproduction
+          gcloud functions describe rrghAccountApi             --gen2             --region=us-east5             --project=rrgh-nonproduction             --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime)'
+
+      - name: Resolve live endpoint and Firebase API key
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FUNCTION_URL="$(gcloud functions describe rrghAccountApi             --gen2             --region=us-east5             --project=rrgh-nonproduction             --format='value(serviceConfig.uri)')"
+          test -n "$FUNCTION_URL"
+          echo "RRGH_FUNCTION_URL=$FUNCTION_URL" >> "$GITHUB_ENV"
+
+          KEY_RESOURCES="$(gcloud services api-keys list             --project=rrgh-nonproduction             --format='value(name)')"
+          KEY_COUNT="$(printf '%s
+' "$KEY_RESOURCES" | sed '/^[[:space:]]*$/d' | wc -l)"
+          if [ "$KEY_COUNT" -ne 1 ]; then
+            echo "Expected exactly one Firebase/Google API key; found $KEY_COUNT." >&2
+            exit 1
+          fi
+          KEY_RESOURCE="$(printf '%s
+' "$KEY_RESOURCES" | head -n 1)"
+
+          API_KEY="$(curl -fsS             -H "Authorization: Bearer $(gcloud auth print-access-token)"             "https://apikeys.googleapis.com/v2/$KEY_RESOURCE/keyString"             | jq -r '.keyString')"
+          test -n "$API_KEY" && test "$API_KEY" != "null"
+          echo "::add-mask::$API_KEY"
+          echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
+
+      - name: Run remote authenticated and security smoke tests
+        run: node backend/scripts/nonprod-remote-smoke.mjs

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - backend/phase-2-emulator
-      - backend/phase-3-nonprod
   workflow_dispatch:
 
 permissions:
