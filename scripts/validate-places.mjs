@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 
 const ROOT = process.cwd();
 const file = path.join(ROOT, 'src', 'data', 'places', 'places.generated.json');
-const EXPECTED_SHA = 'c2abb7344a9bda1ae26172ef401e8a3c54d44bd3e0375cfdf846ae26edbb1c2c';
+const EXPECTED_SHA = '6ecfaa177860c2c59620e391b7c114577c9d2c3377c748b5984a2bc5c014e149';
 const EXPECTED_SOURCE = '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4';
 const fail = (message) => { throw new Error(message); };
 const bytes = fs.readFileSync(file);
@@ -53,6 +53,8 @@ const skyBridgeStation = places.find(p => p.placeId === 'PLC-004');
 if (skyBridgeStation?.latitude !== 37.7634 || skyBridgeStation?.longitude !== -83.6126) fail('PLC-004 corrected coordinate mismatch');
 const goTime = places.find(p => p.placeId === 'PLC-024');
 if (goTime?.latitude !== 37.7982345 || goTime?.longitude !== -83.7046152) fail('PLC-024 coordinate mismatch');
+if (JSON.stringify(goTime?.hikerServiceTypes) !== JSON.stringify(['backcountry/overnight pass vendor','fuel','provisions'])) fail('PLC-024 Hiker Services classification mismatch');
+if (goTime?.shortDescription !== 'Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.') fail('PLC-024 public description mismatch');
 const parkNSave = places.find(p => p.placeId === 'PLC-025');
 if (parkNSave?.latitude !== 37.7982107 || parkNSave?.longitude !== -83.7026222) fail('PLC-025 corrected coordinate mismatch');
 const hungryHiker = places.find(p => p.placeId === 'PLC-009');

@@ -7,7 +7,7 @@
     "sourceRecordCount": 30,
     "activePlaceCount": 30,
     "excludedRecordCount": 10,
-    "generatedAt": "2026-10-03T00:46:00Z"
+    "generatedAt": "2026-10-03T01:02:00Z"
   },
   "integrity": {
     "activePlaceCount": 30,
@@ -761,7 +761,9 @@
       "aroundCategory": "",
       "hikerServices": true,
       "hikerServiceTypes": [
-        "backcountry/overnight pass vendor"
+        "backcountry/overnight pass vendor",
+        "fuel",
+        "provisions"
       ],
       "mapPoiEligible": true,
       "offlineAppPoiEligible": true,
@@ -772,14 +774,16 @@
       "aliases": [],
       "seasonalVolatile": false,
       "nearbyRouteContext": "",
-      "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition.",
+      "shortDescription": "Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.",
       "officialSourceUrl": "https://gopoco.org/hiking-camping/",
       "googleMapsUrl": "https://www.google.com/maps/search/?api=1&query=Go%20Time%2012056%20Campton%20Road%2C%20Slade%2C%20KY%2040376",
       "lastVerified": "2026-10-02",
-      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; coordinate cross-checked again during owner map correction pass. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
+      "verificationStatus": "Verified 2026-10-02 — current identity/address and Powell County backcountry/overnight pass-vendor status checked; fuel/provisions utility reconciled for consistency with the current Go Time convenience-store operation. FULL ADDRESS RECONCILIATION 2026-10-02 — current Google/current-business address reviewed.",
       "implementationTags": [
         "hiker-service",
-        "pass-vendor"
+        "pass-vendor",
+        "fuel",
+        "provisions"
       ],
       "locationContext": "12056 Campton Road, Slade, KY 40376",
       "latitude": 37.7982345,

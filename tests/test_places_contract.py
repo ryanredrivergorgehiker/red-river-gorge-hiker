@@ -6,7 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLACES = ROOT / 'src/data/places/places.generated.json'
 MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
-EXPECTED_SHA = 'c2abb7344a9bda1ae26172ef401e8a3c54d44bd3e0375cfdf846ae26edbb1c2c'
+EXPECTED_SHA = '6ecfaa177860c2c59620e391b7c114577c9d2c3377c748b5984a2bc5c014e149'
 
 class PlacesContractTests(unittest.TestCase):
     @classmethod
@@ -40,6 +40,8 @@ class PlacesContractTests(unittest.TestCase):
         self.assertEqual(by_id['PLC-025']['publicName'], 'Park N Save')
         self.assertEqual((by_id['PLC-004']['latitude'], by_id['PLC-004']['longitude']), (37.7634, -83.6126))
         self.assertEqual((by_id['PLC-024']['latitude'], by_id['PLC-024']['longitude']), (37.7982345, -83.7046152))
+        self.assertEqual(by_id['PLC-024']['hikerServiceTypes'], ['backcountry/overnight pass vendor', 'fuel', 'provisions'])
+        self.assertEqual(by_id['PLC-024']['shortDescription'], 'Hiking-logistics stop for required backcountry/overnight pass acquisition, fuel, and provisions.')
         self.assertEqual((by_id['PLC-025']['latitude'], by_id['PLC-025']['longitude']), (37.7982107, -83.7026222))
         self.assertEqual((by_id['PLC-009']['latitude'], by_id['PLC-009']['longitude']), (37.7845241, -83.6914935))
         self.assertEqual((by_id['PLC-019']['latitude'], by_id['PLC-019']['longitude']), (37.781217, -83.689967))
