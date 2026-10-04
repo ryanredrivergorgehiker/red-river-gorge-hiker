@@ -1,5 +1,10 @@
-import { applicationDefault, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import { createRequire } from "node:module";
+
+const requireFromFunctions = createRequire(
+  new URL("../functions/package.json", import.meta.url),
+);
+const { applicationDefault, initializeApp } = requireFromFunctions("firebase-admin/app");
+const { getAuth } = requireFromFunctions("firebase-admin/auth");
 
 const projectId = process.env.GCLOUD_PROJECT || "rrgh-nonproduction";
 const functionUrl = process.env.RRGH_FUNCTION_URL;
