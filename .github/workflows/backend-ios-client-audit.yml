@@ -1,0 +1,100 @@
+name: Backend iOS Client Registration Audit
+
+on:
+  push:
+    branches:
+      - backend/phase-3-nonprod
+    paths:
+      - ".github/workflows/backend-ios-client-audit.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: rrgh-nonproduction
+  PROJECT_NUMBER: "843975209563"
+  FUNCTION_REGION: us-east5
+  FUNCTION_NAME: rrghAccountApi
+  RRGH_DEPLOY_SERVICE_ACCOUNT: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Authenticate to Google Cloud without a service-account key
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+
+      - name: Verify project identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud projects describe "$PROJECT_ID" --format='json(projectId,projectNumber,name,lifecycleState)'
+          ACTUAL_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+          test "$ACTUAL_NUMBER" = "$PROJECT_NUMBER"
+
+      - name: Verify current Firebase app inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json
+
+      - name: Verify live backend and database
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud functions describe "$FUNCTION_NAME"             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='json(name,state,buildConfig.runtime,serviceConfig.availableMemory,serviceConfig.uri)'
+          gcloud firestore databases describe             --database='(default)'             --project="$PROJECT_ID"             --format='json(name,locationId,type,deleteProtectionState)'
+
+      - name: Verify current Authentication configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="$(gcloud auth print-access-token)"
+          curl -fsS             -H "Authorization: Bearer $TOKEN"             "https://identitytoolkit.googleapis.com/admin/v2/projects/$PROJECT_ID/config"             | jq '{name, signIn: .signIn}'
+
+      - name: Verify App Check API and Cloud Functions enforcement state
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services list --enabled --project="$PROJECT_ID"             --filter='config.name:firebaseappcheck.googleapis.com'             --format='value(config.name)' || true
+          TOKEN="$(gcloud auth print-access-token)"
+          HTTP_CODE="$(curl -sS -o /tmp/appcheck-service.json -w '%{http_code}'             -H "Authorization: Bearer $TOKEN"             "https://firebaseappcheck.googleapis.com/v1/projects/$PROJECT_NUMBER/services/cloudfunctions.googleapis.com")"
+          echo "App Check service GET HTTP $HTTP_CODE"
+          cat /tmp/appcheck-service.json
+          echo
+
+      - name: Verify exact deploy-identity permissions needed for registration
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="$(gcloud auth print-access-token)"
+          cat > /tmp/permissions.json <<'JSON'
+          {
+            "permissions": [
+              "firebase.clients.create",
+              "firebase.clients.get",
+              "firebase.clients.list",
+              "firebaseappcheck.appAttestConfig.get",
+              "firebaseappcheck.appAttestConfig.update",
+              "firebaseappcheck.services.get",
+              "clientauthconfig.clients.get",
+              "clientauthconfig.clients.update",
+              "serviceusage.services.enable",
+              "serviceusage.services.get"
+            ]
+          }
+          JSON
+          curl -fsS             -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data-binary @/tmp/permissions.json             "https://cloudresourcemanager.googleapis.com/v1/projects/$PROJECT_ID:testIamPermissions"             | jq .
