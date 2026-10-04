@@ -58,7 +58,7 @@ jobs:
           APPS_JSON="$(npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json)"
           echo "$APPS_JSON" | jq .
 
-          EXACT_COUNT="$(echo "$APPS_JSON" | jq --arg b "$IOS_BUNDLE_ID" '[.result[]? | select(.platform=="IOS" and .resourceName != null and (.displayName // "") != "" and (.bundleId // "")==$b)] | length')"
+          EXACT_COUNT="$(echo "$APPS_JSON" | jq --arg b "$IOS_BUNDLE_ID" '[.result[]? | select(.platform=="IOS" and .resourceName != null and (.displayName // "") != "" and (.namespace // "")==$b)] | length')"
           ALL_COUNT="$(echo "$APPS_JSON" | jq '[.result[]?] | length')"
 
           if [ "$EXACT_COUNT" -eq 0 ]; then
@@ -74,7 +74,7 @@ jobs:
 
           AFTER="$(npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json)"
           echo "$AFTER" | jq .
-          APP_ID="$(echo "$AFTER" | jq -r --arg b "$IOS_BUNDLE_ID" '.result[]? | select(.platform=="IOS" and (.bundleId // "")==$b) | .appId' | head -n 1)"
+          APP_ID="$(echo "$AFTER" | jq -r --arg b "$IOS_BUNDLE_ID" '.result[]? | select(.platform=="IOS" and (.namespace // "")==$b) | .appId' | head -n 1)"
           test -n "$APP_ID" && test "$APP_ID" != "null"
 
           echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
