@@ -58,7 +58,7 @@ jobs:
           APPS_JSON="$(npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json)"
           echo "$APPS_JSON" | jq .
 
-          EXACT_COUNT="$(echo "$APPS_JSON" | jq --arg b "$IOS_BUNDLE_ID" '[.result[]? | select(.platform=="IOS" and .resourceName != null and (.displayName // "") != "" and (.namespace // "")==$b)] | length')"
+          EXACT_COUNT="$(echo "$APPS_JSON" | jq --arg b "$IOS_BUNDLE_ID" '[.result[]? | select(.platform=="IOS" and (.displayName // "") != "" and (.namespace // "")==$b)] | length')"
           ALL_COUNT="$(echo "$APPS_JSON" | jq '[.result[]?] | length')"
 
           if [ "$EXACT_COUNT" -eq 0 ]; then
