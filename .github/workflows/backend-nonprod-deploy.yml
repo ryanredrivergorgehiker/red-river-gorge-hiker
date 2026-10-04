@@ -1,6 +1,12 @@
 name: Backend Nonproduction Deploy
 
 on:
+  push:
+    branches:
+      - backend/phase-3-nonprod
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-nonprod-deploy.yml"
   workflow_dispatch:
 
 permissions:
@@ -82,28 +88,39 @@ jobs:
         working-directory: backend
         run: |
           npx --yes firebase-tools@15.30.2 functions:list --project rrgh-nonproduction
-          gcloud functions describe rrghAccountApi             --gen2             --region=us-east5             --project=rrgh-nonproduction             --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime)'
+          gcloud functions describe rrghAccountApi \
+            --gen2 \
+            --region=us-east5 \
+            --project=rrgh-nonproduction \
+            --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime)'
 
       - name: Resolve live endpoint and Firebase API key
         shell: bash
         run: |
           set -euo pipefail
 
-          FUNCTION_URL="$(gcloud functions describe rrghAccountApi             --gen2             --region=us-east5             --project=rrgh-nonproduction             --format='value(serviceConfig.uri)')"
+          FUNCTION_URL="$(gcloud functions describe rrghAccountApi \
+            --gen2 \
+            --region=us-east5 \
+            --project=rrgh-nonproduction \
+            --format='value(serviceConfig.uri)')"
           test -n "$FUNCTION_URL"
           echo "RRGH_FUNCTION_URL=$FUNCTION_URL" >> "$GITHUB_ENV"
 
-          KEY_RESOURCES="$(gcloud services api-keys list             --project=rrgh-nonproduction             --format='value(name)')"
-          KEY_COUNT="$(printf '%s
-' "$KEY_RESOURCES" | sed '/^[[:space:]]*$/d' | wc -l)"
+          KEY_RESOURCES="$(gcloud services api-keys list \
+            --project=rrgh-nonproduction \
+            --format='value(name)')"
+          KEY_COUNT="$(printf '%s\n' "$KEY_RESOURCES" | sed '/^[[:space:]]*$/d' | wc -l)"
           if [ "$KEY_COUNT" -ne 1 ]; then
             echo "Expected exactly one Firebase/Google API key; found $KEY_COUNT." >&2
             exit 1
           fi
-          KEY_RESOURCE="$(printf '%s
-' "$KEY_RESOURCES" | head -n 1)"
+          KEY_RESOURCE="$(printf '%s\n' "$KEY_RESOURCES" | head -n 1)"
 
-          API_KEY="$(curl -fsS             -H "Authorization: Bearer $(gcloud auth print-access-token)"             "https://apikeys.googleapis.com/v2/$KEY_RESOURCE/keyString"             | jq -r '.keyString')"
+          API_KEY="$(curl -fsS \
+            -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+            "https://apikeys.googleapis.com/v2/$KEY_RESOURCE/keyString" \
+            | jq -r '.keyString')"
           test -n "$API_KEY" && test "$API_KEY" != "null"
           echo "::add-mask::$API_KEY"
           echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
