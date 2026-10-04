@@ -1,0 +1,68 @@
+name: Backend iOS App Check Audit
+
+on:
+  push:
+    branches:
+      - backend/phase-3-nonprod
+    paths:
+      - ".github/workflows/backend-ios-appcheck-audit.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: rrgh-nonproduction
+  PROJECT_NUMBER: "843975209563"
+  IOS_APP_ID: "1:843975209563:ios:68d59290136388c8f0857e"
+  IOS_BUNDLE_ID: com.redrivergorgehiker.ios
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Authenticate to Google Cloud without a service-account key
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+
+      - name: Verify Firebase App Check API and exact iOS app
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud services list --enabled --project="$PROJECT_ID"             --filter='config.name:firebaseappcheck.googleapis.com'             --format='value(config.name)' | grep -Fx 'firebaseappcheck.googleapis.com'
+
+          TOKEN="$(gcloud auth print-access-token)"
+          curl -fsS             -H "Authorization: Bearer $TOKEN"             "https://firebase.googleapis.com/v1beta1/projects/$PROJECT_ID/iosApps/$IOS_APP_ID"             | tee /tmp/ios-app.json             | jq '{appId,displayName,projectId,bundleId,appStoreId,teamId,apiKeyId,state}'
+
+          test "$(jq -r '.appId' /tmp/ios-app.json)" = "$IOS_APP_ID"
+          test "$(jq -r '.bundleId' /tmp/ios-app.json)" = "$IOS_BUNDLE_ID"
+
+      - name: Read exact App Attest provider configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="$(gcloud auth print-access-token)"
+          URL="https://firebaseappcheck.googleapis.com/v1/projects/$PROJECT_NUMBER/apps/$IOS_APP_ID/appAttestConfig"
+          CODE="$(curl -sS -o /tmp/appattest.json -w '%{http_code}'             -H "Authorization: Bearer $TOKEN" "$URL")"
+          echo "App Attest config HTTP $CODE"
+          cat /tmp/appattest.json | jq .
+          echo "APP_ATTEST_HTTP_CODE=$CODE" >> "$GITHUB_ENV"
+          TEAM_ID="$(jq -r '.teamId // empty' /tmp/ios-app.json)"
+          if [ -z "$TEAM_ID" ]; then
+            echo "APPLE_TEAM_ID_STATE=MISSING" >> "$GITHUB_ENV"
+            echo "Firebase iOS App Apple Team ID: MISSING"
+          else
+            echo "APPLE_TEAM_ID_STATE=PRESENT" >> "$GITHUB_ENV"
+            echo "Firebase iOS App Apple Team ID: PRESENT"
+          fi
