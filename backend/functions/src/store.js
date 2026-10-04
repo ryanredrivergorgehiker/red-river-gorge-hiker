@@ -246,7 +246,7 @@ export async function authorizeProtectedPackageForUid(db, uid, packageId) {
     },
     delivery: {
       ready: false,
-      reason: "LEG-Q-0018-not-cleared-no-storage-delivery",
+      reason: "protected_package_delivery_not_implemented",
     },
   };
 }
