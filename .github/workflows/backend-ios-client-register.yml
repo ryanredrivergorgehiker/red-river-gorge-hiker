@@ -1,0 +1,119 @@
+name: Backend iOS Client Register
+
+on:
+  push:
+    branches:
+      - backend/phase-3-nonprod
+    paths:
+      - ".github/workflows/backend-ios-client-register.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: rrgh-nonproduction
+  PROJECT_NUMBER: "843975209563"
+  IOS_BUNDLE_ID: com.redrivergorgehiker.ios
+  IOS_DISPLAY_NAME: Red River Gorge Hiker
+  RRGH_DEPLOY_SERVICE_ACCOUNT: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+
+jobs:
+  register-ios-client:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Authenticate to Google Cloud without a service-account key
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+
+      - name: Verify exact project and registration permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')" = "$PROJECT_NUMBER"
+          TOKEN="$(gcloud auth print-access-token)"
+          cat > /tmp/permissions.json <<'JSON'
+          {"permissions":["firebase.clients.create","firebase.clients.get","firebase.clients.list"]}
+          JSON
+          HAVE="$(curl -fsS -X POST             -H "Authorization: Bearer $TOKEN"             -H "Content-Type: application/json"             --data-binary @/tmp/permissions.json             "https://cloudresourcemanager.googleapis.com/v1/projects/$PROJECT_ID:testIamPermissions")"
+          echo "$HAVE" | jq .
+          test "$(echo "$HAVE" | jq '[.permissions[]? | select(.=="firebase.clients.create")] | length')" = "1"
+
+      - name: Register exact iOS Firebase App if absent
+        id: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          APPS_JSON="$(npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json)"
+          echo "$APPS_JSON" | jq .
+
+          EXACT_COUNT="$(echo "$APPS_JSON" | jq --arg b "$IOS_BUNDLE_ID" '[.result[]? | select(.platform=="IOS" and .resourceName != null and (.displayName // "") != "" and (.bundleId // "")==$b)] | length')"
+          ALL_COUNT="$(echo "$APPS_JSON" | jq '[.result[]?] | length')"
+
+          if [ "$EXACT_COUNT" -eq 0 ]; then
+            if [ "$ALL_COUNT" -ne 0 ]; then
+              echo "Firebase App inventory is no longer empty and the exact governed iOS bundle is absent. Refusing to create an unrelated/duplicate client." >&2
+              exit 1
+            fi
+            npx --yes firebase-tools@15.30.2 apps:create               --bundle-id "$IOS_BUNDLE_ID"               ios "$IOS_DISPLAY_NAME"               --project "$PROJECT_ID"               --non-interactive
+          elif [ "$EXACT_COUNT" -ne 1 ]; then
+            echo "Expected at most one exact iOS Firebase App; found $EXACT_COUNT." >&2
+            exit 1
+          fi
+
+          AFTER="$(npx --yes firebase-tools@15.30.2 apps:list --project "$PROJECT_ID" --json)"
+          echo "$AFTER" | jq .
+          APP_ID="$(echo "$AFTER" | jq -r --arg b "$IOS_BUNDLE_ID" '.result[]? | select(.platform=="IOS" and (.bundleId // "")==$b) | .appId' | head -n 1)"
+          test -n "$APP_ID" && test "$APP_ID" != "null"
+
+          echo "app_id=$APP_ID" >> "$GITHUB_OUTPUT"
+          echo "FIREBASE_IOS_APP_ID=$APP_ID" >> "$GITHUB_ENV"
+          echo "Registered Firebase iOS App ID: $APP_ID"
+
+      - name: Retrieve exact Firebase iOS app resource
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN="$(gcloud auth print-access-token)"
+          curl -fsS             -H "Authorization: Bearer $TOKEN"             "https://firebase.googleapis.com/v1beta1/projects/$PROJECT_ID/iosApps/$FIREBASE_IOS_APP_ID"             | tee /tmp/ios-app.json             | jq '{name,appId,displayName,projectId,bundleId,appStoreId,teamId,apiKeyId,state}'
+          test "$(jq -r '.bundleId' /tmp/ios-app.json)" = "$IOS_BUNDLE_ID"
+          test "$(jq -r '.projectId' /tmp/ios-app.json)" = "$PROJECT_ID"
+
+      - name: Retrieve exact GoogleService-Info.plist
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools@15.30.2 apps:sdkconfig             ios "$FIREBASE_IOS_APP_ID"             --project "$PROJECT_ID"             --non-interactive             > GoogleService-Info.plist
+
+          python3 - <<'PY'
+          import plistlib
+          with open("GoogleService-Info.plist","rb") as f:
+              p=plistlib.load(f)
+          assert p["BUNDLE_ID"] == "com.redrivergorgehiker.ios", p["BUNDLE_ID"]
+          assert p["PROJECT_ID"] == "rrgh-nonproduction", p["PROJECT_ID"]
+          assert p["GOOGLE_APP_ID"] == __import__("os").environ["FIREBASE_IOS_APP_ID"], p["GOOGLE_APP_ID"]
+          print("GoogleService-Info.plist verification: PASS")
+          print("BUNDLE_ID=" + p["BUNDLE_ID"])
+          print("PROJECT_ID=" + p["PROJECT_ID"])
+          print("GOOGLE_APP_ID=" + p["GOOGLE_APP_ID"])
+          print("GCM_SENDER_ID=" + p.get("GCM_SENDER_ID",""))
+          PY
+
+      - name: Preserve exact client configuration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-nonproduction-ios-GoogleService-Info
+          path: GoogleService-Info.plist
+          if-no-files-found: error
+          retention-days: 30
