@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Protected/offline package objects are never a direct Firebase client
+    // surface. Runtime delivery is mediated by rrghPackageDownload after
+    // server-authoritative authorization and a short-lived capability.
+    match /{object=**} {
+      allow read, write: if false;
+    }
+  }
+}
