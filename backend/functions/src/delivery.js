@@ -25,7 +25,11 @@ export function packageDownloadUrl(projectId = process.env.GCLOUD_PROJECT) {
   if (explicit) return explicit;
 
   const resolvedProjectId = projectId || "rrgh-nonproduction";
-  if (process.env.FUNCTIONS_EMULATOR === "true") {
+  if (
+    process.env.FUNCTIONS_EMULATOR === "true" ||
+    process.env.FIRESTORE_EMULATOR_HOST ||
+    process.env.FIREBASE_STORAGE_EMULATOR_HOST
+  ) {
     return `http://127.0.0.1:5001/${resolvedProjectId}/us-east5/rrghPackageDownload`;
   }
 
@@ -82,7 +86,7 @@ export async function validatePackageObject(
       metadata,
     };
   } catch (error) {
-    if (error?.code === 404 || error?.code === 404) {
+    if (error?.code === 404) {
       return { ready: false, reason: "package_object_unavailable" };
     }
     return { ready: false, reason: "backend_temporarily_unavailable" };
