@@ -179,14 +179,22 @@ test("emulator contract enforces account-level trial and cross-store entitlement
 
   await db.collection("packageCatalog").doc("base-demo").set({
     active: true,
+    lifecycle: "active",
+    deliveryState: "building",
+    packageType: "test_fixture",
     version: "emulator-v1",
     sha256: "emulator-only-no-route-content",
+    byteCount: 1,
     requiredEntitlement: "base",
   });
   await db.collection("packageCatalog").doc("backpacking-demo").set({
     active: true,
+    lifecycle: "active",
+    deliveryState: "building",
+    packageType: "test_fixture",
     version: "emulator-v1",
     sha256: "emulator-only-no-route-content",
+    byteCount: 1,
     requiredEntitlement: "backpacking",
   });
 
@@ -210,6 +218,7 @@ test("emulator contract enforces account-level trial and cross-store entitlement
   });
   assert.equal(allowedBasePackage.result.authorized, true);
   assert.equal(allowedBasePackage.result.delivery.ready, false);
+  assert.equal(allowedBasePackage.result.delivery.reason, "package_not_ready");
 
   const allowedBackpackingPackage = await callApi("authorizeProtectedPackage", idToken, {
     packageId: "backpacking-demo",

@@ -2,6 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import {
   ENTITLEMENTS,
   TRIAL_DURATION_MS,
+  canonicalEntitlementFromPackageRequirement,
   deriveAccess,
   deriveCanonicalEntitlementFromEvidence,
 } from "./domain.js";
@@ -206,49 +207,167 @@ export async function initiateAccountDeletionForUid(db, uid) {
   };
 }
 
-export async function authorizeProtectedPackageForUid(db, uid, packageId) {
+function packageDeliveryUnavailable(reason) {
+  return {
+    ready: false,
+    reason,
+    method: null,
+    httpMethod: null,
+    url: null,
+    expiresAt: null,
+    authorizationScheme: null,
+    authorizationToken: null,
+  };
+}
+
+function packageDescriptor(packageId, packageData, requirement) {
+  const byteCount = Number(packageData.byteCount);
+  return {
+    packageId,
+    packageType: packageData.packageType ?? null,
+    version: packageData.version ?? null,
+    sha256: packageData.sha256 ?? null,
+    byteCount: Number.isSafeInteger(byteCount) && byteCount > 0 ? byteCount : null,
+    requiredEntitlement: requirement,
+    offlineManifest: packageData.offlineManifest ?? null,
+  };
+}
+
+export async function authorizeProtectedPackageForUid(
+  db,
+  uid,
+  packageId,
+  {
+    createDelivery = null,
+  } = {},
+) {
   const packageSnapshot = await db.collection("packageCatalog").doc(packageId).get();
   if (!packageSnapshot.exists) {
     return {
       authorized: false,
       reason: "package_not_found",
+      requiredEntitlement: null,
+      package: null,
+      delivery: null,
     };
   }
 
   const packageData = packageSnapshot.data() ?? {};
-  if (packageData.active !== true) {
+  if (
+    packageData.active !== true ||
+    packageData.lifecycle === "superseded"
+  ) {
     return {
       authorized: false,
-      reason: "package_inactive",
+      reason: "package_superseded",
+      requiredEntitlement: packageData.requiredEntitlement ?? null,
+      package: null,
+      delivery: null,
+    };
+  }
+
+  let requirement;
+  try {
+    requirement = canonicalEntitlementFromPackageRequirement(
+      packageData.requiredEntitlement,
+    );
+  } catch {
+    return {
+      authorized: false,
+      reason: "package_configuration_invalid",
+      requiredEntitlement: null,
+      package: null,
+      delivery: null,
     };
   }
 
   const state = await getAccountStateForUid(db, uid);
-  const requirement = packageData.requiredEntitlement;
-  const accessKey = requirement === ENTITLEMENTS.BASE ? "base" : requirement;
-  const authorized = state.access?.[accessKey] === true;
 
-  if (!authorized) {
+  if (state.accountStatus !== "active") {
+    return {
+      authorized: false,
+      reason: "account_not_active",
+      requiredEntitlement: requirement,
+      package: null,
+      delivery: null,
+    };
+  }
+
+  const accessKey = requirement === ENTITLEMENTS.BASE ? "base" : requirement;
+  if (state.access?.[accessKey] !== true) {
     return {
       authorized: false,
       reason: "not_entitled",
       requiredEntitlement: requirement,
+      package: null,
+      delivery: null,
     };
   }
 
-  return {
-    authorized: true,
-    package: {
-      packageId,
-      version: packageData.version ?? null,
-      sha256: packageData.sha256 ?? null,
+  const descriptor = packageDescriptor(
+    packageId,
+    packageData,
+    requirement,
+  );
+
+  if (
+    typeof descriptor.version !== "string" ||
+    descriptor.version.length === 0 ||
+    typeof descriptor.sha256 !== "string" ||
+    descriptor.sha256.length === 0 ||
+    descriptor.byteCount === null
+  ) {
+    return {
+      authorized: true,
+      reason: null,
       requiredEntitlement: requirement,
-    },
-    delivery: {
-      ready: false,
-      reason: "protected_package_delivery_not_implemented",
-    },
-  };
+      package: descriptor,
+      delivery: packageDeliveryUnavailable("package_configuration_invalid"),
+    };
+  }
+
+  if (packageData.deliveryState !== "ready") {
+    return {
+      authorized: true,
+      reason: null,
+      requiredEntitlement: requirement,
+      package: descriptor,
+      delivery: packageDeliveryUnavailable("package_not_ready"),
+    };
+  }
+
+  if (typeof createDelivery !== "function") {
+    return {
+      authorized: true,
+      reason: null,
+      requiredEntitlement: requirement,
+      package: descriptor,
+      delivery: packageDeliveryUnavailable("backend_temporarily_unavailable"),
+    };
+  }
+
+  try {
+    const delivery = await createDelivery({
+      packageId,
+      packageData,
+    });
+
+    return {
+      authorized: true,
+      reason: null,
+      requiredEntitlement: requirement,
+      package: descriptor,
+      delivery,
+    };
+  } catch {
+    return {
+      authorized: true,
+      reason: null,
+      requiredEntitlement: requirement,
+      package: descriptor,
+      delivery: packageDeliveryUnavailable("backend_temporarily_unavailable"),
+    };
+  }
 }
 
 // Emulator/internal service seam only. This is intentionally not exported as a
