@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  statuses: write
 
 concurrency:
   group: rrgh-backend-nonproduction
@@ -260,3 +261,27 @@ jobs:
 
       - name: Run remote authenticated, integrity, expiry, and security smoke tests
         run: node backend/scripts/nonprod-remote-smoke.mjs
+
+      - name: Publish deploy result as commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATE="success"
+            DESCRIPTION="RRGH backend nonproduction deploy verified"
+          else
+            STATE="failure"
+            DESCRIPTION="RRGH backend nonproduction deploy failed"
+          fi
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$STATE" \
+            -f context="rrgh/backend-nonprod-deploy" \
+            -f description="$DESCRIPTION"
