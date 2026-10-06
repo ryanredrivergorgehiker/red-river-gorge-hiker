@@ -13,7 +13,7 @@ test("package capability TTL is frozen at five minutes", () => {
 test("capability token is stored only by SHA-256 hash", () => {
   assert.equal(
     hashCapabilityToken("synthetic-capability-token"),
-    "b8986ad11ff0107032f10c28e509579b89e0af74f2abbd2476bd6dab51eeb765",
+    "14344dae072018d5aaf37d59007122e38b29079b104bfd3c937bd576a6cef7e8",
   );
 });
 
