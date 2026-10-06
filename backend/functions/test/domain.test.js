@@ -105,3 +105,21 @@ test("No customer track operation exists in the callable contract", () => {
   ]);
   assert.equal(ALLOWED_OPERATIONS.some((name) => /track|gpx|upload|sync/i.test(name)), false);
 });
+
+
+test("Permanent Base unlocks both extension entitlements when purchased", () => {
+  const access = deriveAccess({
+    entitlementStates: {
+      base: "active",
+      backpacking: "active",
+      off_trail: "active",
+    },
+  });
+
+  assert.deepEqual(access, {
+    base: true,
+    day_hikes: true,
+    backpacking: true,
+    off_trail: true,
+  });
+});
