@@ -19,14 +19,18 @@ concurrency:
 
 env:
   PROJECT_ID: rrgh-nonproduction
+  PROJECT_NUMBER: "843975209563"
   FUNCTION_REGION: us-east5
   FUNCTION_NAME: rrghAccountApi
+  PACKAGE_DOWNLOAD_FUNCTION_NAME: rrghPackageDownload
+  RRGH_PACKAGE_BUCKET: rrgh-nonproduction-protected-packages
   RRGH_DEPLOY_SERVICE_ACCOUNT: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+  GORGE_BASE_VERSION: "2026.10.06.1"
 
 jobs:
   deploy-and-verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
 
     steps:
       - name: Checkout
@@ -43,7 +47,7 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Verify Phase 3 guardrails
+      - name: Verify nonproduction delivery guardrails
         run: node backend/scripts/phase3-readiness.mjs
 
       - name: Install backend dependencies
@@ -54,7 +58,7 @@ jobs:
         run: >
           npx --yes firebase-tools@15.30.2 emulators:exec
           --project demo-rrgh-entitlements
-          --only auth,firestore,functions
+          --only auth,firestore,functions,storage
           "npm --prefix functions test"
 
       - name: Authenticate to Google Cloud without a service-account key
@@ -71,45 +75,170 @@ jobs:
         with:
           project_id: rrgh-nonproduction
 
-      - name: Verify federated identity
+      - name: Verify federated identity and Drive source access prerequisite
+        shell: bash
         run: |
+          set -euo pipefail
           test "$(gcloud config get-value project)" = "rrgh-nonproduction"
           gcloud auth list --filter=status:ACTIVE --format='value(account)'
 
-      - name: Deploy deny-all Firestore rules and account API
+          if ! gcloud services list             --enabled             --project="$PROJECT_ID"             --filter='config.name:drive.googleapis.com'             --format='value(config.name)'             | grep -Fx 'drive.googleapis.com'; then
+            echo "::error::Google Drive API is not enabled for rrgh-nonproduction. It is required only so the keyless deploy identity can read the two privately shared, governed route source files. Do not make them public."
+            exit 1
+          fi
+
+      - name: Install offline package build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin osmium-tool unzip
+
+      - name: Stage exact governed route package bytes from private Drive
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROUTE_DIR="$RUNNER_TEMP/rrgh-route-packages"
+          echo "RRGH_ROUTE_PACKAGE_DIR=$ROUTE_DIR" >> "$GITHUB_ENV"
+          export GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)"
+          bash backend/scripts/stage-governed-route-packages.sh "$ROUTE_DIR"
+
+      - name: Create or harden private nonproduction package bucket
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUCKET_URI="gs://$RRGH_PACKAGE_BUCKET"
+
+          if ! gcloud storage buckets describe "$BUCKET_URI"             --project="$PROJECT_ID" >/dev/null 2>&1; then
+            gcloud storage buckets create "$BUCKET_URI"               --project="$PROJECT_ID"               --location="$FUNCTION_REGION"               --uniform-bucket-level-access               --public-access-prevention
+          fi
+
+          gcloud storage buckets update "$BUCKET_URI"             --uniform-bucket-level-access             --public-access-prevention
+
+          POLICY="$(gcloud storage buckets get-iam-policy "$BUCKET_URI" --format=json)"
+          if printf '%s' "$POLICY" | jq -e '
+            [.bindings[]?.members[]?]
+            | any(. == "allUsers" or . == "allAuthenticatedUsers")
+          ' >/dev/null; then
+            echo "::error::Protected package bucket has a public IAM member."
+            exit 1
+          fi
+
+      - name: Build immutable Gorge Base package when version is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_DIR="$RUNNER_TEMP/rrgh-gorge-base"
+          BASE_PACKAGE="$BASE_DIR/gorge-base-$GORGE_BASE_VERSION.rrghpkg"
+          BASE_MANIFEST="$BASE_DIR/gorge-base-manifest.json"
+          BASE_OBJECT="gs://$RRGH_PACKAGE_BUCKET/packages/offline/gorge-base/$GORGE_BASE_VERSION/gorge-base.rrghpkg"
+          MANIFEST_OBJECT="gs://$RRGH_PACKAGE_BUCKET/packages/offline/gorge-base/$GORGE_BASE_VERSION/manifest.json"
+
+          echo "RRGH_BASE_PACKAGE_PATH=$BASE_PACKAGE" >> "$GITHUB_ENV"
+          echo "RRGH_BASE_MANIFEST_PATH=$BASE_MANIFEST" >> "$GITHUB_ENV"
+
+          if gcloud storage objects describe "$BASE_OBJECT" >/dev/null 2>&1; then
+            mkdir -p "$BASE_DIR"
+            gsutil cp "$BASE_OBJECT" "$BASE_PACKAGE"
+            gsutil cp "$MANIFEST_OBJECT" "$BASE_MANIFEST"
+            echo "Reusing immutable Gorge Base $GORGE_BASE_VERSION from private bucket."
+          else
+            bash backend/scripts/build-gorge-base.sh "$BASE_DIR" "$GORGE_BASE_VERSION"
+
+            BASE_SHA="$(jq -r '.sha256' "$BASE_MANIFEST")"
+            BASE_BYTES="$(jq -r '.byteCount' "$BASE_MANIFEST")"
+            test "$(sha256sum "$BASE_PACKAGE" | awk '{print $1}')" = "$BASE_SHA"
+            test "$(stat -c '%s' "$BASE_PACKAGE")" = "$BASE_BYTES"
+
+            gsutil -h "Content-Type:application/octet-stream"               -h "x-goog-meta-rrgh-sha256:$BASE_SHA"               -h "x-goog-meta-rrgh-package-id:gorge-base"               -h "x-goog-meta-rrgh-version:$GORGE_BASE_VERSION"               cp -n "$BASE_PACKAGE" "$BASE_OBJECT"
+
+            gsutil -h "Content-Type:application/json"               cp -n "$BASE_MANIFEST" "$MANIFEST_OBJECT"
+          fi
+
+      - name: Upload immutable governed route package objects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          upload_route() {
+            local package_id="$1"
+            local version="$2"
+            local filename="$3"
+            local expected_sha="$4"
+            local expected_bytes="$5"
+            local object="gs://$RRGH_PACKAGE_BUCKET/packages/routes/$package_id/$version/route.geojson"
+
+            test "$(sha256sum "$filename" | awk '{print $1}')" = "$expected_sha"
+            test "$(stat -c '%s' "$filename")" = "$expected_bytes"
+
+            if ! gcloud storage objects describe "$object" >/dev/null 2>&1; then
+              gsutil -h "Content-Type:application/geo+json"                 -h "x-goog-meta-rrgh-sha256:$expected_sha"                 -h "x-goog-meta-rrgh-package-id:$package_id"                 -h "x-goog-meta-rrgh-version:$version"                 cp -n "$filename" "$object"
+            fi
+          }
+
+          upload_route             "route-rte-0001"             "1"             "$RRGH_ROUTE_PACKAGE_DIR/route-rte-0001.geojson"             "123fdb57e1142299f86c714367cc466b70f18fa90cfbaabb92b0d9ced157dc66"             "8201"
+
+          upload_route             "route-rte-0002"             "1"             "$RRGH_ROUTE_PACKAGE_DIR/route-rte-0002.geojson"             "ced314bb34392750b0f823c9a11bc95a48e6fa52c59830d4ee83619f615d6602"             "6533"
+
+      - name: Deploy deny-all Firestore rules and protected-delivery Functions
         working-directory: backend
         run: >
           npx --yes firebase-tools@15.30.2 deploy
           --project rrgh-nonproduction
-          --only firestore:rules,functions:rrgh-account:rrghAccountApi
+          --only firestore:rules,functions:rrgh-account:rrghAccountApi,functions:rrgh-account:rrghPackageDownload
           --non-interactive
+
+      - name: Grant deployed runtime read-only access to private package objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNTIME_SA="$(gcloud functions describe rrghAccountApi             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='value(serviceConfig.serviceAccountEmail)')"
+          test -n "$RUNTIME_SA"
+          echo "RRGH_RUNTIME_SERVICE_ACCOUNT=$RUNTIME_SA" >> "$GITHUB_ENV"
+
+          gcloud storage buckets add-iam-policy-binding             "gs://$RRGH_PACKAGE_BUCKET"             --member="serviceAccount:$RUNTIME_SA"             --role="roles/storage.objectViewer"             --quiet
+
+      - name: Seed exact package catalog metadata
+        run: node backend/scripts/seed-package-catalog.mjs
+        env:
+          RRGH_PACKAGE_BUCKET: ${{ env.RRGH_PACKAGE_BUCKET }}
+          RRGH_ROUTE_PACKAGE_DIR: ${{ env.RRGH_ROUTE_PACKAGE_DIR }}
+          RRGH_BASE_PACKAGE_PATH: ${{ env.RRGH_BASE_PACKAGE_PATH }}
+          RRGH_BASE_MANIFEST_PATH: ${{ env.RRGH_BASE_MANIFEST_PATH }}
 
       - name: Verify deployed Function inventory
         working-directory: backend
         run: |
           npx --yes firebase-tools@15.30.2 functions:list --project rrgh-nonproduction
-          gcloud functions describe rrghAccountApi \
-            --gen2 \
-            --region=us-east5 \
-            --project=rrgh-nonproduction \
-            --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime)'
+          gcloud functions describe rrghAccountApi             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime,serviceConfig.serviceAccountEmail)'
+          gcloud functions describe rrghPackageDownload             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='table(name,state,serviceConfig.availableMemory,buildConfig.runtime,serviceConfig.serviceAccountEmail)'
+
+      - name: Verify private object metadata and no public object path
+        shell: bash
+        run: |
+          set -euo pipefail
+          for object in             "packages/routes/route-rte-0001/1/route.geojson"             "packages/routes/route-rte-0002/1/route.geojson"             "packages/offline/gorge-base/$GORGE_BASE_VERSION/gorge-base.rrghpkg"; do
+            gcloud storage objects describe               "gs://$RRGH_PACKAGE_BUCKET/$object"               --format='json(name,size,contentType,metadata)'
+            code="$(curl -sS -o /dev/null -w '%{http_code}'               "https://storage.googleapis.com/$RRGH_PACKAGE_BUCKET/$object")"
+            if [ "$code" = "200" ]; then
+              echo "::error::Protected package object is publicly readable: $object"
+              exit 1
+            fi
+          done
 
       - name: Resolve live endpoint and Firebase API key
         shell: bash
         run: |
           set -euo pipefail
 
-          FUNCTION_URL="$(gcloud functions describe rrghAccountApi \
-            --gen2 \
-            --region=us-east5 \
-            --project=rrgh-nonproduction \
-            --format='value(serviceConfig.uri)')"
+          FUNCTION_URL="$(gcloud functions describe rrghAccountApi             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='value(serviceConfig.uri)')"
+          PACKAGE_DOWNLOAD_URL="$(gcloud functions describe rrghPackageDownload             --gen2             --region="$FUNCTION_REGION"             --project="$PROJECT_ID"             --format='value(serviceConfig.uri)')"
           test -n "$FUNCTION_URL"
+          test -n "$PACKAGE_DOWNLOAD_URL"
           echo "RRGH_FUNCTION_URL=$FUNCTION_URL" >> "$GITHUB_ENV"
+          echo "RRGH_PACKAGE_DOWNLOAD_SERVICE_URL=$PACKAGE_DOWNLOAD_URL" >> "$GITHUB_ENV"
 
-          KEY_RESOURCES="$(gcloud services api-keys list \
-            --project=rrgh-nonproduction \
-            --format='value(name)')"
+          KEY_RESOURCES="$(gcloud services api-keys list             --project=rrgh-nonproduction             --format='value(name)')"
           KEY_COUNT="$(printf '%s\n' "$KEY_RESOURCES" | sed '/^[[:space:]]*$/d' | wc -l)"
           if [ "$KEY_COUNT" -ne 1 ]; then
             echo "Expected exactly one Firebase/Google API key; found $KEY_COUNT." >&2
@@ -117,13 +246,10 @@ jobs:
           fi
           KEY_RESOURCE="$(printf '%s\n' "$KEY_RESOURCES" | head -n 1)"
 
-          API_KEY="$(curl -fsS \
-            -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-            "https://apikeys.googleapis.com/v2/$KEY_RESOURCE/keyString" \
-            | jq -r '.keyString')"
+          API_KEY="$(curl -fsS             -H "Authorization: Bearer $(gcloud auth print-access-token)"             "https://apikeys.googleapis.com/v2/$KEY_RESOURCE/keyString"             | jq -r '.keyString')"
           test -n "$API_KEY" && test "$API_KEY" != "null"
           echo "::add-mask::$API_KEY"
           echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
 
-      - name: Run remote authenticated and security smoke tests
+      - name: Run remote authenticated, integrity, expiry, and security smoke tests
         run: node backend/scripts/nonprod-remote-smoke.mjs
