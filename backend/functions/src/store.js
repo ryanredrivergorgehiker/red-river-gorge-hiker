@@ -5,6 +5,11 @@ import {
   deriveAccess,
   deriveCanonicalEntitlementFromEvidence,
 } from "./domain.js";
+import {
+  issuePackageCapability,
+  packageDescriptor,
+  verifyGovernedObject,
+} from "./packageDelivery.js";
 
 function timestampToMillis(value) {
   if (!value) return null;
@@ -28,33 +33,6 @@ function entitlementRef(db, uid, entitlementId) {
 
 function purchaseEvidenceCollection(db, uid) {
   return accountRef(db, uid).collection("purchaseEvidence");
-}
-
-function unavailableDelivery(reason) {
-  return {
-    ready: false,
-    reason,
-    method: null,
-    httpMethod: null,
-    url: null,
-    expiresAt: null,
-    authorizationScheme: null,
-    authorizationToken: null,
-  };
-}
-
-function packageDescriptor(packageId, packageData, requirement) {
-  return {
-    packageId,
-    packageType: packageData.packageType ?? null,
-    version: packageData.version ?? null,
-    sha256: packageData.sha256 ?? null,
-    byteCount: Number.isSafeInteger(Number(packageData.byteCount))
-      ? Number(packageData.byteCount)
-      : null,
-    requiredEntitlement: requirement,
-    offlineManifest: packageData.offlineManifest ?? null,
-  };
 }
 
 export async function ensureAccount(db, uid, now = Timestamp.now()) {
@@ -237,59 +215,36 @@ export async function authorizeProtectedPackageForUid(
   db,
   uid,
   packageId,
-  { createDelivery = null } = {},
+  {
+    bucket = null,
+    deliveryUrl = null,
+  } = {},
 ) {
-  const state = await getAccountStateForUid(db, uid);
-  if (state.accountStatus !== "active") {
-    return {
-      authorized: false,
-      reason: "account_not_active",
-      requiredEntitlement: null,
-      package: null,
-      delivery: null,
-    };
-  }
-
   const packageSnapshot = await db.collection("packageCatalog").doc(packageId).get();
   if (!packageSnapshot.exists) {
     return {
       authorized: false,
       reason: "package_not_found",
-      requiredEntitlement: null,
-      package: null,
-      delivery: null,
     };
   }
 
   const packageData = packageSnapshot.data() ?? {};
-  if (packageData.lifecycle === "superseded") {
+  if (packageData.active !== true) {
     return {
       authorized: false,
-      reason: "package_superseded",
-      requiredEntitlement: packageData.requiredEntitlement ?? null,
-      package: null,
-      delivery: null,
+      reason: packageData.replacedByPackageId ? "package_superseded" : "package_inactive",
+      replacedByPackageId: packageData.replacedByPackageId ?? null,
     };
   }
 
-  if (packageData.active !== true || packageData.lifecycle !== "active") {
-    return {
-      authorized: false,
-      reason: "package_not_ready",
-      requiredEntitlement: packageData.requiredEntitlement ?? null,
-      package: null,
-      delivery: null,
-    };
-  }
-
+  const state = await getAccountStateForUid(db, uid);
   const requirement = packageData.requiredEntitlement;
-  if (!Object.values(ENTITLEMENTS).includes(requirement)) {
+
+  if (state.accountStatus !== "active") {
     return {
       authorized: false,
-      reason: "package_configuration_invalid",
-      requiredEntitlement: null,
-      package: null,
-      delivery: null,
+      reason: "account_not_active",
+      requiredEntitlement: requirement,
     };
   }
 
@@ -301,39 +256,60 @@ export async function authorizeProtectedPackageForUid(
       authorized: false,
       reason: "not_entitled",
       requiredEntitlement: requirement,
-      package: null,
-      delivery: null,
     };
   }
 
-  const descriptor = packageDescriptor(packageId, packageData, requirement);
+  const descriptor = packageDescriptor(packageId, packageData);
 
-  if (packageData.deliveryState !== "ready") {
+  if (!bucket || !deliveryUrl) {
     return {
       authorized: true,
       reason: null,
       requiredEntitlement: requirement,
       package: descriptor,
-      delivery: unavailableDelivery("package_not_ready"),
+      delivery: {
+        ready: false,
+        reason: "package_delivery_service_unavailable",
+        method: null,
+        url: null,
+        expiresAt: null,
+        capability: null,
+        capabilityHeader: null,
+      },
     };
   }
 
-  if (typeof createDelivery !== "function") {
+  const governedObject = await verifyGovernedObject(bucket, {
+    ...packageData,
+    packageId,
+  });
+
+  if (!governedObject.ready) {
     return {
       authorized: true,
       reason: null,
       requiredEntitlement: requirement,
       package: descriptor,
-      delivery: unavailableDelivery("backend_temporarily_unavailable"),
+      delivery: {
+        ready: false,
+        reason: governedObject.reason,
+        method: null,
+        url: null,
+        expiresAt: null,
+        capability: null,
+        capabilityHeader: null,
+      },
     };
   }
 
-  let delivery;
-  try {
-    delivery = await createDelivery({ packageId, packageData });
-  } catch {
-    delivery = unavailableDelivery("backend_temporarily_unavailable");
-  }
+  const delivery = await issuePackageCapability(db, {
+    uid,
+    packageId,
+    version: packageData.version,
+    requiredEntitlement: requirement,
+    objectPath: packageData.objectPath,
+    deliveryUrl,
+  });
 
   return {
     authorized: true,
