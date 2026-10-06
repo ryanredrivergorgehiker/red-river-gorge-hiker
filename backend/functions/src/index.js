@@ -3,7 +3,12 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { ALLOWED_OPERATIONS } from "./domain.js";
-import { handlePackageDownload } from "./packageDelivery.js";
+import {
+  createProtectedPackageDelivery,
+  parseBearerToken,
+  resolvePackageCapability,
+  validatePackageObject,
+} from "./delivery.js";
 import {
   authorizeProtectedPackageForUid,
   getAccountStateForUid,
@@ -13,13 +18,7 @@ import {
 
 initializeApp();
 const db = getFirestore();
-
-const FUNCTION_REGION = "us-east5";
-const PACKAGE_BUCKET = "rrgh-nonproduction-protected-packages-843975209563";
-const projectId = process.env.GCLOUD_PROJECT || "rrgh-nonproduction";
-const PACKAGE_DOWNLOAD_URL =
-  `https://${FUNCTION_REGION}-${projectId}.cloudfunctions.net/rrghPackageDownload`;
-const packageBucket = getStorage().bucket(PACKAGE_BUCKET);
+const storage = getStorage();
 
 function requireAuthenticatedUid(request) {
   const uid = request.auth?.uid;
@@ -29,9 +28,24 @@ function requireAuthenticatedUid(request) {
   return uid;
 }
 
+function accessKeyForRequirement(requirement) {
+  return requirement === "base" ? "base" : requirement;
+}
+
+function packageError(res, status, reason) {
+  res
+    .status(status)
+    .set("Cache-Control", "private, no-store, max-age=0")
+    .json({
+      error: {
+        reason,
+      },
+    });
+}
+
 export const rrghAccountApi = onCall(
   {
-    region: FUNCTION_REGION,
+    region: "us-east5",
     minInstances: 0,
     maxInstances: 2,
     memory: "256MiB",
@@ -66,9 +80,16 @@ export const rrghAccountApi = onCall(
         if (typeof packageId !== "string" || packageId.length < 1 || packageId.length > 128) {
           throw new HttpsError("invalid-argument", "A valid packageId is required.");
         }
+
         return authorizeProtectedPackageForUid(db, uid, packageId, {
-          bucket: packageBucket,
-          deliveryUrl: PACKAGE_DOWNLOAD_URL,
+          createDelivery: ({ packageId: id, packageData }) =>
+            createProtectedPackageDelivery({
+              db,
+              uid,
+              packageId: id,
+              packageData,
+              storage,
+            }),
         });
       }
 
@@ -88,7 +109,7 @@ export const rrghAccountApi = onCall(
 
 export const rrghPackageDownload = onRequest(
   {
-    region: FUNCTION_REGION,
+    region: "us-east5",
     minInstances: 0,
     maxInstances: 2,
     memory: "256MiB",
@@ -98,12 +119,96 @@ export const rrghPackageDownload = onRequest(
     enforceAppCheck: false,
   },
   async (req, res) => {
-    await handlePackageDownload({
-      req,
-      res,
-      db,
-      bucket: packageBucket,
-      getAccountStateForUid,
+    if (req.method !== "GET") {
+      packageError(res, 405, "method_not_allowed");
+      return;
+    }
+
+    const token = parseBearerToken(req.get("authorization"));
+    if (!token) {
+      packageError(res, 401, "delivery_capability_invalid");
+      return;
+    }
+
+    const resolved = await resolvePackageCapability(db, token);
+    if (!resolved.valid) {
+      packageError(
+        res,
+        resolved.reason === "delivery_capability_expired" ? 410 : 401,
+        resolved.reason,
+      );
+      return;
+    }
+
+    const capability = resolved.capability;
+    const packageSnapshot = await db
+      .collection("packageCatalog")
+      .doc(capability.packageId)
+      .get();
+
+    if (!packageSnapshot.exists) {
+      packageError(res, 409, "package_superseded");
+      return;
+    }
+
+    const packageData = packageSnapshot.data() ?? {};
+    if (
+      packageData.active !== true ||
+      packageData.lifecycle === "superseded" ||
+      packageData.deliveryState !== "ready" ||
+      packageData.version !== capability.packageVersion ||
+      packageData.requiredEntitlement !== capability.requiredEntitlement ||
+      packageData.storageBucket !== capability.storageBucket ||
+      packageData.objectName !== capability.objectName
+    ) {
+      packageError(res, 409, "package_version_superseded");
+      return;
+    }
+
+    const account = await getAccountStateForUid(db, capability.uid);
+    if (account.accountStatus !== "active") {
+      packageError(res, 403, "account_not_active");
+      return;
+    }
+
+    const accessKey = accessKeyForRequirement(
+      packageData.requiredEntitlement,
+    );
+    if (account.access?.[accessKey] !== true) {
+      packageError(res, 403, "not_entitled");
+      return;
+    }
+
+    const object = await validatePackageObject(
+      capability.packageId,
+      packageData,
+      storage,
+    );
+    if (!object.ready) {
+      packageError(
+        res,
+        object.reason === "backend_temporarily_unavailable" ? 503 : 409,
+        object.reason,
+      );
+      return;
+    }
+
+    res.status(200);
+    res.set("Cache-Control", "private, no-store, max-age=0");
+    res.set("Content-Type", packageData.contentType ?? "application/octet-stream");
+    res.set("Content-Length", String(packageData.byteCount));
+    res.set("X-RRGH-Package-Id", capability.packageId);
+    res.set("X-RRGH-Package-Version", packageData.version);
+    res.set("X-RRGH-Package-SHA256", packageData.sha256);
+
+    const stream = object.file.createReadStream();
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        packageError(res, 503, "backend_temporarily_unavailable");
+      } else {
+        res.destroy();
+      }
     });
+    stream.pipe(res);
   },
 );
