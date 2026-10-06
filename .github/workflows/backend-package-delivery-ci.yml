@@ -1,0 +1,60 @@
+name: Backend Package Delivery CI
+
+on:
+  push:
+    branches:
+      - backend/protected-package-delivery-v1
+  pull_request:
+    branches:
+      - backend/phase-3-nonprod
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-package-delivery-ci.yml"
+      - ".github/workflows/backend-nonprod-deploy.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  delivery-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Use Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Verify shell and JavaScript syntax
+        run: |
+          bash -n backend/scripts/build-gorge-base.sh
+          bash -n backend/scripts/stage-governed-route-packages.sh
+          node --check backend/scripts/seed-package-catalog.mjs
+          node --check backend/scripts/nonprod-remote-smoke.mjs
+          node --check backend/functions/src/index.js
+          node --check backend/functions/src/store.js
+          node --check backend/functions/src/delivery.js
+
+      - name: Verify nonproduction guardrails
+        run: node backend/scripts/phase3-readiness.mjs
+
+      - name: Install backend dependencies
+        run: npm install --prefix backend/functions --no-audit --no-fund
+
+      - name: Run Firebase emulator contract with deny-all Storage
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --project demo-rrgh-entitlements
+          --only auth,firestore,functions,storage
+          "npm --prefix functions test"
