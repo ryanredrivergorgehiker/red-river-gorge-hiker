@@ -151,6 +151,49 @@ export async function createProtectedPackageDelivery({
   };
 }
 
+export const DIRECT_READ_TTL_SECONDS = 60;
+
+export async function createSignedPackageReadUrl(
+  file,
+  capabilityExpiresAt,
+  nowMs = Date.now(),
+) {
+  const capabilityExpiresAtMs =
+    typeof capabilityExpiresAt?.toMillis === "function"
+      ? capabilityExpiresAt.toMillis()
+      : Number(capabilityExpiresAt);
+
+  if (
+    !Number.isFinite(capabilityExpiresAtMs) ||
+    capabilityExpiresAtMs <= nowMs
+  ) {
+    throw new Error("delivery_capability_expired");
+  }
+
+  const directExpiresAtMs = Math.min(
+    capabilityExpiresAtMs,
+    nowMs + DIRECT_READ_TTL_SECONDS * 1000,
+  );
+
+  const [url] = await file.getSignedUrl({
+    version: "v4",
+    action: "read",
+    expires: new Date(directExpiresAtMs),
+  });
+
+  if (
+    typeof url !== "string" ||
+    !url.startsWith("https://")
+  ) {
+    throw new Error("signed_package_url_invalid");
+  }
+
+  return {
+    url,
+    expiresAtMs: directExpiresAtMs,
+  };
+}
+
 export async function resolvePackageCapability(
   db,
   token,
