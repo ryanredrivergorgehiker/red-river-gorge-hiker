@@ -50,22 +50,13 @@ KYFROMABOVE_OUT="$ROOT/layers/terrain/kyfromabove-hillshade.tif"
 curl --fail --location --retry 4 --retry-all-errors   --get "$KYFROMABOVE_SERVICE/exportImage"   --data-urlencode "bbox=$BBOX"   --data-urlencode "bboxSR=4326"   --data-urlencode "imageSR=3857"   --data-urlencode "size=4096,3072"   --data-urlencode "format=tiff"   --data-urlencode "interpolation=RSP_BilinearInterpolation"   --data-urlencode "f=image"   -o "$KYFROMABOVE_OUT"
 test -s "$KYFROMABOVE_OUT"
 
-# 2. USGS NHDPlus High Resolution, HUC4 0510 — fixed downloadable snapshot.
-USGS_NHD_URL="https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/Hydrography/NHDPlus/HU4/HighResolution/GDB/NHDPLUS_H_0510_HU4_GDB.zip"
-USGS_ZIP="$DOWNLOADS/NHDPLUS_H_0510_HU4_GDB.zip"
-download "$USGS_NHD_URL" "$USGS_ZIP"
-mkdir -p "$DOWNLOADS/nhd"
-unzip -q "$USGS_ZIP" -d "$DOWNLOADS/nhd"
-NHD_GDB="$(find "$DOWNLOADS/nhd" -type d -name '*.gdb' | head -n 1)"
-test -n "$NHD_GDB"
-
-FLOW_LAYER="$(ogrinfo -ro "$NHD_GDB" 2>/dev/null | sed -n 's/^[0-9][0-9]*: \([^ ]*NHDFlowline[^ ]*\).*/\1/p' | head -n 1)"
-WATER_LAYER="$(ogrinfo -ro "$NHD_GDB" 2>/dev/null | sed -n 's/^[0-9][0-9]*: \([^ ]*NHDWaterbody[^ ]*\).*/\1/p' | head -n 1)"
-test -n "$FLOW_LAYER"
-test -n "$WATER_LAYER"
-
-ogr2ogr -f GeoJSON   -t_srs EPSG:4326   -spat "$WEST" "$SOUTH" "$EAST" "$NORTH"   -spat_srs EPSG:4326   "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson"   "$NHD_GDB" "$FLOW_LAYER"
-ogr2ogr -f GeoJSON   -t_srs EPSG:4326   -spat "$WEST" "$SOUTH" "$EAST" "$NORTH"   -spat_srs EPSG:4326   "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson"   "$NHD_GDB" "$WATER_LAYER"
+# 2. USGS NHDPlus High Resolution — fixed bounded build-time snapshot from the
+# official National Map service. This avoids relying on a legacy bulk-download
+# redirect while still producing immutable package bytes with retrieval time and
+# output hashes frozen in the manifest.
+USGS_NHD_SERVICE="https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer"
+arcgis_geojson "$USGS_NHD_SERVICE/3" "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson"
+arcgis_geojson "$USGS_NHD_SERVICE/9" "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson"
 
 # 3. 2025 Census TIGER/Line county Roads — latest published county Roads snapshot for Powell, Wolfe, Menifee, Lee.
 CENSUS_BASE="https://www2.census.gov/geo/tiger/TIGER2025/ROADS"
@@ -179,7 +170,7 @@ PACKAGE_SHA="$(hash_file "$PACKAGE")"
 PACKAGE_BYTES="$(stat -c '%s' "$PACKAGE")"
 
 # External manifest shape is exactly the Lane 21 OfflinePackageManifest contract.
-jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg nhdUrl "$USGS_NHD_URL"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
+jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg nhdUrl "$USGS_NHD_SERVICE"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
     packageID:$packageID,
     version:$version,
     byteCount:$byteCount,
@@ -202,8 +193,8 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceURL:$nhdUrl,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HUC4 0510 NHDFlowline clipped to WGS84 bbox " + $bbox),
-        processingMethod:"Downloaded fixed NHDPlus HR HU4 geodatabase package; ogr2ogr bounded clip/reprojection to GeoJSON.",
+        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NetworkNHDFlowline layer 3 queried within WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
@@ -214,7 +205,7 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceURL:$nhdUrl,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HUC4 0510 NHDWaterbody clipped to WGS84 bbox " + $bbox),
+        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NHDWaterbody layer 9 queried within WGS84 bbox " + $bbox),
         processingMethod:"Downloaded fixed NHDPlus HR HU4 geodatabase package; ogr2ogr bounded clip/reprojection to GeoJSON.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
