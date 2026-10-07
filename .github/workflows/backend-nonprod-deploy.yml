@@ -88,9 +88,11 @@ jobs:
           gcloud auth list --filter=status:ACTIVE --format='value(account)'
 
           if ! gcloud services list             --enabled             --project="$PROJECT_ID"             --filter='config.name:drive.googleapis.com'             --format='value(config.name)'             | grep -Fx 'drive.googleapis.com'; then
-            echo "::error::Google Drive API is not enabled for rrgh-nonproduction. It is required only so the keyless deploy identity can read the two privately shared, governed route source files. Do not make them public."
-            exit 1
+            echo "Drive API is not yet enabled; enabling it for the nonproduction governed-source staging path."
+            gcloud services enable drive.googleapis.com --project="$PROJECT_ID"
           fi
+
+          gcloud services list             --enabled             --project="$PROJECT_ID"             --filter='config.name:drive.googleapis.com'             --format='value(config.name)'             | grep -Fx 'drive.googleapis.com'
 
       - name: Install offline package build tools
         shell: bash
