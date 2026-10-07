@@ -147,8 +147,7 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
     areaOfInterest:{bboxWgs84:$bbox,note:"RRGH supported-area build AOI; not a legal boundary"},
     sourceArchiveIntegrity:{
       geofabrikKentuckyPbfSHA256:$osmSourceSha,
-      kgsOilGasZipSHA256:$kgsSourceSha,
-      usgsNhdPlusHuc4ZipSHA256:$usgsSourceSha
+      kgsOilGasZipSHA256:$kgsSourceSha
     },
     exclusions:{
       protectedRouteGeometry:"Delivered as separately entitlement-authorized route packages; not embedded in Gorge Base.",
