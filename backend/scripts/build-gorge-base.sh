@@ -44,6 +44,79 @@ hash_file() {
   sha256sum "$1" | awk '{print $1}'
 }
 
+arcgis_geojson_tiled() {
+  local layer_url="$1"
+  local output="$2"
+  local out_fields="$3"
+  local work_dir="$4"
+
+  mkdir -p "$work_dir"
+
+  local mid_lon="-83.60"
+  local mid_lat="37.80"
+  local boxes=(
+    "$WEST,$SOUTH,$mid_lon,$mid_lat"
+    "$mid_lon,$SOUTH,$EAST,$mid_lat"
+    "$WEST,$mid_lat,$mid_lon,$NORTH"
+    "$mid_lon,$mid_lat,$EAST,$NORTH"
+  )
+
+  local parts=()
+  local index=0
+  for bbox in "${boxes[@]}"; do
+    local part="$work_dir/part-$index.geojson"
+    curl --fail --location --retry 6 --retry-all-errors \
+      --retry-delay 3 --retry-max-time 600 \
+      --connect-timeout 30 --max-time 120 \
+      --get "$layer_url/query" \
+      --data-urlencode "where=1=1" \
+      --data-urlencode "geometry=$bbox" \
+      --data-urlencode "geometryType=esriGeometryEnvelope" \
+      --data-urlencode "inSR=4326" \
+      --data-urlencode "outSR=4326" \
+      --data-urlencode "spatialRel=esriSpatialRelIntersects" \
+      --data-urlencode "outFields=$out_fields" \
+      --data-urlencode "returnGeometry=true" \
+      --data-urlencode "returnZ=false" \
+      --data-urlencode "returnM=false" \
+      --data-urlencode "geometryPrecision=6" \
+      --data-urlencode "resultRecordCount=2000" \
+      --data-urlencode "f=geojson" \
+      -o "$part"
+
+    jq -e '
+      .type == "FeatureCollection"
+      and (.features | type == "array")
+      and (.exceededTransferLimit // false | not)
+    ' "$part" >/dev/null
+
+    parts+=("$part")
+    index=$((index + 1))
+  done
+
+  jq -s '
+    {
+      type:"FeatureCollection",
+      features:
+        (
+          [.[].features[]]
+          | unique_by(
+              .properties.OBJECTID
+              // .properties.objectid
+              // .properties.NHDPlusID
+              // .properties.nhdplusid
+              // (.geometry | tostring)
+            )
+        )
+    }
+  ' "${parts[@]}" > "$output"
+
+  jq -e '
+    .type == "FeatureCollection"
+    and (.features | type == "array")
+  ' "$output" >/dev/null
+}
+
 # 1. Terrain / hillshade — exact KyFromAbove ImageServer export, bounded to RRGH AOI.
 KYFROMABOVE_SERVICE="https://kyraster.ky.gov/arcgis/rest/services/ElevationServices/Ky_DEM_KYAPED_2FT_Phase3_MultiDirectionalHillshade_WGS84WM/ImageServer"
 KYFROMABOVE_OUT="$ROOT/layers/terrain/kyfromabove-hillshade.tif"
@@ -62,8 +135,16 @@ test -s "$NATIVE_HILLSHADE"
 # redirect while still producing immutable package bytes with retrieval time and
 # output hashes frozen in the manifest.
 USGS_NHD_SERVICE="https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer"
-arcgis_geojson "$USGS_NHD_SERVICE/3" "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson"
-arcgis_geojson "$USGS_NHD_SERVICE/9" "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson"
+arcgis_geojson_tiled \
+  "$USGS_NHD_SERVICE/3" \
+  "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson" \
+  "OBJECTID,NHDPlusID,GNIS_NAME,FTYPE,FCODE" \
+  "$DOWNLOADS/nhd-flowline-parts"
+arcgis_geojson_tiled \
+  "$USGS_NHD_SERVICE/9" \
+  "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson" \
+  "OBJECTID,NHDPlusID,GNIS_NAME,FTYPE,FCODE" \
+  "$DOWNLOADS/nhd-waterbody-parts"
 
 # 3. 2025 Census TIGER/Line county Roads — latest published county Roads snapshot for Powell, Wolfe, Menifee, Lee.
 CENSUS_BASE="https://www2.census.gov/geo/tiger/TIGER2025/ROADS"
