@@ -265,7 +265,7 @@ KGS_SOURCE_SHA="$(hash_file "$KGS_ZIP")"
 
 cat > "$ROOT/NATIVE-MAP.json" <<EOF
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "archiveFormat": "tar",
   "packageID": "gorge-base",
   "packageVersion": "$PACKAGE_VERSION",
