@@ -253,16 +253,7 @@ jobs:
             --non-interactive \
             > /tmp/rrgh-ios-GoogleService-Info.plist
 
-          API_KEY="$(python3 - <<'PY'
-import plistlib
-with open("/tmp/rrgh-ios-GoogleService-Info.plist", "rb") as f:
-    p = plistlib.load(f)
-assert p["BUNDLE_ID"] == "com.redrivergorgehiker.ios"
-assert p["PROJECT_ID"] == "rrgh-nonproduction"
-assert p["GOOGLE_APP_ID"] == "1:843975209563:ios:68d59290136388c8f0857e"
-print(p["API_KEY"], end="")
-PY
-)"
+          API_KEY="$(python3 -c 'import plistlib; p=plistlib.load(open("/tmp/rrgh-ios-GoogleService-Info.plist","rb")); assert p["BUNDLE_ID"]=="com.redrivergorgehiker.ios"; assert p["PROJECT_ID"]=="rrgh-nonproduction"; assert p["GOOGLE_APP_ID"]=="1:843975209563:ios:68d59290136388c8f0857e"; print(p["API_KEY"], end="")')"
           test -n "$API_KEY"
           echo "::add-mask::$API_KEY"
           echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
