@@ -2,7 +2,7 @@
 set -euo pipefail
 
 OUTPUT_DIR="${1:-/tmp/rrgh-gorge-base}"
-PACKAGE_VERSION="${2:-2026.10.07.1}"
+PACKAGE_VERSION="${2:-2026.10.07.2}"
 BBOX="-83.80,37.65,-83.40,37.95"
 WEST="-83.80"
 SOUTH="37.65"
@@ -18,7 +18,7 @@ PACKAGE="$OUTPUT_DIR/gorge-base-${PACKAGE_VERSION}.rrghpkg"
 rm -rf "$OUTPUT_DIR"
 mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/native"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
 
-for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gdal_translate tar; do
+for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gdal_translate gdalinfo tar; do
   command -v "$command" >/dev/null || {
     echo "Missing required build command: $command" >&2
     exit 1
@@ -135,6 +135,24 @@ NATIVE_HILLSHADE="$ROOT/native/terrain-relief.png"
 gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
 test -s "$NATIVE_HILLSHADE"
 
+# Offline topographic backdrop — one bounded USGS Topo MapServer export.
+# This is a single governed federal-source export for the RRGH AOI, not tile
+# scraping. The native app uses it only when network access is unavailable.
+USGS_TOPO_SERVICE="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer"
+NATIVE_USGS_TOPO="$ROOT/native/usgs-topo.png"
+curl --fail --location --retry 4 --retry-all-errors \
+  --get "$USGS_TOPO_SERVICE/export" \
+  --data-urlencode "bbox=$BBOX" \
+  --data-urlencode "bboxSR=4326" \
+  --data-urlencode "imageSR=3857" \
+  --data-urlencode "size=4096,3072" \
+  --data-urlencode "format=png32" \
+  --data-urlencode "transparent=false" \
+  --data-urlencode "f=image" \
+  -o "$NATIVE_USGS_TOPO"
+test -s "$NATIVE_USGS_TOPO"
+gdalinfo "$NATIVE_USGS_TOPO" >/dev/null
+
 # 2. USGS 3D Hydrography Program — current official bounded snapshot.
 # The retired NHDPlus_HR nationwide service and staged rockyweb product both
 # proved unreliable for deterministic CI retrieval. 3DHP_all is the current
@@ -241,6 +259,7 @@ USFS_OWNER_SHA="$(hash_file "$ROOT/layers/forest/usfs-basic-ownership.geojson")"
 OSM_SHA="$(hash_file "$ROOT/layers/osm/osm-community-local-context.geojson")"
 KGS_SHA="$(hash_file "$ROOT/layers/kgs/kgs-oil-gas-wells.geojson")"
 NATIVE_HILLSHADE_SHA="$(hash_file "$NATIVE_HILLSHADE")"
+NATIVE_USGS_TOPO_SHA="$(hash_file "$NATIVE_USGS_TOPO")"
 OSM_SOURCE_SHA="$(hash_file "$OSM_SOURCE")"
 KGS_SOURCE_SHA="$(hash_file "$KGS_ZIP")"
 
@@ -255,6 +274,10 @@ cat > "$ROOT/NATIVE-MAP.json" <<EOF
     "south": $SOUTH,
     "east": $EAST,
     "north": $NORTH
+  },
+  "usgsTopo": {
+    "path": "native/usgs-topo.png",
+    "sha256": "$NATIVE_USGS_TOPO_SHA"
   },
   "terrainRelief": {
     "path": "native/terrain-relief.png",
@@ -306,12 +329,24 @@ PACKAGE_SHA="$(hash_file "$PACKAGE")"
 PACKAGE_BYTES="$(stat -c '%s' "$PACKAGE")"
 
 # External manifest shape is exactly the Lane 21 OfflinePackageManifest contract.
-jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg nhdUrl "$USGS_NHD_PRODUCT"   --arg nhdSourceSha "$NHD_SOURCE_SHA"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
+jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg usgsTopoUrl "$USGS_TOPO_SERVICE"   --arg usgsTopoSha "$NATIVE_USGS_TOPO_SHA"   --arg nhdUrl "$USGS_NHD_PRODUCT"   --arg nhdSourceSha "$NHD_SOURCE_SHA"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
     packageID:$packageID,
     version:$version,
     byteCount:$byteCount,
     sha256:$sha256,
     sources:[
+      {
+        sourceID:"usgs-topo-offline",
+        sourceURL:$usgsTopoUrl,
+        provider:"U.S. Geological Survey / The National Map",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("USGS Topo MapServer single bounded export for WGS84 bbox " + $bbox),
+        processingMethod:"Single official MapServer export request to PNG for the fixed RRGH AOI; no tile scraping; packaged as the native no-network topographic backdrop.",
+        rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
+        attributionOrDisclaimer:"USGS / The National Map. Fixed contextual topographic snapshot; verify current conditions and access independently.",
+        outputVersion:$version,
+        integritySHA256:$usgsTopoSha
+      },
       {
         sourceID:"kyfromabove-hillshade",
         sourceURL:$kyUrl,
@@ -429,7 +464,7 @@ jq -e   '.packageID == "gorge-base"
    and (.version | length > 0)
    and (.byteCount > 0)
    and (.sha256 | length == 64)
-   and (.sources | length == 9)
+   and (.sources | length == 10)
    and all(.sources[];
      (.sourceID | length > 0)
      and (.sourceURL | length > 0)
