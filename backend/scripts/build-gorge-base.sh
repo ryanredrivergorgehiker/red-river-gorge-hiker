@@ -47,51 +47,58 @@ hash_file() {
 arcgis_geojson_tiled() {
   local layer_url="$1"
   local output="$2"
-  local out_fields="$3"
-  local work_dir="$4"
+  local work_dir="$3"
 
   mkdir -p "$work_dir"
 
-  local mid_lon="-83.60"
-  local mid_lat="37.80"
-  local boxes=(
-    "$WEST,$SOUTH,$mid_lon,$mid_lat"
-    "$mid_lon,$SOUTH,$EAST,$mid_lat"
-    "$WEST,$mid_lat,$mid_lon,$NORTH"
-    "$mid_lon,$mid_lat,$EAST,$NORTH"
+  # The national NHDPlus_HR dynamic service can stall on denser Gorge
+  # quadrants even when the overall AOI is small. Query a deterministic 4x4
+  # grid and request geometry plus OBJECTID only; native rendering does not
+  # consume the remaining NHD attributes.
+  local lon_edges=(
+    "-83.80" "-83.70" "-83.60" "-83.50" "-83.40"
+  )
+  local lat_edges=(
+    "37.65" "37.725" "37.80" "37.875" "37.95"
   )
 
   local parts=()
   local index=0
-  for bbox in "${boxes[@]}"; do
-    local part="$work_dir/part-$index.geojson"
-    curl --fail --location --retry 6 --retry-all-errors \
-      --retry-delay 3 --retry-max-time 600 \
-      --connect-timeout 30 --max-time 120 \
-      --get "$layer_url/query" \
-      --data-urlencode "where=1=1" \
-      --data-urlencode "geometry=$bbox" \
-      --data-urlencode "geometryType=esriGeometryEnvelope" \
-      --data-urlencode "inSR=4326" \
-      --data-urlencode "outSR=4326" \
-      --data-urlencode "spatialRel=esriSpatialRelIntersects" \
-      --data-urlencode "outFields=$out_fields" \
-      --data-urlencode "returnGeometry=true" \
-      --data-urlencode "returnZ=false" \
-      --data-urlencode "returnM=false" \
-      --data-urlencode "geometryPrecision=6" \
-      --data-urlencode "resultRecordCount=2000" \
-      --data-urlencode "f=geojson" \
-      -o "$part"
+  local row col
+  for row in 0 1 2 3; do
+    for col in 0 1 2 3; do
+      local bbox="${lon_edges[$col]},${lat_edges[$row]},${lon_edges[$((col + 1))]},${lat_edges[$((row + 1))]}"
+      local part="$work_dir/part-$index.geojson"
 
-    jq -e '
-      .type == "FeatureCollection"
-      and (.features | type == "array")
-      and (.exceededTransferLimit // false | not)
-    ' "$part" >/dev/null
+      echo "USGS NHDPlus_HR tile $index bbox=$bbox"
+      curl --fail --location --retry 4 --retry-all-errors \
+        --retry-delay 2 --retry-max-time 300 \
+        --connect-timeout 20 --max-time 60 \
+        --get "$layer_url/query" \
+        --data-urlencode "where=1=1" \
+        --data-urlencode "geometry=$bbox" \
+        --data-urlencode "geometryType=esriGeometryEnvelope" \
+        --data-urlencode "inSR=4326" \
+        --data-urlencode "outSR=4326" \
+        --data-urlencode "spatialRel=esriSpatialRelIntersects" \
+        --data-urlencode "outFields=OBJECTID" \
+        --data-urlencode "returnGeometry=true" \
+        --data-urlencode "returnZ=false" \
+        --data-urlencode "returnM=false" \
+        --data-urlencode "geometryPrecision=5" \
+        --data-urlencode "resultRecordCount=2000" \
+        --data-urlencode "f=geojson" \
+        -o "$part"
 
-    parts+=("$part")
-    index=$((index + 1))
+      jq -e '
+        .type == "FeatureCollection"
+        and (.features | type == "array")
+        and (.exceededTransferLimit // false | not)
+      ' "$part" >/dev/null
+
+      parts+=("$part")
+      index=$((index + 1))
+    done
   done
 
   jq -s '
@@ -103,8 +110,6 @@ arcgis_geojson_tiled() {
           | unique_by(
               .properties.OBJECTID
               // .properties.objectid
-              // .properties.NHDPlusID
-              // .properties.nhdplusid
               // (.geometry | tostring)
             )
         )
@@ -138,12 +143,10 @@ USGS_NHD_SERVICE="https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/
 arcgis_geojson_tiled \
   "$USGS_NHD_SERVICE/3" \
   "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson" \
-  "OBJECTID,NHDPlusID,GNIS_NAME,FTYPE,FCODE" \
   "$DOWNLOADS/nhd-flowline-parts"
 arcgis_geojson_tiled \
   "$USGS_NHD_SERVICE/9" \
   "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson" \
-  "OBJECTID,NHDPlusID,GNIS_NAME,FTYPE,FCODE" \
   "$DOWNLOADS/nhd-waterbody-parts"
 
 # 3. 2025 Census TIGER/Line county Roads — latest published county Roads snapshot for Powell, Wolfe, Menifee, Lee.
