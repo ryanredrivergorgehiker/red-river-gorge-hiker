@@ -113,7 +113,7 @@ validateOfflineManifest(baseManifest);
 if (baseManifest.packageID !== "gorge-base") {
   throw new Error("Unexpected Gorge Base packageID.");
 }
-if (baseManifest.version !== "2026.10.06.1") {
+if (baseManifest.version !== "2026.10.07.1") {
   throw new Error("Unexpected Gorge Base package version.");
 }
 assertExactFile(

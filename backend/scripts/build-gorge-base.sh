@@ -2,7 +2,7 @@
 set -euo pipefail
 
 OUTPUT_DIR="${1:-/tmp/rrgh-gorge-base}"
-PACKAGE_VERSION="${2:-2026.10.06.1}"
+PACKAGE_VERSION="${2:-2026.10.07.1}"
 BBOX="-83.80,37.65,-83.40,37.95"
 WEST="-83.80"
 SOUTH="37.65"
@@ -16,9 +16,9 @@ MANIFEST="$OUTPUT_DIR/gorge-base-manifest.json"
 PACKAGE="$OUTPUT_DIR/gorge-base-${PACKAGE_VERSION}.rrghpkg"
 
 rm -rf "$OUTPUT_DIR"
-mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
+mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/native"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
 
-for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gzip tar; do
+for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gdal_translate tar; do
   command -v "$command" >/dev/null || {
     echo "Missing required build command: $command" >&2
     exit 1
@@ -49,6 +49,13 @@ KYFROMABOVE_SERVICE="https://kyraster.ky.gov/arcgis/rest/services/ElevationServi
 KYFROMABOVE_OUT="$ROOT/layers/terrain/kyfromabove-hillshade.tif"
 curl --fail --location --retry 4 --retry-all-errors   --get "$KYFROMABOVE_SERVICE/exportImage"   --data-urlencode "bbox=$BBOX"   --data-urlencode "bboxSR=4326"   --data-urlencode "imageSR=3857"   --data-urlencode "size=4096,3072"   --data-urlencode "format=tiff"   --data-urlencode "interpolation=RSP_BilinearInterpolation"   --data-urlencode "f=image"   -o "$KYFROMABOVE_OUT"
 test -s "$KYFROMABOVE_OUT"
+
+# Native offline renderer derivative. This is built from the exact governed
+# hillshade export above so the app can render terrain without requiring
+# MapKit/third-party network tiles in the field.
+NATIVE_HILLSHADE="$ROOT/native/terrain-relief.png"
+gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
+test -s "$NATIVE_HILLSHADE"
 
 # 2. USGS NHDPlus High Resolution — fixed bounded build-time snapshot from the
 # official National Map service. This avoids relying on a legacy bulk-download
@@ -137,8 +144,38 @@ USFS_ROADS_SHA="$(hash_file "$ROOT/layers/forest/usfs-nfs-roads.geojson")"
 USFS_OWNER_SHA="$(hash_file "$ROOT/layers/forest/usfs-basic-ownership.geojson")"
 OSM_SHA="$(hash_file "$ROOT/layers/osm/osm-community-local-context.geojson")"
 KGS_SHA="$(hash_file "$ROOT/layers/kgs/kgs-oil-gas-wells.geojson")"
+NATIVE_HILLSHADE_SHA="$(hash_file "$NATIVE_HILLSHADE")"
 OSM_SOURCE_SHA="$(hash_file "$OSM_SOURCE")"
 KGS_SOURCE_SHA="$(hash_file "$KGS_ZIP")"
+
+cat > "$ROOT/NATIVE-MAP.json" <<EOF
+{
+  "schemaVersion": 1,
+  "archiveFormat": "tar",
+  "packageID": "gorge-base",
+  "packageVersion": "$PACKAGE_VERSION",
+  "boundsWgs84": {
+    "west": $WEST,
+    "south": $SOUTH,
+    "east": $EAST,
+    "north": $NORTH
+  },
+  "terrainRelief": {
+    "path": "native/terrain-relief.png",
+    "sha256": "$NATIVE_HILLSHADE_SHA"
+  },
+  "vectors": [
+    {"id":"hydro-flowline","path":"layers/hydrography/usgs-nhd-flowline.geojson","sha256":"$NHD_FLOW_SHA"},
+    {"id":"hydro-waterbody","path":"layers/hydrography/usgs-nhd-waterbody.geojson","sha256":"$NHD_WATER_SHA"},
+    {"id":"local-roads","path":"layers/roads/census-tiger-roads.geojson","sha256":"$CENSUS_SHA"},
+    {"id":"forest-service-trails","path":"layers/forest/usfs-nfs-trails.geojson","sha256":"$USFS_TRAILS_SHA"},
+    {"id":"forest-service-roads","path":"layers/forest/usfs-nfs-roads.geojson","sha256":"$USFS_ROADS_SHA"},
+    {"id":"forest-ownership","path":"layers/forest/usfs-basic-ownership.geojson","sha256":"$USFS_OWNER_SHA"},
+    {"id":"community-informal","path":"layers/osm/osm-community-local-context.geojson","sha256":"$OSM_SHA"},
+    {"id":"oil-gas-wells","path":"layers/kgs/kgs-oil-gas-wells.geojson","sha256":"$KGS_SHA"}
+  ]
+}
+EOF
 
 jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"    '{
     packageID:"gorge-base",
@@ -154,15 +191,20 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
       streamStats:"Paid connected-only under LEG-DEC-0033; no offline substitute.",
       parcels:"Excluded pending exact authorized source.",
       gaiaCalTopoPublicTiles:"Excluded; no proprietary/public tile scraping.",
-      scheduledWeather:"Separate timestamped refresh package/workflow; not silently represented as static Gorge Base data."
+      scheduledWeather:"Separate timestamped refresh package/workflow; not silently represented as static Gorge Base data.",
+      archiveFormat:"Plain deterministic tar so the native app can safely extract verified package members without a third-party decompression dependency."
     }
   }' > "$ROOT/BUILD-PROVENANCE.json"
 
 # Deterministic archive framing for these exact built files.
+# Version 2026.10.07.1 moves Gorge Base to a plain tar container. The package
+# remains immutable and SHA-256 verified before install; the native client can
+# now extract governed components using a small fail-closed tar reader rather
+# than treating the offline package as an opaque blob.
 (
   cd "$ROOT"
-  tar --sort=name     --mtime='UTC 2026-10-06 00:00:00'     --owner=0 --group=0 --numeric-owner     -cf - .
-) | gzip -n > "$PACKAGE"
+  tar --sort=name     --mtime='UTC 2026-10-07 00:00:00'     --owner=0 --group=0 --numeric-owner     -cf "$PACKAGE" .
+)
 
 PACKAGE_SHA="$(hash_file "$PACKAGE")"
 PACKAGE_BYTES="$(stat -c '%s' "$PACKAGE")"
