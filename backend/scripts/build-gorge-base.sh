@@ -51,7 +51,7 @@ curl --fail --location --retry 4 --retry-all-errors   --get "$KYFROMABOVE_SERVIC
 test -s "$KYFROMABOVE_OUT"
 
 # 2. USGS NHDPlus High Resolution, HUC4 0510 — fixed downloadable snapshot.
-USGS_NHD_URL="https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlus/HU4/HighResolution/GDB/NHDPLUS_H_0510_HU4_GDB.zip"
+USGS_NHD_URL="https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/Hydrography/NHDPlus/HU4/HighResolution/GDB/NHDPLUS_H_0510_HU4_GDB.zip"
 USGS_ZIP="$DOWNLOADS/NHDPLUS_H_0510_HU4_GDB.zip"
 download "$USGS_NHD_URL" "$USGS_ZIP"
 mkdir -p "$DOWNLOADS/nhd"
@@ -67,13 +67,13 @@ test -n "$WATER_LAYER"
 ogr2ogr -f GeoJSON   -t_srs EPSG:4326   -spat "$WEST" "$SOUTH" "$EAST" "$NORTH"   -spat_srs EPSG:4326   "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson"   "$NHD_GDB" "$FLOW_LAYER"
 ogr2ogr -f GeoJSON   -t_srs EPSG:4326   -spat "$WEST" "$SOUTH" "$EAST" "$NORTH"   -spat_srs EPSG:4326   "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson"   "$NHD_GDB" "$WATER_LAYER"
 
-# 3. 2026 Census TIGER/Line county Roads — Powell, Wolfe, Menifee, Lee.
-CENSUS_BASE="https://www2.census.gov/geo/tiger/TIGER2026/ROADS"
+# 3. 2025 Census TIGER/Line county Roads — latest published county Roads snapshot for Powell, Wolfe, Menifee, Lee.
+CENSUS_BASE="https://www2.census.gov/geo/tiger/TIGER2025/ROADS"
 : > "$DOWNLOADS/census-features.ndjson"
 for fips in 21129 21165 21197 21237; do
-  ZIP="$DOWNLOADS/tl_2026_${fips}_roads.zip"
+  ZIP="$DOWNLOADS/tl_2025_${fips}_roads.zip"
   DIR="$DOWNLOADS/census-${fips}"
-  download "$CENSUS_BASE/tl_2026_${fips}_roads.zip" "$ZIP"
+  download "$CENSUS_BASE/tl_2025_${fips}_roads.zip" "$ZIP"
   mkdir -p "$DIR"
   unzip -q "$ZIP" -d "$DIR"
   SHP="$(find "$DIR" -type f -name '*.shp' | head -n 1)"
@@ -225,9 +225,9 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceID:"census-tiger-roads",
         sourceURL:$censusUrl,
         provider:"U.S. Census Bureau",
-        vintageOrRetrievedAt:"2026 TIGER/Line Roads",
-        areaOfInterestOrSourceObjects:("Lee 21129, Menifee 21165, Powell 21197, Wolfe 21237 county Roads clipped to WGS84 bbox " + $bbox),
-        processingMethod:"Downloaded official 2026 county Roads shapefiles; ogr2ogr bounded clip/reprojection; merged as one GeoJSON FeatureCollection.",
+        vintageOrRetrievedAt:"2025 TIGER/Line Roads",
+        areaOfInterestOrSourceObjects:("Lee 21129, Menifee 21165, Powell 21197, Wolfe 21237 county Roads from the latest published 2025 TIGER/Line Roads release, clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Downloaded official 2025 county Roads shapefiles; ogr2ogr bounded clip/reprojection; merged as one GeoJSON FeatureCollection.",
         rightsBasis:"U.S. Census Bureau public-use federal geographic data; LEG-DEC-0033 / LEG-REF-0040.",
         attributionOrDisclaimer:"U.S. Census Bureau TIGER/Line; road context is informational and does not establish current access, drivability, closure status, title or legal boundary.",
         outputVersion:$version,
