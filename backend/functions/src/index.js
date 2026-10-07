@@ -5,6 +5,7 @@ import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { ALLOWED_OPERATIONS } from "./domain.js";
 import {
   createProtectedPackageDelivery,
+  createSignedPackageReadUrl,
   parseBearerToken,
   resolvePackageCapability,
   validatePackageObject,
@@ -193,22 +194,57 @@ export const rrghPackageDownload = onRequest(
       return;
     }
 
-    res.status(200);
-    res.set("Cache-Control", "private, no-store, max-age=0");
-    res.set("Content-Type", packageData.contentType ?? "application/octet-stream");
-    res.set("Content-Length", String(packageData.byteCount));
-    res.set("X-RRGH-Package-Id", capability.packageId);
-    res.set("X-RRGH-Package-Version", packageData.version);
-    res.set("X-RRGH-Package-SHA256", packageData.sha256);
+    const useEmulatorProxy =
+      process.env.FUNCTIONS_EMULATOR === "true" ||
+      process.env.FIRESTORE_EMULATOR_HOST ||
+      process.env.FIREBASE_STORAGE_EMULATOR_HOST;
 
-    const stream = object.file.createReadStream();
-    stream.on("error", () => {
-      if (!res.headersSent) {
-        packageError(res, 503, "backend_temporarily_unavailable");
-      } else {
-        res.destroy();
-      }
-    });
-    stream.pipe(res);
+    if (useEmulatorProxy) {
+      // Emulator contract tests use tiny synthetic payloads and do not have
+      // IAMCredentials signing. Keep the exact byte proxy only in emulators.
+      res.status(200);
+      res.set("Cache-Control", "private, no-store, max-age=0");
+      res.set("Content-Type", packageData.contentType ?? "application/octet-stream");
+      res.set("Content-Length", String(packageData.byteCount));
+      res.set("X-RRGH-Package-Id", capability.packageId);
+      res.set("X-RRGH-Package-Version", packageData.version);
+      res.set("X-RRGH-Package-SHA256", packageData.sha256);
+
+      const stream = object.file.createReadStream();
+      stream.on("error", () => {
+        if (!res.headersSent) {
+          packageError(res, 503, "backend_temporarily_unavailable");
+        } else {
+          res.destroy();
+        }
+      });
+      stream.pipe(res);
+      return;
+    }
+
+    try {
+      // Cloud Run functions cap streaming HTTP responses at 10 MB. Gorge Base
+      // is intentionally larger, so the Bearer capability remains the only
+      // client-facing authorization and the function exchanges it for a
+      // short-lived, object-scoped V4 read URL. The signed URL is generated
+      // only after rechecking account, entitlement, package version, object
+      // metadata, and capability expiry. It is never returned by the account
+      // API or persisted by RRGH.
+      const direct = await createSignedPackageReadUrl(
+        object.file,
+        capability.expiresAt,
+      );
+
+      res
+        .status(307)
+        .set("Cache-Control", "private, no-store, max-age=0")
+        .set("X-RRGH-Package-Id", capability.packageId)
+        .set("X-RRGH-Package-Version", packageData.version)
+        .set("X-RRGH-Package-SHA256", packageData.sha256)
+        .set("Location", direct.url)
+        .end();
+    } catch {
+      packageError(res, 503, "backend_temporarily_unavailable");
+    }
   },
 );
