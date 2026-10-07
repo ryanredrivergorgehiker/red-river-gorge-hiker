@@ -2,7 +2,7 @@
 set -euo pipefail
 
 OUTPUT_DIR="${1:-/tmp/rrgh-gorge-base}"
-PACKAGE_VERSION="${2:-2026.10.07.1}"
+PACKAGE_VERSION="${2:-2026.10.07.2}"
 BBOX="-83.80,37.65,-83.40,37.95"
 WEST="-83.80"
 SOUTH="37.65"
@@ -16,7 +16,7 @@ MANIFEST="$OUTPUT_DIR/gorge-base-manifest.json"
 PACKAGE="$OUTPUT_DIR/gorge-base-${PACKAGE_VERSION}.rrghpkg"
 
 rm -rf "$OUTPUT_DIR"
-mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/native"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
+mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/state"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/native"   "$ROOT/native/base"   "$ROOT/native/website/data/map/weather"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
 
 for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gdal_translate tar; do
   command -v "$command" >/dev/null || {
@@ -42,6 +42,25 @@ arcgis_geojson() {
 
 hash_file() {
   sha256sum "$1" | awk '{print $1}'
+}
+
+arcgis_map_export() {
+  local service_url="$1"
+  local output="$2"
+  local format="$3"
+
+  curl --fail --location --retry 4 --retry-all-errors \
+    --connect-timeout 30 --max-time 900 \
+    --get "$service_url/export" \
+    --data-urlencode "bbox=$BBOX" \
+    --data-urlencode "bboxSR=4326" \
+    --data-urlencode "imageSR=3857" \
+    --data-urlencode "size=4096,3072" \
+    --data-urlencode "format=$format" \
+    --data-urlencode "transparent=false" \
+    --data-urlencode "f=image" \
+    -o "$output"
+  test -s "$output"
 }
 
 arcgis_geojson_tiled() {
@@ -131,9 +150,26 @@ test -s "$KYFROMABOVE_OUT"
 # Native offline renderer derivative. This is built from the exact governed
 # hillshade export above so the app can render terrain without requiring
 # MapKit/third-party network tiles in the field.
-NATIVE_HILLSHADE="$ROOT/native/terrain-relief.png"
+NATIVE_HILLSHADE="$ROOT/native/base/terrain-relief.png"
 gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
 test -s "$NATIVE_HILLSHADE"
+
+# Offline raster counterparts for the accepted Website map views. These are
+# single bounded exports of the supported Gorge AOI — never bulk tile scraping.
+KY_TOPO_SERVICE="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_KyTopo_Map_Series_WGS84WM/MapServer"
+USGS_TOPO_SERVICE="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer"
+LEAF_ON_SERVICE="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase3_3IN_WGS84WM/MapServer"
+LEAF_OFF_SERVICE="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_Imagery_Phase2_6IN_WGS84WM/MapServer"
+
+NATIVE_KY_TOPO="$ROOT/native/base/kentucky-topo.png"
+NATIVE_USGS_TOPO="$ROOT/native/base/usgs-topo.png"
+NATIVE_LEAF_ON="$ROOT/native/base/leaf-on-aerial.jpg"
+NATIVE_LEAF_OFF="$ROOT/native/base/leaf-off-aerial.jpg"
+
+arcgis_map_export "$KY_TOPO_SERVICE" "$NATIVE_KY_TOPO" "png32"
+arcgis_map_export "$USGS_TOPO_SERVICE" "$NATIVE_USGS_TOPO" "png32"
+arcgis_map_export "$LEAF_ON_SERVICE" "$NATIVE_LEAF_ON" "jpg"
+arcgis_map_export "$LEAF_OFF_SERVICE" "$NATIVE_LEAF_OFF" "jpg"
 
 # 2. USGS NHDPlus High Resolution — fixed downloadable HU4 snapshot.
 # The nationwide dynamic ArcGIS service repeatedly returned 502/504/timeouts
@@ -197,6 +233,20 @@ arcgis_geojson "$USFS_TRAILS" "$ROOT/layers/forest/usfs-nfs-trails.geojson"
 arcgis_geojson "$USFS_ROADS" "$ROOT/layers/forest/usfs-nfs-roads.geojson"
 arcgis_geojson "$USFS_OWNERSHIP" "$ROOT/layers/forest/usfs-basic-ownership.geojson"
 
+# Static Website-parity context layers that are legally cleared for the Base
+# package. These remain informational and do not establish access or boundaries.
+STATE_PARK_TRAILS="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_State_Parks_Features_WGS84WM/MapServer/9"
+USFS_WILDERNESS="https://apps.fs.usda.gov/ArcX/rest/services/EDW/EDW_Wilderness_01/MapServer/0"
+USFS_SPECIAL="https://apps.fs.usda.gov/ArcX/rest/services/EDW/EDW_SpecialInterestManagementArea_01/MapServer/0"
+USFS_LAND_UNITS="https://apps.fs.usda.gov/ArcX/rest/services/EDW/EDW_NFSLandUnit_01/MapServer/0"
+KY_COUNTIES="https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_CountyLines_WGS84WM/MapServer/0"
+
+arcgis_geojson "$STATE_PARK_TRAILS" "$ROOT/layers/state/ky-state-park-trails.geojson"
+arcgis_geojson "$USFS_WILDERNESS" "$ROOT/layers/forest/usfs-wilderness.geojson"
+arcgis_geojson "$USFS_SPECIAL" "$ROOT/layers/forest/usfs-special-management.geojson"
+arcgis_geojson "$USFS_LAND_UNITS" "$ROOT/layers/forest/usfs-land-units.geojson"
+arcgis_geojson "$KY_COUNTIES" "$ROOT/layers/state/ky-counties.geojson"
+
 # 5. OpenStreetMap — fixed Geofabrik Kentucky snapshot, clipped and transformed locally.
 OSM_URL="https://download.geofabrik.de/north-america/us/kentucky-260901.osm.pbf"
 OSM_SOURCE="$DOWNLOADS/kentucky-260901.osm.pbf"
@@ -240,6 +290,54 @@ applicable. This derivative is not represented as a live or authoritative
 well-status service.
 EOF
 
+# 7. Accepted RRGH Website map derivatives — frozen exact staging source.
+# The nonproduction package consumes only RRGH-controlled derivative artifacts
+# from the exact accepted Website map source commit. Production packaging must
+# point at a promoted production source before release.
+RRGH_MAP_SOURCE_SHA="2e8dd27db788f1a93017fe8146c5c28e40734a68"
+RRGH_RAW_BASE="https://raw.githubusercontent.com/ryanredrivergorgehiker/red-river-gorge-hiker/$RRGH_MAP_SOURCE_SHA/public"
+RRGH_WEBSITE_ROOT="$ROOT/native/website"
+SUN_MANIFEST_REL="data/map/rrg-lidar-sun-mobile-manifest.json"
+WEATHER_MANIFEST_REL="data/map/weather/manifest.json"
+
+mkdir -p "$RRGH_WEBSITE_ROOT/data/map/rrg-lidar-sun-mobile" "$RRGH_WEBSITE_ROOT/data/map/weather"
+download "$RRGH_RAW_BASE/$SUN_MANIFEST_REL" "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL"
+download "$RRGH_RAW_BASE/$WEATHER_MANIFEST_REL" "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL"
+
+while IFS= read -r rel; do
+  test -n "$rel" || continue
+  mkdir -p "$RRGH_WEBSITE_ROOT/$(dirname "$rel")"
+  download "$RRGH_RAW_BASE/$rel" "$RRGH_WEBSITE_ROOT/$rel"
+done < <(
+  jq -r '
+    .sectors[]
+    | .variants.overview.sunrise.file,
+      .variants.overview.sunset.file,
+      .variants.detail.sunrise.file,
+      .variants.detail.sunset.file
+  ' "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL" | sort -u
+)
+
+while IFS= read -r rel; do
+  test -n "$rel" || continue
+  mkdir -p "$RRGH_WEBSITE_ROOT/$(dirname "$rel")"
+  download "$RRGH_RAW_BASE/$rel" "$RRGH_WEBSITE_ROOT/$rel"
+done < <(
+  jq -r '.products[].file' "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL" | sort -u
+)
+
+# Freeze a complete hash index for every native Website derivative so the
+# client can validate each member before accepting it for offline rendering.
+STATIC_ASSETS_NDJSON="$DOWNLOADS/native-static-assets.ndjson"
+STATIC_ASSETS_JSON="$DOWNLOADS/native-static-assets.json"
+: > "$STATIC_ASSETS_NDJSON"
+while IFS= read -r path; do
+  rel="${path#$ROOT/}"
+  sha="$(hash_file "$path")"
+  jq -nc --arg path "$rel" --arg sha "$sha"     '{path:$path,sha256:$sha}' >> "$STATIC_ASSETS_NDJSON"
+done < <(find "$RRGH_WEBSITE_ROOT" -type f | sort)
+jq -s '.' "$STATIC_ASSETS_NDJSON" > "$STATIC_ASSETS_JSON"
+
 # Freeze per-output source integrity before creating the package archive.
 KY_SHA="$(hash_file "$KYFROMABOVE_OUT")"
 NHD_FLOW_SHA="$(hash_file "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson")"
@@ -252,6 +350,17 @@ USFS_OWNER_SHA="$(hash_file "$ROOT/layers/forest/usfs-basic-ownership.geojson")"
 OSM_SHA="$(hash_file "$ROOT/layers/osm/osm-community-local-context.geojson")"
 KGS_SHA="$(hash_file "$ROOT/layers/kgs/kgs-oil-gas-wells.geojson")"
 NATIVE_HILLSHADE_SHA="$(hash_file "$NATIVE_HILLSHADE")"
+NATIVE_KY_TOPO_SHA="$(hash_file "$NATIVE_KY_TOPO")"
+NATIVE_USGS_TOPO_SHA="$(hash_file "$NATIVE_USGS_TOPO")"
+NATIVE_LEAF_ON_SHA="$(hash_file "$NATIVE_LEAF_ON")"
+NATIVE_LEAF_OFF_SHA="$(hash_file "$NATIVE_LEAF_OFF")"
+STATE_PARK_TRAILS_SHA="$(hash_file "$ROOT/layers/state/ky-state-park-trails.geojson")"
+USFS_WILDERNESS_SHA="$(hash_file "$ROOT/layers/forest/usfs-wilderness.geojson")"
+USFS_SPECIAL_SHA="$(hash_file "$ROOT/layers/forest/usfs-special-management.geojson")"
+USFS_LAND_UNITS_SHA="$(hash_file "$ROOT/layers/forest/usfs-land-units.geojson")"
+KY_COUNTIES_SHA="$(hash_file "$ROOT/layers/state/ky-counties.geojson")"
+SUN_MANIFEST_SHA="$(hash_file "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL")"
+WEATHER_MANIFEST_SHA="$(hash_file "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL")"
 OSM_SOURCE_SHA="$(hash_file "$OSM_SOURCE")"
 KGS_SOURCE_SHA="$(hash_file "$KGS_ZIP")"
 
@@ -268,22 +377,45 @@ cat > "$ROOT/NATIVE-MAP.json" <<EOF
     "north": $NORTH
   },
   "terrainRelief": {
-    "path": "native/terrain-relief.png",
+    "path": "native/base/terrain-relief.png",
     "sha256": "$NATIVE_HILLSHADE_SHA"
   },
+  "baseRasters": [
+    {"id":"kentucky-topo","path":"native/base/kentucky-topo.png","sha256":"$NATIVE_KY_TOPO_SHA"},
+    {"id":"usgs-topo","path":"native/base/usgs-topo.png","sha256":"$NATIVE_USGS_TOPO_SHA"},
+    {"id":"terrain-relief","path":"native/base/terrain-relief.png","sha256":"$NATIVE_HILLSHADE_SHA"},
+    {"id":"leaf-on-aerial","path":"native/base/leaf-on-aerial.jpg","sha256":"$NATIVE_LEAF_ON_SHA"},
+    {"id":"leaf-off-aerial","path":"native/base/leaf-off-aerial.jpg","sha256":"$NATIVE_LEAF_OFF_SHA"}
+  ],
   "vectors": [
     {"id":"hydro-flowline","path":"layers/hydrography/usgs-nhd-flowline.geojson","sha256":"$NHD_FLOW_SHA"},
     {"id":"hydro-waterbody","path":"layers/hydrography/usgs-nhd-waterbody.geojson","sha256":"$NHD_WATER_SHA"},
     {"id":"local-roads","path":"layers/roads/census-tiger-roads.geojson","sha256":"$CENSUS_SHA"},
     {"id":"forest-service-trails","path":"layers/forest/usfs-nfs-trails.geojson","sha256":"$USFS_TRAILS_SHA"},
+    {"id":"state-park-trails","path":"layers/state/ky-state-park-trails.geojson","sha256":"$STATE_PARK_TRAILS_SHA"},
     {"id":"forest-service-roads","path":"layers/forest/usfs-nfs-roads.geojson","sha256":"$USFS_ROADS_SHA"},
     {"id":"forest-ownership","path":"layers/forest/usfs-basic-ownership.geojson","sha256":"$USFS_OWNER_SHA"},
+    {"id":"wilderness","path":"layers/forest/usfs-wilderness.geojson","sha256":"$USFS_WILDERNESS_SHA"},
+    {"id":"special-management","path":"layers/forest/usfs-special-management.geojson","sha256":"$USFS_SPECIAL_SHA"},
+    {"id":"national-forest-land","path":"layers/forest/usfs-land-units.geojson","sha256":"$USFS_LAND_UNITS_SHA"},
+    {"id":"county-boundaries","path":"layers/state/ky-counties.geojson","sha256":"$KY_COUNTIES_SHA"},
     {"id":"community-informal","path":"layers/osm/osm-community-local-context.geojson","sha256":"$OSM_SHA"},
     {"id":"oil-gas-wells","path":"layers/kgs/kgs-oil-gas-wells.geojson","sha256":"$KGS_SHA"}
-  ]
+  ],
+  "websiteAssetsRoot": "native/website",
+  "sunPotentialManifest": {
+    "path": "native/website/$SUN_MANIFEST_REL",
+    "sha256": "$SUN_MANIFEST_SHA",
+    "sourceCommit": "$RRGH_MAP_SOURCE_SHA"
+  },
+  "weatherManifest": {
+    "path": "native/website/$WEATHER_MANIFEST_REL",
+    "sha256": "$WEATHER_MANIFEST_SHA",
+    "sourceCommit": "$RRGH_MAP_SOURCE_SHA"
+  },
+  "staticAssets": $(cat "$STATIC_ASSETS_JSON")
 }
 EOF
-
 jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"    '{
     packageID:"gorge-base",
     packageVersion:$packageVersion,
@@ -304,7 +436,7 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
   }' > "$ROOT/BUILD-PROVENANCE.json"
 
 # Deterministic archive framing for these exact built files.
-# Version 2026.10.07.1 moves Gorge Base to a plain tar container. The package
+# Version 2026.10.07.2 extends Gorge Base to a plain tar container. The package
 # remains immutable and SHA-256 verified before install; the native client can
 # now extract governed components using a small fail-closed tar reader rather
 # than treating the offline package as an opaque blob.
@@ -341,8 +473,8 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NetworkNHDFlowline layer 3 queried within WGS84 bbox " + $bbox),
-        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
+        areaOfInterestOrSourceObjects:("Official staged NHDPlus HR HU4 0510 GDB product, NHDFlowline clipped locally to WGS84 bbox " + $bbox),
+        processingMethod:"Downloaded the official staged HU4 0510 file geodatabase; ogr2ogr clipped/reprojected NHDFlowline locally to GeoJSON. Exact source archive and output hashes are frozen.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
@@ -354,8 +486,8 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NHDWaterbody layer 9 queried within WGS84 bbox " + $bbox),
-        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
+        areaOfInterestOrSourceObjects:("Official staged NHDPlus HR HU4 0510 GDB product, NHDWaterbody clipped locally to WGS84 bbox " + $bbox),
+        processingMethod:"Downloaded the official staged HU4 0510 file geodatabase; ogr2ogr clipped/reprojected NHDWaterbody locally to GeoJSON. Exact source archive and output hashes are frozen.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
