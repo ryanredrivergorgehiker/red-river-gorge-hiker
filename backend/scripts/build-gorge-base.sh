@@ -81,7 +81,7 @@ arcgis_geojson_tiled() {
         --data-urlencode "inSR=4326" \
         --data-urlencode "outSR=4326" \
         --data-urlencode "spatialRel=esriSpatialRelIntersects" \
-        --data-urlencode "outFields=OBJECTID" \
+        --data-urlencode "outFields=*" \
         --data-urlencode "returnGeometry=true" \
         --data-urlencode "returnZ=false" \
         --data-urlencode "returnM=false" \
@@ -135,114 +135,23 @@ NATIVE_HILLSHADE="$ROOT/native/terrain-relief.png"
 gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
 test -s "$NATIVE_HILLSHADE"
 
-# 2. USGS NHDPlus High Resolution — current official HU4 0510 product.
-# The nationwide ArcGIS service repeatedly returned 502/504/timeouts in CI,
-# while the rockyweb directory can return a federal system-use HTML page to
-# non-browser clients. Resolve the current pre-staged FileGDB through the
-# official TNMAccess API, then clip locally. This keeps the source official
-# while avoiding both failure modes.
-USGS_TNM_API="https://tnmaccess.nationalmap.gov/api/v1/products"
-USGS_NHD_LOOKUP="$DOWNLOADS/tnm-nhdplus-0510.json"
-curl --fail --location --retry 5 --retry-all-errors \
-  --retry-delay 3 --retry-max-time 300 \
-  --connect-timeout 30 --max-time 120 \
-  --get "$USGS_TNM_API" \
-  --data-urlencode "polyType=huc4" \
-  --data-urlencode "polyCode=0510" \
-  --data-urlencode "max=1000" \
-  --data-urlencode "outputFormat=JSON" \
-  -o "$USGS_NHD_LOOKUP"
+# 2. USGS 3D Hydrography Program — current official bounded snapshot.
+# The retired NHDPlus_HR nationwide service and staged rockyweb product both
+# proved unreliable for deterministic CI retrieval. 3DHP_all is the current
+# USGS National Map hydrography service and supports GeoJSON feature queries.
+# Query the fixed Gorge AOI in small deterministic tiles, then merge/dedupe.
+USGS_3DHP_SERVICE="https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer"
+USGS_NHD_PRODUCT="$USGS_3DHP_SERVICE"
 
-jq -e '
-  (.items | type == "array")
-  and (.items | length > 0)
-' "$USGS_NHD_LOOKUP" >/dev/null
-
-USGS_NHD_PRODUCT="$(
-  jq -r '
-    [
-      .items[]
-      | {
-          title:(.title // ""),
-          url:(
-            .downloadURL
-            // .urls.FileGDB
-            // .urls.GDB
-            // .urls["File Geodatabase"]
-            // empty
-          )
-        }
-      | select(
-          (.url | type == "string")
-          and (.url | length > 0)
-          and (
-            (.url | test("NHDPLUS_H_0510.*GDB\\.zip($|\\?)"; "i"))
-            or (
-              (.title | test("NHDPlus"; "i"))
-              and (.title | test("0510"; "i"))
-              and (.url | test("GDB\\.zip($|\\?)"; "i"))
-            )
-          )
-        )
-      | .url
-    ][0] // empty
-  ' "$USGS_NHD_LOOKUP"
-)"
-if [[ -z "$USGS_NHD_PRODUCT" ]]; then
-  echo "TNMAccess returned no downloadable NHDPlus HR FileGDB for HU4 0510." >&2
-  jq '{
-    total,
-    candidates:[
-      .items[]?
-      | select(
-          ((.title // "") | test("NHD|Hydro"; "i"))
-          or ((.downloadURL // "") | test("NHD|Hydro"; "i"))
-        )
-      | {
-          title,
-          format,
-          downloadURL,
-          urls
-        }
-    ][0:25]
-  }' "$USGS_NHD_LOOKUP" >&2
-  exit 1
-fi
-
-USGS_NHD_ZIP="$DOWNLOADS/NHDPLUS_H_0510_HU4_GDB.zip"
-USGS_NHD_DIR="$DOWNLOADS/nhdplus-0510"
-download "$USGS_NHD_PRODUCT" "$USGS_NHD_ZIP"
-
-# Fail with a source-specific message instead of allowing an HTML/error body
-# to reach the generic extraction step.
-if ! unzip -tq "$USGS_NHD_ZIP" >/dev/null; then
-  echo "Resolved TNMAccess NHDPlus HR product is not a valid ZIP: $USGS_NHD_PRODUCT" >&2
-  exit 1
-fi
-
-mkdir -p "$USGS_NHD_DIR"
-unzip -q "$USGS_NHD_ZIP" -d "$USGS_NHD_DIR"
-USGS_NHD_GDB="$(find "$USGS_NHD_DIR" -type d -name '*.gdb' | head -n 1)"
-if [[ -z "$USGS_NHD_GDB" ]]; then
-  echo "TNMAccess NHDPlus HR ZIP contained no FileGDB." >&2
-  exit 1
-fi
-
-ogr2ogr -f GeoJSON \
-  -t_srs EPSG:4326 \
-  -spat "$WEST" "$SOUTH" "$EAST" "$NORTH" \
-  -spat_srs EPSG:4326 \
+arcgis_geojson_tiled \
+  "$USGS_3DHP_SERVICE/50" \
   "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson" \
-  "$USGS_NHD_GDB" \
-  NHDFlowline
+  "$DOWNLOADS/3dhp-flowline-parts"
 
-ogr2ogr -f GeoJSON \
-  -t_srs EPSG:4326 \
-  -spat "$WEST" "$SOUTH" "$EAST" "$NORTH" \
-  -spat_srs EPSG:4326 \
+arcgis_geojson_tiled \
+  "$USGS_3DHP_SERVICE/60" \
   "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson" \
-  "$USGS_NHD_GDB" \
-  NHDWaterbody
+  "$DOWNLOADS/3dhp-waterbody-parts"
 
 jq -e '.type == "FeatureCollection" and (.features | type == "array") and (.features | length > 0)' \
   "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson" >/dev/null
@@ -322,7 +231,9 @@ EOF
 KY_SHA="$(hash_file "$KYFROMABOVE_OUT")"
 NHD_FLOW_SHA="$(hash_file "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson")"
 NHD_WATER_SHA="$(hash_file "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson")"
-NHD_SOURCE_SHA="$(hash_file "$USGS_NHD_ZIP")"
+NHD_SOURCE_SHA="$(
+  printf '%s\n%s\n' "$NHD_FLOW_SHA" "$NHD_WATER_SHA"     | sha256sum     | awk '{print $1}'
+)"
 CENSUS_SHA="$(hash_file "$ROOT/layers/roads/census-tiger-roads.geojson")"
 USFS_TRAILS_SHA="$(hash_file "$ROOT/layers/forest/usfs-nfs-trails.geojson")"
 USFS_ROADS_SHA="$(hash_file "$ROOT/layers/forest/usfs-nfs-roads.geojson")"
@@ -414,28 +325,28 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         integritySHA256:$kySha
       },
       {
-        sourceID:"usgs-nhdplus-flowline",
+        sourceID:"usgs-3dhp-flowline",
         sourceURL:$nhdUrl,
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HU4 0510 FileGDB; NetworkNHDFlowline clipped within WGS84 bbox " + $bbox),
-        processingMethod:"Official TNMAccess-resolved NHDPlus HR HU4 0510 FileGDB clipped locally to the fixed Gorge AOI; exact source ZIP and output hashes frozen in this package version.",
+        areaOfInterestOrSourceObjects:("USGS 3DHP_all Flowline layer 50 queried in deterministic tiles within WGS84 bbox " + $bbox),
+        processingMethod:"Official USGS 3DHP_all FeatureServer queried in deterministic bounded tiles; merged GeoJSON output hashes frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
-        attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
+        attributionOrDisclaimer:"USGS / The National Map 3D Hydrography Program; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
         integritySHA256:$nhdFlowSha
       },
       {
-        sourceID:"usgs-nhdplus-waterbody",
+        sourceID:"usgs-3dhp-waterbody",
         sourceURL:$nhdUrl,
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HU4 0510 FileGDB; NHDWaterbody clipped within WGS84 bbox " + $bbox),
-        processingMethod:"Official TNMAccess-resolved NHDPlus HR HU4 0510 FileGDB clipped locally to the fixed Gorge AOI; exact source ZIP and output hashes frozen in this package version.",
+        areaOfInterestOrSourceObjects:("USGS 3DHP_all Waterbody layer 60 queried in deterministic tiles within WGS84 bbox " + $bbox),
+        processingMethod:"Official USGS 3DHP_all FeatureServer queried in deterministic bounded tiles; merged GeoJSON output hashes frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
-        attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
+        attributionOrDisclaimer:"USGS / The National Map 3D Hydrography Program; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
         integritySHA256:$nhdWaterSha
       },
