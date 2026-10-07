@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_CAPABILITY_TTL_SECONDS,
-  DIRECT_READ_TTL_SECONDS,
-  createSignedPackageReadUrl,
+  MAX_PROXY_RANGE_BYTES,
   hashCapabilityToken,
   parseBearerToken,
+  resolveProtectedPackageRange,
 } from "../src/delivery.js";
 
 test("package capability TTL is frozen at five minutes", () => {
@@ -30,61 +30,79 @@ test("Bearer parser accepts exactly one opaque capability", () => {
 });
 
 
-test("direct signed read is object-scoped and bounded to one minute", async () => {
-  let options = null;
-  const file = {
-    async getSignedUrl(value) {
-      options = value;
-      return ["https://storage.googleapis.com/example/signed-object?X-Goog-Signature=test"];
-    },
-  };
 
-  const nowMs = Date.parse("2026-10-07T22:00:00Z");
-  const capabilityExpiresAt = {
-    toMillis() {
-      return nowMs + 5 * 60 * 1000;
-    },
-  };
-
-  const result = await createSignedPackageReadUrl(
-    file,
-    capabilityExpiresAt,
-    nowMs,
+test("small protected package can still use one exact response", () => {
+  const range = resolveProtectedPackageRange(
+    null,
+    8_201,
   );
 
-  assert.equal(DIRECT_READ_TTL_SECONDS, 60);
-  assert.equal(options.version, "v4");
-  assert.equal(options.action, "read");
-  assert.equal(
-    options.expires.getTime(),
-    nowMs + 60_000,
-  );
-  assert.equal(
-    result.expiresAtMs,
-    nowMs + 60_000,
-  );
-  assert.match(result.url, /^https:\/\//);
+  assert.deepEqual(range, {
+    valid: true,
+    partial: false,
+    start: 0,
+    end: 8_200,
+    length: 8_201,
+  });
 });
 
-test("direct signed read can never outlive the Bearer capability", async () => {
-  let expires = null;
-  const file = {
-    async getSignedUrl(options) {
-      expires = options.expires.getTime();
-      return ["https://storage.googleapis.com/example/signed-object?X-Goog-Signature=test"];
-    },
-  };
+test("large protected package requires bounded byte ranges", () => {
+  assert.equal(MAX_PROXY_RANGE_BYTES, 8 * 1024 * 1024);
 
-  const nowMs = Date.parse("2026-10-07T22:00:00Z");
-  await createSignedPackageReadUrl(
-    file,
-    {
-      toMillis() {
-        return nowMs + 12_000;
-      },
-    },
-    nowMs,
+  const noRange = resolveProtectedPackageRange(
+    null,
+    MAX_PROXY_RANGE_BYTES + 1,
   );
+  assert.equal(noRange.valid, false);
+  assert.equal(noRange.reason, "range_required");
 
-  assert.equal(expires, nowMs + 12_000);
+  const first = resolveProtectedPackageRange(
+    "bytes=0-8388607",
+    11_000_000,
+  );
+  assert.deepEqual(first, {
+    valid: true,
+    partial: true,
+    start: 0,
+    end: 8_388_607,
+    length: 8_388_608,
+  });
+
+  const final = resolveProtectedPackageRange(
+    "bytes=8388608-10999999",
+    11_000_000,
+  );
+  assert.deepEqual(final, {
+    valid: true,
+    partial: true,
+    start: 8_388_608,
+    end: 10_999_999,
+    length: 2_611_392,
+  });
+});
+
+test("range contract rejects oversized or invalid requests", () => {
+  const oversized = resolveProtectedPackageRange(
+    "bytes=0-8388608",
+    20_000_000,
+  );
+  assert.equal(oversized.valid, false);
+  assert.equal(oversized.reason, "range_too_large");
+
+  const suffix = resolveProtectedPackageRange(
+    "bytes=-100",
+    20_000_000,
+  );
+  assert.equal(suffix.valid, false);
+  assert.equal(suffix.reason, "invalid_range");
+
+  const beyond = resolveProtectedPackageRange(
+    "bytes=25000000-",
+    20_000_000,
+  );
+  assert.equal(beyond.valid, false);
+  assert.equal(
+    beyond.reason,
+    "range_not_satisfiable",
+  );
 });

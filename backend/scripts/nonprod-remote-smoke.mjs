@@ -27,6 +27,104 @@ function capabilityHash(token) {
   return sha256(Buffer.from(token, "utf8"));
 }
 
+const PACKAGE_RANGE_BYTES = 8 * 1024 * 1024;
+
+async function fetchPackageBytesInRanges(
+  delivery,
+  descriptor,
+) {
+  const chunks = [];
+  let offset = 0;
+  let packageIdHeader = null;
+  let versionHeader = null;
+
+  while (offset < descriptor.byteCount) {
+    const end = Math.min(
+      descriptor.byteCount - 1,
+      offset + PACKAGE_RANGE_BYTES - 1,
+    );
+
+    const response = await fetch(delivery.url, {
+      method: "GET",
+      headers: {
+        authorization:
+          "Bearer " +
+          delivery.authorizationToken,
+        range: `bytes=${offset}-${end}`,
+      },
+    });
+
+    if (response.status !== 206) {
+      throw new Error(
+        "Authorized ranged package download failed for " +
+          descriptor.packageId +
+          ": HTTP " +
+          response.status,
+      );
+    }
+
+    const expectedContentRange =
+      `bytes ${offset}-${end}/${descriptor.byteCount}`;
+    if (
+      response.headers.get("content-range") !==
+        expectedContentRange
+    ) {
+      throw new Error(
+        "Protected range response mismatch for " +
+          descriptor.packageId +
+          ": expected " +
+          expectedContentRange +
+          ", got " +
+          response.headers.get("content-range"),
+      );
+    }
+
+    const chunk =
+      Buffer.from(
+        await response.arrayBuffer(),
+      );
+    const expectedLength =
+      end - offset + 1;
+    if (chunk.length !== expectedLength) {
+      throw new Error(
+        "Protected range byte-count mismatch for " +
+          descriptor.packageId,
+      );
+    }
+
+    const returnedPackageId =
+      response.headers.get(
+        "x-rrgh-package-id",
+      );
+    const returnedVersion =
+      response.headers.get(
+        "x-rrgh-package-version",
+      );
+    if (
+      returnedPackageId !==
+        descriptor.packageId ||
+      returnedVersion !==
+        descriptor.version
+    ) {
+      throw new Error(
+        "Protected range identity header mismatch for " +
+          descriptor.packageId,
+      );
+    }
+
+    packageIdHeader = returnedPackageId;
+    versionHeader = returnedVersion;
+    chunks.push(chunk);
+    offset = end + 1;
+  }
+
+  return {
+    bytes: Buffer.concat(chunks),
+    packageIdHeader,
+    versionHeader,
+  };
+}
+
 async function readJson(response) {
   const text = await response.text();
   try {
@@ -116,40 +214,42 @@ async function assertPackageDownload(idToken, packageId) {
     );
   }
 
-  const response = await fetch(delivery.url, {
-    method: "GET",
-    headers: {
-      authorization: "Bearer " + delivery.authorizationToken,
-    },
-  });
-  if (!response.ok) {
+  const download =
+    await fetchPackageBytesInRanges(
+      delivery,
+      descriptor,
+    );
+  const bytes = download.bytes;
+
+  if (bytes.length !== descriptor.byteCount) {
     throw new Error(
-      "Authorized package download failed for " +
-        packageId +
-        ": HTTP " +
-        response.status,
+      "Downloaded byte-count mismatch for " +
+        packageId,
+    );
+  }
+  if (sha256(bytes) !== descriptor.sha256) {
+    throw new Error(
+      "Downloaded SHA-256 mismatch for " +
+        packageId,
     );
   }
 
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.length !== descriptor.byteCount) {
-    throw new Error("Downloaded byte-count mismatch for " + packageId);
+  if (
+    download.packageIdHeader !== packageId
+  ) {
+    throw new Error(
+      "Downloaded package ID header mismatch for " +
+        packageId,
+    );
   }
-  if (sha256(bytes) !== descriptor.sha256) {
-    throw new Error("Downloaded SHA-256 mismatch for " + packageId);
-  }
-  const returnedPackageId =
-    response.headers.get("x-rrgh-package-id") ??
-    response.headers.get("x-goog-meta-rrgh-package-id");
-  const returnedVersion =
-    response.headers.get("x-rrgh-package-version") ??
-    response.headers.get("x-goog-meta-rrgh-version");
-
-  if (returnedPackageId !== packageId) {
-    throw new Error("Downloaded package ID header mismatch for " + packageId);
-  }
-  if (returnedVersion !== descriptor.version) {
-    throw new Error("Downloaded package version header mismatch for " + packageId);
+  if (
+    download.versionHeader !==
+      descriptor.version
+  ) {
+    throw new Error(
+      "Downloaded package version header mismatch for " +
+        packageId,
+    );
   }
 
   return authorization.result;
