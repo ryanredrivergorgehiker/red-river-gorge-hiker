@@ -206,6 +206,11 @@ jobs:
 
           gcloud storage buckets add-iam-policy-binding             "gs://$RRGH_PACKAGE_BUCKET"             --member="serviceAccount:$RUNTIME_SA"             --role="roles/storage.objectViewer"             --quiet
 
+          # Large protected packages cannot be streamed through a Cloud Run
+          # function response. Allow the runtime identity to sign a short-lived
+          # V4 URL for its own already-authorized private object only.
+          gcloud iam service-accounts add-iam-policy-binding             "$RUNTIME_SA"             --member="serviceAccount:$RUNTIME_SA"             --role="roles/iam.serviceAccountTokenCreator"             --project="$PROJECT_ID"             --quiet
+
       - name: Seed exact package catalog metadata
         run: node backend/scripts/seed-package-catalog.mjs
         env:
