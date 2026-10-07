@@ -416,7 +416,7 @@ cat > "$ROOT/NATIVE-MAP.json" <<EOF
   "staticAssets": $(cat "$STATIC_ASSETS_JSON")
 }
 EOF
-jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"    '{
+jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"   --arg rrghMapSha "$RRGH_MAP_SOURCE_SHA"    '{
     packageID:"gorge-base",
     packageVersion:$packageVersion,
     builtAt:$builtAt,
@@ -431,7 +431,7 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
       parcels:"Excluded pending exact authorized source.",
       gaiaCalTopoPublicTiles:"Excluded; no proprietary/public tile scraping.",
       scheduledWeather:"Latest accepted RRGH-hosted NOAA/NWS snapshot is embedded with its fetchedAtUtc timestamp for truthful last-known offline display; a later refresh package/workflow may supersede it independently.",
-      websiteParitySource:("Exact RRGH Website map derivative source commit " + "$RRGH_MAP_SOURCE_SHA"),
+      websiteParitySource:("Exact RRGH Website map derivative source commit " + $rrghMapSha),
       archiveFormat:"Plain deterministic tar so the native app can safely extract verified package members without a third-party decompression dependency."
     }
   }' > "$ROOT/BUILD-PROVENANCE.json"
