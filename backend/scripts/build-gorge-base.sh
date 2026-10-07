@@ -61,26 +61,64 @@ arcgis_geojson_tiled() {
     "$mid_lon,$mid_lat,$EAST,$NORTH"
   )
 
-  local parts=()
+  # Ask the service for object IDs only before requesting geometry. The
+  # NHDPlus HR service has repeatedly timed out when asked to perform the
+  # spatial filter and serialize all geometry in one response. ID-only
+  # responses are small; exact geometry is then fetched in bounded batches.
+  : > "$work_dir/object-ids.txt"
   local index=0
   for bbox in "${boxes[@]}"; do
-    local part="$work_dir/part-$index.geojson"
-    curl --fail --location --retry 6 --retry-all-errors \
-      --retry-delay 3 --retry-max-time 600 \
-      --connect-timeout 30 --max-time 120 \
+    local ids_json="$work_dir/ids-$index.json"
+    echo "NHD ID discovery: layer=$layer_url tile=$index bbox=$bbox"
+    curl --fail --location --retry 3 --retry-all-errors \
+      --retry-delay 4 --retry-max-time 240 \
+      --connect-timeout 30 --max-time 60 \
       --get "$layer_url/query" \
       --data-urlencode "where=1=1" \
       --data-urlencode "geometry=$bbox" \
       --data-urlencode "geometryType=esriGeometryEnvelope" \
       --data-urlencode "inSR=4326" \
-      --data-urlencode "outSR=4326" \
       --data-urlencode "spatialRel=esriSpatialRelIntersects" \
+      --data-urlencode "returnGeometry=false" \
+      --data-urlencode "returnIdsOnly=true" \
+      --data-urlencode "f=json" \
+      -o "$ids_json"
+
+    jq -e '
+      (.error // null) == null
+      and (.objectIds | type == "array")
+    ' "$ids_json" >/dev/null
+    jq -r '.objectIds[]?' "$ids_json" >> "$work_dir/object-ids.txt"
+    index=$((index + 1))
+  done
+
+  sort -n -u "$work_dir/object-ids.txt" > "$work_dir/object-ids.unique.txt"
+  local id_count
+  id_count="$(wc -l < "$work_dir/object-ids.unique.txt" | tr -d ' ')"
+  echo "NHD ID discovery complete: layer=$layer_url ids=$id_count"
+
+  if [ "$id_count" = "0" ]; then
+    printf '%s\n' '{"type":"FeatureCollection","features":[]}' > "$output"
+    return
+  fi
+
+  local parts=()
+  local batch_index=0
+  while IFS= read -r batch; do
+    [ -n "$batch" ] || continue
+    local part="$work_dir/features-$batch_index.geojson"
+    echo "NHD geometry batch: layer=$layer_url batch=$batch_index"
+    curl --fail --location --retry 3 --retry-all-errors \
+      --retry-delay 4 --retry-max-time 240 \
+      --connect-timeout 30 --max-time 60 \
+      --get "$layer_url/query" \
+      --data-urlencode "objectIds=$batch" \
       --data-urlencode "outFields=$out_fields" \
       --data-urlencode "returnGeometry=true" \
       --data-urlencode "returnZ=false" \
       --data-urlencode "returnM=false" \
+      --data-urlencode "outSR=4326" \
       --data-urlencode "geometryPrecision=6" \
-      --data-urlencode "resultRecordCount=2000" \
       --data-urlencode "f=geojson" \
       -o "$part"
 
@@ -89,10 +127,25 @@ arcgis_geojson_tiled() {
       and (.features | type == "array")
       and (.exceededTransferLimit // false | not)
     ' "$part" >/dev/null
-
     parts+=("$part")
-    index=$((index + 1))
-  done
+    batch_index=$((batch_index + 1))
+  done < <(
+    awk '
+      {
+        if (count == 0) line=$0;
+        else line=line "," $0;
+        count++;
+        if (count == 100) {
+          print line;
+          line="";
+          count=0;
+        }
+      }
+      END {
+        if (count > 0) print line;
+      }
+    ' "$work_dir/object-ids.unique.txt"
+  )
 
   jq -s '
     {
