@@ -139,9 +139,8 @@ OSM_SHA="$(hash_file "$ROOT/layers/osm/osm-community-local-context.geojson")"
 KGS_SHA="$(hash_file "$ROOT/layers/kgs/kgs-oil-gas-wells.geojson")"
 OSM_SOURCE_SHA="$(hash_file "$OSM_SOURCE")"
 KGS_SOURCE_SHA="$(hash_file "$KGS_ZIP")"
-USGS_SOURCE_SHA="$(hash_file "$USGS_ZIP")"
 
-jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"   --arg usgsSourceSha "$USGS_SOURCE_SHA"   '{
+jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg osmSourceSha "$OSM_SOURCE_SHA"   --arg kgsSourceSha "$KGS_SOURCE_SHA"    '{
     packageID:"gorge-base",
     packageVersion:$packageVersion,
     builtAt:$builtAt,
@@ -206,7 +205,7 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
         areaOfInterestOrSourceObjects:("NHDPlus High Resolution NHDWaterbody layer 9 queried within WGS84 bbox " + $bbox),
-        processingMethod:"Downloaded fixed NHDPlus HR HU4 geodatabase package; ogr2ogr bounded clip/reprojection to GeoJSON.",
+        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
