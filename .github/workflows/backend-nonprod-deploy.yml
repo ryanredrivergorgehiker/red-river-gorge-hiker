@@ -73,9 +73,7 @@ jobs:
           export_environment_variables: true
           token_format: access_token
           access_token_lifetime: 900s
-          access_token_scopes: >-
-            https://www.googleapis.com/auth/cloud-platform
-            https://www.googleapis.com/auth/drive.readonly
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.readonly
 
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v3
