@@ -430,7 +430,8 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
       streamStats:"Paid connected-only under LEG-DEC-0033; no offline substitute.",
       parcels:"Excluded pending exact authorized source.",
       gaiaCalTopoPublicTiles:"Excluded; no proprietary/public tile scraping.",
-      scheduledWeather:"Separate timestamped refresh package/workflow; not silently represented as static Gorge Base data.",
+      scheduledWeather:"Latest accepted RRGH-hosted NOAA/NWS snapshot is embedded with its fetchedAtUtc timestamp for truthful last-known offline display; a later refresh package/workflow may supersede it independently.",
+      websiteParitySource:("Exact RRGH Website map derivative source commit " + "$RRGH_MAP_SOURCE_SHA"),
       archiveFormat:"Plain deterministic tar so the native app can safely extract verified package members without a third-party decompression dependency."
     }
   }' > "$ROOT/BUILD-PROVENANCE.json"
@@ -449,7 +450,7 @@ PACKAGE_SHA="$(hash_file "$PACKAGE")"
 PACKAGE_BYTES="$(stat -c '%s' "$PACKAGE")"
 
 # External manifest shape is exactly the Lane 21 OfflinePackageManifest contract.
-jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg nhdUrl "$USGS_NHD_PRODUCT"   --arg nhdSourceSha "$NHD_SOURCE_SHA"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
+jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argjson byteCount "$PACKAGE_BYTES"   --arg sha256 "$PACKAGE_SHA"   --arg retrievedAt "$RETRIEVED_AT"   --arg bbox "$BBOX"   --arg kyUrl "$KYFROMABOVE_SERVICE"   --arg kySha "$KY_SHA"   --arg nhdUrl "$USGS_NHD_PRODUCT"   --arg nhdSourceSha "$NHD_SOURCE_SHA"   --arg nhdFlowSha "$NHD_FLOW_SHA"   --arg nhdWaterSha "$NHD_WATER_SHA"   --arg censusUrl "$CENSUS_BASE"   --arg censusSha "$CENSUS_SHA"   --arg usfsTrails "$USFS_TRAILS"   --arg usfsTrailsSha "$USFS_TRAILS_SHA"   --arg usfsRoads "$USFS_ROADS"   --arg usfsRoadsSha "$USFS_ROADS_SHA"   --arg usfsOwnership "$USFS_OWNERSHIP"   --arg usfsOwnershipSha "$USFS_OWNER_SHA"   --arg kyTopo "$KY_TOPO_SERVICE"   --arg kyTopoSha "$NATIVE_KY_TOPO_SHA"   --arg usgsTopo "$USGS_TOPO_SERVICE"   --arg usgsTopoSha "$NATIVE_USGS_TOPO_SHA"   --arg leafOn "$LEAF_ON_SERVICE"   --arg leafOnSha "$NATIVE_LEAF_ON_SHA"   --arg leafOff "$LEAF_OFF_SERVICE"   --arg leafOffSha "$NATIVE_LEAF_OFF_SHA"   --arg stateParkTrails "$STATE_PARK_TRAILS"   --arg stateParkTrailsSha "$STATE_PARK_TRAILS_SHA"   --arg usfsWilderness "$USFS_WILDERNESS"   --arg usfsWildernessSha "$USFS_WILDERNESS_SHA"   --arg usfsSpecial "$USFS_SPECIAL"   --arg usfsSpecialSha "$USFS_SPECIAL_SHA"   --arg usfsLandUnits "$USFS_LAND_UNITS"   --arg usfsLandUnitsSha "$USFS_LAND_UNITS_SHA"   --arg kyCounties "$KY_COUNTIES"   --arg kyCountiesSha "$KY_COUNTIES_SHA"   --arg rrghMapSha "$RRGH_MAP_SOURCE_SHA"   --arg sunManifestSha "$SUN_MANIFEST_SHA"   --arg weatherManifestSha "$WEATHER_MANIFEST_SHA"   --arg osmUrl "$OSM_URL"   --arg osmSha "$OSM_SHA"   --arg kgsUrl "$KGS_URL"   --arg kgsSha "$KGS_SHA"   '{
     packageID:$packageID,
     version:$version,
     byteCount:$byteCount,
@@ -542,6 +543,138 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         integritySHA256:$usfsOwnershipSha
       },
       {
+        sourceID:"kentucky-topo-offline",
+        sourceURL:$kyTopo,
+        provider:"Commonwealth of Kentucky / Kentucky Division of Geographic Information",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Kentucky Topo bounded Web Mercator export for WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS MapServer export request to PNG; no bulk tile scraping.",
+        rightsBasis:"LEG-DEC-0033 approved Kentucky source stack.",
+        attributionOrDisclaimer:"KyFromAbove Partners / Kentucky Division of Geographic Information.",
+        outputVersion:$version,
+        integritySHA256:$kyTopoSha
+      },
+      {
+        sourceID:"usgs-topo-offline",
+        sourceURL:$usgsTopo,
+        provider:"U.S. Geological Survey / The National Map",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("USGS Topo bounded Web Mercator export for WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS MapServer export request to PNG; no bulk tile scraping.",
+        rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033.",
+        attributionOrDisclaimer:"USGS The National Map.",
+        outputVersion:$version,
+        integritySHA256:$usgsTopoSha
+      },
+      {
+        sourceID:"kyfromabove-leaf-on-aerial-offline",
+        sourceURL:$leafOn,
+        provider:"Commonwealth of Kentucky / KyFromAbove",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Phase 3 leaf-on aerial bounded Web Mercator export for WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS MapServer export request to JPEG; no bulk tile scraping.",
+        rightsBasis:"LEG-DEC-0033 approved Kentucky source stack.",
+        attributionOrDisclaimer:"KyFromAbove / Commonwealth of Kentucky.",
+        outputVersion:$version,
+        integritySHA256:$leafOnSha
+      },
+      {
+        sourceID:"kyfromabove-leaf-off-aerial-offline",
+        sourceURL:$leafOff,
+        provider:"Commonwealth of Kentucky / KyFromAbove",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Phase 2 leaf-off aerial bounded Web Mercator export for WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS MapServer export request to JPEG; no bulk tile scraping.",
+        rightsBasis:"LEG-DEC-0033 approved Kentucky source stack.",
+        attributionOrDisclaimer:"KyFromAbove / Commonwealth of Kentucky.",
+        outputVersion:$version,
+        integritySHA256:$leafOffSha
+      },
+      {
+        sourceID:"kentucky-state-park-trails",
+        sourceURL:$stateParkTrails,
+        provider:"Kentucky State Parks / Kentucky Division of Geographic Information",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Official State Park Trails layer clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS feature-layer GeoJSON query.",
+        rightsBasis:"LEG-DEC-0033 approved Kentucky public-source stack.",
+        attributionOrDisclaimer:"Kentucky State Parks / Kentucky Division of Geographic Information; trail display is informational.",
+        outputVersion:$version,
+        integritySHA256:$stateParkTrailsSha
+      },
+      {
+        sourceID:"usfs-wilderness",
+        sourceURL:$usfsWilderness,
+        provider:"USDA Forest Service Enterprise Data Warehouse",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Wilderness layer clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS feature-layer GeoJSON query.",
+        rightsBasis:"USDA Forest Service public geospatial service; LEG-DEC-0033.",
+        attributionOrDisclaimer:"USDA Forest Service; informational management context, not a survey or access determination.",
+        outputVersion:$version,
+        integritySHA256:$usfsWildernessSha
+      },
+      {
+        sourceID:"usfs-special-management",
+        sourceURL:$usfsSpecial,
+        provider:"USDA Forest Service Enterprise Data Warehouse",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("Special-interest management-area layer clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS feature-layer GeoJSON query.",
+        rightsBasis:"USDA Forest Service public geospatial service; LEG-DEC-0033.",
+        attributionOrDisclaimer:"USDA Forest Service; informational management context, not a survey or access determination.",
+        outputVersion:$version,
+        integritySHA256:$usfsSpecialSha
+      },
+      {
+        sourceID:"usfs-land-units",
+        sourceURL:$usfsLandUnits,
+        provider:"USDA Forest Service Enterprise Data Warehouse",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("National Forest System land-unit layer clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS feature-layer GeoJSON query.",
+        rightsBasis:"USDA Forest Service public geospatial service; LEG-DEC-0033.",
+        attributionOrDisclaimer:"USDA Forest Service; informational land-management context, not a legal boundary.",
+        outputVersion:$version,
+        integritySHA256:$usfsLandUnitsSha
+      },
+      {
+        sourceID:"kentucky-county-boundaries",
+        sourceURL:$kyCounties,
+        provider:"Kentucky Division of Geographic Information",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:("County boundary layer clipped to WGS84 bbox " + $bbox),
+        processingMethod:"Single bounded ArcGIS feature-layer GeoJSON query.",
+        rightsBasis:"LEG-DEC-0033 approved Kentucky public-source stack.",
+        attributionOrDisclaimer:"Kentucky Division of Geographic Information; contextual county boundaries are not survey products.",
+        outputVersion:$version,
+        integritySHA256:$kyCountiesSha
+      },
+      {
+        sourceID:"rrgh-terrain-sun-potential",
+        sourceURL:("https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/commit/" + $rrghMapSha),
+        provider:"Red River Gorge Hiker",
+        vintageOrRetrievedAt:$rrghMapSha,
+        areaOfInterestOrSourceObjects:"Accepted RRGH 30-sector mobile Sunrise / Sunset Potential derivative manifest and raster set.",
+        processingMethod:"Copied exact RRGH-controlled accepted Website derivative bytes from the frozen source commit into the protected Base package; every packaged file is SHA-256 indexed by NATIVE-MAP.json.",
+        rightsBasis:"RRGH-controlled derivative of LEG-DEC-0033 cleared terrain/source stack.",
+        attributionOrDisclaimer:"RRGH terrain-derived potential model; bare-earth/source limitations remain visible in the app.",
+        outputVersion:$version,
+        integritySHA256:$sunManifestSha
+      },
+      {
+        sourceID:"rrgh-noaa-weather-snapshot",
+        sourceURL:("https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/commit/" + $rrghMapSha),
+        provider:"Red River Gorge Hiker derivative from NOAA / National Weather Service",
+        vintageOrRetrievedAt:$retrievedAt,
+        areaOfInterestOrSourceObjects:"Accepted RRGH-hosted snow-depth and recent-precipitation snapshot manifest plus rasters, retaining source fetchedAtUtc.",
+        processingMethod:"Copied exact RRGH-controlled Website derivative bytes from the frozen source commit into the protected Base package; every packaged file is SHA-256 indexed by NATIVE-MAP.json.",
+        rightsBasis:"NOAA/NWS public U.S. government data through the LEG-DEC-0033 approved RRGH refreshable-weather path.",
+        attributionOrDisclaimer:"NOAA / National Weather Service. Snapshot is last-known data with visible age and is not a trail-condition or safety guarantee.",
+        outputVersion:$version,
+        integritySHA256:$weatherManifestSha
+      },
+      {
         sourceID:"osm-community-local-context",
         sourceURL:$osmUrl,
         provider:"OpenStreetMap contributors via Geofabrik",
@@ -572,7 +705,7 @@ jq -e   '.packageID == "gorge-base"
    and (.version | length > 0)
    and (.byteCount > 0)
    and (.sha256 | length == 64)
-   and (.sources | length == 9)
+   and (.sources | length == 20)
    and all(.sources[];
      (.sourceID | length > 0)
      and (.sourceURL | length > 0)
