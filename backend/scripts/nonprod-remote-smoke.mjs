@@ -138,12 +138,17 @@ async function assertPackageDownload(idToken, packageId) {
   if (sha256(bytes) !== descriptor.sha256) {
     throw new Error("Downloaded SHA-256 mismatch for " + packageId);
   }
-  if (response.headers.get("x-rrgh-package-id") !== packageId) {
+  const returnedPackageId =
+    response.headers.get("x-rrgh-package-id") ??
+    response.headers.get("x-goog-meta-rrgh-package-id");
+  const returnedVersion =
+    response.headers.get("x-rrgh-package-version") ??
+    response.headers.get("x-goog-meta-rrgh-version");
+
+  if (returnedPackageId !== packageId) {
     throw new Error("Downloaded package ID header mismatch for " + packageId);
   }
-  if (
-    response.headers.get("x-rrgh-package-version") !== descriptor.version
-  ) {
+  if (returnedVersion !== descriptor.version) {
     throw new Error("Downloaded package version header mismatch for " + packageId);
   }
 
