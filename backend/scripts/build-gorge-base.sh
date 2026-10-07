@@ -16,9 +16,9 @@ MANIFEST="$OUTPUT_DIR/gorge-base-manifest.json"
 PACKAGE="$OUTPUT_DIR/gorge-base-${PACKAGE_VERSION}.rrghpkg"
 
 rm -rf "$OUTPUT_DIR"
-mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
+mkdir -p   "$ROOT/layers/terrain"   "$ROOT/layers/hydrography"   "$ROOT/layers/roads"   "$ROOT/layers/forest"   "$ROOT/layers/osm"   "$ROOT/layers/kgs"   "$ROOT/native"   "$ROOT/documentation/kgs"   "$ROOT/documentation/osm"   "$DOWNLOADS"
 
-for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gzip tar; do
+for command in curl jq unzip ogr2ogr ogrinfo osmium sha256sum gdal_translate tar; do
   command -v "$command" >/dev/null || {
     echo "Missing required build command: $command" >&2
     exit 1
@@ -49,6 +49,12 @@ KYFROMABOVE_SERVICE="https://kyraster.ky.gov/arcgis/rest/services/ElevationServi
 KYFROMABOVE_OUT="$ROOT/layers/terrain/kyfromabove-hillshade.tif"
 curl --fail --location --retry 4 --retry-all-errors   --get "$KYFROMABOVE_SERVICE/exportImage"   --data-urlencode "bbox=$BBOX"   --data-urlencode "bboxSR=4326"   --data-urlencode "imageSR=3857"   --data-urlencode "size=4096,3072"   --data-urlencode "format=tiff"   --data-urlencode "interpolation=RSP_BilinearInterpolation"   --data-urlencode "f=image"   -o "$KYFROMABOVE_OUT"
 test -s "$KYFROMABOVE_OUT"
+
+# Native iOS offline renderer asset. Keep the governed source TIFF for provenance,
+# and derive a deterministic PNG that UIKit can render directly without GDAL.
+NATIVE_TERRAIN_OUT="$ROOT/native/terrain-relief.png"
+gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_TERRAIN_OUT"
+test -s "$NATIVE_TERRAIN_OUT"
 
 # 2. USGS NHDPlus High Resolution — fixed bounded build-time snapshot from the
 # official National Map service. This avoids relying on a legacy bulk-download
@@ -158,11 +164,71 @@ jq -n   --arg packageVersion "$PACKAGE_VERSION"   --arg builtAt "$RETRIEVED_AT" 
     }
   }' > "$ROOT/BUILD-PROVENANCE.json"
 
-# Deterministic archive framing for these exact built files.
+# Native renderer manifest. These paths are intentionally limited to files
+# already governed by the frozen source/provenance set above. Additional
+# Website-parity layers are added only when their exact derivative/source
+# lineage is frozen into a later immutable package version.
+NATIVE_TERRAIN_SHA="$(hash_file "$NATIVE_TERRAIN_OUT")"
+NHD_FLOW_SHA="$(hash_file "$ROOT/layers/hydrography/usgs-nhd-flowline.geojson")"
+NHD_WATER_SHA="$(hash_file "$ROOT/layers/hydrography/usgs-nhd-waterbody.geojson")"
+CENSUS_SHA="$(hash_file "$ROOT/layers/roads/census-tiger-roads.geojson")"
+USFS_TRAILS_SHA="$(hash_file "$ROOT/layers/forest/usfs-nfs-trails.geojson")"
+USFS_ROADS_SHA="$(hash_file "$ROOT/layers/forest/usfs-nfs-roads.geojson")"
+USFS_OWNER_SHA="$(hash_file "$ROOT/layers/forest/usfs-basic-ownership.geojson")"
+KGS_SHA="$(hash_file "$ROOT/layers/kgs/kgs-oil-gas-wells.geojson")"
+
+jq -n \
+  --arg packageVersion "$PACKAGE_VERSION" \
+  --arg terrainSha "$NATIVE_TERRAIN_SHA" \
+  --arg nhdFlowSha "$NHD_FLOW_SHA" \
+  --arg nhdWaterSha "$NHD_WATER_SHA" \
+  --arg censusSha "$CENSUS_SHA" \
+  --arg usfsTrailsSha "$USFS_TRAILS_SHA" \
+  --arg usfsRoadsSha "$USFS_ROADS_SHA" \
+  --arg usfsOwnerSha "$USFS_OWNER_SHA" \
+  --arg kgsSha "$KGS_SHA" \
+  '{
+    schemaVersion:1,
+    archiveFormat:"tar",
+    packageID:"gorge-base",
+    packageVersion:$packageVersion,
+    boundsWgs84:{west:-83.80,south:37.65,east:-83.40,north:37.95},
+    terrainRelief:{
+      path:"native/terrain-relief.png",
+      sha256:$terrainSha
+    },
+    vectors:[
+      {id:"hydro-flowline",path:"layers/hydrography/usgs-nhd-flowline.geojson",sha256:$nhdFlowSha},
+      {id:"hydro-waterbody",path:"layers/hydrography/usgs-nhd-waterbody.geojson",sha256:$nhdWaterSha},
+      {id:"local-roads",path:"layers/roads/census-tiger-roads.geojson",sha256:$censusSha},
+      {id:"forest-service-trails",path:"layers/forest/usfs-nfs-trails.geojson",sha256:$usfsTrailsSha},
+      {id:"forest-service-roads",path:"layers/forest/usfs-nfs-roads.geojson",sha256:$usfsRoadsSha},
+      {id:"forest-ownership",path:"layers/forest/usfs-basic-ownership.geojson",sha256:$usfsOwnerSha},
+      {id:"oil-gas-wells",path:"layers/kgs/kgs-oil-gas-wells.geojson",sha256:$kgsSha}
+    ]
+  }' > "$ROOT/NATIVE-MAP.json"
+
+jq -e '
+  .schemaVersion == 1
+  and .archiveFormat == "tar"
+  and .packageID == "gorge-base"
+  and (.packageVersion | length > 0)
+  and (.terrainRelief.sha256 | length == 64)
+  and (.vectors | length == 7)
+  and all(.vectors[]; (.id | length > 0) and (.path | length > 0) and (.sha256 | length == 64))
+' "$ROOT/NATIVE-MAP.json" >/dev/null
+
+# Deterministic *plain tar* framing for native iOS extraction. The previous
+# package version used gzip-wrapped tar; the iOS runtime now fail-closed
+# extracts a bounded plain tar without shelling out or depending on third-party
+# archive code.
 (
   cd "$ROOT"
-  tar --sort=name     --mtime='UTC 2026-10-06 00:00:00'     --owner=0 --group=0 --numeric-owner     -cf - .
-) | gzip -n > "$PACKAGE"
+  tar --sort=name \
+    --mtime='UTC 2026-10-07 00:00:00' \
+    --owner=0 --group=0 --numeric-owner \
+    -cf "$PACKAGE" .
+)
 
 PACKAGE_SHA="$(hash_file "$PACKAGE")"
 PACKAGE_BYTES="$(stat -c '%s' "$PACKAGE")"
