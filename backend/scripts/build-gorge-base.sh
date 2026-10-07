@@ -135,20 +135,74 @@ NATIVE_HILLSHADE="$ROOT/native/terrain-relief.png"
 gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
 test -s "$NATIVE_HILLSHADE"
 
-# 2. USGS NHDPlus High Resolution — fixed downloadable HU4 snapshot.
-# The nationwide dynamic ArcGIS service repeatedly returned 502/504/timeouts
-# even for small deterministic subqueries in CI. USGS explicitly publishes
-# NHDPlus HR as staged downloadable HU4 products; Red River Gorge is within
-# HU4 0510 (Kentucky-Licking). Use the official staged GDB product and clip
-# locally so package generation does not depend on expensive live rendering.
-USGS_NHD_PRODUCT="https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/Hydrography/NHDPlus/HU4/HighResolution/GDB/NHDPLUS_H_0510_HU4_GDB.zip"
+# 2. USGS NHDPlus High Resolution — current official HU4 0510 product.
+# The nationwide ArcGIS service repeatedly returned 502/504/timeouts in CI,
+# while the rockyweb directory can return a federal system-use HTML page to
+# non-browser clients. Resolve the current pre-staged FileGDB through the
+# official TNMAccess API, then clip locally. This keeps the source official
+# while avoiding both failure modes.
+USGS_TNM_API="https://tnmaccess.nationalmap.gov/api/v1/products"
+USGS_NHD_LOOKUP="$DOWNLOADS/tnm-nhdplus-0510.json"
+curl --fail --location --retry 5 --retry-all-errors \
+  --retry-delay 3 --retry-max-time 300 \
+  --connect-timeout 30 --max-time 120 \
+  --get "$USGS_TNM_API" \
+  --data-urlencode "polyType=huc4" \
+  --data-urlencode "polyCode=0510" \
+  --data-urlencode "q=NHDPlus_H_0510_HU4" \
+  --data-urlencode "prodFormats=FileGDB" \
+  --data-urlencode "max=25" \
+  --data-urlencode "outputFormat=JSON" \
+  -o "$USGS_NHD_LOOKUP"
+
+jq -e '
+  (.items | type == "array")
+  and (.items | length > 0)
+' "$USGS_NHD_LOOKUP" >/dev/null
+
+USGS_NHD_PRODUCT="$(
+  jq -r '
+    [
+      .items[]
+      | select(
+          ((.title // "") | test("NHDPlus.*0510"; "i"))
+          or ((.downloadURL // "") | test("NHDPLUS_H_0510"; "i"))
+        )
+      | (
+          .downloadURL
+          // .urls.FileGDB
+          // .urls.GDB
+          // .urls["File Geodatabase"]
+          // empty
+        )
+      | select(type == "string" and length > 0)
+    ][0] // empty
+  ' "$USGS_NHD_LOOKUP"
+)"
+if [[ -z "$USGS_NHD_PRODUCT" ]]; then
+  echo "TNMAccess returned no downloadable NHDPlus HR FileGDB for HU4 0510." >&2
+  jq '{total, titles:[.items[]?.title]}' "$USGS_NHD_LOOKUP" >&2
+  exit 1
+fi
+
 USGS_NHD_ZIP="$DOWNLOADS/NHDPLUS_H_0510_HU4_GDB.zip"
 USGS_NHD_DIR="$DOWNLOADS/nhdplus-0510"
 download "$USGS_NHD_PRODUCT" "$USGS_NHD_ZIP"
+
+# Fail with a source-specific message instead of allowing an HTML/error body
+# to reach the generic extraction step.
+if ! unzip -tq "$USGS_NHD_ZIP" >/dev/null; then
+  echo "Resolved TNMAccess NHDPlus HR product is not a valid ZIP: $USGS_NHD_PRODUCT" >&2
+  exit 1
+fi
+
 mkdir -p "$USGS_NHD_DIR"
 unzip -q "$USGS_NHD_ZIP" -d "$USGS_NHD_DIR"
 USGS_NHD_GDB="$(find "$USGS_NHD_DIR" -type d -name '*.gdb' | head -n 1)"
-test -n "$USGS_NHD_GDB"
+if [[ -z "$USGS_NHD_GDB" ]]; then
+  echo "TNMAccess NHDPlus HR ZIP contained no FileGDB." >&2
+  exit 1
+fi
 
 ogr2ogr -f GeoJSON \
   -t_srs EPSG:4326 \
@@ -341,8 +395,8 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NetworkNHDFlowline layer 3 queried within WGS84 bbox " + $bbox),
-        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
+        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HU4 0510 FileGDB; NetworkNHDFlowline clipped within WGS84 bbox " + $bbox),
+        processingMethod:"Official TNMAccess-resolved NHDPlus HR HU4 0510 FileGDB clipped locally to the fixed Gorge AOI; exact source ZIP and output hashes frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
@@ -354,8 +408,8 @@ jq -n   --arg packageID "gorge-base"   --arg version "$PACKAGE_VERSION"   --argj
         sourceArchiveSHA256:$nhdSourceSha,
         provider:"U.S. Geological Survey / The National Map",
         vintageOrRetrievedAt:$retrievedAt,
-        areaOfInterestOrSourceObjects:("NHDPlus High Resolution NHDWaterbody layer 9 queried within WGS84 bbox " + $bbox),
-        processingMethod:"Single bounded ArcGIS NHDPlus_HR layer query returning GeoJSON; retrieval timestamp and exact output hash frozen in this package version.",
+        areaOfInterestOrSourceObjects:("NHDPlus High Resolution HU4 0510 FileGDB; NHDWaterbody clipped within WGS84 bbox " + $bbox),
+        processingMethod:"Official TNMAccess-resolved NHDPlus HR HU4 0510 FileGDB clipped locally to the fixed Gorge AOI; exact source ZIP and output hashes frozen in this package version.",
         rightsBasis:"U.S. federal public-domain geospatial data; LEG-DEC-0033 / LEG-REF-0025.",
         attributionOrDisclaimer:"USGS / The National Map; fixed contextual hydrography snapshot, not live regulatory or access data.",
         outputVersion:$version,
