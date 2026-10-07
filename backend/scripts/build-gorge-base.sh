@@ -149,9 +149,7 @@ curl --fail --location --retry 5 --retry-all-errors \
   --get "$USGS_TNM_API" \
   --data-urlencode "polyType=huc4" \
   --data-urlencode "polyCode=0510" \
-  --data-urlencode "q=NHDPlus_H_0510_HU4" \
-  --data-urlencode "prodFormats=FileGDB" \
-  --data-urlencode "max=25" \
+  --data-urlencode "max=1000" \
   --data-urlencode "outputFormat=JSON" \
   -o "$USGS_NHD_LOOKUP"
 
@@ -164,24 +162,50 @@ USGS_NHD_PRODUCT="$(
   jq -r '
     [
       .items[]
+      | {
+          title:(.title // ""),
+          url:(
+            .downloadURL
+            // .urls.FileGDB
+            // .urls.GDB
+            // .urls["File Geodatabase"]
+            // empty
+          )
+        }
       | select(
-          ((.title // "") | test("NHDPlus.*0510"; "i"))
-          or ((.downloadURL // "") | test("NHDPLUS_H_0510"; "i"))
+          (.url | type == "string")
+          and (.url | length > 0)
+          and (
+            (.url | test("NHDPLUS_H_0510.*GDB\\.zip($|\\?)"; "i"))
+            or (
+              (.title | test("NHDPlus"; "i"))
+              and (.title | test("0510"; "i"))
+              and (.url | test("GDB\\.zip($|\\?)"; "i"))
+            )
+          )
         )
-      | (
-          .downloadURL
-          // .urls.FileGDB
-          // .urls.GDB
-          // .urls["File Geodatabase"]
-          // empty
-        )
-      | select(type == "string" and length > 0)
+      | .url
     ][0] // empty
   ' "$USGS_NHD_LOOKUP"
 )"
 if [[ -z "$USGS_NHD_PRODUCT" ]]; then
   echo "TNMAccess returned no downloadable NHDPlus HR FileGDB for HU4 0510." >&2
-  jq '{total, titles:[.items[]?.title]}' "$USGS_NHD_LOOKUP" >&2
+  jq '{
+    total,
+    candidates:[
+      .items[]?
+      | select(
+          ((.title // "") | test("NHD|Hydro"; "i"))
+          or ((.downloadURL // "") | test("NHD|Hydro"; "i"))
+        )
+      | {
+          title,
+          format,
+          downloadURL,
+          urls
+        }
+    ][0:25]
+  }' "$USGS_NHD_LOOKUP" >&2
   exit 1
 fi
 
