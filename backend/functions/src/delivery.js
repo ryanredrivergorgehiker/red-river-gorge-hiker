@@ -151,46 +151,103 @@ export async function createProtectedPackageDelivery({
   };
 }
 
-export const DIRECT_READ_TTL_SECONDS = 60;
+export const MAX_PROXY_RANGE_BYTES = 8 * 1024 * 1024;
 
-export async function createSignedPackageReadUrl(
-  file,
-  capabilityExpiresAt,
-  nowMs = Date.now(),
+export function resolveProtectedPackageRange(
+  rangeHeader,
+  totalBytes,
+  maxBytes = MAX_PROXY_RANGE_BYTES,
 ) {
-  const capabilityExpiresAtMs =
-    typeof capabilityExpiresAt?.toMillis === "function"
-      ? capabilityExpiresAt.toMillis()
-      : Number(capabilityExpiresAt);
+  const total = Number(totalBytes);
+  const maximum = Number(maxBytes);
 
   if (
-    !Number.isFinite(capabilityExpiresAtMs) ||
-    capabilityExpiresAtMs <= nowMs
+    !Number.isSafeInteger(total) ||
+    total <= 0 ||
+    !Number.isSafeInteger(maximum) ||
+    maximum <= 0
   ) {
-    throw new Error("delivery_capability_expired");
+    return {
+      valid: false,
+      reason: "invalid_range_configuration",
+    };
   }
 
-  const directExpiresAtMs = Math.min(
-    capabilityExpiresAtMs,
-    nowMs + DIRECT_READ_TTL_SECONDS * 1000,
-  );
+  if (rangeHeader == null || rangeHeader === "") {
+    if (total <= maximum) {
+      return {
+        valid: true,
+        partial: false,
+        start: 0,
+        end: total - 1,
+        length: total,
+      };
+    }
 
-  const [url] = await file.getSignedUrl({
-    version: "v4",
-    action: "read",
-    expires: new Date(directExpiresAtMs),
-  });
+    return {
+      valid: false,
+      reason: "range_required",
+    };
+  }
+
+  if (typeof rangeHeader !== "string") {
+    return {
+      valid: false,
+      reason: "invalid_range",
+    };
+  }
+
+  const match = rangeHeader.match(/^bytes=(\d+)-(\d*)$/);
+  if (!match) {
+    return {
+      valid: false,
+      reason: "invalid_range",
+    };
+  }
+
+  const start = Number(match[1]);
+  if (
+    !Number.isSafeInteger(start) ||
+    start < 0 ||
+    start >= total
+  ) {
+    return {
+      valid: false,
+      reason: "range_not_satisfiable",
+    };
+  }
+
+  const requestedEnd =
+    match[2] === ""
+      ? Math.min(total - 1, start + maximum - 1)
+      : Number(match[2]);
 
   if (
-    typeof url !== "string" ||
-    !url.startsWith("https://")
+    !Number.isSafeInteger(requestedEnd) ||
+    requestedEnd < start
   ) {
-    throw new Error("signed_package_url_invalid");
+    return {
+      valid: false,
+      reason: "invalid_range",
+    };
+  }
+
+  const end = Math.min(requestedEnd, total - 1);
+  const length = end - start + 1;
+
+  if (length > maximum) {
+    return {
+      valid: false,
+      reason: "range_too_large",
+    };
   }
 
   return {
-    url,
-    expiresAtMs: directExpiresAtMs,
+    valid: true,
+    partial: true,
+    start,
+    end,
+    length,
   };
 }
 
