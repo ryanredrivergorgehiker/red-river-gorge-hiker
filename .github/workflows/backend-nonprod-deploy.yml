@@ -87,24 +87,22 @@ jobs:
           test "$(gcloud config get-value project)" = "rrgh-nonproduction"
           gcloud auth list --filter=status:ACTIVE --format='value(account)'
 
-          for api in drive.googleapis.com iamcredentials.googleapis.com; do
-            if ! gcloud services list \
-              --enabled \
-              --project="$PROJECT_ID" \
-              --filter="config.name:$api" \
-              --format='value(config.name)' \
-              | grep -Fx "$api"; then
-              echo "$api is not yet enabled; enabling it for the authorized nonproduction backend path."
-              gcloud services enable "$api" --project="$PROJECT_ID"
-            fi
+          if ! gcloud services list \
+            --enabled \
+            --project="$PROJECT_ID" \
+            --filter='config.name:drive.googleapis.com' \
+            --format='value(config.name)' \
+            | grep -Fx 'drive.googleapis.com'; then
+            echo "Drive API is not yet enabled; enabling it for the nonproduction governed-source staging path."
+            gcloud services enable drive.googleapis.com --project="$PROJECT_ID"
+          fi
 
-            gcloud services list \
-              --enabled \
-              --project="$PROJECT_ID" \
-              --filter="config.name:$api" \
-              --format='value(config.name)' \
-              | grep -Fx "$api"
-          done
+          gcloud services list \
+            --enabled \
+            --project="$PROJECT_ID" \
+            --filter='config.name:drive.googleapis.com' \
+            --format='value(config.name)' \
+            | grep -Fx 'drive.googleapis.com'
 
       - name: Install offline package build tools
         shell: bash
@@ -143,6 +141,29 @@ jobs:
             echo "::error::Protected package bucket has a public IAM member."
             exit 1
           fi
+
+      - name: Ensure private offline lease signing keyring
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY_OBJECT="gs://$RRGH_PACKAGE_BUCKET/backend-secrets/offline-lease/keyring-v1.json"
+          KEY_FILE="$RUNNER_TEMP/rrgh-offline-lease-keyring-v1.json"
+
+          if gcloud storage objects describe "$KEY_OBJECT" >/dev/null 2>&1; then
+            gsutil cp "$KEY_OBJECT" "$KEY_FILE"
+            node backend/scripts/ensure-offline-lease-keyring.mjs "$KEY_FILE"
+            echo "Reusing existing private offline lease keyring."
+          else
+            node backend/scripts/ensure-offline-lease-keyring.mjs "$KEY_FILE"
+            gsutil -h "Content-Type:application/json" \
+              -h "x-goog-meta-rrgh-purpose:offline-entitlement-lease-signing" \
+              cp -n "$KEY_FILE" "$KEY_OBJECT"
+            echo "Created private offline lease keyring in the existing protected bucket."
+          fi
+
+          rm -f "$KEY_FILE"
+          gcloud storage objects describe "$KEY_OBJECT" \
+            --format='json(name,size,contentType,metadata)'
 
       - name: Build immutable Gorge Base package when version is absent
         shell: bash
@@ -218,20 +239,12 @@ jobs:
 
           gcloud storage buckets add-iam-policy-binding             "gs://$RRGH_PACKAGE_BUCKET"             --member="serviceAccount:$RUNTIME_SA"             --role="roles/storage.objectViewer"             --quiet
 
-          # LEG-DEC-0035 uses the runtime identity's Google-managed signing key
-          # through IAM Credentials signBlob. The private key is never exported
-          # or stored by RRGH. Bind Token Creator to the runtime identity only
-          # on itself so it can sign/verify leases without a paid KMS service.
-          gcloud iam service-accounts add-iam-policy-binding \
-            "$RUNTIME_SA" \
-            --member="serviceAccount:$RUNTIME_SA" \
-            --role="roles/iam.serviceAccountTokenCreator" \
-            --project="$PROJECT_ID" \
-            --quiet
-
+          # LEG-DEC-0035 signing uses a private RSA keyring stored under
+          # backend-secrets/ in this same private bucket. The runtime receives
+          # read-only object access only; clients remain denied and no public
+          # or permanent download URL is created. No KMS/new paid service is used.
           # Large packages remain bounded authenticated byte ranges through
-          # rrghPackageDownload; this lease signing permission does not create
-          # package signed URLs or public Storage access.
+          # rrghPackageDownload.
 
       - name: Seed exact package catalog metadata
         run: node backend/scripts/seed-package-catalog.mjs
