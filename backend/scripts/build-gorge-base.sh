@@ -61,6 +61,9 @@ arcgis_map_export() {
     --data-urlencode "f=image" \
     -o "$output"
   test -s "$output"
+  # ArcGIS can reply HTTP 200 with an error JSON body instead of an image.
+  # Reject it before this source can become a hashed immutable map asset.
+  gdalinfo "$output" >/dev/null
 }
 
 arcgis_geojson_tiled() {
@@ -146,6 +149,7 @@ KYFROMABOVE_SERVICE="https://kyraster.ky.gov/arcgis/rest/services/ElevationServi
 KYFROMABOVE_OUT="$ROOT/layers/terrain/kyfromabove-hillshade.tif"
 curl --fail --location --retry 4 --retry-all-errors   --get "$KYFROMABOVE_SERVICE/exportImage"   --data-urlencode "bbox=$BBOX"   --data-urlencode "bboxSR=4326"   --data-urlencode "imageSR=3857"   --data-urlencode "size=4096,3072"   --data-urlencode "format=tiff"   --data-urlencode "interpolation=RSP_BilinearInterpolation"   --data-urlencode "f=image"   -o "$KYFROMABOVE_OUT"
 test -s "$KYFROMABOVE_OUT"
+gdalinfo "$KYFROMABOVE_OUT" >/dev/null
 
 # Native offline renderer derivative. This is built from the exact governed
 # hillshade export above so the app can render terrain without requiring
@@ -153,6 +157,7 @@ test -s "$KYFROMABOVE_OUT"
 NATIVE_HILLSHADE="$ROOT/native/base/terrain-relief.png"
 gdal_translate -q -of PNG "$KYFROMABOVE_OUT" "$NATIVE_HILLSHADE"
 test -s "$NATIVE_HILLSHADE"
+gdalinfo "$NATIVE_HILLSHADE" >/dev/null
 
 # Offline raster counterparts for the accepted Website map views. These are
 # single bounded exports of the supported Gorge AOI — never bulk tile scraping.
@@ -291,26 +296,44 @@ mkdir -p "$RRGH_WEBSITE_ROOT/data/map/rrg-lidar-sun-mobile" "$RRGH_WEBSITE_ROOT/
 download "$RRGH_RAW_BASE/$SUN_MANIFEST_REL" "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL"
 download "$RRGH_RAW_BASE/$WEATHER_MANIFEST_REL" "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL"
 
-while IFS= read -r rel; do
+# The accepted sunlight manifest carries upstream SHA-256 and size for
+# every WebP. Verify those before constructing the package's own hash index;
+# do not silently accept a different asset under the same Website source SHA.
+while IFS=$'\t' read -r rel expected_sha expected_bytes; do
   test -n "$rel" || continue
+  test "$expected_sha" != "null"
+  test "$expected_bytes" != "null"
   mkdir -p "$RRGH_WEBSITE_ROOT/$(dirname "$rel")"
   download "$RRGH_RAW_BASE/$rel" "$RRGH_WEBSITE_ROOT/$rel"
+  test "$(hash_file "$RRGH_WEBSITE_ROOT/$rel")" = "$expected_sha"
+  test "$(stat -c '%s' "$RRGH_WEBSITE_ROOT/$rel")" = "$expected_bytes"
+  gdalinfo "$RRGH_WEBSITE_ROOT/$rel" >/dev/null
 done < <(
   jq -r '
-    .sectors[]
-    | .variants.overview.sunrise.file,
-      .variants.overview.sunset.file,
-      .variants.detail.sunrise.file,
-      .variants.detail.sunset.file
-  ' "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL" | sort -u
+    [.sectors[] |
+      .variants.overview.sunrise,
+      .variants.overview.sunset,
+      .variants.detail.sunrise,
+      .variants.detail.sunset
+    ]
+    | unique_by(.file)[]
+    | [.file, .sha256, (.bytes|tostring)]
+    | @tsv
+  ' "$RRGH_WEBSITE_ROOT/$SUN_MANIFEST_REL"
 )
 
-while IFS= read -r rel; do
+# NOAA/NWS weather exports currently publish exact byte count, timestamp,
+# source attribution, and legend. Check their declared byte counts; never
+# invent an upstream hash absent from the provider manifest.
+while IFS=$'\t' read -r rel expected_bytes; do
   test -n "$rel" || continue
+  test "$expected_bytes" != "null"
   mkdir -p "$RRGH_WEBSITE_ROOT/$(dirname "$rel")"
   download "$RRGH_RAW_BASE/$rel" "$RRGH_WEBSITE_ROOT/$rel"
+  test "$(stat -c '%s' "$RRGH_WEBSITE_ROOT/$rel")" = "$expected_bytes"
+  gdalinfo "$RRGH_WEBSITE_ROOT/$rel" >/dev/null
 done < <(
-  jq -r '.products[].file' "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL" | sort -u
+  jq -r '.products[] | [.file, (.bytes|tostring)] | @tsv'     "$RRGH_WEBSITE_ROOT/$WEATHER_MANIFEST_REL" | sort -u
 )
 
 # Freeze a complete hash index for every native Website derivative so the
