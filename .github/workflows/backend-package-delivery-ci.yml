@@ -41,6 +41,7 @@ jobs:
           bash -n backend/scripts/stage-governed-route-packages.sh
           node --check backend/scripts/seed-package-catalog.mjs
           node --check backend/scripts/nonprod-remote-smoke.mjs
+          node --check backend/scripts/ensure-offline-lease-keyring.mjs
           node --check backend/functions/src/index.js
           node --check backend/functions/src/store.js
           node --check backend/functions/src/delivery.js
