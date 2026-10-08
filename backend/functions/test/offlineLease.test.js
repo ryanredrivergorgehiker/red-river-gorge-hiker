@@ -11,6 +11,7 @@ import {
   OFFLINE_LEASE_MAX_PAID_MS,
   OFFLINE_LEASE_RENEWAL_WINDOW_MS,
   buildOfflineLeaseClaims,
+  privateKeyringLeaseSigner,
   signOfflineLeaseClaims,
   validateOfflineLeaseClaims,
   verifyOfflineLeaseToken,
@@ -401,4 +402,55 @@ test("frozen cross-client lease fixtures verify exactly", () => {
     assert.equal(result.valid, true, item.name);
     assert.deepEqual(result.claims, item.expectedClaims, item.name);
   }
+});
+
+
+test("private protected-bucket keyring signer emits verifiable public-only client material", async () => {
+  const nowMs = Date.parse("2026-10-08T12:00:00.000Z");
+  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
+  const publicDer = publicKey.export({ format: "der", type: "spki" });
+  const privateDer = privateKey.export({ format: "der", type: "pkcs8" });
+  const keyId =
+    "keyring-test-" +
+    createHash("sha256").update(publicDer).digest("hex").slice(0, 16);
+  const keyring = {
+    version: 1,
+    activeKeyId: keyId,
+    keys: [
+      {
+        keyId,
+        algorithm: "RS256",
+        publicKeySpkiBase64: Buffer.from(publicDer).toString("base64"),
+        privateKeyPkcs8Base64: Buffer.from(privateDer).toString("base64"),
+      },
+    ],
+  };
+
+  const claims = buildOfflineLeaseClaims({
+    uid: "private-keyring-user",
+    nowMs,
+    leaseId: "lease-private-keyring-0001",
+    accountState: accountState({ base: "active" }),
+  }).claims;
+  const signed = await signOfflineLeaseClaims(
+    claims,
+    privateKeyringLeaseSigner(keyring),
+  );
+
+  assert.equal(
+    JSON.stringify(signed.verificationKeys).includes("privateKey"),
+    false,
+  );
+  assert.equal(
+    verifyOfflineLeaseToken({
+      signedToken: signed.signedToken,
+      keyId: signed.keyId,
+      verificationKeys: signed.verificationKeys,
+      expectedUid: "private-keyring-user",
+      nowMs,
+    }).valid,
+    true,
+  );
 });
