@@ -87,12 +87,24 @@ jobs:
           test "$(gcloud config get-value project)" = "rrgh-nonproduction"
           gcloud auth list --filter=status:ACTIVE --format='value(account)'
 
-          if ! gcloud services list             --enabled             --project="$PROJECT_ID"             --filter='config.name:drive.googleapis.com'             --format='value(config.name)'             | grep -Fx 'drive.googleapis.com'; then
-            echo "Drive API is not yet enabled; enabling it for the nonproduction governed-source staging path."
-            gcloud services enable drive.googleapis.com --project="$PROJECT_ID"
-          fi
+          for api in drive.googleapis.com iamcredentials.googleapis.com; do
+            if ! gcloud services list \
+              --enabled \
+              --project="$PROJECT_ID" \
+              --filter="config.name:$api" \
+              --format='value(config.name)' \
+              | grep -Fx "$api"; then
+              echo "$api is not yet enabled; enabling it for the authorized nonproduction backend path."
+              gcloud services enable "$api" --project="$PROJECT_ID"
+            fi
 
-          gcloud services list             --enabled             --project="$PROJECT_ID"             --filter='config.name:drive.googleapis.com'             --format='value(config.name)'             | grep -Fx 'drive.googleapis.com'
+            gcloud services list \
+              --enabled \
+              --project="$PROJECT_ID" \
+              --filter="config.name:$api" \
+              --format='value(config.name)' \
+              | grep -Fx "$api"
+          done
 
       - name: Install offline package build tools
         shell: bash
@@ -206,9 +218,20 @@ jobs:
 
           gcloud storage buckets add-iam-policy-binding             "gs://$RRGH_PACKAGE_BUCKET"             --member="serviceAccount:$RUNTIME_SA"             --role="roles/storage.objectViewer"             --quiet
 
-          # Large packages are served as bounded authenticated byte ranges
-          # through rrghPackageDownload. No signed URL or service-account
-          # Token Creator permission is required.
+          # LEG-DEC-0035 uses the runtime identity's Google-managed signing key
+          # through IAM Credentials signBlob. The private key is never exported
+          # or stored by RRGH. Bind Token Creator to the runtime identity only
+          # on itself so it can sign/verify leases without a paid KMS service.
+          gcloud iam service-accounts add-iam-policy-binding \
+            "$RUNTIME_SA" \
+            --member="serviceAccount:$RUNTIME_SA" \
+            --role="roles/iam.serviceAccountTokenCreator" \
+            --project="$PROJECT_ID" \
+            --quiet
+
+          # Large packages remain bounded authenticated byte ranges through
+          # rrghPackageDownload; this lease signing permission does not create
+          # package signed URLs or public Storage access.
 
       - name: Seed exact package catalog metadata
         run: node backend/scripts/seed-package-catalog.mjs
