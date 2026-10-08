@@ -6,7 +6,6 @@ import {
   sign as cryptoSign,
   verify as cryptoVerify,
 } from "node:crypto";
-import { getApp } from "firebase-admin/app";
 
 export const OFFLINE_LEASE_FORMAT = "compact_jws_rs256_v1";
 export const OFFLINE_LEASE_ALGORITHM = "RS256";
@@ -389,13 +388,21 @@ async function runtimeServiceAccountEmail() {
 }
 
 async function googleAccessToken() {
-  const credential = getApp().options.credential;
-  if (!credential || typeof credential.getAccessToken !== "function") {
-    throw new Error("offline-lease-google-credential-unavailable");
-  }
-  const token = await credential.getAccessToken();
-  if (!token?.access_token) {
+  const response = await fetch(
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+    {
+      headers: {
+        "Metadata-Flavor": "Google",
+      },
+      signal: AbortSignal.timeout(5_000),
+    },
+  );
+  if (!response.ok) {
     throw new Error("offline-lease-google-access-token-unavailable");
+  }
+  const token = await response.json();
+  if (typeof token?.access_token !== "string" || token.access_token.length === 0) {
+    throw new Error("offline-lease-google-access-token-invalid");
   }
   return token.access_token;
 }
