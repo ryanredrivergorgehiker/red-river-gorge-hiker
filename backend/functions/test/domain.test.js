@@ -101,6 +101,7 @@ test("No customer track operation exists in the callable contract", () => {
     "startBaseTrial",
     "getEntitlements",
     "authorizeProtectedPackage",
+    "issueOfflineAccessLease",
     "initiateAccountDeletion",
   ]);
   assert.equal(ALLOWED_OPERATIONS.some((name) => /track|gpx|upload|sync/i.test(name)), false);
