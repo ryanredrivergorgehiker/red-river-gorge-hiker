@@ -85,8 +85,16 @@ assert(
   "Offline lease payload must remain bound to LEG-DEC-0035.",
 );
 assert(
-  offlineLease.includes("iamcredentials.googleapis.com"),
-  "Offline lease signing must use existing Google service-account signing authority.",
+  offlineLease.includes('"backend-secrets/offline-lease/keyring-v1.json"'),
+  "Offline lease signing must read the private keyring only from the existing protected bucket.",
+);
+assert(
+  offlineLease.includes("privateKeyPkcs8Base64"),
+  "Offline lease signing must keep private signing material server-side.",
+);
+assert(
+  !offlineLease.includes("iamcredentials.googleapis.com"),
+  "Offline lease signing must not depend on IAM Token Creator or paid KMS infrastructure.",
 );
 assert(
   !/BEGIN (RSA )?PRIVATE KEY|PRIVATE KEY-----/.test(offlineLease),
