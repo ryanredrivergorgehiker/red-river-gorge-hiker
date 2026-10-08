@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import {
   createHash,
   generateKeyPairSync,
@@ -377,4 +378,27 @@ test("offline lease claims contain no recorded-track or location history data", 
     accountState: accountState({ base: "active" }),
   }).claims;
   assert.equal(/track|gpx|location|latitude|longitude/i.test(JSON.stringify(claims)), false);
+});
+
+
+test("frozen cross-client lease fixtures verify exactly", () => {
+  const fixture = JSON.parse(
+    fs.readFileSync(
+      new URL("./fixtures/offline-lease-v1.json", import.meta.url),
+      "utf8",
+    ),
+  );
+
+  assert.equal(fixture.fixtureVersion, 1);
+  for (const item of fixture.cases) {
+    const result = verifyOfflineLeaseToken({
+      signedToken: item.lease.signedToken,
+      keyId: item.lease.keyId,
+      verificationKeys: fixture.verificationKeys,
+      expectedUid: item.expectedUid,
+      nowMs: Date.parse(item.verificationNow),
+    });
+    assert.equal(result.valid, true, item.name);
+    assert.deepEqual(result.claims, item.expectedClaims, item.name);
+  }
 });
