@@ -1,12 +1,11 @@
 import {
-  X509Certificate,
   createHash,
   generateKeyPairSync,
   randomBytes,
   sign as cryptoSign,
   verify as cryptoVerify,
 } from "node:crypto";
-import { getApp } from "firebase-admin/app";
+import { getStorage } from "firebase-admin/storage";
 
 export const OFFLINE_LEASE_FORMAT = "compact_jws_rs256_v1";
 export const OFFLINE_LEASE_ALGORITHM = "RS256";
@@ -365,137 +364,128 @@ export function verifyOfflineLeaseToken({
   });
 }
 
-async function runtimeServiceAccountEmail() {
-  const configured = process.env.RRGH_OFFLINE_LEASE_SIGNER_SERVICE_ACCOUNT;
-  if (configured) return configured;
-
-  const response = await fetch(
-    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email",
-    {
-      headers: {
-        "Metadata-Flavor": "Google",
-      },
-      signal: AbortSignal.timeout(5_000),
-    },
-  );
-  if (!response.ok) {
-    throw new Error("offline-lease-runtime-identity-unavailable");
-  }
-  const email = (await response.text()).trim();
-  if (!email.includes("@")) {
-    throw new Error("offline-lease-runtime-identity-invalid");
-  }
-  return email;
+function offlineLeaseKeyringLocation() {
+  const projectId =
+    process.env.GCLOUD_PROJECT ||
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    "rrgh-nonproduction";
+  return {
+    bucket:
+      process.env.RRGH_OFFLINE_LEASE_KEYRING_BUCKET ||
+      `${projectId}-protected-packages`,
+    objectName:
+      process.env.RRGH_OFFLINE_LEASE_KEYRING_OBJECT ||
+      "backend-secrets/offline-lease/keyring-v1.json",
+  };
 }
 
-async function googleAccessToken() {
-  const credential = getApp().options.credential;
-  if (!credential || typeof credential.getAccessToken !== "function") {
-    throw new Error("offline-lease-google-credential-unavailable");
+function validatePrivateKeyring(keyring) {
+  if (
+    !keyring ||
+    keyring.version !== 1 ||
+    typeof keyring.activeKeyId !== "string" ||
+    !Array.isArray(keyring.keys) ||
+    keyring.keys.length === 0
+  ) {
+    throw new Error("offline-lease-keyring-invalid");
   }
-  const token = await credential.getAccessToken();
-  if (!token?.access_token) {
-    throw new Error("offline-lease-google-access-token-unavailable");
+
+  const ids = new Set();
+  for (const key of keyring.keys) {
+    if (
+      !key ||
+      typeof key.keyId !== "string" ||
+      key.keyId.length < 16 ||
+      ids.has(key.keyId) ||
+      key.algorithm !== OFFLINE_LEASE_ALGORITHM ||
+      typeof key.publicKeySpkiBase64 !== "string" ||
+      key.publicKeySpkiBase64.length === 0 ||
+      typeof key.privateKeyPkcs8Base64 !== "string" ||
+      key.privateKeyPkcs8Base64.length === 0
+    ) {
+      throw new Error("offline-lease-keyring-invalid");
+    }
+    ids.add(key.keyId);
   }
-  return token.access_token;
+
+  if (!ids.has(keyring.activeKeyId)) {
+    throw new Error("offline-lease-keyring-active-key-missing");
+  }
+  return keyring;
 }
 
-function certMapToVerificationKeys(certMap) {
-  return Object.entries(certMap ?? {}).map(([keyId, pem]) => {
-    const certificate = new X509Certificate(pem);
-    const spki = certificate.publicKey.export({
-      format: "der",
-      type: "spki",
-    });
-    return {
-      keyId,
-      algorithm: OFFLINE_LEASE_ALGORITHM,
-      publicKeySpkiBase64: Buffer.from(spki).toString("base64"),
-    };
-  });
-}
-
-async function serviceAccountVerificationKeys(email, forceRefresh = false) {
+async function loadPrivateKeyring({
+  storage = getStorage(),
+  forceRefresh = false,
+} = {}) {
+  const location = offlineLeaseKeyringLocation();
   if (
     !forceRefresh &&
-    productionKeyCache?.email === email &&
+    productionKeyCache?.bucket === location.bucket &&
+    productionKeyCache?.objectName === location.objectName &&
     Date.now() - productionKeyCache.fetchedAtMs < KEY_CACHE_MS
   ) {
-    return productionKeyCache.keys;
+    return productionKeyCache.keyring;
   }
 
-  const response = await fetch(
-    "https://www.googleapis.com/service_accounts/v1/metadata/x509/" +
-      encodeURIComponent(email),
-    {
-      signal: AbortSignal.timeout(10_000),
-    },
-  );
-  if (!response.ok) {
-    throw new Error("offline-lease-verification-keys-unavailable");
+  let bytes;
+  try {
+    [bytes] = await storage
+      .bucket(location.bucket)
+      .file(location.objectName)
+      .download();
+  } catch {
+    throw new Error("offline-lease-keyring-unavailable");
   }
-  const keys = certMapToVerificationKeys(await response.json());
-  if (keys.length === 0) {
-    throw new Error("offline-lease-verification-keys-empty");
+
+  let parsed;
+  try {
+    parsed = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    throw new Error("offline-lease-keyring-invalid");
   }
+  const keyring = validatePrivateKeyring(parsed);
   productionKeyCache = {
-    email,
+    bucket: location.bucket,
+    objectName: location.objectName,
     fetchedAtMs: Date.now(),
-    keys,
+    keyring,
   };
-  return keys;
+  return keyring;
 }
 
-async function iamSignBlob(email, bytes) {
-  const token = await googleAccessToken();
-  const response = await fetch(
-    "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/" +
-      encodeURIComponent(email) +
-      ":signBlob",
-    {
-      method: "POST",
-      headers: {
-        authorization: "Bearer " + token,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        payload: Buffer.from(bytes).toString("base64"),
-      }),
-      signal: AbortSignal.timeout(10_000),
-    },
-  );
-  if (!response.ok) {
-    throw new Error(
-      "offline-lease-signing-failed-http-" + response.status,
+export function privateKeyringLeaseSigner(keyring) {
+  const validated = validatePrivateKeyring(keyring);
+
+  return async (bytes) => {
+    const active = validated.keys.find(
+      (key) => key.keyId === validated.activeKeyId,
     );
-  }
-  const body = await response.json();
-  if (
-    typeof body.keyId !== "string" ||
-    typeof body.signedBlob !== "string"
-  ) {
-    throw new Error("offline-lease-signing-response-invalid");
-  }
-  return {
-    keyId: body.keyId,
-    signatureBase64url: Buffer.from(body.signedBlob, "base64").toString("base64url"),
+    const signature = cryptoSign(
+      "RSA-SHA256",
+      bytes,
+      {
+        key: Buffer.from(active.privateKeyPkcs8Base64, "base64"),
+        format: "der",
+        type: "pkcs8",
+      },
+    ).toString("base64url");
+
+    return {
+      keyId: active.keyId,
+      signatureBase64url: signature,
+      verificationKeys: validated.keys.map((key) => ({
+        keyId: key.keyId,
+        algorithm: key.algorithm,
+        publicKeySpkiBase64: key.publicKeySpkiBase64,
+      })),
+    };
   };
 }
 
-export async function googleServiceAccountLeaseSigner(bytes) {
-  const email = await runtimeServiceAccountEmail();
-  const signed = await iamSignBlob(email, bytes);
-  let verificationKeys = await serviceAccountVerificationKeys(email);
-  if (!verificationKeys.some((item) => item.keyId === signed.keyId)) {
-    verificationKeys = await serviceAccountVerificationKeys(email, true);
-  }
-  if (!verificationKeys.some((item) => item.keyId === signed.keyId)) {
-    throw new Error("offline-lease-signing-key-not-published");
-  }
-  return {
-    ...signed,
-    verificationKeys,
-  };
+export async function privateBucketLeaseSigner(bytes) {
+  const keyring = await loadPrivateKeyring();
+  return privateKeyringLeaseSigner(keyring)(bytes);
 }
 
 export function createEphemeralEmulatorLeaseSigner() {
@@ -537,5 +527,5 @@ export function leaseSignerForRuntime() {
     (process.env.GCLOUD_PROJECT ?? "").startsWith("demo-");
   return emulator
     ? createEphemeralEmulatorLeaseSigner()
-    : googleServiceAccountLeaseSigner;
+    : privateBucketLeaseSigner;
 }
