@@ -59,3 +59,54 @@ jobs:
           --only auth,firestore,functions,storage
           "npm --prefix functions test"
 
+
+  gorge-base-v3-preflight:
+    name: Gorge Base v3 real-build preflight
+    # This ephemeral build never publishes protected offline map geometry
+    # or an installable package to an Actions artifact/public repository.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Install trusted source-conversion tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gdal-bin osmium-tool unzip
+
+      - name: Build actual immutable Gorge Base candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_DIR="$RUNNER_TEMP/rrgh-gorge-base-preflight"
+          PACKAGE_VERSION="2026.10.08.1"
+          bash backend/scripts/build-gorge-base.sh "$BASE_DIR" "$PACKAGE_VERSION"
+
+          PKG="$BASE_DIR/gorge-base-$PACKAGE_VERSION.rrghpkg"
+          MANIFEST="$BASE_DIR/gorge-base-manifest.json"
+          NATIVE="$BASE_DIR/root/NATIVE-MAP.json"
+          test -s "$PKG" && test -s "$MANIFEST" && test -s "$NATIVE"
+          test "$(jq -r '.packageID' "$MANIFEST")" = "gorge-base"
+          test "$(jq -r '.version' "$MANIFEST")" = "$PACKAGE_VERSION"
+          test "$(jq -r '.sources | length' "$MANIFEST")" = "20"
+          test "$(jq -r '.schemaVersion' "$NATIVE")" = "3"
+          test "$(jq -r '.baseRasters | length' "$NATIVE")" = "5"
+          test "$(jq -r '.vectors | length' "$NATIVE")" = "13"
+          test "$(jq -r '.staticAssets | length' "$NATIVE")" -ge 125
+          test "$(sha256sum "$PKG" | awk '{print $1}')" = "$(jq -r '.sha256' "$MANIFEST")"
+          test "$(stat -c '%s' "$PKG")" = "$(jq -r '.byteCount' "$MANIFEST")"
+          tar -tf "$PKG" | grep -Fx './NATIVE-MAP.json'
+          tar -tf "$PKG" | grep -Fx './native/base/leaf-off-aerial.jpg'
+          tar -tf "$PKG" | grep -Fx './native/website/data/map/weather/manifest.json'
+
+          # Save aggregate evidence only. Never upload a package or its
+          # protected content as a GitHub Actions artifact.
+          echo "Gorge Base $PACKAGE_VERSION full-source preflight passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "Sources: $(jq '.sources | length' "$MANIFEST")" >> "$GITHUB_STEP_SUMMARY"
+          echo "Native rasters: $(jq '.baseRasters | length' "$NATIVE")" >> "$GITHUB_STEP_SUMMARY"
+          echo "Native vectors: $(jq '.vectors | length' "$NATIVE")" >> "$GITHUB_STEP_SUMMARY"
+          echo "Static indexed assets: $(jq '.staticAssets | length' "$NATIVE")" >> "$GITHUB_STEP_SUMMARY"
+          echo "Package SHA256: $(jq -r '.sha256' "$MANIFEST")" >> "$GITHUB_STEP_SUMMARY"
