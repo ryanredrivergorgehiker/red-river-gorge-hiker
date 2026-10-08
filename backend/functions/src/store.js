@@ -6,6 +6,10 @@ import {
   deriveAccess,
   deriveCanonicalEntitlementFromEvidence,
 } from "./domain.js";
+import {
+  buildOfflineLeaseClaims,
+  signOfflineLeaseClaims,
+} from "./offlineLease.js";
 
 function timestampToMillis(value) {
   if (!value) return null;
@@ -167,6 +171,53 @@ export async function startBaseTrialForUid(db, uid) {
       endsAt: endsAt.toDate().toISOString(),
     };
   });
+}
+
+export async function issueOfflineAccessLeaseForUid(
+  db,
+  uid,
+  {
+    signer,
+    nowMs = Date.now(),
+  } = {},
+) {
+  const state = await getAccountStateForUid(db, uid, nowMs);
+  const decision = buildOfflineLeaseClaims({
+    uid,
+    accountState: state,
+    nowMs,
+  });
+
+  if (!decision.issued) {
+    return {
+      issued: false,
+      reason: decision.reason,
+      lease: null,
+      verificationKeys: [],
+    };
+  }
+
+  try {
+    const signed = await signOfflineLeaseClaims(decision.claims, signer);
+    return {
+      issued: true,
+      reason: null,
+      lease: {
+        format: signed.format,
+        algorithm: signed.algorithm,
+        keyId: signed.keyId,
+        signedToken: signed.signedToken,
+      },
+      verificationKeys: signed.verificationKeys,
+    };
+  } catch {
+    return {
+      issued: false,
+      reason: "backend_temporarily_unavailable",
+      lease: null,
+      verificationKeys: [],
+    };
+  }
 }
 
 export async function initiateAccountDeletionForUid(db, uid) {
