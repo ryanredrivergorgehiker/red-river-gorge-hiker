@@ -16,6 +16,7 @@ export const ALLOWED_OPERATIONS = Object.freeze([
   "startBaseTrial",
   "getEntitlements",
   "authorizeProtectedPackage",
+  "issueOfflineAccessLease",
   "initiateAccountDeletion",
 ]);
 
