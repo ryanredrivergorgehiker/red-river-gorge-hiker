@@ -44,6 +44,7 @@ jobs:
           node --check backend/functions/src/index.js
           node --check backend/functions/src/store.js
           node --check backend/functions/src/delivery.js
+          node --check backend/functions/src/offlineLease.js
 
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs

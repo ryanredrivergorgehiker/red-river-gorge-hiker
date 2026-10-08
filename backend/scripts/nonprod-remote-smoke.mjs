@@ -7,6 +7,14 @@ const requireFromFunctions = createRequire(
 const { applicationDefault, initializeApp } = requireFromFunctions("firebase-admin/app");
 const { getAuth } = requireFromFunctions("firebase-admin/auth");
 const { getFirestore, Timestamp } = requireFromFunctions("firebase-admin/firestore");
+const {
+  OFFLINE_LEASE_MAX_PAID_MS,
+  OFFLINE_LEASE_RENEWAL_WINDOW_MS,
+  verifyOfflineLeaseToken,
+} = await import("../functions/src/offlineLease.js");
+const {
+  upsertPurchaseEvidenceForEmulator,
+} = await import("../functions/src/store.js");
 
 const projectId = process.env.GCLOUD_PROJECT || "rrgh-nonproduction";
 const functionUrl = process.env.RRGH_FUNCTION_URL;
@@ -343,6 +351,37 @@ if (
 }
 console.log("Remote Base-trial access contract: PASS");
 
+const trialLease = await callApi("issueOfflineAccessLease", idToken);
+if (
+  !trialLease.response.ok ||
+  trialLease.result?.issued !== true ||
+  trialLease.result?.lease?.format !== "compact_jws_rs256_v1" ||
+  trialLease.result?.lease?.algorithm !== "RS256" ||
+  !Array.isArray(trialLease.result?.verificationKeys)
+) {
+  throw new Error(
+    "Remote trial offline-lease issuance failed: " +
+      JSON.stringify(trialLease.body),
+  );
+}
+const verifiedTrialLease = verifyOfflineLeaseToken({
+  signedToken: trialLease.result.lease.signedToken,
+  keyId: trialLease.result.lease.keyId,
+  verificationKeys: trialLease.result.verificationKeys,
+  expectedUid: smokeUid,
+});
+if (
+  verifiedTrialLease.valid !== true ||
+  verifiedTrialLease.claims?.trial !== true ||
+  verifiedTrialLease.claims?.trialEndsAt !== trial.result?.trial?.endsAt ||
+  JSON.stringify(verifiedTrialLease.claims?.grants) !== JSON.stringify(["base"]) ||
+  Date.parse(verifiedTrialLease.claims.validUntil) >
+    Date.parse(trial.result.trial.endsAt)
+) {
+  throw new Error("Remote trial offline-lease verification failed.");
+}
+console.log("Remote signed trial offline lease: PASS");
+
 const skybridge = await assertPackageDownload(
   idToken,
   "route-rte-0001",
@@ -390,6 +429,125 @@ console.log(
     " bytes",
 );
 
+await upsertPurchaseEvidenceForEmulator(db, {
+  uid: smokeUid,
+  evidenceId: "smoke-apple-base",
+  store: "apple",
+  platformProductId: "rrgh.smoke.base",
+  canonicalEntitlementId: "base",
+  state: "validated",
+});
+await upsertPurchaseEvidenceForEmulator(db, {
+  uid: smokeUid,
+  evidenceId: "smoke-apple-backpacking",
+  store: "apple",
+  platformProductId: "rrgh.smoke.backpacking",
+  canonicalEntitlementId: "backpacking",
+  state: "validated",
+});
+await upsertPurchaseEvidenceForEmulator(db, {
+  uid: smokeUid,
+  evidenceId: "smoke-google-off-trail",
+  store: "google_play",
+  platformProductId: "rrgh.smoke.offtrail",
+  canonicalEntitlementId: "off_trail",
+  state: "validated",
+});
+
+const paidLease = await callApi("issueOfflineAccessLease", idToken);
+if (
+  !paidLease.response.ok ||
+  paidLease.result?.issued !== true
+) {
+  throw new Error(
+    "Remote paid offline-lease issuance failed: " +
+      JSON.stringify(paidLease.body),
+  );
+}
+const paidLeaseNow = Date.now();
+const verifiedPaidLease = verifyOfflineLeaseToken({
+  signedToken: paidLease.result.lease.signedToken,
+  keyId: paidLease.result.lease.keyId,
+  verificationKeys: paidLease.result.verificationKeys,
+  expectedUid: smokeUid,
+  nowMs: paidLeaseNow,
+});
+if (
+  verifiedPaidLease.valid !== true ||
+  verifiedPaidLease.claims?.trial !== false ||
+  JSON.stringify(verifiedPaidLease.claims?.grants) !==
+    JSON.stringify(["base", "backpacking", "off_trail"]) ||
+  Math.abs(
+    Date.parse(verifiedPaidLease.claims.validUntil) -
+      Date.parse(verifiedPaidLease.claims.issuedAt) -
+      OFFLINE_LEASE_MAX_PAID_MS,
+  ) > 5_000 ||
+  Math.abs(
+    Date.parse(verifiedPaidLease.claims.validUntil) -
+      Date.parse(verifiedPaidLease.claims.renewAfter) -
+      OFFLINE_LEASE_RENEWAL_WINDOW_MS,
+  ) > 5_000
+) {
+  throw new Error("Remote paid offline-lease verification failed.");
+}
+
+const wrongUid = verifyOfflineLeaseToken({
+  signedToken: paidLease.result.lease.signedToken,
+  keyId: paidLease.result.lease.keyId,
+  verificationKeys: paidLease.result.verificationKeys,
+  expectedUid: "not-" + smokeUid,
+  nowMs: paidLeaseNow,
+});
+if (wrongUid.reason !== "lease_uid_mismatch") {
+  throw new Error("Remote lease UID-binding verification failed.");
+}
+
+const paidParts = paidLease.result.lease.signedToken.split(".");
+const tamperedPayload = JSON.parse(
+  Buffer.from(paidParts[1], "base64url").toString("utf8"),
+);
+tamperedPayload.grants = ["base"];
+const forgedToken =
+  paidParts[0] +
+  "." +
+  Buffer.from(JSON.stringify(tamperedPayload), "utf8").toString("base64url") +
+  "." +
+  paidParts[2];
+const forged = verifyOfflineLeaseToken({
+  signedToken: forgedToken,
+  keyId: paidLease.result.lease.keyId,
+  verificationKeys: paidLease.result.verificationKeys,
+  expectedUid: smokeUid,
+  nowMs: paidLeaseNow,
+});
+if (forged.reason !== "lease_signature_invalid") {
+  throw new Error("Remote forged offline-lease verification failed.");
+}
+console.log("Remote paid signed offline lease + UID/forgery checks: PASS");
+
+await upsertPurchaseEvidenceForEmulator(db, {
+  uid: smokeUid,
+  evidenceId: "smoke-apple-backpacking",
+  store: "apple",
+  platformProductId: "rrgh.smoke.backpacking",
+  canonicalEntitlementId: "backpacking",
+  state: "refunded",
+});
+const afterExtensionRefund = await callApi("issueOfflineAccessLease", idToken);
+const verifiedAfterExtensionRefund = verifyOfflineLeaseToken({
+  signedToken: afterExtensionRefund.result?.lease?.signedToken,
+  keyId: afterExtensionRefund.result?.lease?.keyId,
+  verificationKeys: afterExtensionRefund.result?.verificationKeys,
+  expectedUid: smokeUid,
+});
+if (
+  verifiedAfterExtensionRefund.valid !== true ||
+  verifiedAfterExtensionRefund.claims.grants.includes("backpacking")
+) {
+  throw new Error("Remote refunded-extension reconciliation failed.");
+}
+console.log("Remote refund/revocation lease reconciliation: PASS");
+
 const expiring = await callApi(
   "authorizeProtectedPackage",
   idToken,
@@ -415,6 +573,36 @@ if (
 }
 console.log("Remote expired capability denial: PASS");
 
+await db.collection("accounts").doc(smokeUid).set(
+  {
+    trial: {
+      base: {
+        consumed: true,
+        startedAt: Timestamp.fromMillis(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        endsAt: Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000),
+      },
+    },
+  },
+  { merge: true },
+);
+await upsertPurchaseEvidenceForEmulator(db, {
+  uid: smokeUid,
+  evidenceId: "smoke-apple-base",
+  store: "apple",
+  platformProductId: "rrgh.smoke.base",
+  canonicalEntitlementId: "base",
+  state: "revoked",
+});
+const afterBaseRevocation = await callApi("issueOfflineAccessLease", idToken);
+if (
+  afterBaseRevocation.result?.issued !== false ||
+  afterBaseRevocation.result?.reason !== "no_effective_access" ||
+  afterBaseRevocation.result?.lease !== null
+) {
+  throw new Error("Remote Base-revocation lease denial failed.");
+}
+console.log("Remote revoked Base offline-lease denial: PASS");
+
 const deletion = await callApi("initiateAccountDeletion", idToken);
 if (
   deletion.result?.deletion?.state !== "pending" ||
@@ -436,6 +624,16 @@ if (
 }
 console.log("Remote deletion-pending package denial: PASS");
 
+const deletionLease = await callApi("issueOfflineAccessLease", idToken);
+if (
+  deletionLease.result?.issued !== false ||
+  deletionLease.result?.reason !== "account_not_active" ||
+  deletionLease.result?.lease !== null
+) {
+  throw new Error("Deletion-pending offline-lease denial failed.");
+}
+console.log("Remote deletion-pending offline-lease denial: PASS");
+
 const firestoreResponse = await fetch(
   "https://firestore.googleapis.com/v1/projects/" +
     projectId +
@@ -456,4 +654,4 @@ if (firestoreResponse.status !== 403) {
 console.log("Remote direct Firestore denial: PASS");
 
 await resetSmokeAccount();
-console.log("RRGH non-production protected delivery smoke: PASS");
+console.log("RRGH non-production protected delivery + offline lease smoke: PASS");

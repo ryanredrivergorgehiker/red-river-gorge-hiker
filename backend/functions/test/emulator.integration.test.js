@@ -5,6 +5,10 @@ import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import {
   upsertPurchaseEvidenceForEmulator,
 } from "../src/store.js";
+import {
+  OFFLINE_LEASE_MAX_PAID_MS,
+  verifyOfflineLeaseToken,
+} from "../src/offlineLease.js";
 
 const projectId = "demo-rrgh-entitlements";
 const functionUrl =
@@ -97,12 +101,43 @@ test("emulator contract enforces account-level trial and cross-store entitlement
   assert.equal(secondTrial.result.trial.startedAt, firstStart);
   assert.equal(secondTrial.result.trial.endsAt, firstEnd);
 
+  const trialLease = await callApi("issueOfflineAccessLease", idToken);
+  assert.equal(trialLease.response.ok, true, JSON.stringify(trialLease.body));
+  assert.equal(trialLease.result.issued, true);
+  assert.equal(trialLease.result.reason, null);
+  assert.equal(trialLease.result.lease.format, "compact_jws_rs256_v1");
+  assert.equal(trialLease.result.lease.algorithm, "RS256");
+  assert.equal(Array.isArray(trialLease.result.verificationKeys), true);
+  const verifiedTrialLease = verifyOfflineLeaseToken({
+    signedToken: trialLease.result.lease.signedToken,
+    keyId: trialLease.result.lease.keyId,
+    verificationKeys: trialLease.result.verificationKeys,
+    expectedUid: uid,
+  });
+  assert.equal(verifiedTrialLease.valid, true);
+  assert.deepEqual(verifiedTrialLease.claims.grants, ["base"]);
+  assert.equal(verifiedTrialLease.claims.trial, true);
+  assert.equal(verifiedTrialLease.claims.trialEndsAt, firstEnd);
+  assert.equal(
+    Date.parse(verifiedTrialLease.claims.validUntil) <= Date.parse(firstEnd),
+    true,
+  );
+
   await upsertPurchaseEvidenceForEmulator(db, {
     uid,
     evidenceId: "google-backpacking-1",
     store: "google_play",
     platformProductId: "rrgh.backpacking",
     canonicalEntitlementId: "backpacking",
+    state: "validated",
+  });
+
+  await upsertPurchaseEvidenceForEmulator(db, {
+    uid,
+    evidenceId: "apple-off-trail-1",
+    store: "apple",
+    platformProductId: "rrgh.offtrail",
+    canonicalEntitlementId: "off_trail",
     state: "validated",
   });
 
@@ -122,6 +157,34 @@ test("emulator contract enforces account-level trial and cross-store entitlement
   const appleBase = await callApi("getEntitlements", idToken);
   assert.equal(appleBase.result.entitlements.base, "active");
   assert.equal(appleBase.result.access.backpacking, true);
+
+  const paidLeaseIssuedAtMs = Date.now();
+  const paidLease = await callApi("issueOfflineAccessLease", idToken);
+  assert.equal(paidLease.response.ok, true, JSON.stringify(paidLease.body));
+  assert.equal(paidLease.result.issued, true);
+  const verifiedPaidLease = verifyOfflineLeaseToken({
+    signedToken: paidLease.result.lease.signedToken,
+    keyId: paidLease.result.lease.keyId,
+    verificationKeys: paidLease.result.verificationKeys,
+    expectedUid: uid,
+    nowMs: paidLeaseIssuedAtMs,
+  });
+  assert.equal(verifiedPaidLease.valid, true);
+  assert.deepEqual(verifiedPaidLease.claims.grants, [
+    "base",
+    "backpacking",
+    "off_trail",
+  ]);
+  assert.equal(verifiedPaidLease.claims.trial, false);
+  assert.equal(verifiedPaidLease.claims.trialEndsAt, null);
+  assert.equal(
+    Math.abs(
+      Date.parse(verifiedPaidLease.claims.validUntil) -
+        Date.parse(verifiedPaidLease.claims.issuedAt) -
+        OFFLINE_LEASE_MAX_PAID_MS,
+    ) < 5_000,
+    true,
+  );
 
   await upsertPurchaseEvidenceForEmulator(db, {
     uid,
@@ -172,6 +235,11 @@ test("emulator contract enforces account-level trial and cross-store entitlement
   assert.equal(revokedEverywhere.result.entitlements.base, "revoked");
   assert.equal(revokedEverywhere.result.access.base, false);
   assert.equal(revokedEverywhere.result.access.backpacking, false);
+
+  const revokedLease = await callApi("issueOfflineAccessLease", idToken);
+  assert.equal(revokedLease.result.issued, false);
+  assert.equal(revokedLease.result.reason, "no_effective_access");
+  assert.equal(revokedLease.result.lease, null);
 
   const consumedTrial = await callApi("startBaseTrial", idToken);
   assert.equal(consumedTrial.result.trial.started, false);
@@ -235,6 +303,11 @@ test("emulator contract enforces account-level trial and cross-store entitlement
     packageId: "base-demo",
   });
   assert.equal(afterDeletionPackage.result.authorized, false);
+
+  const afterDeletionLease = await callApi("issueOfflineAccessLease", idToken);
+  assert.equal(afterDeletionLease.result.issued, false);
+  assert.equal(afterDeletionLease.result.reason, "account_not_active");
+  assert.equal(afterDeletionLease.result.lease, null);
 
   const trackCollection = await db.collection("userTracks").limit(1).get();
   assert.equal(trackCollection.empty, true);

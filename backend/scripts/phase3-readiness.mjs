@@ -11,6 +11,10 @@ const delivery = fs.readFileSync(
   new URL("../functions/src/delivery.js", import.meta.url),
   "utf8",
 );
+const offlineLease = fs.readFileSync(
+  new URL("../functions/src/offlineLease.js", import.meta.url),
+  "utf8",
+);
 const firestoreRules = fs.readFileSync(
   new URL("../firestore.rules", import.meta.url),
   "utf8",
@@ -65,6 +69,30 @@ assert(
   "Package capability TTL must remain five minutes unless the contract is revised.",
 );
 assert(
+  index.includes('"issueOfflineAccessLease"'),
+  "LEG-DEC-0035 offline lease issuance must remain an authenticated callable operation.",
+);
+assert(
+  offlineLease.includes('OFFLINE_LEASE_MAX_PAID_MS = 90 * 24 * 60 * 60 * 1000'),
+  "Permanent offline lease duration must remain bounded to 90 days.",
+);
+assert(
+  offlineLease.includes('OFFLINE_LEASE_RENEWAL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000'),
+  "Paid lease proactive renewal window must begin by 30 days remaining.",
+);
+assert(
+  offlineLease.includes('OFFLINE_LEASE_POLICY_ID = "LEG-DEC-0035"'),
+  "Offline lease payload must remain bound to LEG-DEC-0035.",
+);
+assert(
+  offlineLease.includes("iamcredentials.googleapis.com"),
+  "Offline lease signing must use existing Google service-account signing authority.",
+);
+assert(
+  !/BEGIN (RSA )?PRIVATE KEY|PRIVATE KEY-----/.test(offlineLease),
+  "No offline lease private key may be committed to source.",
+);
+assert(
   firestoreRules.includes("allow read, write: if false;"),
   "Direct Firestore client access must remain deny-all.",
 );
@@ -74,7 +102,7 @@ assert(
 );
 assert(
   !/firebaseStorageDownloadTokens|token=|alt=media/i.test(
-    index + "\n" + delivery,
+    index + "\n" + delivery + "\n" + offlineLease,
   ),
   "Permanent Firebase download-token patterns are prohibited.",
 );
@@ -83,4 +111,4 @@ assert(
   "No user-track or GPX server API is allowed.",
 );
 
-console.log("Lane 20 non-production delivery guardrails: PASS");
+console.log("Lane 20 non-production delivery + offline lease guardrails: PASS");

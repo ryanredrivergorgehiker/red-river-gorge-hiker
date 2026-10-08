@@ -1,0 +1,65 @@
+{
+  "fixtureVersion": 1,
+  "warning": "TEST FIXTURE ONLY. This key is not used by any RRGH environment.",
+  "format": "compact_jws_rs256_v1",
+  "algorithm": "RS256",
+  "verificationKeys": [
+    {
+      "keyId": "fixture-4b30bce5b8719cdeb01a74eb",
+      "algorithm": "RS256",
+      "publicKeySpkiBase64": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsHEWJ3QztKdMZGmNvU6/4vLyvQN797DR3+jHLTevm2wNeimtIekqRACjHUAk8RmuCWk21MjYEOIAWp+tbGHFYd9DvJfyb3+b+AYe/qZWWnsPhOQXdtVmC9JsEchibeDBDSj2MEee7WrwGbLvncRbw7wguvVFyKTfBOa0dkDp/OPCaCYl56ll0oZOIE7aYYDh5C7oj/Ewzv5nbzWccox8ZDPkd0n8820qaUcmFp6iFj3yf64khi/AW8kQyUjjwDkVtgjG0S0+hPz/wyM2NpBJqZL0h/Fi2qnp8JSFtY9Mo1FYzeLhyCzjYKXpuaAb47RhxGV7t0vhrUCXKCvvMTKD3wIDAQAB"
+    }
+  ],
+  "cases": [
+    {
+      "name": "paid-base-backpacking-off-trail",
+      "expectedUid": "fixture-paid-user",
+      "verificationNow": "2026-10-09T16:00:00.000Z",
+      "lease": {
+        "format": "compact_jws_rs256_v1",
+        "algorithm": "RS256",
+        "keyId": "fixture-4b30bce5b8719cdeb01a74eb",
+        "signedToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IlJSR0gtT0ZGTElORS1FTlRJVExFTUVOVC1MRUFTRSIsInYiOjF9.eyJzY2hlbWFWZXJzaW9uIjoxLCJwb2xpY3lWZXJzaW9uIjoxLCJwb2xpY3lJZCI6IkxFRy1ERUMtMDAzNSIsImxlYXNlSWQiOiJmaXh0dXJlLXBhaWQtbGVhc2UtMDAwMSIsInVpZCI6ImZpeHR1cmUtcGFpZC11c2VyIiwiaXNzdWVkQXQiOiIyMDI2LTEwLTA4VDE2OjAwOjAwLjAwMFoiLCJ2YWxpZFVudGlsIjoiMjAyNy0wMS0wNlQxNjowMDowMC4wMDBaIiwicmVuZXdBZnRlciI6IjIwMjYtMTItMDdUMTY6MDA6MDAuMDAwWiIsImdyYW50cyI6WyJiYXNlIiwiYmFja3BhY2tpbmciLCJvZmZfdHJhaWwiXSwidHJpYWwiOmZhbHNlLCJ0cmlhbEVuZHNBdCI6bnVsbCwiZW50aXRsZW1lbnRSZXZpc2lvbiI6InNoYTI1NjpkMWMwM2JmZTIxNWFiMWY0YjUyMTZhZmE5OWEzNmNkNGY1ODJlM2MxOGU5YjNhMWMzYmViNjI1YTE1ZjRmZjJjIn0.LgziM7N6ie6Uum__omq7XczsfptJaeQ1aa8NQu4mO9MqxcNi7wdgkXH_mbtBhFzw8KNHkMLxlfgxNOu6PlzMDyWW5oBkOwuGjH6ZPmJt8XSXrlK85QxUaw46PTiNKdtlPcR1chmUmU092rFZMSXnU0dcnYWOOT2In6Y5sKm6SHdFe3x4Z10DhuJtOtcJ0cAKjco_p-QoLVzc4Vf1TS0gp9STAEF_a9bRZssdKWiMM7Eo83YcsTwmwgVoazZee7emkWg6huIV9VC7aDwBbITLy_3mAp-ssl_MZFghXKFwOsD_htBZotqP7Ia0j2CNyawHXG670HDyR5YN_OQrF2T2dw"
+      },
+      "expectedClaims": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "policyId": "LEG-DEC-0035",
+        "leaseId": "fixture-paid-lease-0001",
+        "uid": "fixture-paid-user",
+        "issuedAt": "2026-10-08T16:00:00.000Z",
+        "validUntil": "2027-01-06T16:00:00.000Z",
+        "renewAfter": "2026-12-07T16:00:00.000Z",
+        "grants": ["base", "backpacking", "off_trail"],
+        "trial": false,
+        "trialEndsAt": null,
+        "entitlementRevision": "sha256:d1c03bfe215ab1f4b5216afa99a36cd4f582e3c18e9b3a1c3beb625a15f4ff2c"
+      }
+    },
+    {
+      "name": "trial-base-only",
+      "expectedUid": "fixture-trial-user",
+      "verificationNow": "2026-10-09T16:00:00.000Z",
+      "lease": {
+        "format": "compact_jws_rs256_v1",
+        "algorithm": "RS256",
+        "keyId": "fixture-4b30bce5b8719cdeb01a74eb",
+        "signedToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IlJSR0gtT0ZGTElORS1FTlRJVExFTUVOVC1MRUFTRSIsInYiOjF9.eyJzY2hlbWFWZXJzaW9uIjoxLCJwb2xpY3lWZXJzaW9uIjoxLCJwb2xpY3lJZCI6IkxFRy1ERUMtMDAzNSIsImxlYXNlSWQiOiJmaXh0dXJlLXRyaWFsLWxlYXNlLTAwMDEiLCJ1aWQiOiJmaXh0dXJlLXRyaWFsLXVzZXIiLCJpc3N1ZWRBdCI6IjIwMjYtMTAtMDhUMTY6MDA6MDAuMDAwWiIsInZhbGlkVW50aWwiOiIyMDI2LTEwLTEyVDE2OjAwOjAwLjAwMFoiLCJyZW5ld0FmdGVyIjpudWxsLCJncmFudHMiOlsiYmFzZSJdLCJ0cmlhbCI6dHJ1ZSwidHJpYWxFbmRzQXQiOiIyMDI2LTEwLTEyVDE2OjAwOjAwLjAwMFoiLCJlbnRpdGxlbWVudFJldmlzaW9uIjoic2hhMjU2OjllZDdiNmViZDhhOTgxNmRkZTI0MGUzMWQ1MmQ2YzFjODA5YTA1ZDBjMGI2OTM0YjA3NTA3OTkzOGE1YTI4NGYifQ.oozQuxlHWIggY9Crt1RCLVH3nUuuHzT17PJe6Beu-mNomd6jcvlAVJdi3YgWtreAi_u-wyKiVSZG4CiGE8Lz0LGetPisKbMTTXqgvn9oV7mQP_MbrCnM3OlF7pFAYY-r_taUq991h3uf_5ym79eJKs5K2Tsx8NCMTRskXBn3pxtrJPx50DAd9OijdyI2M_h4nZ-uUvBuHDglt4IFztb3uMrS8vUNLifZoUqaGzBXo3PBVOAXuIga7CYLsv6ZuFmtVO5FPAy_FtpxOp6bVC2asXN5UAUhfQ05g-Ik_Mp4jRI2GTnr16qU0jbOYrNSzt4LM0nW5x62nked78vLO1uBRw"
+      },
+      "expectedClaims": {
+        "schemaVersion": 1,
+        "policyVersion": 1,
+        "policyId": "LEG-DEC-0035",
+        "leaseId": "fixture-trial-lease-0001",
+        "uid": "fixture-trial-user",
+        "issuedAt": "2026-10-08T16:00:00.000Z",
+        "validUntil": "2026-10-12T16:00:00.000Z",
+        "renewAfter": null,
+        "grants": ["base"],
+        "trial": true,
+        "trialEndsAt": "2026-10-12T16:00:00.000Z",
+        "entitlementRevision": "sha256:9ed7b6ebd8a9816dde240e31d52d6c1c809a05d0c0b6934b075079938a5a284f"
+      }
+    }
+  ]
+}
