@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { ALLOWED_OPERATIONS } from "./domain.js";
+import { leaseSignerForRuntime } from "./offlineLease.js";
 import {
   createProtectedPackageDelivery,
   MAX_PROXY_RANGE_BYTES,
@@ -15,6 +16,7 @@ import {
   authorizeProtectedPackageForUid,
   getAccountStateForUid,
   initiateAccountDeletionForUid,
+  issueOfflineAccessLeaseForUid,
   startBaseTrialForUid,
 } from "./store.js";
 
@@ -94,6 +96,11 @@ export const rrghAccountApi = onCall(
             }),
         });
       }
+
+      case "issueOfflineAccessLease":
+        return issueOfflineAccessLeaseForUid(db, uid, {
+          signer: leaseSignerForRuntime(),
+        });
 
       case "initiateAccountDeletion": {
         const deletion = await initiateAccountDeletionForUid(db, uid);
