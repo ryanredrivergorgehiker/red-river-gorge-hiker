@@ -98,6 +98,8 @@ test("No valid evidence revokes the canonical entitlement", () => {
 test("No customer track operation exists in the callable contract", () => {
   assert.deepEqual(ALLOWED_OPERATIONS, [
     "getAccountState",
+    "getAppAgreementStatus",
+    "acceptAppAgreement",
     "startBaseTrial",
     "getEntitlements",
     "authorizeProtectedPackage",

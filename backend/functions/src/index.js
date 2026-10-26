@@ -3,6 +3,10 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { ALLOWED_OPERATIONS } from "./domain.js";
+import {
+  acceptAppAgreementForUid,
+  getAppAgreementStatusForUid,
+} from "./appAgreement.js";
 import { leaseSignerForRuntime } from "./offlineLease.js";
 import {
   createProtectedPackageDelivery,
@@ -14,6 +18,7 @@ import {
 } from "./delivery.js";
 import {
   authorizeProtectedPackageForUid,
+  ensureAccount,
   getAccountStateForUid,
   initiateAccountDeletionForUid,
   issueOfflineAccessLeaseForUid,
@@ -66,12 +71,33 @@ export const rrghAccountApi = onCall(
       throw new HttpsError("invalid-argument", "Unsupported backend operation.");
     }
 
+    // Once the final agreement is legally published, protected operations
+    // must check its current, immutable UID-bound server receipt. A draft
+    // cannot silently become a binding customer contract.
+    const protect = async () => {
+      const status = await getAppAgreementStatusForUid(db, uid);
+      if (status.published && !status.accepted) {
+        throw new HttpsError("failed-precondition",
+          "Current App Terms must be accepted before protected access.");
+      }
+    };
+
     switch (operation) {
       case "getAccountState":
       case "getEntitlements":
         return getAccountStateForUid(db, uid);
 
+      case "getAppAgreementStatus":
+        // Firebase identity may exist before the first account-state read.
+        // Initialize account metadata here, without starting a trial.
+        await ensureAccount(db, uid);
+        return getAppAgreementStatusForUid(db, uid);
+
+      case "acceptAppAgreement":
+        return acceptAppAgreementForUid(db, uid, request.data);
+
       case "startBaseTrial": {
+        await protect();
         const trial = await startBaseTrialForUid(db, uid);
         return {
           trial,
@@ -80,6 +106,7 @@ export const rrghAccountApi = onCall(
       }
 
       case "authorizeProtectedPackage": {
+        await protect();
         const packageId = request.data?.packageId;
         if (typeof packageId !== "string" || packageId.length < 1 || packageId.length > 128) {
           throw new HttpsError("invalid-argument", "A valid packageId is required.");
@@ -98,6 +125,7 @@ export const rrghAccountApi = onCall(
       }
 
       case "issueOfflineAccessLease":
+        await protect();
         return issueOfflineAccessLeaseForUid(db, uid, {
           signer: leaseSignerForRuntime(),
         });

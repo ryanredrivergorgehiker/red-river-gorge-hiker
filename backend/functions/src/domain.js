@@ -13,6 +13,8 @@ export const ACCESS_KEYS = Object.freeze({
 
 export const ALLOWED_OPERATIONS = Object.freeze([
   "getAccountState",
+  "getAppAgreementStatus",
+  "acceptAppAgreement",
   "startBaseTrial",
   "getEntitlements",
   "authorizeProtectedPackage",
