@@ -125,3 +125,23 @@ test("unpublished, inactive, or duplicate accounts cannot manufacture consent", 
   assert.equal((await acceptAppAgreementForUid(db, "uid1", declaration(), testEnv)).accepted, false);
   assert.equal(documents.size, 1);
 });
+
+test("malformed historical receipt without server time never authorizes current agreement", async () => {
+  const { db, documents } = memoryStore();
+  const manifest = publishedAgreement(testEnv);
+  documents.set(
+    "accounts/uid1/appAgreementAcceptances/" + receiptId(manifest),
+    {
+      uid: "uid1",
+      agreementId: manifest.agreementId,
+      version: manifest.version,
+      contentSha256: manifest.contentSha256,
+      method: "checkbox_accept_and_continue",
+      affirmed: true,
+      // Simulate incomplete/legacy/imported record: no acceptedAt field.
+    }
+  );
+  const status = await getAppAgreementStatusForUid(db, "uid1", testEnv);
+  assert.equal(status.accepted, false);
+  assert.equal(status.reason, "acceptance_required");
+});
