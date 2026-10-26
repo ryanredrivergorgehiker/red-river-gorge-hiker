@@ -101,6 +101,15 @@ test("minor with permission writes one immutable server-timestamped receipt", as
   assert.equal(record.method, "checkbox_accept_and_continue");
   assert.equal(record.acceptedAt, now);
 });
+test("first Firebase UID can create active account plus immutable acceptance atomically", async () => {
+  const { db, documents } = memoryStore();
+  const first = await acceptAppAgreementForUid(db, "new-user", declaration(), testEnv);
+  assert.equal(first.accepted, true);
+  assert.equal(documents.get("accounts/new-user").status, "active");
+  const status = await getAppAgreementStatusForUid(db, "new-user", testEnv);
+  assert.equal(status.accepted, true);
+});
+
 test("different UID and material version receive no inherited legal acceptance", async () => {
   const { db, documents } = memoryStore();
   await acceptAppAgreementForUid(db, "uid1", declaration(), testEnv);
