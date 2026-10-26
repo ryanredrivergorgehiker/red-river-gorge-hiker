@@ -62,7 +62,9 @@ export async function getAppAgreementStatusForUid(db, uid, env = process.env) {
     && receipt?.version === manifest.version
     && receipt?.contentSha256 === manifest.contentSha256
     && receipt?.method === "checkbox_accept_and_continue"
-    && receipt?.affirmed === true;
+    && receipt?.affirmed === true
+    && typeof receipt?.acceptedAt?.toDate === "function"
+    && Number.isFinite(receipt.acceptedAt.toDate().getTime());
   return {
     uid, published: true, accepted, reason: accepted ? null : "acceptance_required",
     ...manifest, acceptedAt: accepted ? receipt.acceptedAt?.toDate?.()?.toISOString() ?? null : null,
