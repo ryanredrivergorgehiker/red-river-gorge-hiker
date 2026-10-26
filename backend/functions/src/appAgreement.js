@@ -92,13 +92,22 @@ export async function acceptAppAgreementForUid(
     const [accountSnapshot, receiptSnapshot] = await Promise.all([
       transaction.get(account), transaction.get(ref),
     ]);
-    if (!accountSnapshot.exists || accountSnapshot.data()?.status !== "active") {
+    // Firebase authentication establishes the UID. The account document
+    // might not yet exist if this is a new registration and its initial
+    // account-state request is still in flight. Create both atomically.
+    // Existing suspended/deletion-pending accounts remain ineligible.
+    if (accountSnapshot.exists && accountSnapshot.data()?.status !== "active") {
       return { accepted: false, reason: "account_not_active" };
     }
     if (receiptSnapshot.exists) {
       // Immutable evidence; repeated retries are idempotent.
       return { accepted: true, reason: "already_accepted",
         uid, ...manifest };
+    }
+    if (!accountSnapshot.exists) {
+      transaction.create(account, {
+        status: "active", createdAt: now, policyVersion: 1,
+      });
     }
     transaction.create(ref, {
       uid,
