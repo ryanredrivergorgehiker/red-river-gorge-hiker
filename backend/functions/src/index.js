@@ -18,6 +18,7 @@ import {
 } from "./delivery.js";
 import {
   authorizeProtectedPackageForUid,
+  ensureAccount,
   getAccountStateForUid,
   initiateAccountDeletionForUid,
   issueOfflineAccessLeaseForUid,
@@ -87,6 +88,9 @@ export const rrghAccountApi = onCall(
         return getAccountStateForUid(db, uid);
 
       case "getAppAgreementStatus":
+        // Firebase identity may exist before the first account-state read.
+        // Initialize account metadata here, without starting a trial.
+        await ensureAccount(db, uid);
         return getAppAgreementStatusForUid(db, uid);
 
       case "acceptAppAgreement":
