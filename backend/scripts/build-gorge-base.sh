@@ -741,3 +741,31 @@ echo "  bytes=$PACKAGE_BYTES"
 echo "  sha256=$PACKAGE_SHA"
 echo "  manifest=$MANIFEST"
 echo "  package=$PACKAGE"
+
+# NONPRODUCTION SOURCE-ONLY v4 OPTION. Disabled unless vetted LOCAL XYZ
+# inputs and a distinct immutable version are explicitly supplied. The
+# deployed v3 package and existing scheduled deployment remain unchanged.
+# No provider tile scraping, upload, Firebase catalog write or paid grant.
+if [[ -n "${RRGH_V4_APPROVED_XYZ_ROOT:-}" ]]; then
+  : "${RRGH_V4_PACKAGE_VERSION:?A distinct approved immutable v4 version is required}"
+  if [[ "$RRGH_V4_PACKAGE_VERSION" == "$PACKAGE_VERSION" ]]; then
+    echo "Refusing to reissue an existing Gorge Base version with different bytes." >&2
+    exit 1
+  fi
+  command -v python3 >/dev/null || {
+    echo "Python 3 is required for native schema-4 offline candidate build." >&2
+    exit 1
+  }
+  V4_PACKAGE="$OUTPUT_DIR/gorge-base-$RRGH_V4_PACKAGE_VERSION.rrghpkg"
+  python3 "$(dirname "${BASH_SOURCE[0]}")/build_gorge_base_native_v4.py" \
+    --approved-v3-root "$ROOT" \
+    --approved-xyz-root "$RRGH_V4_APPROVED_XYZ_ROOT" \
+    --output-rrghpkg "$V4_PACKAGE" \
+    --new-version "$RRGH_V4_PACKAGE_VERSION" \
+    --min-zoom "${RRGH_V4_MIN_ZOOM:-10}" \
+    --max-zoom "${RRGH_V4_MAX_ZOOM:-16}"
+  test -s "$V4_PACKAGE"
+  test -s "$V4_PACKAGE.build.json"
+  echo "Built schema-4 candidate only: $V4_PACKAGE"
+  echo "NOT published, NOT authorized into Firebase catalog, NOT an entitlement."
+fi
