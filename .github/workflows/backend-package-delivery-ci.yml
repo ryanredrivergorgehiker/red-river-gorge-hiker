@@ -47,6 +47,12 @@ jobs:
           node --check backend/functions/src/delivery.js
           node --check backend/functions/src/offlineLease.js
 
+      - name: Verify schema-4 offline package source integrity (no network)
+        run: |
+          set -euo pipefail
+          python3 -m py_compile backend/scripts/build_gorge_base_native_v4.py backend/scripts/test_build_gorge_base_native_v4.py
+          python3 -m unittest discover -s backend/scripts -p 'test_build_gorge_base_native_v4.py' -v
+
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs
 
