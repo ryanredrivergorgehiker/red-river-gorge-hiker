@@ -76,6 +76,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_inspect_official_ky_cog_geotiff.py' -v
           python3 -m py_compile backend/scripts/pilot_official_cog_xyz.py backend/scripts/test_pilot_official_cog_xyz.py
           python3 -m unittest discover -s backend/scripts -p 'test_pilot_official_cog_xyz.py' -v
+          python3 -m py_compile backend/scripts/inventory_kyfromabove_stac_coverage.py backend/scripts/test_inventory_kyfromabove_stac_coverage.py
+          python3 -m unittest discover -s backend/scripts -p 'test_inventory_kyfromabove_stac_coverage.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
 
@@ -94,6 +96,25 @@ jobs:
         with:
           name: official-kyfromabove-stac-cog-metadata
           path: ${{ runner.temp }}/official-ky-stac-gorge-candidates.json
+          retention-days: 2
+
+      - name: Enumerate official Gorge COG source footprints (METADATA ONLY)
+        id: kentucky_full_metadata
+        if: steps.kentucky_stac.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/inventory_kyfromabove_stac_coverage.py \
+            --initial-stac "${{ runner.temp }}/official-ky-stac-gorge-candidates.json" \
+            --output-json "${{ runner.temp }}/official-ky-gorge-cog-footprints.json"
+
+      - name: Retain finite Phase2 DEM and Phase3 aerial source footprints
+        if: steps.kentucky_full_metadata.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-gorge-dem-aerial-source-footprint-inventory
+          path: ${{ runner.temp }}/official-ky-gorge-cog-footprints.json
           retention-days: 2
 
       - name: Probe up to two authentic official COG TIFF headers (8 KiB total)
