@@ -180,7 +180,19 @@ if __name__ == "__main__":
     p.add_argument("--mosaic-plan", required=True, type=Path)
     p.add_argument("--pilot-root", required=True, type=Path)
     a = p.parse_args()
-    result = run_pilot(json.loads(a.mosaic_plan.read_text()), a.pilot_root)
+    try:
+        result = run_pilot(json.loads(a.mosaic_plan.read_text()), a.pilot_root)
+    except Exception as exc:
+        # Even if the external source/projection fails, persist a bounded
+        # diagnostic artifact rather than letting optional CI look green.
+        # No confidential token or user map/location payload is included.
+        a.pilot_root.mkdir(parents=True, exist_ok=True)
+        (a.pilot_root / "SOURCE-MOSAIC-FAILED.txt").write_text(
+            type(exc).__name__ + ": " + str(exc)[:2000] + "\n"
+        )
+        print("SOURCE-MOSAIC-PILOT-FAILED: " +
+              type(exc).__name__ + ": " + str(exc)[:2000], flush=True)
+        raise
     print(json.dumps({
         "status": result["status"], "xyz": result["xyz"],
         "rangeBytes": result["http206SourceTransferBytes"],
