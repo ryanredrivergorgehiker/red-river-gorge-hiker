@@ -170,6 +170,10 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         if any(item.get("sha256") == source_hash
                for item in existing_report.get("imports", [])):
             raise ValueError("Source TPKX already imported; immutable replay refused")
+        if (existing_report.get("boundsWGS84") != bounds or
+            existing_report.get("zoomMin") != zoom_min or
+            existing_report.get("zoomMax") != zoom_max):
+            raise ValueError("Cannot mix different geographic coverage contracts")
     planned = []
     with zipfile.ZipFile(tpkx) as pkg:
         roots = [name for name in pkg.namelist() if name.endswith("root.json")]
@@ -230,12 +234,6 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         }],
         "result": "LOCAL IMPORT ONLY, NOT complete-v4 coverage or permission to deploy",
     }
-    if existing_report and (
-        existing_report.get("boundsWGS84") != bounds or
-        existing_report.get("zoomMin") != zoom_min or
-        existing_report.get("zoomMax") != zoom_max
-    ):
-        raise ValueError("Cannot mix different geographic coverage contracts")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = report_path.with_suffix(".pending")
     temporary.write_text(json.dumps(record, indent=2) + "\n")
