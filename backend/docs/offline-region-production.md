@@ -24,7 +24,7 @@ reserved seconds, 500 MB outputs, and 300 seconds per child. Defaults execute
 zero jobs. Native workers consume a single durable reservation and cannot be
 restarted using the same reservation. Crash reservations remain charged. Two
 attempts per job are allowed across resumes; failed work stops for inspection.
-Maximum invocation is 12 jobs. No uncapped mode exists. Full production needs a
+Normal invocation is at most 12 jobs. `--drain-bounded-plan --live-source` processes the remaining immutable plan automatically until completion or its cumulative limits stop it. No uncapped mode exists. Full production needs a
 separate measured plan and existing spending-control verification.
 
 Example bounded resume (all paths private, outside this source checkout):
@@ -39,8 +39,7 @@ python backend/scripts/orchestrate_gorge_region.py \
 
 COG cache remains capped at 250 MB and the NAIP/USGS cache at 80 MB/120 requests.
 Those old ledgers are never reset. They are engineering limits, insufficient for
-an unrestricted full build. A subsequent reviewed production source ledger must
-have measured limits; modifying these values is not an approval to spend money.
+an unrestricted full build. A subsequent reviewed production plan may set explicit `source_limits` for a NEW ledger via `make_plan`; existing ledger ceilings cannot be raised on resume. Full-region plans can reserve their measured complete job/time/source limits without resetting engineering caches. Modifying these limits is not approval to spend money.
 
 `extend_gorge_sunlight.py` preserves the accepted 30 sectors and extends to 80
 using the exact hard-rim implementation, 2.5 m accepted processing grid, 180 m

@@ -54,8 +54,8 @@ def official_url(url):
 
 
 class Cache:
-    def __init__(self, root, limit=250_000_000, opener=urlopen):
-        if type(limit) is not int or not 1 <= limit <= 2_000_000_000:
+    def __init__(self, root, limit=250_000_000, opener=urlopen, maximum_limit=2_000_000_000):
+        if type(maximum_limit) is not int or not 1 <= maximum_limit <= 1_000_000_000_000 or type(limit) is not int or not 1 <= limit <= maximum_limit:
             raise ValueError("Explicit cumulative source transfer ceiling required")
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)

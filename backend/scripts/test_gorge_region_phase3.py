@@ -60,4 +60,13 @@ class RegionSafetyTests(unittest.TestCase):
    atomic(root/'input.json',json_bytes(p))
    with self.assertRaisesRegex(ValueError,'Engine changed'):run(root/'input.json',root/'output',root/'cog',root/'service',0)
 
+ def test_future_production_ledger_cannot_raise_existing_cap(self):
+  from cached_cog_source import Cache
+  with tempfile.TemporaryDirectory() as d:
+   c=Cache(d,limit=250_000_000);c.close()
+   with self.assertRaisesRegex(ValueError,'preserve'):Cache(d,limit=3_000_000_000,maximum_limit=1_000_000_000_000)
+  with tempfile.TemporaryDirectory() as d:
+   c=Cache(d,limit=3_000_000_000,maximum_limit=1_000_000_000_000)
+   self.assertEqual(c.limit,3_000_000_000);c.close()
+
 if __name__=='__main__':unittest.main()

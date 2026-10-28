@@ -39,8 +39,10 @@ def tile_coords(z):
     return [(x,y) for x in range(l,r+1) for y in range(t,b+1)]
 
 
-def make_plan(inventory,limits):
-    if set(limits)!={'attempts','seconds','outputBytes','childSeconds'} or not (0<limits['attempts']<=70000 and 1<=limits['childSeconds']<=600 and limits['childSeconds']<=limits['seconds']<=604800 and 0<limits['outputBytes']<=100_000_000_000):raise ValueError('Explicit bounded production limits required')
+def make_plan(inventory,limits,source_limits=None):
+    if set(limits)!={'attempts','seconds','outputBytes','childSeconds'} or not (0<limits['attempts']<=70000 and 1<=limits['childSeconds']<=600 and limits['childSeconds']<=limits['seconds']<=30_000_000 and 0<limits['outputBytes']<=100_000_000_000):raise ValueError('Explicit bounded production limits required')
+    source_limits=source_limits or {'cogBytes':250_000_000,'serviceBytes':80_000_000,'serviceRequests':120}
+    if set(source_limits)!={'cogBytes','serviceBytes','serviceRequests'} or not (0<source_limits['cogBytes']<=1_000_000_000_000 and 0<source_limits['serviceBytes']<=1_000_000_000_000 and 0<source_limits['serviceRequests']<=2_000_000):raise ValueError('Bounded source ledger limits required')
     sources=inventory['sources'];jobs=[];coverage={}
     for layer in LAYERS:
         family='dem' if layer=='terrain' else layer
@@ -58,7 +60,7 @@ def make_plan(inventory,limits):
                              'operation':'usgs-tile' if layer=='usgs-topo' else 'source-window' if z==16 else 'overview'})
     # Hash every local Python processing dependency, not just the controller.
     code={p.name:digest(p.read_bytes()) for p in sorted(Path(__file__).parent.glob('*.py')) if not p.name.startswith('test_')}
-    return {'format':'rrgh-region-plan-v1','boundsWGS84':AOI,'profiles':PROFILE,'limits':limits,'inventory':inventory,
+    return {'format':'rrgh-region-plan-v1','sourceLimits':source_limits,'boundsWGS84':AOI,'profiles':PROFILE,'limits':limits,'inventory':inventory,
             'runtime':{'python':platform.python_version(),'rasterio':rasterio.__version__,'GDAL':rasterio.__gdal_version__,'numpy':np.__version__},'inventorySHA256':digest(json_bytes(inventory)),'engineHashes':code,'jobs':jobs,'sourceBboxMissingSquareDegrees':coverage,
             'regionalPixelCoverageVerified':False,'cloudWrites':False,'actionsDispatch':False}
 
@@ -79,7 +81,7 @@ def write_image(image,root,layer,z,x,y):
 
 
 def worker(plan,job,root,cog_cache,service_cache):
-    root=private_root(root);layer=job['layer'];z,x,y=(job[k] for k in ('z','x','y'));outputs=[];evidence=[]
+    root=private_root(root);caps=plan.get('sourceLimits',{'cogBytes':250_000_000,'serviceBytes':80_000_000,'serviceRequests':120});layer=job['layer'];z,x,y=(job[k] for k in ('z','x','y'));outputs=[];evidence=[]
     if job['operation']=='overview':
         image=Image.new('RGBA',(512,512));allowed=set(tile_coords(z+1))
         for dx in range(2):
@@ -91,7 +93,7 @@ def worker(plan,job,root,cog_cache,service_cache):
                 with Image.open(children[0]) as im:image.paste(im.convert('RGBA'),(dx*256,dy*256))
         outputs=[write_image(image.resize((256,256),Image.Resampling.LANCZOS),root,layer,z,x,y)]
     elif layer=='usgs-topo':
-        cache=ServiceCache(service_cache)
+        cache=ServiceCache(service_cache,byte_limit=caps['serviceBytes'],request_limit=caps['serviceRequests'])
         try:
             raw,source=cache.fetch(f'{USGS}/tile/{z}/{y}/{x}',maximum=500_000)
             with Image.open(io.BytesIO(raw)) as im:
@@ -102,7 +104,7 @@ def worker(plan,job,root,cog_cache,service_cache):
             path=root/f'tiles/{layer}/{z}/{x}/{y}.{extension}';atomic(path,raw);outputs=[file_entry(path,root)];evidence=[source]
         finally:cache.close()
     elif layer=='leaf-on':
-        cache=ServiceCache(service_cache)
+        cache=ServiceCache(service_cache,byte_limit=caps['serviceBytes'],request_limit=caps['serviceRequests'])
         try:
             metadata,_=cache.fetch(NAIP,{'f':'pjson'});b=transform_bounds('EPSG:3857','EPSG:4326',*mercator_bounds(x,y,16))
             r=render_naip(cache,json.loads(metadata),{'id':job['id'],'lon':(b[0]+b[2])/2,'lat':(b[1]+b[3])/2},root)
@@ -110,7 +112,7 @@ def worker(plan,job,root,cog_cache,service_cache):
         finally:cache.close()
     else:
         family='dem' if layer=='terrain' else layer;sources=[s for s in plan['inventory']['sources'][family] if s['id'] in job['sourceIDs']]
-        cache=Cache(cog_cache,limit=250_000_000)
+        cache=Cache(cog_cache,limit=caps['cogBytes'],maximum_limit=1_000_000_000_000)
         try:
             bounds=mercator_bounds(x,y,16);size=256*2**(LAYERS[layer]-16)
             if layer=='terrain':
@@ -173,8 +175,8 @@ def run(plan_path,root,cog_cache,service_cache,max_jobs=0):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--plan',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--cog-cache',required=True);p.add_argument('--service-cache',required=True);p.add_argument('--max-jobs',type=int,default=0);p.add_argument('--live-source',action='store_true');p.add_argument('--worker');p.add_argument('--reservation',type=int);a=p.parse_args()
-    if not 0<=a.max_jobs<=12 or (a.max_jobs and not a.live_source):p.error('Explicit bounded invocation required (0..12 jobs)')
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--plan',required=True,type=Path);p.add_argument('--output',required=True,type=Path);p.add_argument('--cog-cache',required=True);p.add_argument('--service-cache',required=True);p.add_argument('--max-jobs',type=int,default=0);p.add_argument('--live-source',action='store_true');p.add_argument('--worker');p.add_argument('--reservation',type=int);p.add_argument('--drain-bounded-plan',action='store_true');a=p.parse_args()
+    if not 0<=a.max_jobs<=12 or ((a.max_jobs or a.drain_bounded_plan) and not a.live_source):p.error('Explicit bounded invocation required (0..12 jobs)')
     if a.worker:
         root=private_root(a.output)
         if not a.reservation or not (root/'jobs.sqlite').exists() or (root/'PLAN.json').read_bytes()!=a.plan.read_bytes():raise ValueError('Worker requires parent reservation')
@@ -183,4 +185,5 @@ if __name__=='__main__':
         if changed!=1:raise ValueError('Worker reservation already consumed or invalid')
         plan=json.loads(a.plan.read_text());job=next(j for j in plan['jobs'] if j['id']==a.worker);r=worker(plan,job,a.output,a.cog_cache,a.service_cache);atomic(a.output/'receipts'/(job['id']+'.json'),json_bytes(r))
     else:
-        r=run(a.plan,a.output,a.cog_cache,a.service_cache,a.max_jobs);print(json.dumps({k:v for k,v in r.items() if k!='receipts'},indent=2))
+        maximum=json.loads(a.plan.read_text())['limits']['attempts'] if a.drain_bounded_plan else a.max_jobs
+        r=run(a.plan,a.output,a.cog_cache,a.service_cache,maximum);print(json.dumps({k:v for k,v in r.items() if k!='receipts'},indent=2))
