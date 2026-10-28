@@ -95,6 +95,40 @@ jobs:
           path: ${{ runner.temp }}/official-ky-source-sizes.json
           retention-days: 2
 
+      - name: Probe one official Powell aerial tile without whole-package download
+        id: selective_tpkx_pilot
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/rrgh-powell-pilot"
+          cat > "${{ runner.temp }}/powell-source-provenance.json" <<'PROVENANCE'
+          {
+            "publisher": "Kentucky Division of Geographic Information",
+            "sourceTitle": "Powell KyFromAbove 2019 6-inch leaf-off imagery TPKX",
+            "sourceURL": "https://ky.box.com/shared/static/zi0ltrlzlx39ashp232dt37cdj0utem1.tpkx",
+            "licenseURL": "https://kyfromabove.ky.gov/",
+            "attribution": "KyFromAbove / Kentucky DGI (public-domain data with requested attribution)",
+            "verifiedOfflineReuse": true
+          }
+          PROVENANCE
+          python3 backend/scripts/import_official_tpkx_xyz.py \
+            --tpkx-url "https://ky.box.com/shared/static/zi0ltrlzlx39ashp232dt37cdj0utem1.tpkx" \
+            --approved-xyz-root "${{ runner.temp }}/rrgh-powell-pilot" \
+            --layer-id leaf-off-aerial \
+            --bbox -83.689 37.773 -83.685 37.777 \
+            --min-zoom 13 --max-zoom 13 \
+            --approved-provenance "${{ runner.temp }}/powell-source-provenance.json" \
+            --max-remote-bytes 60000000
+
+      - name: Retain only bounded publicly sourced Powell pilot tiles
+        if: steps.selective_tpkx_pilot.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-powell-leafoff-pilot-qa
+          path: ${{ runner.temp }}/rrgh-powell-pilot/
+          retention-days: 1
+
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs
 
