@@ -16,6 +16,7 @@ import re
 import struct
 import zipfile
 from http_range_zip import RangeZipReader
+from compact_v2_range_extract import select_xyz_tiles
 
 BUNDLE_RE = re.compile(
     r"(?:^|/)L([0-9A-Fa-f]{2})/R([0-9A-Fa-f]{4,8})C([0-9A-Fa-f]{4,8})\.bundle$",
@@ -230,9 +231,22 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
                 "uncompressedBytes": entry.file_size,
                 "compressedBytes": entry.compress_size,
             })
-            for z, x, y, image_format, raw in tiles_from_bundle(
-                pkg.read(entry), orig_y, orig_x, zoom, bounds
-            ):
+            # Official TPKX ZIP entries are usually STORED. Read only
+            # the 128x128 index and selected image offsets using bounded
+            # HTTP ranges, NOT the entire many-megabyte bundle.
+            if remote and entry.compress_type == zipfile.ZIP_STORED:
+                selected = select_xyz_tiles(
+                    source, entry, orig_y, orig_x, zoom, bounds,
+                    xyz, valid_tile
+                )
+            else:
+                # Local files and uncommon compressed bundles retain full
+                # native CompactV2 verification; remote compressed entries
+                # remain limited by the per-source transfer byte budget.
+                selected = tiles_from_bundle(
+                    pkg.read(entry), orig_y, orig_x, zoom, bounds
+                )
+            for z, x, y, image_format, raw in selected:
                 relative = f"{layer_id}/{z}/{x}/{y}.{image_format}"
                 planned.append((relative, raw))
     if not planned:
