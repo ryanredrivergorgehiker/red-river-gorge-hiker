@@ -66,6 +66,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_measure_inherited_gorge_assets.py' -v
           python3 -m py_compile backend/scripts/inventory_ky_topo_original_cogs.py backend/scripts/test_inventory_ky_topo_original_cogs.py
           python3 -m unittest discover -s backend/scripts -p 'test_inventory_ky_topo_original_cogs.py' -v
+          python3 -m py_compile backend/scripts/discover_ky_topo_gorge_quads.py backend/scripts/test_discover_ky_topo_gorge_quads.py
+          python3 -m unittest discover -s backend/scripts -p 'test_discover_ky_topo_gorge_quads.py' -v
           python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
           python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
           python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
@@ -106,6 +108,25 @@ jobs:
         with:
           name: official-ky-topo-original-source-index-only
           path: ${{ runner.temp }}/official-ky-topo-original-cog-index.json
+          retention-days: 3
+
+      - name: Select actual Gorge KyTopo source quadrangles from official grid
+        id: ky_topo_gorge_quads
+        if: steps.ky_topo_index.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_ky_topo_gorge_quads.py \
+            --official-s3-listing "${{ runner.temp }}/official-ky-topo-original-cog-index.json" \
+            --output-json "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json"
+
+      - name: Retain original Gorge-intersecting KyTopo source links and footprints
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-topo-gorge-original-cog-quads-metadata
+          path: ${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json
           retention-days: 3
 
       - name: Discover official KyFromAbove COG metadata (NO TIFF reads)
