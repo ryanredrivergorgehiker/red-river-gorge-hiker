@@ -61,3 +61,33 @@ Engineering confirmed one real Kentucky source varies image encoding by zoom, co
 The official TPKX uses Esri CompactV2 version3 but zero declared header record count (full index is present). Source parser permits that observed official header only if all other fixed index, offset and image bounds checks pass. ZIP entry method is **STORED**, enabling a direct local-header + index + individual tile-offset HTTP206 range reader. Repeated real z13 image hash matched while network transfer fell from 3,319,085 to 1,221,933 bytes. Full z13–16 seven-image sample transferred only 4,367,661 bytes. No whole-county archive downloaded.
 
 **Not released**: this isolated seven-tile QA sample is not even a complete leaf-off layer, and does not establish topo, terrain, leaf-on or all published Day Hikes. Real authenticated nonprod v4 packaged/download/airplane-mode client and owner acceptance remain blocked. Old production/nonproduction v3 immutable archive preserved, no purchases.
+
+
+## Continued source engineering: October 28 owner budget authorization and COG discovery
+
+**Owner budget direction:** The October GitHub Actions account budget was visibly increased to **$350**, with **$275 reported spent / 78%** when the owner supplied the billing screenshot on October 28. Earlier $250 stop-threshold notes are superseded for remaining October development runs; **do not exceed the $350 account-level ceiling**. The screen is a usage-budget observation, **not a verified paid invoice or bookkeeping expense**.
+
+**Private CI operating-cost improvement:** On draft backend PR #68 only, cancel superseded backend delivery workflow runs and skip the separate known-failing legacy v3 *real-source* rebuild (55-minute job). The existing v3 real-source gate remains intact for other backend PRs. The candidate branch cannot deploy nonproduction or overwrite v3. The standard delivery-contract/emulator and synthetic v4 source checks still execute.
+
+**Source registry and rights, source-specific rather than inferred from map-service tiles:**
+
+| Required offline visual | Highest-value official candidate | Current rights/coverage status |
+| --- | --- | --- |
+| Kentucky topo | KyFromAbove **KyTopo Map Series** individual COG GeoTIFFs under public S3 `elevation/KyTopoMapSeries/`; released May 2026 | Kentucky public-domain data-with-attribution claim documented; actual quadrangle/Gorge coverage, source rendition and reuse evidence still unverified |
+| USGS topo | USGS The National Map current US Topo GeoTIFF or approved raw public-domain style/data | USGS maps generally public domain but earlier maps may include identified commercial road exceptions; verify selected product's embedded credit/metadata |
+| Terrain relief | KyFromAbove public LiDAR-derived DEM COGs `elevation/DEM/` or USGS 3DEP (public-domain) | Need exact DEM geolocation/scale/extent, terrain derivation, per-source attribution and genuine near zoom |
+| Leaf-on aerial | **USDA NAIP** growing-season orthophotos, with Kentucky's official 2022 NAIP 60-cm statewide reference | This is the *correct seasonal class*; do not mislabel Kentucky's leaf-OFF KyFromAbove TPKX. USDA raw public-domain data, locate source acquisition and license/metadata before original TIFF/COG import |
+| Leaf-off aerial | Existing official KyFromAbove Phase 2 2019 six-inch TPKX, and Phase 2/3 orthophoto COGs in `imagery/orthos/` | Actual 7 original Powell z13–16 source tiles verified; full eight-county Gorge clipped coverage **not** yet verified |
+
+Official source references:
+- Kentucky public program and catalog: https://kyfromabove.ky.gov/
+- AWS Open Data Kentucky COG registry, public domain with attribution: https://registry.opendata.aws/kyfromabove/
+- Kentucky government STAC endpoint: https://spved5ihrl.execute-api.us-west-2.amazonaws.com/
+- Kentucky 2022 NAIP 60cm leaf-on reference: https://opengisdata.ky.gov/maps/kygeonet%3A%3Akentucky-2022-naip-imagery-tile-layer/about?layer=0
+- USDA NAIP public-domain imagery metadata: https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip-imagery
+- USGS The National Map: https://www.usgs.gov/tools/download-data-maps-national-map
+- Official KyFromAbove data distribution policy: https://kygeonet.ky.gov/kyfromabove/pdfs/KyFromAboveDistributionPolicy.pdf
+
+**New metadata-only STAC stage:** `discover_kyfromabove_stac.py` searches a strictly Gorge-bounded box, only two recognized DEM/orthophoto collections and at most three candidate records per collection. HTTPS official endpoint and response-byte limits are enforced, other external URLs are rejected, raw COG bytes are never retrieved, and missing KyTopo/USGS/leaf-on roles remain explicitly unproven. Network-free tests cover bounds, limited cardinality, provenance and invalid external assets. The CI-produced metadata artifact is a short-lived provenance/intake aid, **not a public multi-gigabyte Base package**.
+
+**Intake progression, no simulated coverage:** identify actual intersecting COG/TPKX assets; verify WGS84/GIS coordinates, original resolution, exact coverage and written reuse conditions; produce clipped *derived* XYZ rendering without invented detail, clearly distinguished from native source-image bytes; run all five independent layer coverage and storage-budget audits; then build a separate immutable schema4 version. The existing 1.5 GB uncompressed TAR / 60,000-file guard is mandatory. The old ~200GB of county archive sizes does not imply that many bytes are required for a bounded Gorge output. No real package or device acceptance yet.
