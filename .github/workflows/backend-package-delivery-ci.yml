@@ -74,6 +74,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_probe_kyfromabove_cog_headers.py' -v
           python3 -m py_compile backend/scripts/inspect_official_ky_cog_geotiff.py backend/scripts/test_inspect_official_ky_cog_geotiff.py
           python3 -m unittest discover -s backend/scripts -p 'test_inspect_official_ky_cog_geotiff.py' -v
+          python3 -m py_compile backend/scripts/pilot_official_cog_xyz.py backend/scripts/test_pilot_official_cog_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_official_cog_xyz.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
 
@@ -131,6 +133,29 @@ jobs:
           name: official-kyfromabove-cog-georeference-source-proof
           path: ${{ runner.temp }}/official-ky-cog-geospatial-tags.json
           retention-days: 2
+
+      - name: Reproject ONE real original-source Phase3 aerial XYZ (64 MB hard range cap)
+        id: kentucky_cog_xyz
+        if: steps.kentucky_cog_geotiff.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends gdal-bin
+          python3 backend/scripts/pilot_official_cog_xyz.py \
+            --stac "${{ runner.temp }}/official-ky-stac-gorge-candidates.json" \
+            --headers "${{ runner.temp }}/official-ky-cog-range-headers.json" \
+            --geotiff "${{ runner.temp }}/official-ky-cog-geospatial-tags.json" \
+            --pilot-root "${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot" --zoom 16
+
+      - name: Preserve SINGLE public-domain aerial XYZ pilot and honest provenance
+        if: steps.kentucky_cog_xyz.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-2024-cog-one-real-z16-xyz-qa
+          path: ${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot/
+          retention-days: 1
 
       - name: Discover county offline package metadata (no imagery download)
         id: official_sources
