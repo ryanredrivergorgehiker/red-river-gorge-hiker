@@ -130,12 +130,49 @@ def run_pilot(plan, output_root):
             info = json.loads(check.stdout)
             geographic = verify_derived_grid(info, bounds)
             bands = info.get("bands", [])
-            if len(bands) < 4:
-                raise ValueError("Mosaic lacks raster coverage alpha channel")
-            alpha = (bands[3].get("metadata") or {}).get("", {})
+            alpha_matches = [
+                i+1 for i, band in enumerate(bands)
+                if band.get("colorInterpretation") == "Alpha"
+            ]
+            if not alpha_matches:
+                raise ValueError("Mosaic lacks tagged raster coverage alpha")
+            alpha_index = alpha_matches[-1]
+            alpha = (bands[alpha_index-1].get("metadata") or {}).get("", {})
             alpha_min = alpha.get("STATISTICS_MINIMUM")
             if alpha_min is None or float(alpha_min) < 255:
-                raise ValueError("Mosaic has missing pixels; cannot present as full XYZ")
+                # Keep a genuine-source forensic pixel sample and full band
+                # diagnostics; never publish this incomplete tile as a map.
+                output_root.mkdir(parents=True, exist_ok=True)
+                diagnostic = output_root / "SOURCE-MOSAIC-NODATA-DETAIL.json"
+                rgba = output_root / "FAILED-SOURCE-MOSAIC-PIXELS-DO-NOT-DEPLOY.png"
+                band_summary = [{
+                    "index": i + 1,
+                    "colorInterpretation": band.get("colorInterpretation"),
+                    "metadata": (band.get("metadata") or {}).get("", {})
+                } for i, band in enumerate(bands)]
+                try:
+                    subprocess.run([
+                        "gdal_translate", "-q", "-of", "PNG",
+                        "-b", "1", "-b", "2", "-b", "3",
+                        "-b", str(alpha_index), str(tiff), str(rgba),
+                    ], check=True, timeout=30, capture_output=True)
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                    pass
+                diagnostic.write_text(json.dumps({
+                    "status": "FAILED ACTUAL MULTI-COG RASTER QA",
+                    "originalCOGs": [s["name"] for s in resolved],
+                    "xyz": {"z": ZOOM, "x": X, "y": Y},
+                    "boundsEPSG3857": bounds,
+                    "sourceBytesRanged": budget.used,
+                    "sourceRangeRequests": budget.calls,
+                    "alphaBand": alpha_index, "alphaMinimum": alpha_min,
+                    "bandMetadata": band_summary,
+                    "derivedImageIsAcceptedForMap": False,
+                }, indent=2) + "\n")
+                raise ValueError(
+                    "Mosaic source pixel coverage incomplete: alpha minimum "
+                    + str(alpha_min) + "; see bounded FAILED QA artifact"
+                )
             output.parent.mkdir(parents=True, exist_ok=True)
             subprocess.run([
                 "gdal_translate", "-q", "-of", "JPEG",
