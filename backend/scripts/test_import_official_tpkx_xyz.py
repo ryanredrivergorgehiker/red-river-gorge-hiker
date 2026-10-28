@@ -99,7 +99,7 @@ class ImporterTests(unittest.TestCase):
         data = local.read_bytes()
 
         class FakeRanges(io.BytesIO):
-            def __init__(self, url):
+            def __init__(self, url, **_ignored_limit):
                 super().__init__(data)
                 self.url = url
                 self.length = len(data)
