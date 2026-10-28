@@ -8,6 +8,7 @@ import struct
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 import zlib
 
 SCRIPT = Path(__file__).with_name("build_gorge_base_native_v4.py")
@@ -95,6 +96,29 @@ class NativeV4BuilderTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             builder.build(self.base, self.tiles, self.out,
                           "v4-qa-20261027", 8, 15)
+
+    def test_preserves_mixed_png_jpg_source_bytes_and_manifest(self):
+        z = 15
+        x, y = builder.xy(self.bounds["west"], self.bounds["north"], z)
+        old = self.tiles / f"leaf-off-aerial/{z}/{x}/{y}.png"
+        renamed = old.with_suffix(".jpg")
+        old.rename(renamed)
+        # Isolate format dispatch with a synthetic JPEG validator mock.
+        # The production validator still checks real JPEG SOF dimensions.
+        with patch.object(builder, "jpeg_256", return_value=True):
+            builder.build(self.base, self.tiles, self.out, "v4-mixed", 8, 15)
+        with tarfile.open(self.out) as tar:
+            manifest = json.load(tar.extractfile("NATIVE-MAP.json"))
+            leaf = next(s for s in manifest["tileSets"]
+                        if s["id"] == "leaf-off-aerial")
+            self.assertEqual(leaf["tileFormat"], "mixed")
+            self.assertTrue(any(v["path"].endswith(".jpg")
+                                for v in leaf["tiles"]))
+            self.assertTrue(any(v["path"].endswith(".png")
+                                for v in leaf["tiles"]))
+            self.assertIsNotNone(tar.getmember(
+                f"tiles/leaf-off-aerial/{z}/{x}/{y}.jpg"))
+        self.assertFalse(old.exists())
 
     def test_missing_close_tile_blocks_built_package(self):
         zoom = 15
