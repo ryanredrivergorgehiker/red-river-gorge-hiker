@@ -59,6 +59,22 @@ class SeamPlannerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             plan(report)
 
+    def test_pixel_verified_special_source_fails_if_footprints_move(self):
+        # The real Daysboro/Simpson original-source pair has a proven sample
+        # z16/17578/25339. Synthetic quad geometry does not match that
+        # pixel-proven position, so no unverified fallback is allowed.
+        report = index()
+        for q in report["quadrangles"]:
+            if q["id"] in ("N14E31", "N15E31"):
+                name = "Daysboro" if q["id"] == "N14E31" else "Simpson"
+                q["officialOriginalCogURL"] = (
+                    "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/"
+                    "KyTopoMapSeries/COGs/KyTopo_24K_" +
+                    q["id"] + "_" + name + "_cog.tif"
+                )
+        with self.assertRaisesRegex(ValueError, "Prior pixel-verified"):
+            plan(report)
+
     def test_duplicate_original_ids_fail_closed(self):
         report = index()
         report["quadrangles"][0] = report["quadrangles"][1]
