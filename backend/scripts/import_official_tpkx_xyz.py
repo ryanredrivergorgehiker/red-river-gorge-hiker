@@ -253,24 +253,17 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         raise ValueError("TPKX has no approved tiles inside requested region")
     # A complete v4 map may combine several county packages. Reject
     # contradictions and preserve existing exact matching bytes.
-    format_by_layer = None
-    for rel, raw in planned:
-        ext = Path(rel).suffix.lower()
-        if format_by_layer is None:
-            format_by_layer = ext
-        elif ext != format_by_layer:
-            raise ValueError("Multiple tile formats in one source layer")
-    layer_dir = output_root / layer_id
-    if layer_dir.exists():
-        existing_files = [p for p in layer_dir.rglob("*") if p.is_file()]
-        if any(p.suffix.lower() != format_by_layer for p in existing_files):
-            raise ValueError("Mixed county tile formats must be normalized separately")
+    # Official KyFromAbove TPKX uses MIXED JPEG/PNG imagery by zoom.
+    # Preserve each source image's original bytes and exact tile extension,
+    # never recompress, rescale, or pretend a new image exists.
     for rel, raw in planned:
         dest = output_root / rel
         if dest.is_file() and dest.read_bytes() != raw:
             raise ValueError("Conflicting county overlap: " + rel)
-        if dest.with_suffix(".jpg" if dest.suffix == ".png" else ".png").exists():
-            raise ValueError("Mixed image formats in tile overlap")
+        if any(dest.with_suffix(ext).exists()
+               for ext in (".png", ".jpg", ".jpeg")
+               if ext != dest.suffix.lower()):
+            raise ValueError("Conflicting image formats for the same XYZ tile")
     for rel, raw in planned:
         dest = output_root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
