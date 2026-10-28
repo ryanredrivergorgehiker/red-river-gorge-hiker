@@ -31,3 +31,19 @@ Intersections returned for bbox [-83.80, 37.65, -83.40, 37.95]: Breathitt, Estil
 5. Nonprod backend signed catalog and protected lease authorization, then full physical iPhone offline Base + two Day Hikes install and disconnected cold-restart QA. Existing owner Gate A remains REJECTED until this is demonstrated.
 
 No new third-party subscription, licensing fee, protected field use, map-data deployment, sales, or verified expense has been made in this source-intake work.
+
+
+## First real original-resolution leaf-off tile verified (October 28, 2026)
+
+A strict nonproduction test on the actual publicly downloadable Powell County KyFromAbove 2019 six-inch leaf-off TPKX (`zi0ltrlzlx39ashp232dt37cdj0utem1.tpkx`, 14,845,388,076 bytes) produced exactly one valid, original PNG image:
+- XYZ `leaf-off-aerial/13/2191/3166.png`, 256 x 256 RGBA, 122,687 bytes.
+- SHA-256 `ad1de71fe82643ce3a2a519ff306cb9f93c1b52214ebf80bc70a3175eb8b3708`.
+- Micro-bounds [-83.689,37.773,-83.685,37.777]; representative imagery has real pixel variation and was not stretched from the former v3 regional raster.
+- Initial ZIP bundle reader transferred 3,319,085 bytes, rather than the full 14.85 GB. Official CompactV2 bundle exposed `version=3, declared_count=0` (contrary to Esri's published normative 16,384 count), while preserving full 131,072-byte index and valid per-tile images. Parser accepts only count 0 or 16,384 with all other version, offsets, sizes and image constraints intact. Dedicated synthetic test added.
+- Actual county bundle `tile/L13/R0c00C0880.bundle` has ZIP method **0 (STORED)**, compressed/uncompressed size 2,465,616 bytes.
+- Implemented and independently synthetic-tested direct CompactV2 tile-offset range extraction from ZIP_STORED entries, using the existing bounded HTTP206 source reader. Repeat real public Powell pilot yielded the **same exact PNG SHA** but only **1,221,933 bytes transferred**. No coordinate reconstruction, image resampling or full county download.
+- Stored tiny verified test package in private operational Google Drive: https://drive.google.com/file/d/1aqYZIshGrFnkfiU8ocsnweVgFLtDZHS4/view (source QA only, NOT full Base).
+- Real official file, exact SHA, bounds and delta demonstrate one correct source/scale pipeline. **This is not an installed v4 package and cannot establish complete Gorge-wide coverage or other four map layers.**
+- GitHub Actions delivery-contract and synthetic selector tests pass on source after changes; independent old v3 high-resolution GeoTIFF preflight is still failing its upstream remote source. Never merge v4 draft into automatic deploy or sign new Base from this pilot.
+
+Remaining hard blockers: legally vetted all-five-layer z10–16 closed tile coverage, actual volume fitting 1.5GB uncompressed offline budget, signed UID-bound Base+two Day Hikes downloaded and verified, native hard-offline iPhone rendering and owner acceptance. No new revenue, external purchase or billed map service.
