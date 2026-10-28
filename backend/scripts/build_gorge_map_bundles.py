@@ -16,6 +16,7 @@ from cached_cog_source import atomic, digest
 from benchmark_gorge_pipeline import json_bytes, receipt_valid, AOI
 from build_gorge_base_native_v4 import xy
 from measure_gorge_benchmark import archive_bytes
+from validate_gorge_shared import validate_shared
 
 PROFILE = {'core': {'hiking': 17, 'usgs-topo': 16, 'terrain': 17},
            'leaf-on': {'leaf-on': 18}, 'leaf-off': {'leaf-off': 18}}
@@ -53,7 +54,7 @@ def gather(benchmark_roots,shared_root=None):
         for e in r['files']:
             source=root/e['file'];path='shared/'+e['file'];safe_path(path)
             if digest(source.read_bytes())!=e['sha256'] or source.stat().st_size!=e['bytes']:raise ValueError('Shared source integrity mismatch')
-            result['core'][path]={'path':path,'sha256':e['sha256'],'bytes':e['bytes'],'source':str(source),'layer':'sunlight-accepted'}
+            result['core'][path]={'path':path,'sha256':e['sha256'],'bytes':e['bytes'],'source':str(source),'layer':'shared'}
     return {k:list(v.values()) for k,v in result.items()}
 
 
@@ -66,11 +67,7 @@ def validate_regional(entries,group,bounds=AOI):
             left,bottom=xy(bounds[0],bounds[1],z);right,top=xy(bounds[2],bounds[3],z)
             expected.update((z,x,y) for x in range(left,right+1) for y in range(top,bottom+1))
         if actual!=expected:raise ValueError(f'{group}/{layer}: incomplete or extraneous regional XYZ coverage')
-    if group=='core':
-        # Shared manifests/vectors and full Sunlight acceptance cannot be
-        # inferred from the sample raster files. This gate is intentionally
-        # closed until an independently validated shared-content receipt exists.
-        raise ValueError('Regional core requires full-extent accepted shared-content validation; benchmark assets alone cannot satisfy it')
+    if group=='core':validate_shared(entries)
 
 
 def part_manifest(group,entries):
@@ -142,7 +139,10 @@ def write_part(group,entries,out):
 
 def build(groups,out,release,scope='benchmark',max_bytes=MAX_PART_BYTES,max_entries=MAX_ENTRIES,provenance=None):
     import fcntl
-    out=Path(out);out.mkdir(parents=True,exist_ok=True)
+    out=Path(out)
+    checkout=Path(__file__).resolve().parents[2]
+    if 'public' in out.resolve().parts or out.resolve()==checkout or checkout in out.resolve().parents:raise ValueError('Protected packages must remain outside source checkout/public paths')
+    out.mkdir(parents=True,exist_ok=True)
     with (out/'producer.lock').open('a+') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         return _build_locked(groups,out,release,scope,max_bytes,max_entries,provenance)
@@ -157,7 +157,7 @@ def _build_locked(groups,out,release,scope,max_bytes,max_entries,provenance):
         if not entries:raise ValueError('Missing required candidate group '+group)
         if len({e['path'] for e in entries})!=len(entries):raise ValueError('Duplicate package member')
         for e in entries:
-            if e['layer'] not in PROFILE[group] and not (group=='core' and e['layer']=='sunlight-accepted'):
+            if e['layer'] not in PROFILE[group] and not (group=='core' and e['layer'] in ('sunlight-accepted','shared')):
                 raise ValueError('Layer does not belong in this package group')
             if Path(e['source']).is_symlink():raise ValueError('Symlink source is not immutable content')
             safe_path(e['path']);raw=Path(e['source']).read_bytes()
@@ -187,12 +187,19 @@ def _build_locked(groups,out,release,scope,max_bytes,max_entries,provenance):
         index={'format':'rrgh-map-bundle-v1','group':group,'packageID':IDS[group],
                'release':release,'coverageScope':scope,'boundsWGS84':AOI,'required':group=='core',
                'minimumZoom':10,'maximumZoomByLayer':PROFILE[group],'parts':parts,
-               'regionalReady':scope=='regional','fullSunlightCoverageVerified':False,
+               'regionalReady':scope=='regional','fullSunlightCoverageVerified':scope=='regional' and group=='core',
                'sources':sources,'provenanceComplete':bool(sources),
                'architecture':'existing private GCS + authenticated backend + existing Base entitlement and offline lease'}
         path=directory/'MAP-BUNDLE.json';blob=json_bytes(index)
+        if len(blob)>1_048_576:raise ValueError('Authenticated index exceeds native 1MiB ceiling')
         if path.exists() and path.read_bytes()!=blob:raise ValueError('Immutable release output already exists; choose a new directory')
         atomic(path,blob)
+        if sources:
+            offline={'packageID':IDS[group],'version':release,'byteCount':len(blob),'sha256':digest(blob),'sources':sources}
+            atomic(directory/'INDEX.catalog-candidate.json',json_bytes({'packageId':IDS[group],'packageType':'offline_base',
+                'requiredEntitlement':'base','version':release,'byteCount':len(blob),'sha256':digest(blob),'offlineManifest':offline,
+                'active':False,'contentReady':False,'storageBucket':None,'objectName':f'engineering/{release}/{group}/MAP-BUNDLE.json',
+                'objectMetadata':{'rrgh-sha256':digest(blob),'rrgh-package-id':IDS[group],'rrgh-version':release}}))
         summaries[group]={'indexSHA256':digest(blob),'parts':len(parts),'archiveBytes':sum(p['byteCount'] for p in parts),
                           'extractedBytes':sum(p['extractedByteCount'] for p in parts),'files':sum(p['fileCount'] for p in parts),
                           'maxPartBytes':max(p['byteCount'] for p in parts),'regionalReady':index['regionalReady']}
