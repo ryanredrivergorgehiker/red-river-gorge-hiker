@@ -47,3 +47,17 @@ A strict nonproduction test on the actual publicly downloadable Powell County Ky
 - GitHub Actions delivery-contract and synthetic selector tests pass on source after changes; independent old v3 high-resolution GeoTIFF preflight is still failing its upstream remote source. Never merge v4 draft into automatic deploy or sign new Base from this pilot.
 
 Remaining hard blockers: legally vetted all-five-layer z10–16 closed tile coverage, actual volume fitting 1.5GB uncompressed offline budget, signed UID-bound Base+two Day Hikes downloaded and verified, native hard-offline iPhone rendering and owner acceptance. No new revenue, external purchase or billed map service.
+
+
+## Confirmed real high-zoom KyFromAbove source — 2026-10-28
+
+Real official Powell County KyFromAbove 2019 six-inch leaf-off TPKX, original file **14,845,388,076 bytes**. Nonproduction selective-read real QA produced **7 original 256px tiles** at z13–16 in a tiny approved testing bbox [-83.689,37.773,-83.685,37.777]. All seven images and source metadata saved privately in Drive:
+https://drive.google.com/file/d/1kOMgvwoTgX3_aGUCloW6LKmCbjNY1KoP/view
+
+Actual tile distribution: z13 = 1 PNG; z14 = 1 JPEG; z15 = 1 JPEG; z16 = 4 JPEG. Total network bytes read **4,367,661**, rather than 14.85GB full source. Exact original z13 tile SHA **ad1de71fe82643ce3a2a519ff306cb9f93c1b52214ebf80bc70a3175eb8b3708** preserved from single-zoom pilot. Higher-zoom JPEG pixels are source-original with per-image SHA recorded; no GIS reconstruction, stretching, upsampling or compression was performed.
+
+Engineering confirmed one real Kentucky source varies image encoding by zoom, contradicting earlier uniform file-format assumption. Schema4 builder and iOS validator now allow **tileFormat = mixed** with per-tile canonical `tiles/<raster-id>/<z>/<x>/<y>.<png|jpg|jpeg>`, preserving exact source bytes and full SHA integrity, rejecting duplicate/conflicting formats for one XYZ coordinate. The MapKit local tile reader already loads both image types. Matching Python/Swift regression tests added. Source changes remain UNMERGED and were not proven by owner device as of note.
+
+The official TPKX uses Esri CompactV2 version3 but zero declared header record count (full index is present). Source parser permits that observed official header only if all other fixed index, offset and image bounds checks pass. ZIP entry method is **STORED**, enabling a direct local-header + index + individual tile-offset HTTP206 range reader. Repeated real z13 image hash matched while network transfer fell from 3,319,085 to 1,221,933 bytes. Full z13–16 seven-image sample transferred only 4,367,661 bytes. No whole-county archive downloaded.
+
+**Not released**: this isolated seven-tile QA sample is not even a complete leaf-off layer, and does not establish topo, terrain, leaf-on or all published Day Hikes. Real authenticated nonprod v4 packaged/download/airplane-mode client and owner acceptance remain blocked. Old production/nonproduction v3 immutable archive preserved, no purchases.
