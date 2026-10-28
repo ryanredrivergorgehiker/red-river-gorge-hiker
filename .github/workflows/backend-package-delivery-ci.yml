@@ -220,6 +220,15 @@ jobs:
           path: ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/
           retention-days: 2
 
+      - name: Preserve honest failed two-source mosaic attempt (NO map acceptance)
+        if: always() && steps.kentucky_two_cog_mosaic.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-2-cog-z16-mosaic-FAILED-DIAGNOSTIC
+          path: ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-FAILED.txt
+          if-no-files-found: error
+          retention-days: 2
+
       - name: Discover county offline package metadata (no imagery download)
         id: official_sources
         continue-on-error: true
