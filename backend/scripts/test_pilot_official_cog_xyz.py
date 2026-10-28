@@ -3,7 +3,7 @@
 import unittest
 
 from pilot_official_cog_xyz import (
-    select, xyz, mercator_bounds, RangeBudget, MAX_REQUEST,
+    select, xyz, mercator_bounds, verify_derived_grid, RangeBudget, MAX_REQUEST,
     MAX_TRANSFER, COG_HOST
 )
 
@@ -57,6 +57,27 @@ class SourceGuardTests(unittest.TestCase):
             xyz(-100, 38, 16)
         with self.assertRaises(ValueError):
             xyz(-83.75, 37.65, 20)
+
+    def test_derived_raster_must_have_exact_tile_grid_and_real_pixels(self):
+        box = mercator_bounds(*xyz(-83.759, 37.653, 16), 16)
+        pixel = (box[2] - box[0]) / 256
+        info = {"size": [256, 256],
+                "geoTransform": [box[0], pixel, 0., box[3], 0., -pixel],
+                "bands": [{"metadata": {"": {"STATISTICS_STDDEV": "21.3"}}},
+                          {"metadata": {"": {"STATISTICS_STDDEV": "17.2"}}},
+                          {"metadata": {"": {"STATISTICS_STDDEV": "19.8"}}}]}
+        self.assertTrue(verify_derived_grid(info, box)[
+            "pixelAndGeographicAlignmentVerified"])
+        bad = dict(info, geoTransform=[box[0] + 100, pixel, 0,
+                                       box[3], 0, -pixel])
+        with self.assertRaises(ValueError):
+            verify_derived_grid(bad, box)
+        flat = dict(info, bands=[
+            {"metadata": {"": {"STATISTICS_STDDEV": "0"}}}
+            for _ in range(3)
+        ])
+        with self.assertRaises(ValueError):
+            verify_derived_grid(flat, box)
 
     def test_bad_asset_host_is_not_probed(self):
         stac, h, geo = source_chain()
