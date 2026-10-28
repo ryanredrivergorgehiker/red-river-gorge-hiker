@@ -60,6 +60,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_build_gorge_base_native_v4.py' -v
           python3 -m py_compile backend/scripts/audit_gorge_v4_xyz.py backend/scripts/test_audit_gorge_v4_xyz.py
           python3 -m unittest discover -s backend/scripts -p 'test_audit_gorge_v4_xyz.py' -v
+          python3 -m py_compile backend/scripts/measure_gorge_offline_packs.py backend/scripts/test_measure_gorge_offline_packs.py
+          python3 -m unittest discover -s backend/scripts -p 'test_measure_gorge_offline_packs.py' -v
           python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
           python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
           python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
