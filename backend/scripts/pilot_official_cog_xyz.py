@@ -170,6 +170,35 @@ def proxy_handler(origin, budget, opener=urlopen):
     return Handler
 
 
+def verify_derived_grid(info, bounds):
+    if info.get("size") != [256, 256]:
+        raise ValueError("Derived offline raster is not exact 256x256")
+    affine = info.get("geoTransform")
+    if not isinstance(affine, list) or len(affine) != 6:
+        raise ValueError("Derived XYZ raster lacks georeferencing")
+    pixel = (bounds[2] - bounds[0]) / 256
+    checks = [
+        (affine[0], bounds[0]), (affine[3], bounds[3]),
+        (affine[1], pixel), (affine[5], -pixel),
+        (affine[2], 0), (affine[4], 0),
+    ]
+    if any(abs(float(actual) - expected) > 0.02 for actual, expected in checks):
+        raise ValueError("Actual GDAL output is not aligned to requested XYZ grid")
+    bands = info.get("bands") or []
+    if len(bands) < 3:
+        raise ValueError("Aerial output lacks source RGB")
+    stdevs = []
+    for band in bands[:3]:
+        data = band.get("metadata", {})
+        value = data.get("", {}).get("STATISTICS_STDDEV")
+        if value is not None:
+            stdevs.append(float(value))
+    if len(stdevs) != 3 or max(stdevs) < 1:
+        raise ValueError("Flat, black or statistically unverified aerial source")
+    return {"pixelSizeEPSG3857": pixel, "rgbStddev": stdevs,
+            "pixelAndGeographicAlignmentVerified": True}
+
+
 def run_pilot(stac, headers, geotiff, out, zoom=16):
     origin = select(stac, headers, geotiff)
     bbox = origin["bbox"]
@@ -205,6 +234,11 @@ def run_pilot(stac, headers, geotiff, out, zoom=16):
             "-wm", "32", "-wo", "NUM_THREADS=1",
             addr, str(temp)
         ], env=env, check=True, timeout=110, capture_output=True)
+        raster_info = subprocess.run(
+            ["gdalinfo", "-json", "-stats", str(temp)],
+            check=True, capture_output=True, timeout=35
+        )
+        qa = verify_derived_grid(json.loads(raster_info.stdout), box)
         output.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run([
             "gdal_translate", "-q", "-of", "JPEG",
@@ -226,6 +260,7 @@ def run_pilot(stac, headers, geotiff, out, zoom=16):
             "resampling": "GDAL bilinear reprojection to EPSG3857; NO sharpening or invented data",
             "derivedImageBytes": output.stat().st_size,
             "derivedImageSha256": source_hash,
+            "rasterQA": qa,
             "derivedImageRelativePath": output.relative_to(out).as_posix(),
             "notCustomerReady": True,
         }
