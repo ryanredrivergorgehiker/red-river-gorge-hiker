@@ -9,6 +9,7 @@ schema-4 package builder, not proof that all five layers exist.
 Reference: Esri/raster-tiles-compactcache CompactCacheV2.md (Apache-2.0).
 """
 import argparse
+import tempfile
 import hashlib
 import json
 from pathlib import Path
@@ -29,6 +30,8 @@ ALLOWED_LAYERS = frozenset((
 HEADER_SIZE = 64
 INDEX_SIZE = 131072
 MAX_TILE_BYTES = 4 * 1024 * 1024
+# Keep the importer bounded before the later 1.5 GB schema-4 build.
+MAX_STAGED_BYTES = 1_500_000_000
 
 
 def xyz(lon, lat, z):
@@ -205,7 +208,10 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             existing_report.get("zoomMin") != zoom_min or
             existing_report.get("zoomMax") != zoom_max):
             raise ValueError("Cannot mix different geographic coverage contracts")
-    planned = []
+    # Spool tiles to an anonymous disk file, not a RAM list of image bytes.
+    # ZIP integrity/overlaps are checked before any destination tile is added.
+    planned = []  # (relative_path, offset, byte_count)
+    spool = tempfile.TemporaryFile(mode="w+b")
     bundle_stats = []
     with zipfile.ZipFile(source) as pkg:
         roots = [name for name in pkg.namelist() if name.endswith("root.json")]
@@ -260,7 +266,11 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
                 )
             for z, x, y, image_format, raw in selected:
                 relative = f"{layer_id}/{z}/{x}/{y}.{image_format}"
-                planned.append((relative, raw))
+                if spool.tell() + len(raw) > MAX_STAGED_BYTES:
+                    raise ValueError("Source intake exceeds bounded staging budget")
+                offset = spool.tell()
+                spool.write(raw)
+                planned.append((relative, offset, len(raw)))
     if not planned:
         raise ValueError("TPKX has no approved tiles inside requested region")
     # A complete v4 map may combine several county packages. Reject
@@ -268,7 +278,11 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
     # Official KyFromAbove TPKX uses MIXED JPEG/PNG imagery by zoom.
     # Preserve each source image's original bytes and exact tile extension,
     # never recompress, rescale, or pretend a new image exists.
-    for rel, raw in planned:
+    for rel, offset, byte_count in planned:
+        spool.seek(offset)
+        raw = spool.read(byte_count)
+        if len(raw) != byte_count:
+            raise ValueError("Truncated staged source tile")
         dest = output_root / rel
         if dest.is_file() and dest.read_bytes() != raw:
             raise ValueError("Conflicting county overlap: " + rel)
@@ -276,11 +290,24 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
                for ext in (".png", ".jpg", ".jpeg")
                if ext != dest.suffix.lower()):
             raise ValueError("Conflicting image formats for the same XYZ tile")
-    for rel, raw in planned:
+    for rel, offset, byte_count in planned:
         dest = output_root / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         if not dest.exists():
-            dest.write_bytes(raw)
+            spool.seek(offset)
+            raw = spool.read(byte_count)
+            if len(raw) != byte_count:
+                raise ValueError("Truncated staged source tile")
+            # Stage destination creation to a temporary name and replace only
+            # an absent tile; existing approved originals are not overwritten.
+            with tempfile.NamedTemporaryFile(dir=dest.parent, suffix=".pending",
+                                             delete=False) as scratch:
+                scratch.write(raw)
+                staged = Path(scratch.name)
+            if dest.exists():
+                staged.unlink(missing_ok=True)
+            else:
+                staged.rename(dest)
     record = {
         "layerID": layer_id, "boundsWGS84": bounds,
         "zoomMin": zoom_min, "zoomMax": zoom_max,
@@ -300,6 +327,7 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
     temporary = report_path.with_suffix(".pending")
     temporary.write_text(json.dumps(record, indent=2) + "\n")
     temporary.replace(report_path)
+    spool.close()
     if remote:
         source.close()
     return record
