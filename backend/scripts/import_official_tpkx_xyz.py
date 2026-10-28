@@ -76,7 +76,7 @@ def valid_tile(data):
     return None
 
 
-def web_mercator_256(root):
+def web_mercator_256(root, required_levels):
     # TPKX root.json has tileInfo and spatial reference in different
     # compatible ArcGIS metadata layouts. Reject anything not clearly
     # Web Mercator 256x256 using global Google/OSM top-left tile origin.
@@ -88,8 +88,23 @@ def web_mercator_256(root):
     if ti.get("rows") != 256 or ti.get("cols") != 256:
         return False
     origin = ti.get("origin") or {}
-    return (abs(origin.get("x", 0) + 20037508.342789244) < 2 and
-            abs(origin.get("y", 0) - 20037508.342789244) < 2)
+    if not (abs(origin.get("x", 0) + 20037508.342789244) < 2 and
+            abs(origin.get("y", 0) - 20037508.342789244) < 2):
+        return False
+    # A Web Mercator origin alone does not prove XYZ tile scale. An ArcGIS
+    # cache may have custom/shifted LODs: explicitly reject mismatched
+    # resolutions rather than misaligning trails and raster geography.
+    lods = ti.get("lods") or []
+    try:
+        resolutions = {int(lod["level"]): float(lod["resolution"])
+                       for lod in lods}
+        return all(
+            z in resolutions and
+            abs(resolutions[z] / (156543.03392804097 / (2 ** z)) - 1) < 0.0001
+            for z in required_levels
+        )
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return False
 
 
 def tiles_from_bundle(bundle, origin_y, origin_x, z, bounds):
@@ -161,7 +176,7 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         if len(roots) != 1:
             raise ValueError("Unambiguous TPKX root.json required")
         root = json.loads(pkg.read(roots[0]))
-        if not web_mercator_256(root):
+        if not web_mercator_256(root, range(zoom_min, zoom_max + 1)):
             raise ValueError("TPKX is not 256px global Web Mercator XYZ")
         for entry in pkg.infolist():
             m = BUNDLE_RE.search(entry.filename)
