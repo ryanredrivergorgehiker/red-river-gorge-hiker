@@ -139,6 +139,7 @@ def run(index, root, renderer=render):
     if root.exists() and any(root.iterdir()):
         raise FileExistsError("Do not replace any previous 12-seam source QA")
     records=[]
+    failures=[]
     transferred=0
     for candidate in planned["candidates"]:
         try:
@@ -154,13 +155,19 @@ def run(index, root, renderer=render):
             if transferred > ALL_MAX:
                 raise ValueError("All-seams original-source budget exceeded")
         except Exception as exc:
-            root.mkdir(parents=True,exist_ok=True)
-            (root/"BOUNDARY-FAILED-NOT-ACCEPTED.json").write_text(json.dumps({
-                "status":"FAILED REAL KYTOPO SOURCE BOUNDARY",
-                "candidate":candidate,"passedBeforeFailure":len(records),
-                "problem":type(exc).__name__ + ": " + str(exc)[:600],
-                "notAnOfflineMap":True},indent=2)+"\n")
-            raise
+            failures.append({"candidate":candidate,
+                             "error":type(exc).__name__ + ": " + str(exc)[:600]})
+            # Try remaining independent bounded seam samples so one inaccurate
+            # index bbox cannot conceal further missing source pixels.
+            continue
+    if failures:
+        root.mkdir(parents=True,exist_ok=True)
+        (root/"BOUNDARY-FAILED-NOT-ACCEPTED.json").write_text(json.dumps({
+            "status":"INCOMPLETE 12-SOURCE SEAM QA — NEVER CUSTOMER READY",
+            "passed":len(records),"failed":len(failures),
+            "failures":failures,
+            "notAnOfflineMap":True},indent=2)+"\n")
+        raise ValueError(f"{len(failures)} of 12 official seams failed actual pixel QA")
     result={"status":"12 ORIGINAL KYTOPO BOUNDARY PIXEL PILOTS, NOT REGIONAL COVERAGE",
             "candidateCount":len(records),"records":records,
             "originalBytesTransferred":transferred,
