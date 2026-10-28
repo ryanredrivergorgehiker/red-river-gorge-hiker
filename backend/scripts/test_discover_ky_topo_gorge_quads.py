@@ -21,7 +21,7 @@ class KyTopoRegionTests(unittest.TestCase):
     def test_gorge_quad_with_original_source_linked_to_full_s3_listing(self):
         f = feature("Q24", url("Q24"))
         listed = {"prefix": PREFIX.lstrip("/"), "listingExhausted": True,
-                  "originalCOGs": [{"key": PREFIX.lstrip("/") + "Q24.tif"}]}
+                  "originalCOGs": [{"key": PREFIX.lstrip("/") + "Q24.tif", "sourceFileBytes": 400}]}
         report = discover(BBOX, listed, lambda bounds: {"features": [f]})
         self.assertEqual(report["count"], 1)
         self.assertEqual(report["withOriginalCOGURL"], 1)
