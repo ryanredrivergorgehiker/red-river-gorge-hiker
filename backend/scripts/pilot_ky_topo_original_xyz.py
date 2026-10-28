@@ -45,6 +45,8 @@ def source(index, quad_id=QUAD):
     b = q.get("boundsWGS84")
     if not b or len(b) != 4 or not (b[0] < b[2] and b[1] < b[3]):
         raise ValueError("Missing original source quadrangle geometry")
+    if quad_id == QUAD and not (b[0] < LON < b[2] and b[1] < LAT < b[3]):
+        raise ValueError("Original Pine Ridge sample point outside source quad")
     length = q.get("officialOriginalSourceBytes")
     if not isinstance(length, int) or not (1_000_000 < length < 1_000_000_000):
         raise ValueError("No original S3 byte-length evidence")
