@@ -205,6 +205,7 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             existing_report.get("zoomMax") != zoom_max):
             raise ValueError("Cannot mix different geographic coverage contracts")
     planned = []
+    bundle_stats = []
     with zipfile.ZipFile(source) as pkg:
         roots = [name for name in pkg.namelist() if name.endswith("root.json")]
         if len(roots) != 1:
@@ -223,6 +224,12 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             orig_y, orig_x = int(yhex, 16), int(xhex, 16)
             if entry.file_size > 350_000_000:
                 raise ValueError("Unexpectedly large source cache bundle")
+            bundle_stats.append({
+                "zoom": zoom, "entry": entry.filename,
+                "zipMethod": entry.compress_type,
+                "uncompressedBytes": entry.file_size,
+                "compressedBytes": entry.compress_size,
+            })
             for z, x, y, image_format, raw in tiles_from_bundle(
                 pkg.read(entry), orig_y, orig_x, zoom, bounds
             ):
@@ -265,7 +272,8 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             "sourceArchiveSHA256": None if remote else source_hash,
             "sourceFilename": source_name,
             "sourceRangeProvenance": source.provenance if remote else None,
-            "tileCountRead": len(planned), "source": provenance,
+            "tileCountRead": len(planned), "bundleReadStats": bundle_stats,
+            "source": provenance,
         }],
         "result": "LOCAL IMPORT ONLY, NOT complete-v4 coverage or permission to deploy",
     }
