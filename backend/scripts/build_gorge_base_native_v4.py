@@ -19,6 +19,8 @@ REQUIRED = ("kentucky-topo", "usgs-topo", "terrain-relief",
             "leaf-on-aerial", "leaf-off-aerial")
 MAX_TILES_PER_SET = 100000
 MAX_ARCHIVE_BYTES = 1_500_000_000
+# Align the private source archive with the bounded native TAR extractor.
+MAX_ARCHIVE_FILES = 60_000
 
 
 def safe(root: Path, relative: str) -> Path:
@@ -168,12 +170,16 @@ def build(base: Path, tiles: Path, output: Path,
                      "tileSets": sets})
     manifest_blob = (json.dumps(manifest, sort_keys=True,
                                 separators=(",", ":")) + "\n").encode("utf-8")
+    if len(paths) + 1 > MAX_ARCHIVE_FILES:
+        raise ValueError("Package has too many separate tile/files for native extraction")
     size = len(manifest_blob) + sum(p.stat().st_size for p in paths.values())
     if size > MAX_ARCHIVE_BYTES:
         raise ValueError("Package exceeds 1.5 GB uncompressed storage budget")
     output.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with tarfile.open(output, "w") as archive:
+        # Force USTAR: iOS extractor deliberately rejects PAX/GNU
+        # extension records and permits only regular safe file entries.
+        with tarfile.open(output, "w", format=tarfile.USTAR_FORMAT) as archive:
             for name, path in sorted(paths.items()):
                 info = archive.gettarinfo(str(path), arcname=name)
                 if not info.isfile():
