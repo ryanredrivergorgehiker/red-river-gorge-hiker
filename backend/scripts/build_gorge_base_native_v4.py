@@ -132,7 +132,7 @@ def build(base: Path, tiles: Path, output: Path,
     sets = []
     for layer in REQUIRED:
         layer_tiles = []
-        tile_format = None
+        image_formats = set()
         for z in range(min_zoom, max_zoom + 1):
             nw = xy(bounds["west"], bounds["north"], z)
             se = xy(bounds["east"], bounds["south"], z)
@@ -143,15 +143,15 @@ def build(base: Path, tiles: Path, output: Path,
             for x in columns:
                 for y in rows:
                     stem = f"{layer}/{z}/{x}/{y}"
-                    if tile_format is None:
-                        formats = [ext for ext in ("png", "jpg", "jpeg")
-                                   if (tiles / f"{stem}.{ext}").is_file()]
-                        if len(formats) != 1:
-                            raise ValueError("Need exactly one approved image format at " + stem)
-                        tile_format = formats[0]
-                    rel = f"{stem}.{tile_format}"
+                    formats = [ext for ext in ("png", "jpg", "jpeg")
+                               if (tiles / f"{stem}.{ext}").is_file()]
+                    if len(formats) != 1:
+                        raise ValueError("Need exactly one approved image for " + stem)
+                    image_format = formats[0]
+                    image_formats.add(image_format)
+                    rel = f"{stem}.{image_format}"
                     source = safe(tiles, rel)
-                    if tile_format == "png":
+                    if image_format == "png":
                         dimensions_ok = png_256(source)
                     else:
                         dimensions_ok = jpeg_256(source)
@@ -164,7 +164,9 @@ def build(base: Path, tiles: Path, output: Path,
                     if len(layer_tiles) > MAX_TILES_PER_SET:
                         raise ValueError("Too many tiles for a single layer")
         sets.append({"id": layer, "minZoom": min_zoom, "maxZoom": max_zoom,
-                     "tileFormat": tile_format, "tiles": layer_tiles})
+                     "tileFormat": (next(iter(image_formats))
+                                    if len(image_formats) == 1 else "mixed"),
+                     "tiles": layer_tiles})
     manifest = dict(source_manifest)
     manifest.update({"schemaVersion": 4, "packageVersion": version,
                      "tileSets": sets})
