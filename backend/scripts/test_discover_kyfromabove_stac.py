@@ -3,7 +3,7 @@
 import unittest
 
 from discover_kyfromabove_stac import (
-    discover, valid_bbox, intersects, public_asset, source_kind, MAX_ITEMS_PER_COLLECTION
+    discover, collections, valid_bbox, intersects, public_asset, source_kind, MAX_ITEMS_PER_COLLECTION
 )
 
 BBOX = [-83.80, 37.65, -83.40, 37.95]
@@ -39,6 +39,20 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(result["results"][1]["kind"], "leaf-off-ortho-candidate")
         self.assertTrue(result["noImageryDownloaded"])
         self.assertIn("leaf-on-aerial", result["layerRolesNotEstablished"])
+
+    def test_prefer_complete_newer_sources_not_phase1_list_order(self):
+        p = {"collections": [
+            {"id": "dem-phase1", "title": "DEM LiDAR elevation"},
+            {"id": "orthos-phase1", "title": "Ortho aerial imagery"},
+            {"id": "dem-phase3", "title": "DEM LiDAR elevation"},
+            {"id": "orthos-phase2", "title": "Ortho aerial imagery"},
+            {"id": "dem-phase2", "title": "DEM LiDAR elevation"},
+            {"id": "orthos-phase3", "title": "Ortho aerial imagery"},
+        ]}
+        self.assertEqual(collections(p), [
+            ("terrain-dem-candidate", "dem-phase2"),
+            ("leaf-off-ortho-candidate", "orthos-phase3"),
+        ])
 
     def test_refuse_wide_or_invalid_aoi(self):
         for invalid in (
