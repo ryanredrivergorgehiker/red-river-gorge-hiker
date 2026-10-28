@@ -14,8 +14,8 @@ def png_256():
     def chunk(label, payload):
         return (struct.pack(">I", len(payload)) + label + payload +
                 struct.pack(">I", zlib.crc32(label + payload) & 0xffffffff))
-    rgb = (b"\\x00" + b"\\x12\\x34\\x56" * 256) * 256
-    return (b"\\x89PNG\\r\\n\\x1a\\n" +
+    rgb = (b"\x00" + b"\x12\x34\x56" * 256) * 256
+    return (b"\x89PNG\r\n\x1a\n" +
             chunk(b"IHDR", struct.pack(">IIBBBBB", 256, 256, 8, 2, 0, 0, 0)) +
             chunk(b"IDAT", zlib.compress(rgb)) + chunk(b"IEND", b""))
 
