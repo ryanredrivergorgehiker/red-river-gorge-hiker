@@ -223,6 +223,18 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             if not (zoom_min <= zoom <= zoom_max):
                 continue
             orig_y, orig_x = int(yhex, 16), int(xhex, 16)
+            # County archives can contain thousands of CompactV2 bundles.
+            # Test geographic intersection BEFORE fetching the 131 KiB
+            # index (or decompressing a bundle). A bundle is 128x128 XYZ
+            # tiles at this level. This is an exact integer tile test:
+            # no geometry or image is synthesized or discarded in-bounds.
+            nw = xyz(bounds[0], bounds[3], zoom)
+            se = xyz(bounds[2], bounds[1], zoom)
+            min_x, max_x = sorted((nw[0], se[0]))
+            min_y, max_y = sorted((nw[1], se[1]))
+            if (orig_x > max_x or orig_x + 127 < min_x or
+                    orig_y > max_y or orig_y + 127 < min_y):
+                continue
             if entry.file_size > 350_000_000:
                 raise ValueError("Unexpectedly large source cache bundle")
             bundle_stats.append({
