@@ -96,3 +96,6 @@ if __name__ == "__main__":
     print(json.dumps({k: r[k] for k in ("status", "pagesRetrieved",
                                         "listingExhausted", "originalGeoTiffFileCount",
                                         "originalGeoTiffFileBytes")}, indent=2))
+    print("Official source object samples (metadata only):")
+    for entry in r["originalCOGs"][:5]:
+        print(entry["key"], entry["sourceFileBytes"])
