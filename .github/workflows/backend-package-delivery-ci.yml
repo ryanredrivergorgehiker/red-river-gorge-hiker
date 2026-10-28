@@ -80,6 +80,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_inventory_kyfromabove_stac_coverage.py' -v
           python3 -m py_compile backend/scripts/plan_ky_cog_mosaic_xyz.py backend/scripts/test_plan_ky_cog_mosaic_xyz.py
           python3 -m unittest discover -s backend/scripts -p 'test_plan_ky_cog_mosaic_xyz.py' -v
+          python3 -m py_compile backend/scripts/pilot_ky_cog_boundary_mosaic.py backend/scripts/test_pilot_ky_cog_boundary_mosaic.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_ky_cog_boundary_mosaic.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
 
@@ -198,6 +200,25 @@ jobs:
           name: official-ky-2024-cog-one-real-z16-xyz-qa
           path: ${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot/
           retention-days: 1
+
+      - name: Mosaic ONE verified z16 2023/2024 source boundary with 64MB cap
+        id: kentucky_two_cog_mosaic
+        if: steps.kentucky_cog_xyz.outcome == 'success' && steps.kentucky_mosaic_plan.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/pilot_ky_cog_boundary_mosaic.py \
+            --mosaic-plan "${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json" \
+            --pilot-root "${{ runner.temp }}/rrgh-ky-two-source-seam-qa"
+
+      - name: Preserve TWO-source genuine leaf-off mosaic QA and provenance
+        if: steps.kentucky_two_cog_mosaic.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-2023-2024-2-cog-z16-mosaic-qa
+          path: ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/
+          retention-days: 2
 
       - name: Discover county offline package metadata (no imagery download)
         id: official_sources
