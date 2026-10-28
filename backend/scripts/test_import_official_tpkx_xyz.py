@@ -60,6 +60,9 @@ class ImporterTests(unittest.TestCase):
         metadata = dict(tileInfo=dict(
             rows=256, cols=256, spatialReference=dict(wkid=projection),
             origin=dict(x=-20037508.342789244, y=20037508.342789244),
+            lods=[dict(level=zoom,
+                       resolution=156543.03392804097 / (2 ** zoom))
+                  for zoom in range(8, 19)],
         ))
         t = png() if tile is None else tile
         name = f"tile/L10/R{self.origin_y:04x}C{self.origin_x:04x}.bundle"
