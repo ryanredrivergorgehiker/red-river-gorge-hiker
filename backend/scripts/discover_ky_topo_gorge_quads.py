@@ -8,7 +8,7 @@ import argparse
 import json
 import math
 from pathlib import Path
-from urllib.parse import urlencode, urlparse, unquote
+from urllib.parse import urlencode, urlparse, unquote, quote
 from urllib.request import Request, urlopen
 
 SERVICE = ("https://kygisserver.ky.gov/arcgis/rest/services/"
@@ -77,6 +77,29 @@ def polygon_bbox(geometry):
     return [min(lon), min(lat), max(lon), max(lat)]
 
 
+def choose_cog(quad_id, index_url, available):
+    """Prefer exact current KyTopo COG key confirmed in official S3 listing.
+
+    Existing index AWS_COG_url can be blank or legacy. Never interpret its
+    absence as permission to fabricate a source or use a Phase1 backup.
+    """
+    supplied = source_key(index_url)
+    if available is None:
+        return supplied, "index-url-only" if supplied else "unresolved"
+    prefix = PREFIX.lstrip("/") + "COGs/KyTopo_24K_" + quad_id + "_"
+    candidates = sorted(
+        k for k in available if k.startswith(prefix)
+        and k.lower().endswith("_cog.tif")
+    )
+    if len(candidates) == 1:
+        return candidates[0], "exact-current-cog-in-official-s3"
+    if len(candidates) > 1:
+        return None, "ambiguous-current-cogs"
+    if supplied in available:
+        return supplied, "index-url-confirmed-in-official-s3"
+    return None, "missing-current-cog"
+
+
 def discover(bounds, listing=None, reader=request):
     if (len(bounds) != 4 or not
             (-83.81 <= bounds[0] < bounds[2] <= -83.39 and
@@ -104,11 +127,19 @@ def discover(bounds, listing=None, reader=request):
         if not isinstance(name, str) or not name or name in seen:
             raise ValueError("Missing/duplicate KyTopo quadrangle name")
         seen.add(name)
-        key = source_key(properties.get("AWS_COG_url"))
+        key, selection = choose_cog(name, properties.get("AWS_COG_url"),
+                                    available)
+        size = (listing and next((x["sourceFileBytes"]
+                                 for x in listing["originalCOGs"]
+                                 if x["key"] == key), None)) if key else None
         result.append({
             "id": name, "quadrangle": properties.get("QuadName"),
             "boundsWGS84": polygon_bbox(feature.get("geometry")),
-            "officialOriginalCogURL": properties.get("AWS_COG_url") if key else None,
+            "officialOriginalCogURL":
+                ("https://" + COG_HOST + "/" + quote(key, safe="/"))
+                if key else None,
+            "officialOriginalSourceBytes": size,
+            "sourceSelection": selection,
             "inOfficialS3Listing": key in available if available is not None else None,
         })
     return {
