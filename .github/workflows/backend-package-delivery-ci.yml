@@ -76,6 +76,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_plan_kytopo_quad_seams.py' -v
           python3 -m py_compile backend/scripts/pilot_kytopo_12_source_seams.py backend/scripts/test_pilot_kytopo_12_source_seams.py
           python3 -m unittest discover -s backend/scripts -p 'test_pilot_kytopo_12_source_seams.py' -v
+          python3 -m py_compile backend/scripts/probe_kytopo_failed_seam_neighbors.py backend/scripts/test_probe_kytopo_failed_seam_neighbors.py
+          python3 -m unittest discover -s backend/scripts -p 'test_probe_kytopo_failed_seam_neighbors.py' -v
           python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
           python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
           python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
@@ -320,6 +322,26 @@ jobs:
         with:
           name: ky-gorge-twelve-seams-not-accepted
           path: ${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa/
+          retention-days: 2
+          if-no-files-found: warn
+
+      - name: Diagnose rejected KyTopo N14E31/N15E31 seam with bounded neighbors
+        id: topo_failed_seam_neighbors
+        if: steps.twelve_kytopo_seams.outcome == 'failure' && steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/probe_kytopo_failed_seam_neighbors.py \
+            --official-quads "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --out "${{ runner.temp }}/rrgh-topo-rejected-seam-neighborhood"
+
+      - name: Preserve real rejected-seam neighborhood source QA
+        if: steps.topo_failed_seam_neighbors.outcome == 'success' || steps.topo_failed_seam_neighbors.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-kytopo-rejected-seam-neighborhood-evidence
+          path: ${{ runner.temp }}/rrgh-topo-rejected-seam-neighborhood/
           retention-days: 2
           if-no-files-found: warn
 
