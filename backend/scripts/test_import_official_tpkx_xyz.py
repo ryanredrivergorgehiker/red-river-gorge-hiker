@@ -132,6 +132,19 @@ class ImporterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             mod.import_tpkx(three, self.out, "leaf-on-aerial", self.bounds, 10, 10, self.provenance)
 
+    def test_spooled_intake_budget_refuses_without_promoting_tiles(self):
+        source = self.make_source("budget.tpkx")
+        with patch.object(mod, "MAX_STAGED_BYTES", 100):
+            with self.assertRaisesRegex(ValueError, "staging budget"):
+                mod.import_tpkx(
+                    source, self.out, "leaf-off-aerial",
+                    self.bounds, 10, 10, self.provenance
+                )
+        self.assertFalse(
+            (self.out / f"leaf-off-aerial/10/{self.x}/{self.y}.png").exists()
+        )
+        self.assertFalse((self.out / "leaf-off-aerial.sources.json").exists())
+
     def test_bounded_range_zip_source_preserves_honest_provenance(self):
         local = self.make_source("official.tpkx")
         data = local.read_bytes()
