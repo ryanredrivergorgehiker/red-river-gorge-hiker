@@ -57,6 +57,22 @@ jobs:
           python3 -m py_compile backend/scripts/discover_official_ky_county_sources.py backend/scripts/test_discover_official_ky_county_sources.py
           python3 -m unittest discover -s backend/scripts -p 'test_discover_official_ky_county_sources.py' -v
 
+      - name: Discover county offline package metadata (no imagery download)
+        id: official_sources
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_official_ky_county_sources.py \
+            --output-json "${{ runner.temp }}/official-ky-county-metadata.json"
+
+      - name: Preserve public source metadata for vetted local package intake
+        if: steps.official_sources.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-county-tpkx-metadata
+          path: ${{ runner.temp }}/official-ky-county-metadata.json
+          retention-days: 2
+
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs
 
