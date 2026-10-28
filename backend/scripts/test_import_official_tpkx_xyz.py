@@ -66,6 +66,8 @@ class ImporterTests(unittest.TestCase):
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as pkg:
             pkg.writestr("root.json", json.dumps(metadata))
             pkg.writestr(name, bundle(self.x, self.y, t))
+            # Independent county sources can share the exact same tiles.
+            pkg.writestr("county-source.txt", filename)
         return out
 
     def test_single_import_and_stable_duplicate_replay_block(self):
