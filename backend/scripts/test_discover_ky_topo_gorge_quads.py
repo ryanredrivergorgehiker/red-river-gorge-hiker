@@ -29,6 +29,33 @@ class KyTopoRegionTests(unittest.TestCase):
         self.assertEqual(report["rasterBytesFetched"], 0)
         self.assertTrue(report["noFinalCoverageOrXYZSizeClaim"])
 
+    def test_grid_quad_joins_exact_current_source_not_phase1_duplicate(self):
+        current = PREFIX.lstrip("/") + "COGs/KyTopo_24K_N14E30_Pine Ridge_cog.tif"
+        legacy = PREFIX.lstrip("/") + "COGs_phase1/KyTopo_24K_N14E30_Pine Ridge_cog.tif"
+        listed = {"prefix": PREFIX.lstrip("/"), "listingExhausted": True,
+                  "originalCOGs": [{"key": current, "sourceFileBytes": 77463884},
+                                   {"key": legacy, "sourceFileBytes": 123747745}]}
+        f = feature("N14E30", None)
+        r = discover(BBOX, listed, lambda _: {"features": [f]})
+        q = r["quadrangles"][0]
+        self.assertEqual(r["withOriginalCOGURL"], 1)
+        self.assertEqual(r["allOriginalKeysInS3"], True)
+        self.assertEqual(q["officialOriginalSourceBytes"], 77463884)
+        self.assertIn("Pine%20Ridge_cog.tif", q["officialOriginalCogURL"])
+        self.assertEqual(q["sourceSelection"], "exact-current-cog-in-official-s3")
+
+    def test_ambiguous_current_source_never_selected(self):
+        start = PREFIX.lstrip("/") + "COGs/KyTopo_24K_N14E30_"
+        listed = {"prefix": PREFIX.lstrip("/"), "listingExhausted": True,
+                  "originalCOGs": [{"key": start + "A_cog.tif", "sourceFileBytes": 100},
+                                   {"key": start + "B_cog.tif", "sourceFileBytes": 100}]}
+        r = discover(BBOX, listed, lambda _: {
+            "features": [feature("N14E30", None)]})
+        self.assertEqual(r["withOriginalCOGURL"], 0)
+        self.assertFalse(r["allOriginalKeysInS3"])
+        self.assertEqual(r["quadrangles"][0]["sourceSelection"],
+                         "ambiguous-current-cogs")
+
     def test_no_false_complete_inventory_for_missing_asset(self):
         listed = {"prefix": PREFIX.lstrip("/"), "listingExhausted": True,
                   "originalCOGs": []}
