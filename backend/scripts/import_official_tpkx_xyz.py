@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import struct
 import zipfile
+from http_range_zip import RangeZipReader
 
 BUNDLE_RE = re.compile(
     r"(?:^|/)L([0-9A-Fa-f]{2})/R([0-9A-Fa-f]{4,8})C([0-9A-Fa-f]{4,8})\.bundle$",
@@ -154,20 +155,34 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             raise ValueError("Approved source provenance missing " + field)
     if provenance["verifiedOfflineReuse"] is not True:
         raise ValueError("Offline redistribution has not been approved")
-    if not tpkx.is_file() or not zipfile.is_zipfile(tpkx):
-        raise ValueError("Local TPKX ZIP file required")
-    source_digest = hashlib.sha256()
-    with tpkx.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            source_digest.update(chunk)
-    source_hash = source_digest.hexdigest()
+    remote = isinstance(tpkx, str)
+    if remote:
+        # For approved official Box packages, do not pull 4-40 GB just
+        # to calculate the SHA. Authenticate the extracted map tiles in
+        # the v4 package separately; retain honest remote metadata.
+        source = RangeZipReader(tpkx)
+        source_hash = hashlib.sha256((
+            source.url + "\n" + str(source.length) + "\n" +
+            str(source.etag)
+        ).encode()).hexdigest()
+        source_name = tpkx.rsplit("/", 1)[-1]
+    else:
+        if not tpkx.is_file() or not zipfile.is_zipfile(tpkx):
+            raise ValueError("Local TPKX ZIP file required")
+        source_digest = hashlib.sha256()
+        with tpkx.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                source_digest.update(chunk)
+        source_hash = source_digest.hexdigest()
+        source_name = tpkx.name
+        source = tpkx
     report_path = output_root / f"{layer_id}.sources.json"
     existing_report = None
     if report_path.exists():
         existing_report = json.loads(report_path.read_text())
         if existing_report.get("layerID") != layer_id:
             raise ValueError("Inconsistent source-report layer")
-        if any(item.get("sha256") == source_hash
+        if any(item.get("sourceIdentity") == source_hash
                for item in existing_report.get("imports", [])):
             raise ValueError("Source TPKX already imported; immutable replay refused")
         if (existing_report.get("boundsWGS84") != bounds or
@@ -175,7 +190,7 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             existing_report.get("zoomMax") != zoom_max):
             raise ValueError("Cannot mix different geographic coverage contracts")
     planned = []
-    with zipfile.ZipFile(tpkx) as pkg:
+    with zipfile.ZipFile(source) as pkg:
         roots = [name for name in pkg.namelist() if name.endswith("root.json")]
         if len(roots) != 1:
             raise ValueError("Unambiguous TPKX root.json required")
@@ -229,7 +244,12 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         "layerID": layer_id, "boundsWGS84": bounds,
         "zoomMin": zoom_min, "zoomMax": zoom_max,
         "imports": (existing_report or {}).get("imports", []) + [{
-            "sha256": source_hash, "sourceFilename": tpkx.name,
+            "sourceIdentity": source_hash,
+            "sourceIdentityMethod": ("URL+length+ETag" if remote
+                                     else "verified-full-archive-SHA256"),
+            "sourceArchiveSHA256": None if remote else source_hash,
+            "sourceFilename": source_name,
+            "sourceRangeProvenance": source.provenance if remote else None,
             "tileCountRead": len(planned), "source": provenance,
         }],
         "result": "LOCAL IMPORT ONLY, NOT complete-v4 coverage or permission to deploy",
@@ -238,12 +258,18 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
     temporary = report_path.with_suffix(".pending")
     temporary.write_text(json.dumps(record, indent=2) + "\n")
     temporary.replace(report_path)
+    if remote:
+        source.close()
     return record
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--tpkx", required=True, type=Path)
+    choice = p.add_mutually_exclusive_group(required=True)
+    choice.add_argument("--tpkx", type=Path,
+                        help="Already-downloaded approved local TPKX")
+    choice.add_argument("--tpkx-url",
+                        help="Official ky.box.com URL, selective HTTP 206 ranges")
     p.add_argument("--approved-xyz-root", required=True, type=Path)
     p.add_argument("--layer-id", required=True, choices=sorted(ALLOWED_LAYERS))
     p.add_argument("--bbox", required=True, type=float, nargs=4,
@@ -253,7 +279,7 @@ if __name__ == "__main__":
     p.add_argument("--approved-provenance", required=True, type=Path)
     a = p.parse_args()
     print(json.dumps(import_tpkx(
-        a.tpkx, a.approved_xyz_root, a.layer_id,
+        a.tpkx_url or a.tpkx, a.approved_xyz_root, a.layer_id,
         a.bbox, a.min_zoom, a.max_zoom,
         json.loads(a.approved_provenance.read_text())
     ), indent=2))
