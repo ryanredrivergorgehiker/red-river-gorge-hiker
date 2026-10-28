@@ -90,3 +90,10 @@ those limits require further implementation under the same approved architecture
 Full production remains gated on complete source resolution, edge/seam/low-zoom QA,
 Sunlight parity, native package integration, private GCS validation, measured delivery/device
 checks and a current cost forecast. The bounded engine intentionally cannot launch a full region.
+
+## Kentucky NAIP and separate-package continuation
+
+The public 2022 Kentucky ImageServer and USGS cached cartography are now benchmarked
+by the bounded service engine. See [GORGE-BUNDLES.md](GORGE-BUNDLES.md) for the
+source clarification, actual z16 USGS ceiling, separate core/aerial producer and
+complete-family forecast. Prior evidence and original-source cache remain intact.

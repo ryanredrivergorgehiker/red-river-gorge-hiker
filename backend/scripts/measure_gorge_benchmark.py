@@ -85,7 +85,10 @@ def measure(root, out):
             group = layer if layer in ("leaf-on", "leaf-off") else "core"
             grouped.setdefault(group, []).append(entry)
         for level in receipt["zooms"]:
+            if not level["tileCount"]:
+                continue  # A configured but absent official zoom is not data.
             layer = level.get("layer", receipt["job"].split("-")[-1])
+            if "usgs-topo" in receipt["job"]: layer = "usgs-topo"
             if "leaf-off" in receipt["job"]: layer = "leaf-off"
             if "leaf-on" in receipt["job"]: layer = "leaf-on"
             layer_samples.setdefault((layer, level["zoom"]), []).append(level["bytes"] / level["tileCount"])
@@ -97,11 +100,13 @@ def measure(root, out):
         # Lower zooms were not sampled: conservative explicit approximation
         # uses the measured z16 bytes/tile for all z10-15 positions.
         selected = [row for row in counts if row["zoom"] <= zoom]
-        if not all((layer, max(16, row["zoom"])) in layer_samples for row in selected):
+        def sampled_zoom(z):
+            return z if (layer,z) in layer_samples else max(16,z)
+        if not all((layer, sampled_zoom(row["zoom"])) in layer_samples for row in selected):
             continue
         estimates = {}
         for name, reducer in [("sampleLow", min), ("sampleMean", lambda a: sum(a)/len(a)), ("sampleHigh", max)]:
-            content = sum(row["tileCount"] * reducer(layer_samples[(layer, max(16, row["zoom"]))]) for row in selected)
+            content = sum(row["tileCount"] * reducer(layer_samples[(layer, sampled_zoom(row["zoom"]))]) for row in selected)
             n = sum(row["tileCount"] for row in selected)
             # Approximate average 255.5 bytes padding; exact member sizes unknown regionally.
             archive = content + n * (512 + 255.5) + 10240
@@ -117,8 +122,8 @@ def measure(root, out):
               "sourceFailures": report["failures"], "skipped": report["skipped"],
               "assumptions": ["Three convenience windows are not a statistical confidence interval.",
                   "Full rectangle includes boundary overcoverage; no area clipping.",
-                  "z10-15 bytes/tile approximated from measured z16; no full-region images produced.",
-                  "Regional outputs exclude USGS Topo, vectors, manifests and unresolved leaf-on unless separately measured.",
+                  "Unmeasured z10-15 density uses z16; independently measured lower levels use their actual density. No full-region images produced.",
+                  "Only measured layers are projected; vectors, final package manifests and unmeasured assets are excluded.",
                   "Sunlight XYZ experiment is not accepted mobile sunlight; use inherited accepted assets for shipping.",
                   "GCS rate scenario .020 USD/GiB-month regional Standard; .12 USD/GiB North America egress, no free-tier credit.",
                   "Backend stream egress counted once; same-region bucket-to-function transfer is free. Cross-region/Tier-1 destinations differ."]}
