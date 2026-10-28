@@ -72,6 +72,10 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_pilot_ky_topo_original_xyz.py' -v
           python3 -m py_compile backend/scripts/pilot_all_nine_kytopo_quads.py backend/scripts/test_pilot_all_nine_kytopo_quads.py
           python3 -m unittest discover -s backend/scripts -p 'test_pilot_all_nine_kytopo_quads.py' -v
+          python3 -m py_compile backend/scripts/plan_kytopo_quad_seams.py backend/scripts/test_plan_kytopo_quad_seams.py
+          python3 -m unittest discover -s backend/scripts -p 'test_plan_kytopo_quad_seams.py' -v
+          python3 -m py_compile backend/scripts/pilot_kytopo_12_source_seams.py backend/scripts/test_pilot_kytopo_12_source_seams.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_kytopo_12_source_seams.py' -v
           python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
           python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
           python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
@@ -290,6 +294,34 @@ jobs:
           name: ky-gorge-nine-authentic-kytopo-z16-pilots
           path: ${{ runner.temp }}/rrgh-nine-kytopo-original-qa/
           retention-days: 2
+
+      - name: Verify twelve genuine KyTopo z16 quadrangle seams (max 60 MB)
+        id: twelve_kytopo_seams
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/pilot_kytopo_12_source_seams.py \
+            --official-quads "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --qa-root "${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa"
+
+      - name: Preserve genuine 12-source-boundary QA images and hashes
+        if: steps.twelve_kytopo_seams.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-twelve-real-kytopo-seam-pilots
+          path: ${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa/
+          retention-days: 2
+
+      - name: Preserve rejected twelve-boundary candidate diagnostics
+        if: steps.twelve_kytopo_seams.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-twelve-seams-not-accepted
+          path: ${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa/
+          retention-days: 2
+          if-no-files-found: warn
 
       - name: Mosaic ONE verified z16 2023/2024 source boundary with 64MB cap
         id: kentucky_two_cog_mosaic
