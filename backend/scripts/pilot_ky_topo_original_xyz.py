@@ -25,41 +25,51 @@ MAX_SOURCE_BYTES = 32_000_000
 LON, LAT, ZOOM = -83.575, 37.795, 16
 
 
-def source(index):
+def source(index, quad_id=QUAD):
     if (index.get("status") !=
             "OFFICIAL GORGE-INTERSECTING KYTOPO QUAD METADATA ONLY"
             or index.get("allOriginalKeysInS3") is not True
             or index.get("rasterBytesFetched") != 0):
         raise ValueError("Only complete official Gorge KyTopo COG inventory")
-    matches = [q for q in index.get("quadrangles", []) if q.get("id") == QUAD]
+    matches = [q for q in index.get("quadrangles", []) if q.get("id") == quad_id]
     if len(matches) != 1:
-        raise ValueError("Expected one unique Pine Ridge KyTopo source")
+        raise ValueError("Expected one unique original KyTopo source")
     q = matches[0]
     uri = q.get("officialOriginalCogURL")
     exact = "https://" + COG_HOST + "/elevation/KyTopoMapSeries/COGs/"
     if (not isinstance(uri, str) or not uri.startswith(exact)
             or not uri.endswith("_cog.tif")
-            or "N14E30_" not in uri or q.get("inOfficialS3Listing") is not True
+            or quad_id + "_" not in uri or q.get("inOfficialS3Listing") is not True
             or q.get("sourceSelection") != "exact-current-cog-in-official-s3"):
         raise ValueError("Missing expected verified original current topographic GeoTIFF")
     b = q.get("boundsWGS84")
-    if not b or not b[0] < LON < b[2] or not b[1] < LAT < b[3]:
-        raise ValueError("QA location not inside original quadrangle")
+    if not b or len(b) != 4 or not (b[0] < b[2] and b[1] < b[3]):
+        raise ValueError("Missing original source quadrangle geometry")
     length = q.get("officialOriginalSourceBytes")
     if not isinstance(length, int) or not (1_000_000 < length < 1_000_000_000):
         raise ValueError("No original S3 byte-length evidence")
-    return {"url": uri, "length": length, "sourceQuad": QUAD,
+    return {"url": uri, "length": length, "sourceQuad": quad_id,
             "quadName": q["quadrangle"], "etag": None}
 
 
-def pilot(index, out):
-    original = source(index)
-    x, y = xyz(LON, LAT, ZOOM)
+def pilot(index, out, quad_id=QUAD, byte_budget=MAX_SOURCE_BYTES):
+    original = source(index, quad_id)
+    bb = next(q["boundsWGS84"] for q in index["quadrangles"] if q["id"] == quad_id)
+    region = index["boundsWGS84"]
+    clip = [max(bb[0], region[0]), max(bb[1], region[1]),
+            min(bb[2], region[2]), min(bb[3], region[3])]
+    if clip[0] >= clip[2] or clip[1] >= clip[3]:
+        raise ValueError("Source quadrangle does not intersect Gorge region")
+    lon, lat = (LON, LAT) if quad_id == QUAD else (
+        (clip[0]+clip[2])/2, (clip[1]+clip[3])/2)
+    x, y = xyz(lon, lat, ZOOM)
     target = out / f"kentucky-topo/{ZOOM}/{x}/{y}.jpg"
     evidence = out / "KYTOPO-ORIGINAL-COG-ONE-TILE-QA.json"
     if target.exists() or evidence.exists():
         raise FileExistsError("Never replace previous original-source QA")
-    budget = RangeBudget(MAX_SOURCE_BYTES)
+    if not 1_000_000 <= byte_budget <= MAX_SOURCE_BYTES:
+        raise ValueError("Pilot source-transfer cap must be bounded")
+    budget = RangeBudget(byte_budget)
     srv = ThreadingHTTPServer((HOST, 0), proxy_handler(original, budget))
     srv.daemon_threads = True
     thread = Thread(target=srv.serve_forever, daemon=True)
@@ -106,6 +116,7 @@ def pilot(index, out):
         report = {
             "status": "ONE ORIGINAL KYTOPO-SOURCED GEOREFERENCED XYZ QA ONLY",
             "original": original,
+            "sampleWGS84": [lon, lat],
             "originalTiffDownloaded": False,
             "derivedImageFormat": "JPEG",
             "xyz": {"z": ZOOM, "x": x, "y": y},
@@ -113,7 +124,7 @@ def pilot(index, out):
             "derivedSha256": hashlib.sha256(target.read_bytes()).hexdigest(),
             "sourceBytesTransferred": budget.used,
             "sourcePartialRequests": budget.calls,
-            "maxSourceTransfer": MAX_SOURCE_BYTES,
+            "maxSourceTransfer": byte_budget,
             "alphaMin": float(minimum),
             "rasterQA": geographic,
             "noRegionalCoverageOrFieldAcceptance": True,
@@ -130,8 +141,11 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gorge-kytopo", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--quad-id", default=QUAD)
+    p.add_argument("--byte-limit", type=int, default=MAX_SOURCE_BYTES)
     a = p.parse_args()
-    r = pilot(json.loads(a.gorge_kytopo.read_text()), a.out)
+    r = pilot(json.loads(a.gorge_kytopo.read_text()), a.out,
+              a.quad_id, a.byte_limit)
     print(json.dumps({k: r[k] for k in ("status", "xyz",
                                          "sourceBytesTransferred",
                                          "derivedImageBytes", "alphaMin")}, indent=2))
