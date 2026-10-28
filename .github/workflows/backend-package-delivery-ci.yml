@@ -52,6 +52,8 @@ jobs:
           set -euo pipefail
           python3 -m py_compile backend/scripts/build_gorge_base_native_v4.py backend/scripts/test_build_gorge_base_native_v4.py
           python3 -m unittest discover -s backend/scripts -p 'test_build_gorge_base_native_v4.py' -v
+          python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_import_official_tpkx_xyz.py' -v
 
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs
