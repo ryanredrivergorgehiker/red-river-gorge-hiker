@@ -72,6 +72,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_discover_kyfromabove_stac.py' -v
           python3 -m py_compile backend/scripts/probe_kyfromabove_cog_headers.py backend/scripts/test_probe_kyfromabove_cog_headers.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_kyfromabove_cog_headers.py' -v
+          python3 -m py_compile backend/scripts/inspect_official_ky_cog_geotiff.py backend/scripts/test_inspect_official_ky_cog_geotiff.py
+          python3 -m unittest discover -s backend/scripts -p 'test_inspect_official_ky_cog_geotiff.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
 
@@ -109,6 +111,25 @@ jobs:
         with:
           name: official-kyfromabove-cog-206-header-proof
           path: ${{ runner.temp }}/official-ky-cog-range-headers.json
+          retention-days: 2
+
+      - name: Read official COG geospatial tags through bounded HTTP206 (no pixels)
+        id: kentucky_cog_geotiff
+        if: steps.kentucky_cog_header.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/inspect_official_ky_cog_geotiff.py \
+            --official-header-report "${{ runner.temp }}/official-ky-cog-range-headers.json" \
+            --output-json "${{ runner.temp }}/official-ky-cog-geospatial-tags.json"
+
+      - name: Retain strict original COG CRS/tiling metadata proof
+        if: steps.kentucky_cog_geotiff.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kyfromabove-cog-georeference-source-proof
+          path: ${{ runner.temp }}/official-ky-cog-geospatial-tags.json
           retention-days: 2
 
       - name: Discover county offline package metadata (no imagery download)
