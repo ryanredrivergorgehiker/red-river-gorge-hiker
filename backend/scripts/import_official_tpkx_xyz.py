@@ -112,12 +112,21 @@ def tiles_from_bundle(bundle, origin_y, origin_x, z, bounds):
     if len(bundle) < HEADER_SIZE + INDEX_SIZE:
         raise ValueError("Truncated Compact V2 bundle")
     version, count = struct.unpack_from("<II", bundle, 0)
-    if version != 3 or count != 16384:
+    # Kentucky's October-2026 published Powell TPKX uses CompactV2
+    # version 3, but declares a zero record count in its bundle header.
+    # This is an observed encoder variant (NOT permission to invent tiles):
+    # the FULL fixed index still must be present and every requested tile
+    # must pass the offset, size and 256px image checks below.
+    if version != 3 or count not in (0, 16384):
         raise ValueError(
-            f"Unsupported official bundle header: version={version}, "
-            f"records={count}, length={len(bundle)}, "
-            f"first16={bundle[:16].hex()}. Rejecting without guessing."
+            f"Unsupported CompactV2 version/count: {version}/{count}"
         )
+    if struct.unpack_from("<I", bundle, 12)[0] != 5:
+        raise ValueError("Invalid 5-byte offset declaration")
+    if struct.unpack_from("<Q", bundle, 32)[0] != 40:
+        raise ValueError("Invalid bundle user-header offset")
+    if struct.unpack_from("<I", bundle, 40)[0] != (20 + INDEX_SIZE):
+        raise ValueError("Invalid bundle user-header width")
     width = struct.unpack_from("<I", bundle, 60)[0]
     if width != INDEX_SIZE:
         raise ValueError("Malformed Compact V2 index")
