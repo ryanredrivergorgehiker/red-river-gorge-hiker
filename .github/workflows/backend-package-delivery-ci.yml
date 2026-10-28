@@ -15,6 +15,12 @@ on:
 permissions:
   contents: read
 
+# Expensive PR runs must not stack while the owner-approved monthly
+# Actions budget is consumed. Superseded runs are cancelled.
+concurrency:
+  group: rrgh-backend-delivery-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   delivery-contract:
     runs-on: ubuntu-latest
@@ -47,6 +53,397 @@ jobs:
           node --check backend/functions/src/delivery.js
           node --check backend/functions/src/offlineLease.js
 
+      - name: Verify schema-4 offline package source integrity (no network)
+        run: |
+          set -euo pipefail
+          python3 -m py_compile backend/scripts/build_gorge_base_native_v4.py backend/scripts/test_build_gorge_base_native_v4.py
+          python3 -m unittest discover -s backend/scripts -p 'test_build_gorge_base_native_v4.py' -v
+          python3 -m py_compile backend/scripts/audit_gorge_v4_xyz.py backend/scripts/test_audit_gorge_v4_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_audit_gorge_v4_xyz.py' -v
+          python3 -m py_compile backend/scripts/measure_gorge_offline_packs.py backend/scripts/test_measure_gorge_offline_packs.py
+          python3 -m unittest discover -s backend/scripts -p 'test_measure_gorge_offline_packs.py' -v
+          python3 -m py_compile backend/scripts/measure_inherited_gorge_assets.py backend/scripts/test_measure_inherited_gorge_assets.py
+          python3 -m unittest discover -s backend/scripts -p 'test_measure_inherited_gorge_assets.py' -v
+          python3 -m py_compile backend/scripts/inventory_ky_topo_original_cogs.py backend/scripts/test_inventory_ky_topo_original_cogs.py
+          python3 -m unittest discover -s backend/scripts -p 'test_inventory_ky_topo_original_cogs.py' -v
+          python3 -m py_compile backend/scripts/discover_ky_topo_gorge_quads.py backend/scripts/test_discover_ky_topo_gorge_quads.py
+          python3 -m unittest discover -s backend/scripts -p 'test_discover_ky_topo_gorge_quads.py' -v
+          python3 -m py_compile backend/scripts/pilot_ky_topo_original_xyz.py backend/scripts/test_pilot_ky_topo_original_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_ky_topo_original_xyz.py' -v
+          python3 -m py_compile backend/scripts/pilot_all_nine_kytopo_quads.py backend/scripts/test_pilot_all_nine_kytopo_quads.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_all_nine_kytopo_quads.py' -v
+          python3 -m py_compile backend/scripts/plan_kytopo_quad_seams.py backend/scripts/test_plan_kytopo_quad_seams.py
+          python3 -m unittest discover -s backend/scripts -p 'test_plan_kytopo_quad_seams.py' -v
+          python3 -m py_compile backend/scripts/pilot_kytopo_12_source_seams.py backend/scripts/test_pilot_kytopo_12_source_seams.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_kytopo_12_source_seams.py' -v
+          python3 -m py_compile backend/scripts/probe_kytopo_failed_seam_neighbors.py backend/scripts/test_probe_kytopo_failed_seam_neighbors.py
+          python3 -m unittest discover -s backend/scripts -p 'test_probe_kytopo_failed_seam_neighbors.py' -v
+          python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
+          python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
+          python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
+          python3 -m py_compile backend/scripts/compact_v2_range_extract.py backend/scripts/test_compact_v2_range_extract.py
+          python3 -m unittest discover -s backend/scripts -p 'test_compact_v2_range_extract.py' -v
+          python3 -m unittest discover -s backend/scripts -p 'test_import_official_tpkx_xyz.py' -v
+          python3 -m py_compile backend/scripts/discover_official_ky_county_sources.py backend/scripts/test_discover_official_ky_county_sources.py
+          python3 -m unittest discover -s backend/scripts -p 'test_discover_official_ky_county_sources.py' -v
+          python3 -m py_compile backend/scripts/discover_kyfromabove_stac.py backend/scripts/test_discover_kyfromabove_stac.py
+          python3 -m unittest discover -s backend/scripts -p 'test_discover_kyfromabove_stac.py' -v
+          python3 -m py_compile backend/scripts/probe_kyfromabove_cog_headers.py backend/scripts/test_probe_kyfromabove_cog_headers.py
+          python3 -m unittest discover -s backend/scripts -p 'test_probe_kyfromabove_cog_headers.py' -v
+          python3 -m py_compile backend/scripts/inspect_official_ky_cog_geotiff.py backend/scripts/test_inspect_official_ky_cog_geotiff.py
+          python3 -m unittest discover -s backend/scripts -p 'test_inspect_official_ky_cog_geotiff.py' -v
+          python3 -m py_compile backend/scripts/pilot_official_cog_xyz.py backend/scripts/test_pilot_official_cog_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_official_cog_xyz.py' -v
+          python3 -m py_compile backend/scripts/inventory_kyfromabove_stac_coverage.py backend/scripts/test_inventory_kyfromabove_stac_coverage.py
+          python3 -m unittest discover -s backend/scripts -p 'test_inventory_kyfromabove_stac_coverage.py' -v
+          python3 -m py_compile backend/scripts/plan_ky_cog_mosaic_xyz.py backend/scripts/test_plan_ky_cog_mosaic_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_plan_ky_cog_mosaic_xyz.py' -v
+          python3 -m py_compile backend/scripts/pilot_ky_cog_boundary_mosaic.py backend/scripts/test_pilot_ky_cog_boundary_mosaic.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_ky_cog_boundary_mosaic.py' -v
+          python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
+          python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
+
+      - name: List official KyTopo original GeoTIFF object metadata (NO pixels)
+        id: ky_topo_index
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/inventory_ky_topo_original_cogs.py \
+            --output-json "${{ runner.temp }}/official-ky-topo-original-cog-index.json"
+
+      - name: Retain original KyTopo public-S3 source object inventory
+        if: steps.ky_topo_index.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-topo-original-source-index-only
+          path: ${{ runner.temp }}/official-ky-topo-original-cog-index.json
+          retention-days: 3
+
+      - name: Select actual Gorge KyTopo source quadrangles from official grid
+        id: ky_topo_gorge_quads
+        if: steps.ky_topo_index.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_ky_topo_gorge_quads.py \
+            --official-s3-listing "${{ runner.temp }}/official-ky-topo-original-cog-index.json" \
+            --output-json "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json"
+
+      - name: Retain original Gorge-intersecting KyTopo source links and footprints
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-topo-gorge-original-cog-quads-metadata
+          path: ${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json
+          retention-days: 3
+
+      - name: Discover official KyFromAbove COG metadata (NO TIFF reads)
+        id: kentucky_stac
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_kyfromabove_stac.py \
+            --output-json "${{ runner.temp }}/official-ky-stac-gorge-candidates.json"
+
+      - name: Preserve bounded source candidate inventory (metadata only)
+        if: steps.kentucky_stac.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kyfromabove-stac-cog-metadata
+          path: ${{ runner.temp }}/official-ky-stac-gorge-candidates.json
+          retention-days: 2
+
+      - name: Enumerate official Gorge COG source footprints (METADATA ONLY)
+        id: kentucky_full_metadata
+        if: steps.kentucky_stac.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/inventory_kyfromabove_stac_coverage.py \
+            --initial-stac "${{ runner.temp }}/official-ky-stac-gorge-candidates.json" \
+            --output-json "${{ runner.temp }}/official-ky-gorge-cog-footprints.json"
+
+      - name: Retain finite Phase2 DEM and Phase3 aerial source footprints
+        if: steps.kentucky_full_metadata.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-gorge-dem-aerial-source-footprint-inventory
+          path: ${{ runner.temp }}/official-ky-gorge-cog-footprints.json
+          retention-days: 2
+
+      - name: Plan every high-zoom Gorge tile against all original COGs (no pixels)
+        id: kentucky_mosaic_plan
+        if: steps.kentucky_full_metadata.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/plan_ky_cog_mosaic_xyz.py \
+            --footprints "${{ runner.temp }}/official-ky-gorge-cog-footprints.json" \
+            --output-json "${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json"
+
+      - name: Retain source-aware high-zoom tile mosaic input plan
+        if: steps.kentucky_mosaic_plan.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-gorge-all-z13-16-cog-source-mosaic-plan
+          path: ${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json
+          retention-days: 2
+
+      - name: Probe up to two authentic official COG TIFF headers (8 KiB total)
+        id: kentucky_cog_header
+        if: steps.kentucky_stac.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/probe_kyfromabove_cog_headers.py \
+            --official-stac-report "${{ runner.temp }}/official-ky-stac-gorge-candidates.json" \
+            --output-json "${{ runner.temp }}/official-ky-cog-range-headers.json"
+
+      - name: Retain official COG header receipts (NOT image bytes)
+        if: steps.kentucky_cog_header.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kyfromabove-cog-206-header-proof
+          path: ${{ runner.temp }}/official-ky-cog-range-headers.json
+          retention-days: 2
+
+      - name: Read official COG geospatial tags through bounded HTTP206 (no pixels)
+        id: kentucky_cog_geotiff
+        if: steps.kentucky_cog_header.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/inspect_official_ky_cog_geotiff.py \
+            --official-header-report "${{ runner.temp }}/official-ky-cog-range-headers.json" \
+            --output-json "${{ runner.temp }}/official-ky-cog-geospatial-tags.json"
+
+      - name: Retain strict original COG CRS/tiling metadata proof
+        if: steps.kentucky_cog_geotiff.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kyfromabove-cog-georeference-source-proof
+          path: ${{ runner.temp }}/official-ky-cog-geospatial-tags.json
+          retention-days: 2
+
+      - name: Reproject ONE real original-source Phase3 aerial XYZ (64 MB hard range cap)
+        id: kentucky_cog_xyz
+        if: steps.kentucky_cog_geotiff.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends gdal-bin
+          python3 backend/scripts/pilot_official_cog_xyz.py \
+            --stac "${{ runner.temp }}/official-ky-stac-gorge-candidates.json" \
+            --headers "${{ runner.temp }}/official-ky-cog-range-headers.json" \
+            --geotiff "${{ runner.temp }}/official-ky-cog-geospatial-tags.json" \
+            --pilot-root "${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot" --zoom 16
+
+      - name: Preserve SINGLE public-domain aerial XYZ pilot and honest provenance
+        if: steps.kentucky_cog_xyz.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-2024-cog-one-real-z16-xyz-qa
+          path: ${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot/
+          retention-days: 1
+
+      - name: Render ONE genuine KyTopo Pine Ridge z16 XYZ (32 MB source cap)
+        id: kentucky_topo_xyz
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          if ! command -v gdalwarp >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends gdal-bin
+          fi
+          python3 backend/scripts/pilot_ky_topo_original_xyz.py \
+            --gorge-kytopo "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --out "${{ runner.temp }}/rrgh-ky-topo-original-one-tile"
+
+      - name: Retain verified original KyTopo z16 derivative (not a Base package)
+        if: steps.kentucky_topo_xyz.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-kytopo-one-real-z16-xyz-source-proof
+          path: ${{ runner.temp }}/rrgh-ky-topo-original-one-tile/
+          retention-days: 3
+
+      - name: Verify nine real Gorge KyTopo source samples (5 MB per quad cap)
+        id: nine_kytopo_xyz
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 13
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/pilot_all_nine_kytopo_quads.py \
+            --official-quads "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --qa-root "${{ runner.temp }}/rrgh-nine-kytopo-original-qa"
+
+      - name: Preserve nine authentic source-sample imagery receipts
+        if: steps.nine_kytopo_xyz.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-nine-authentic-kytopo-z16-pilots
+          path: ${{ runner.temp }}/rrgh-nine-kytopo-original-qa/
+          retention-days: 2
+
+      - name: Verify twelve genuine KyTopo z16 quadrangle seams (max 60 MB)
+        id: twelve_kytopo_seams
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 9
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/pilot_kytopo_12_source_seams.py \
+            --official-quads "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --qa-root "${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa"
+
+      - name: Preserve genuine 12-source-boundary QA images and hashes
+        if: steps.twelve_kytopo_seams.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-twelve-real-kytopo-seam-pilots
+          path: ${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa/
+          retention-days: 2
+
+      - name: Preserve rejected twelve-boundary candidate diagnostics
+        if: steps.twelve_kytopo_seams.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-twelve-seams-not-accepted
+          path: ${{ runner.temp }}/rrgh-twelve-kytopo-seam-qa/
+          retention-days: 2
+          if-no-files-found: warn
+
+      - name: Diagnose rejected KyTopo N14E31/N15E31 seam with bounded neighbors
+        id: topo_failed_seam_neighbors
+        if: steps.twelve_kytopo_seams.outcome == 'failure' && steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/probe_kytopo_failed_seam_neighbors.py \
+            --official-quads "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --out "${{ runner.temp }}/rrgh-topo-rejected-seam-neighborhood"
+
+      - name: Preserve real rejected-seam neighborhood source QA
+        if: steps.topo_failed_seam_neighbors.outcome == 'success' || steps.topo_failed_seam_neighbors.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ky-gorge-kytopo-rejected-seam-neighborhood-evidence
+          path: ${{ runner.temp }}/rrgh-topo-rejected-seam-neighborhood/
+          retention-days: 2
+          if-no-files-found: warn
+
+      - name: Mosaic ONE verified z16 2023/2024 source boundary with 64MB cap
+        id: kentucky_two_cog_mosaic
+        if: steps.kentucky_cog_xyz.outcome == 'success' && steps.kentucky_mosaic_plan.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/pilot_ky_cog_boundary_mosaic.py \
+            --mosaic-plan "${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json" \
+            --pilot-root "${{ runner.temp }}/rrgh-ky-two-source-seam-qa"
+
+      - name: Preserve TWO-source genuine leaf-off mosaic QA and provenance
+        if: steps.kentucky_two_cog_mosaic.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-2023-2024-2-cog-z16-mosaic-qa
+          path: ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/
+          retention-days: 2
+
+      - name: Preserve honest failed two-source mosaic attempt (NO map acceptance)
+        if: always() && steps.kentucky_two_cog_mosaic.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-2-cog-z16-mosaic-FAILED-DIAGNOSTIC
+          path: |
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-FAILED.txt
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-NODATA-DETAIL.json
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/FAILED-SOURCE-MOSAIC-PIXELS-DO-NOT-DEPLOY.png
+          if-no-files-found: error
+          retention-days: 2
+
+      - name: Discover county offline package metadata (no imagery download)
+        id: official_sources
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_official_ky_county_sources.py \
+            --output-json "${{ runner.temp }}/official-ky-county-metadata.json"
+
+      - name: Preserve public source metadata for vetted local package intake
+        if: steps.official_sources.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-county-tpkx-metadata
+          path: ${{ runner.temp }}/official-ky-county-metadata.json
+          retention-days: 2
+
+      - name: Probe official county archive sizes without downloading them
+        id: official_sizes
+        if: steps.official_sources.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/probe_official_ky_tpkx_metadata.py \
+            --official-index-json "${{ runner.temp }}/official-ky-county-metadata.json" \
+            --output-json "${{ runner.temp }}/official-ky-source-sizes.json"
+
+      - name: Preserve read-only county package size inventory
+        if: steps.official_sizes.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-county-tpkx-size-probe
+          path: ${{ runner.temp }}/official-ky-source-sizes.json
+          retention-days: 2
+
+      - name: Probe genuine Powell leaf-off aerial at zoom levels 13–16 without whole-county download
+        id: selective_tpkx_pilot
+        continue-on-error: true
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/rrgh-powell-pilot"
+          cat > "${{ runner.temp }}/powell-source-provenance.json" <<'PROVENANCE'
+          {
+            "publisher": "Kentucky Division of Geographic Information",
+            "sourceTitle": "Powell KyFromAbove 2019 6-inch leaf-off imagery TPKX",
+            "sourceURL": "https://ky.box.com/shared/static/zi0ltrlzlx39ashp232dt37cdj0utem1.tpkx",
+            "licenseURL": "https://kyfromabove.ky.gov/",
+            "attribution": "KyFromAbove / Kentucky DGI (public-domain data with requested attribution)",
+            "verifiedOfflineReuse": true
+          }
+          PROVENANCE
+          python3 backend/scripts/import_official_tpkx_xyz.py \
+            --tpkx-url "https://ky.box.com/shared/static/zi0ltrlzlx39ashp232dt37cdj0utem1.tpkx" \
+            --approved-xyz-root "${{ runner.temp }}/rrgh-powell-pilot" \
+            --layer-id leaf-off-aerial \
+            --bbox -83.689 37.773 -83.685 37.777 \
+            --min-zoom 13 --max-zoom 16 \
+            --approved-provenance "${{ runner.temp }}/powell-source-provenance.json" \
+            --max-remote-bytes 60000000
+
+      - name: Retain only bounded publicly sourced Powell pilot tiles
+        if: steps.selective_tpkx_pilot.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kentucky-powell-leafoff-pilot-qa
+          path: ${{ runner.temp }}/rrgh-powell-pilot/
+          retention-days: 1
+
       - name: Verify nonproduction guardrails
         run: node backend/scripts/phase3-readiness.mjs
 
@@ -66,7 +463,11 @@ jobs:
     name: Gorge Base v3 real-build preflight
     # This ephemeral build never publishes protected offline map geometry
     # or an installable package to an Actions artifact/public repository.
-    if: github.event_name == 'pull_request'
+    # Existing v3 preflight already fails on an upstream TIFF service. The
+    # isolated v4 SOURCE-ONLY branch does not change deployed v3, so avoid
+    # spending up to 55 minutes on that unrelated upstream every v4 commit.
+    # Keep the real v3 gate enabled for all other backend PRs.
+    if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'backend/offline-v4-multires-src-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
 
