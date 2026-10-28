@@ -141,7 +141,7 @@ def tiles_from_bundle(bundle, origin_y, origin_x, z, bounds):
 
 
 def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
-                provenance):
+                provenance, max_remote_bytes=1_500_000_000):
     if layer_id not in ALLOWED_LAYERS:
         raise ValueError("Unrecognized protected native raster ID")
     if not (8 <= zoom_min <= zoom_max <= 18):
@@ -160,7 +160,9 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         # For approved official Box packages, do not pull 4-40 GB just
         # to calculate the SHA. Authenticate the extracted map tiles in
         # the v4 package separately; retain honest remote metadata.
-        source = RangeZipReader(tpkx)
+        source = RangeZipReader(
+            tpkx, max_transfer_bytes=max_remote_bytes
+        )
         source_hash = hashlib.sha256((
             source.url + "\n" + str(source.length) + "\n" +
             str(source.etag)
@@ -277,9 +279,11 @@ if __name__ == "__main__":
     p.add_argument("--min-zoom", type=int, default=10)
     p.add_argument("--max-zoom", type=int, default=16)
     p.add_argument("--approved-provenance", required=True, type=Path)
+    p.add_argument("--max-remote-bytes", type=int, default=1_500_000_000)
     a = p.parse_args()
     print(json.dumps(import_tpkx(
         a.tpkx_url or a.tpkx, a.approved_xyz_root, a.layer_id,
         a.bbox, a.min_zoom, a.max_zoom,
-        json.loads(a.approved_provenance.read_text())
+        json.loads(a.approved_provenance.read_text()),
+        max_remote_bytes=a.max_remote_bytes
     ), indent=2))
