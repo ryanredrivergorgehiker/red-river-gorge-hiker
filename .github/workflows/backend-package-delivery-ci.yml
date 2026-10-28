@@ -68,8 +68,27 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_import_official_tpkx_xyz.py' -v
           python3 -m py_compile backend/scripts/discover_official_ky_county_sources.py backend/scripts/test_discover_official_ky_county_sources.py
           python3 -m unittest discover -s backend/scripts -p 'test_discover_official_ky_county_sources.py' -v
+          python3 -m py_compile backend/scripts/discover_kyfromabove_stac.py backend/scripts/test_discover_kyfromabove_stac.py
+          python3 -m unittest discover -s backend/scripts -p 'test_discover_kyfromabove_stac.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
+
+      - name: Discover official KyFromAbove COG metadata (NO TIFF reads)
+        id: kentucky_stac
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/discover_kyfromabove_stac.py \
+            --output-json "${{ runner.temp }}/official-ky-stac-gorge-candidates.json"
+
+      - name: Preserve bounded source candidate inventory (metadata only)
+        if: steps.kentucky_stac.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-kyfromabove-stac-cog-metadata
+          path: ${{ runner.temp }}/official-ky-stac-gorge-candidates.json
+          retention-days: 2
 
       - name: Discover county offline package metadata (no imagery download)
         id: official_sources
