@@ -28,6 +28,9 @@ def png(rgb=100):
 def bundle(x, y, tile):
     header = bytearray(mod.HEADER_SIZE + mod.INDEX_SIZE)
     struct.pack_into("<II", header, 0, 3, 16384)
+    struct.pack_into("<I", header, 12, 5)
+    struct.pack_into("<Q", header, 32, 40)
+    struct.pack_into("<I", header, 40, 20 + mod.INDEX_SIZE)
     struct.pack_into("<I", header, 60, mod.INDEX_SIZE)
     start = len(header) + 4
     offset = mod.HEADER_SIZE + ((y % 128) * 128 + (x % 128)) * 8
@@ -75,6 +78,23 @@ class ImporterTests(unittest.TestCase):
             # Independent county sources can share the exact same tiles.
             pkg.writestr("county-source.txt", filename)
         return out
+
+    def test_kentucky_zero_record_count_header_is_bound_and_checked(self):
+        tile = png()
+        data = bytearray(bundle(self.x, self.y, tile))
+        struct.pack_into("<I", data, 4, 0)
+        self.assertEqual(
+            list(mod.tiles_from_bundle(
+                bytes(data), self.origin_y, self.origin_x,
+                10, self.bounds
+            ))[0][4], tile
+        )
+        struct.pack_into("<I", data, 60, 1234)
+        with self.assertRaises(ValueError):
+            list(mod.tiles_from_bundle(
+                bytes(data), self.origin_y, self.origin_x,
+                10, self.bounds
+            ))
 
     def test_single_import_and_stable_duplicate_replay_block(self):
         source = self.make_source("powell.tpkx")
