@@ -55,13 +55,15 @@ class ImporterTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def make_source(self, filename, tile=None, projection=102100):
+    def make_source(self, filename, tile=None, projection=102100,
+                    shifted_resolution=False):
         out = self.root / filename
         metadata = dict(tileInfo=dict(
             rows=256, cols=256, spatialReference=dict(wkid=projection),
             origin=dict(x=-20037508.342789244, y=20037508.342789244),
             lods=[dict(level=zoom,
-                       resolution=156543.03392804097 / (2 ** zoom))
+                       resolution=(156543.03392804097 / (2 ** zoom)) *
+                       (1.25 if shifted_resolution else 1))
                   for zoom in range(8, 19)],
         ))
         t = png() if tile is None else tile
@@ -95,6 +97,11 @@ class ImporterTests(unittest.TestCase):
         invalid = self.make_source("unprojected.tpkx", projection=4326)
         with self.assertRaises(ValueError):
             mod.import_tpkx(invalid, self.out, "usgs-topo", self.bounds, 10, 10, self.provenance)
+        shifted = self.make_source("shifted.tpkx",
+                                   shifted_resolution=True)
+        with self.assertRaises(ValueError):
+            mod.import_tpkx(shifted, self.out, "usgs-topo",
+                            self.bounds, 10, 10, self.provenance)
         valid = self.make_source("usgs.tpkx")
         rejected = dict(self.provenance, verifiedOfflineReuse=False)
         with self.assertRaises(ValueError):
