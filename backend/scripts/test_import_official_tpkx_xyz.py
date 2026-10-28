@@ -104,6 +104,24 @@ class ImporterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             mod.import_tpkx(source, self.out, "kentucky-topo", self.bounds, 10, 10, self.provenance)
 
+    def test_distant_county_bundle_skipped_before_decompression(self):
+        # A real county archive contains bundles outside a tiny AOI.
+        # An unrelated malformed bundle must never be fetched or decoded.
+        local = self.make_source("wide-county.tpkx")
+        with zipfile.ZipFile(local, "a", zipfile.ZIP_DEFLATED) as pkg:
+            pkg.writestr("tile/L10/R0000C0000.bundle",
+                         b"unrelated malformed bundle outside requested AOI")
+        report = mod.import_tpkx(
+            local, self.out, "leaf-off-aerial",
+            self.bounds, 10, 10, self.provenance
+        )
+        imported = report["imports"][0]
+        self.assertEqual(imported["tileCountRead"], 1)
+        self.assertEqual(len(imported["bundleReadStats"]), 1)
+        self.assertTrue(
+            (self.out / f"leaf-off-aerial/10/{self.x}/{self.y}.png").is_file()
+        )
+
     def test_second_county_preserves_provenance_and_refuses_conflict(self):
         one = self.make_source("powell.tpkx")
         two = self.make_source("wolfe.tpkx")
