@@ -225,7 +225,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: official-kentucky-2-cog-z16-mosaic-FAILED-DIAGNOSTIC
-          path: ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-FAILED.txt
+          path: |
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-FAILED.txt
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/SOURCE-MOSAIC-NODATA-DETAIL.json
+            ${{ runner.temp }}/rrgh-ky-two-source-seam-qa/FAILED-SOURCE-MOSAIC-PIXELS-DO-NOT-DEPLOY.png
           if-no-files-found: error
           retention-days: 2
 
