@@ -2,6 +2,7 @@
 """Network-free CompactV2 tile source importer tests. No real protected data."""
 import importlib.util
 import io
+from unittest.mock import patch
 import json
 from pathlib import Path
 import struct
@@ -92,6 +93,41 @@ class ImporterTests(unittest.TestCase):
         three = self.make_source("menifee.tpkx", tile=png(150))
         with self.assertRaises(ValueError):
             mod.import_tpkx(three, self.out, "leaf-on-aerial", self.bounds, 10, 10, self.provenance)
+
+    def test_bounded_range_zip_source_preserves_honest_provenance(self):
+        local = self.make_source("official.tpkx")
+        data = local.read_bytes()
+
+        class FakeRanges(io.BytesIO):
+            def __init__(self, url):
+                super().__init__(data)
+                self.url = url
+                self.length = len(data)
+                self.etag = '"synthetic"'
+                self.provenance = {
+                    "sourceURL": url,
+                    "contentLength": len(data),
+                    "etag": self.etag,
+                    "rangeBytesTransferred": len(data) // 4,
+                    "hasFullArchiveSHA256": False,
+                }
+
+        url = "https://ky.box.com/shared/static/official.tpkx"
+        with patch.object(mod, "RangeZipReader", FakeRanges):
+            result = mod.import_tpkx(
+                url, self.out, "leaf-off-aerial",
+                self.bounds, 10, 10, self.provenance
+            )
+        record = result["imports"][0]
+        self.assertEqual(record["sourceIdentityMethod"],
+                         "URL+length+ETag")
+        self.assertIsNone(record["sourceArchiveSHA256"])
+        self.assertFalse(
+            record["sourceRangeProvenance"]["hasFullArchiveSHA256"]
+        )
+        self.assertTrue(
+            (self.out / f"leaf-off-aerial/10/{self.x}/{self.y}.png").exists()
+        )
 
     def test_refuse_wrong_projection_and_unapproved_usage(self):
         invalid = self.make_source("unprojected.tpkx", projection=4326)
