@@ -97,7 +97,7 @@ jobs:
           path: ${{ runner.temp }}/official-ky-source-sizes.json
           retention-days: 2
 
-      - name: Probe one official Powell aerial tile without whole-package download
+      - name: Probe genuine Powell leaf-off aerial at zoom levels 13–16 without whole-county download
         id: selective_tpkx_pilot
         continue-on-error: true
         timeout-minutes: 4
@@ -119,7 +119,7 @@ jobs:
             --approved-xyz-root "${{ runner.temp }}/rrgh-powell-pilot" \
             --layer-id leaf-off-aerial \
             --bbox -83.689 37.773 -83.685 37.777 \
-            --min-zoom 13 --max-zoom 13 \
+            --min-zoom 13 --max-zoom 16 \
             --approved-provenance "${{ runner.temp }}/powell-source-provenance.json" \
             --max-remote-bytes 60000000
 
