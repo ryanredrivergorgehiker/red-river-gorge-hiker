@@ -68,7 +68,24 @@ def plan(index):
                 candidates.append((len(matched) != 2, distance, x, y, matched))
         if not candidates:
             raise ValueError("No bounded original-source seam sample for " + a+"/"+b)
-        _, _, x, y, matched = min(candidates)
+        selection = "nearest-two-source-index-bboxes; pixel-QA-required"
+        current_originals = (a, b) == ("N14E31", "N15E31") and (
+            assets[a]["url"].endswith("N14E31_Daysboro_cog.tif") and
+            assets[b]["url"].endswith("N15E31_Simpson_cog.tif"))
+        if current_originals:
+            # An actual bounded HTTP206 source test rejected y25340:
+            # N14E31 had NO original pixels there. The adjacent tile y25339
+            # passed both source alpha checks, full mosaic alpha 255 and
+            # SHA256 40da7029ce345468ae1fd4ef57132f5257649d82918f989574628baceb976ee0.
+            # This is a *private QA sample override*, not a general map fill.
+            corrected = [c for c in candidates
+                         if c[2:4] == (17578, 25339) and c[4] == [a, b]]
+            if len(corrected) != 1:
+                raise ValueError("Prior pixel-verified source sample no longer intersects official source footprints")
+            _, _, x, y, matched = corrected[0]
+            selection = "prior-real-original-pixel-QA-sample; reverify-on-every-run"
+        else:
+            _, _, x, y, matched = min(candidates)
         if matched != sorted((a, b)):
             raise ValueError("Selected tile touches additional/unexpected sources")
         selected.append({
@@ -77,6 +94,7 @@ def plan(index):
             "indexOverlapWGS84": intersection,
             "sourceURLs": [assets[k]["url"] for k in matched],
             "sourceOriginalBytes": [assets[k]["length"] for k in matched],
+            "selection": selection,
             "sourcePixelCoverageVerified": False,
         })
     if len(selected) != 12 or len({tuple(r["pair"]) for r in selected}) != 12:
