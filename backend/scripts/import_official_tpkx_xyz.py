@@ -11,6 +11,7 @@ Reference: Esri/raster-tiles-compactcache CompactCacheV2.md (Apache-2.0).
 import argparse
 import tempfile
 import hashlib
+import os
 import json
 from pathlib import Path
 import re
@@ -304,10 +305,15 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
                                              delete=False) as scratch:
                 scratch.write(raw)
                 staged = Path(scratch.name)
-            if dest.exists():
+            try:
+                # Link-to-new destination fails rather than overwrite a file
+                # that appeared between conflict check and promotion.
+                os.link(staged, dest)
+            except FileExistsError:
+                if dest.read_bytes() != raw:
+                    raise ValueError("Concurrent conflicting county tile: " + rel)
+            finally:
                 staged.unlink(missing_ok=True)
-            else:
-                staged.rename(dest)
     record = {
         "layerID": layer_id, "boundsWGS84": bounds,
         "zoomMin": zoom_min, "zoomMax": zoom_max,
