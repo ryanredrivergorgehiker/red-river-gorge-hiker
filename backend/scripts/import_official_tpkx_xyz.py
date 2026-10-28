@@ -141,10 +141,20 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         raise ValueError("Offline redistribution has not been approved")
     if not tpkx.is_file() or not zipfile.is_zipfile(tpkx):
         raise ValueError("Local TPKX ZIP file required")
-    source_hash = hashlib.sha256(tpkx.read_bytes()).hexdigest()
+    source_digest = hashlib.sha256()
+    with tpkx.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            source_digest.update(chunk)
+    source_hash = source_digest.hexdigest()
     report_path = output_root / f"{layer_id}.sources.json"
+    existing_report = None
     if report_path.exists():
-        raise FileExistsError("Refuse to overwrite prior provenance")
+        existing_report = json.loads(report_path.read_text())
+        if existing_report.get("layerID") != layer_id:
+            raise ValueError("Inconsistent source-report layer")
+        if any(item.get("sha256") == source_hash
+               for item in existing_report.get("imports", [])):
+            raise ValueError("Source TPKX already imported; immutable replay refused")
     planned = []
     with zipfile.ZipFile(tpkx) as pkg:
         roots = [name for name in pkg.namelist() if name.endswith("root.json")]
@@ -162,6 +172,8 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
             if not (zoom_min <= zoom <= zoom_max):
                 continue
             orig_y, orig_x = int(yhex, 16), int(xhex, 16)
+            if entry.file_size > 350_000_000:
+                raise ValueError("Unexpectedly large source cache bundle")
             for z, x, y, image_format, raw in tiles_from_bundle(
                 pkg.read(entry), orig_y, orig_x, zoom, bounds
             ):
@@ -171,6 +183,18 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         raise ValueError("TPKX has no approved tiles inside requested region")
     # A complete v4 map may combine several county packages. Reject
     # contradictions and preserve existing exact matching bytes.
+    format_by_layer = None
+    for rel, raw in planned:
+        ext = Path(rel).suffix.lower()
+        if format_by_layer is None:
+            format_by_layer = ext
+        elif ext != format_by_layer:
+            raise ValueError("Multiple tile formats in one source layer")
+    layer_dir = output_root / layer_id
+    if layer_dir.exists():
+        existing_files = [p for p in layer_dir.rglob("*") if p.is_file()]
+        if any(p.suffix.lower() != format_by_layer for p in existing_files):
+            raise ValueError("Mixed county tile formats must be normalized separately")
     for rel, raw in planned:
         dest = output_root / rel
         if dest.is_file() and dest.read_bytes() != raw:
@@ -183,14 +207,24 @@ def import_tpkx(tpkx, output_root, layer_id, bounds, zoom_min, zoom_max,
         if not dest.exists():
             dest.write_bytes(raw)
     record = {
-        "layerID": layer_id, "sourceSHA256": source_hash,
-        "sourceFilename": tpkx.name, "tileCountRead": len(planned),
-        "boundsWGS84": bounds, "zoomMin": zoom_min, "zoomMax": zoom_max,
-        "source": provenance,
+        "layerID": layer_id, "boundsWGS84": bounds,
+        "zoomMin": zoom_min, "zoomMax": zoom_max,
+        "imports": (existing_report or {}).get("imports", []) + [{
+            "sha256": source_hash, "sourceFilename": tpkx.name,
+            "tileCountRead": len(planned), "source": provenance,
+        }],
         "result": "LOCAL IMPORT ONLY, NOT complete-v4 coverage or permission to deploy",
     }
+    if existing_report and (
+        existing_report.get("boundsWGS84") != bounds or
+        existing_report.get("zoomMin") != zoom_min or
+        existing_report.get("zoomMax") != zoom_max
+    ):
+        raise ValueError("Cannot mix different geographic coverage contracts")
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps(record, indent=2) + "\n")
+    temporary = report_path.with_suffix(".pending")
+    temporary.write_text(json.dumps(record, indent=2) + "\n")
+    temporary.replace(report_path)
     return record
 
 
