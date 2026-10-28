@@ -64,14 +64,30 @@ def source_kind(entry):
 
 
 def collections(payload):
-    choices = {}
+    # STAC lists Phase1 before newer sources. Phase1 orthos do NOT provide
+    # statewide Gorge coverage; Phase2 is complete, while higher-resolution
+    # Phase3 is preferred where actually available. Avoid blind first-match.
+    candidate = {}
     for item in payload.get("collections", []):
         if not isinstance(item, dict) or not isinstance(item.get("id"), str):
             continue
         kind = source_kind(item)
-        if kind and kind not in choices:
-            choices[kind] = item["id"]
-    return list(choices.items())[:MAX_COLLECTIONS]
+        if not kind:
+            continue
+        ident = item["id"].lower().replace("-", "").replace("_", "")
+        if kind == "terrain-dem-candidate":
+            priority = (3 if "phase2" in ident else
+                        2 if "phase3" in ident else 1)
+        else:
+            priority = (3 if "phase3" in ident else
+                        2 if "phase2" in ident else 1)
+        candidate.setdefault(kind, []).append((priority, item["id"]))
+    selected = []
+    for kind in ("terrain-dem-candidate", "leaf-off-ortho-candidate"):
+        if kind in candidate:
+            best = sorted(candidate[kind], key=lambda x: (-x[0], x[1]))[0]
+            selected.append((kind, best[1]))
+    return selected[:MAX_COLLECTIONS]
 
 
 def public_asset(href):
