@@ -68,6 +68,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_inventory_ky_topo_original_cogs.py' -v
           python3 -m py_compile backend/scripts/discover_ky_topo_gorge_quads.py backend/scripts/test_discover_ky_topo_gorge_quads.py
           python3 -m unittest discover -s backend/scripts -p 'test_discover_ky_topo_gorge_quads.py' -v
+          python3 -m py_compile backend/scripts/pilot_ky_topo_original_xyz.py backend/scripts/test_pilot_ky_topo_original_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_pilot_ky_topo_original_xyz.py' -v
           python3 -m py_compile backend/scripts/import_official_tpkx_xyz.py backend/scripts/test_import_official_tpkx_xyz.py
           python3 -m py_compile backend/scripts/http_range_zip.py backend/scripts/test_http_range_zip.py
           python3 -m unittest discover -s backend/scripts -p 'test_http_range_zip.py' -v
@@ -244,6 +246,29 @@ jobs:
           name: official-ky-2024-cog-one-real-z16-xyz-qa
           path: ${{ runner.temp }}/rrgh-ky-cog-one-tile-pilot/
           retention-days: 1
+
+      - name: Render ONE genuine KyTopo Pine Ridge z16 XYZ (32 MB source cap)
+        id: kentucky_topo_xyz
+        if: steps.ky_topo_gorge_quads.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          if ! command -v gdalwarp >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends gdal-bin
+          fi
+          python3 backend/scripts/pilot_ky_topo_original_xyz.py \
+            --gorge-kytopo "${{ runner.temp }}/official-ky-topo-gorge-quad-selection.json" \
+            --out "${{ runner.temp }}/rrgh-ky-topo-original-one-tile"
+
+      - name: Retain verified original KyTopo z16 derivative (not a Base package)
+        if: steps.kentucky_topo_xyz.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-kytopo-one-real-z16-xyz-source-proof
+          path: ${{ runner.temp }}/rrgh-ky-topo-original-one-tile/
+          retention-days: 3
 
       - name: Mosaic ONE verified z16 2023/2024 source boundary with 64MB cap
         id: kentucky_two_cog_mosaic
