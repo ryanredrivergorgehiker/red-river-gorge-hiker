@@ -16,12 +16,23 @@ RANGE = re.compile(r"^bytes (\d+)-(\d+)/(\d+)$")
 class RangeZipReader(io.RawIOBase):
     def __init__(self, url, *, opener=urlopen,
                  chunk_size=262_144, max_transfer_bytes=1_500_000_000,
-                 max_cache_chunks=16):
+                 max_cache_chunks=16, source_kind="kentucky_tpkx"):
         super().__init__()
         parsed = urlparse(url)
-        if parsed.scheme != "https" or parsed.hostname != "ky.box.com" or \
-                not parsed.path.startswith("/shared/static/"):
-            raise ValueError("Only direct official Kentucky Box TPKX references")
+        if (parsed.scheme != "https" or parsed.query or parsed.fragment or
+                parsed.username or parsed.password or parsed.port is not None):
+            raise ValueError("Only exact HTTPS public source URLs")
+        if source_kind == "kentucky_tpkx":
+            if (parsed.hostname != "ky.box.com" or
+                    not parsed.path.startswith("/shared/static/")):
+                raise ValueError("Only direct official Kentucky Box TPKX references")
+        elif source_kind == "kentucky_cog":
+            if (parsed.hostname != "kyfromabove.s3.us-west-2.amazonaws.com" or
+                    not parsed.path.startswith(("/elevation/DEM/", "/imagery/orthos/")) or
+                    not parsed.path.lower().endswith((".tif", ".tiff"))):
+                raise ValueError("Only official Kentucky DEM/orthophoto COG assets")
+        else:
+            raise ValueError("Unrecognized original map source category")
         if not (4096 <= chunk_size <= 2_097_152 and
                 1 <= max_cache_chunks <= 64 and
                 max_transfer_bytes >= chunk_size):
