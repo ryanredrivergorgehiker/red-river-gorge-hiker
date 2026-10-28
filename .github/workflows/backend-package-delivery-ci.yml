@@ -78,6 +78,8 @@ jobs:
           python3 -m unittest discover -s backend/scripts -p 'test_pilot_official_cog_xyz.py' -v
           python3 -m py_compile backend/scripts/inventory_kyfromabove_stac_coverage.py backend/scripts/test_inventory_kyfromabove_stac_coverage.py
           python3 -m unittest discover -s backend/scripts -p 'test_inventory_kyfromabove_stac_coverage.py' -v
+          python3 -m py_compile backend/scripts/plan_ky_cog_mosaic_xyz.py backend/scripts/test_plan_ky_cog_mosaic_xyz.py
+          python3 -m unittest discover -s backend/scripts -p 'test_plan_ky_cog_mosaic_xyz.py' -v
           python3 -m py_compile backend/scripts/probe_official_ky_tpkx_metadata.py backend/scripts/test_probe_official_ky_tpkx_metadata.py
           python3 -m unittest discover -s backend/scripts -p 'test_probe_official_ky_tpkx_metadata.py' -v
 
@@ -115,6 +117,25 @@ jobs:
         with:
           name: official-ky-gorge-dem-aerial-source-footprint-inventory
           path: ${{ runner.temp }}/official-ky-gorge-cog-footprints.json
+          retention-days: 2
+
+      - name: Plan every high-zoom Gorge tile against all original COGs (no pixels)
+        id: kentucky_mosaic_plan
+        if: steps.kentucky_full_metadata.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          python3 backend/scripts/plan_ky_cog_mosaic_xyz.py \
+            --footprints "${{ runner.temp }}/official-ky-gorge-cog-footprints.json" \
+            --output-json "${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json"
+
+      - name: Retain source-aware high-zoom tile mosaic input plan
+        if: steps.kentucky_mosaic_plan.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: official-ky-gorge-all-z13-16-cog-source-mosaic-plan
+          path: ${{ runner.temp }}/official-ky-gorge-cog-mosaic-plan.json
           retention-days: 2
 
       - name: Probe up to two authentic official COG TIFF headers (8 KiB total)
