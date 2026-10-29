@@ -1,9 +1,8 @@
-name: RRGH offline map producer - isolated GCS preflight
-# Template: integration onto the EXACT authorized engineering branch is required.
+name: RRGH one authorized private recovery drill
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
-    paths: [.github/workflows/offline-map-producer-access.yml, .github/map-producer-auth-trigger.txt]
+    paths: [.github/workflows/offline-map-producer-access.yml]
 permissions:
   contents: read
   id-token: write
@@ -11,130 +10,59 @@ concurrency:
   group: rrgh-map-producer-auth-preflight
   cancel-in-progress: false
 jobs:
-  read-only:
-    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && github.event_name == 'push' && github.ref == 'refs/heads/lane20/offline-production-preflight-20261029'
+  bounded-stage:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: execute one owner-authorized five-cent recovery drill 20261029'
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: Checkout before Google authentication
+      - name: Checkout exact source without persisted credentials
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Authenticate using direct WIF — no deployment service account
+      - name: Offline allowance check before Google authentication
+        run: python backend/scripts/drill_gorge_checkpoint.py --phase plan > /dev/null
+      - name: Authenticate existing restricted direct WIF identity
         uses: google-github-actions/auth@v3
         with:
           project_id: rrgh-nonproduction
           workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
           create_credentials_file: true
           export_environment_variables: true
-      - name: Set up Cloud SDK
+      - name: Set up existing Cloud SDK access
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Verify accepted Base metadata and deny signing-key access
-        shell: bash
-        run: |
-          set -euo pipefail
-          P=gs://rrgh-nonproduction-protected-packages/packages/offline/gorge-base/2026.10.08.1
-          for item in gorge-base.rrghpkg manifest.json; do
-            gcloud storage objects describe "$P/$item" --format='value(name,size,generation)' >/dev/null
-          done
-          ERROR_FILE="$(mktemp)"
-          trap 'rm -f "$ERROR_FILE"' EXIT
-          if gcloud storage objects describe gs://rrgh-nonproduction-protected-packages/backend-secrets/offline-lease/keyring-v1.json --format='value(name)' >/dev/null 2>"$ERROR_FILE"; then
-            echo 'BLOCK: producer could read a backend signing secret' >&2
-            exit 9
-          fi
-          if ! grep -Eq 'HTTPError 403:|PERMISSION_DENIED' "$ERROR_FILE"; then
-            echo 'BLOCK: signing-key denial was not an explicit permission denial; no access claim' >&2
-            exit 10
-          fi
-          echo 'PASS: Base metadata permitted; signing secret denied; no download/upload/deploy.'
-# No Actions artifact, cache, Firebase, deployment or GCS write.
-  bounded-stage:
-    needs: read-only
-    runs-on: ubuntu-latest
-    timeout-minutes: 6
-    steps:
-      - name: Checkout without persisted credentials
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Authenticate restricted producer identity
-        uses: google-github-actions/auth@v3
-        with:
-          project_id: rrgh-nonproduction
-          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: rrgh-nonproduction
-      - name: Create one small immutable object and verify overwrite protection
-        shell: bash
-        run: |
-          set -euo pipefail
-          DEST="gs://rrgh-nonproduction-protected-packages/engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
-          printf 'RRGH isolated producer checkpoint; commit=%s\n' "$GITHUB_SHA" > checkpoint.txt
-          printf 'RRGH replacement must be denied; commit=%s\n' "$GITHUB_SHA" > replacement.txt
-          [[ "$(wc -c < checkpoint.txt)" -lt 512 ]] || { echo 'BLOCK: payload exceeds 512-byte test cap'; exit 11; }
-          gcloud storage cp checkpoint.txt "$DEST" --if-generation-match=0 --quiet
-          gcloud storage objects describe "$DEST" --format='value(name,size,generation)' > object-metadata.txt
-          [[ -s object-metadata.txt ]] || { echo 'BLOCK: metadata is missing'; exit 12; }
-          gcloud storage cp "$DEST" immediate-check.txt --quiet
-          cmp -s checkpoint.txt immediate-check.txt || { echo 'BLOCK: uploaded bytes mismatch'; exit 13; }
-          if gcloud storage cp replacement.txt "$DEST" --if-generation-match=0 --quiet 2>precondition.err; then
-            echo 'BLOCK: existing object unexpectedly accepted create-if-absent overwrite' >&2
-            exit 14
-          fi
-          grep -Eqi '412|Precondition|conditionNotMet' precondition.err || { echo 'BLOCK: create-if-absent failed for unexpected reason' >&2; exit 15; }
-          # Cloud SDK masks the attempted overwrite denial as GcsApiError(''); check HTTP.
-          # The target is ONLY this run's disposable checkpoint, never accepted map objects.
-          OBJ="engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
-          ENCODED="$(OBJ="$OBJ" python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["OBJ"],safe=""))')"
-          ACCESS_TOKEN="$(gcloud auth print-access-token)"
-          STATUS="$(curl --silent --show-error --retry 0 --output overwrite-api.json --write-out '%{http_code}' --header "Authorization: Bearer $ACCESS_TOKEN" --header 'Content-Type: text/plain' --data-binary @replacement.txt "https://storage.googleapis.com/upload/storage/v1/b/rrgh-nonproduction-protected-packages/o?uploadType=media&name=$ENCODED")"
-          unset ACCESS_TOKEN
-          if [[ "$STATUS" != 403 ]]; then
-            echo "BLOCK: direct GCS overwrite produced HTTP $STATUS instead of explicit 403" >&2
-            exit 17
-          fi
-          python3 -c 'import json; j=json.load(open("overwrite-api.json")); assert j.get("error",{}).get("code") == 403, "Expected Google Cloud permission denial"; print("PASS: direct Cloud Storage overwrite denied with HTTP 403")'
-          gcloud storage cp "$DEST" final-check.txt --quiet
-          cmp -s checkpoint.txt final-check.txt || { echo 'BLOCK: original staged content changed' >&2; exit 18; }
-          echo "PASS: unique create-only staged checkpoint; condition 412; overwrite IAM 403; bytes intact; sha256=$(sha256sum checkpoint.txt | cut -d' ' -f1)"
+      - name: Claim reserved slot and stage private checkpoint pack
+        run: python backend/scripts/drill_gorge_checkpoint.py --phase stage
   independent-recovery:
     needs: bounded-stage
+    if: github.run_attempt == 1
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: Checkout without persisted credentials
+      - name: Fresh checkout without persistent cache or artifacts
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Reauthenticate restricted producer identity on fresh runner
+      - name: Offline allowance check before independent authentication
+        run: python backend/scripts/drill_gorge_checkpoint.py --phase plan > /dev/null
+      - name: Reauthenticate existing restricted identity on fresh runner
         uses: google-github-actions/auth@v3
         with:
           project_id: rrgh-nonproduction
           workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
-      - name: Set up Cloud SDK
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Set up existing Cloud SDK access
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Recover checkpoint without local artifacts or a persistent credential
-        shell: bash
-        run: |
-          set -euo pipefail
-          DEST="gs://rrgh-nonproduction-protected-packages/engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
-          printf 'RRGH isolated producer checkpoint; commit=%s\n' "$GITHUB_SHA" > expected.txt
-          gcloud storage cp "$DEST" recovered.txt --quiet
-          cmp -s expected.txt recovered.txt || { echo 'BLOCK: independent checkpoint recovery hash/bytes mismatch'; exit 21; }
-          gcloud storage objects describe "$DEST" --format='value(name,size,generation)' >/dev/null
-          ERROR_FILE="$(mktemp)"
-          trap 'rm -f "$ERROR_FILE"' EXIT
-          if gcloud storage objects describe gs://rrgh-nonproduction-protected-packages/backend-secrets/offline-lease/keyring-v1.json --format='value(name)' >/dev/null 2>"$ERROR_FILE"; then
-            echo 'BLOCK: signing secret unexpectedly accessible during independent recovery' >&2
-            exit 22
-          fi
-          grep -Eq 'HTTPError 403:|PERMISSION_DENIED' "$ERROR_FILE" || { echo 'BLOCK: missing explicit signing-secret permission denial' >&2; exit 23; }
-          echo "PASS: independent runner restored identical checkpoint bytes; signing secret explicitly denied; sha256=$(sha256sum recovered.txt | cut -d' ' -f1)"
-# Bounded staging exercise only: <512 bytes uploaded; no delete, listing, Firebase deploy or package publication.
+      - name: Claim recovery slot and verify exact-generation selected ranges
+        run: python backend/scripts/drill_gorge_checkpoint.py --phase recovery
+# No workflow_dispatch, automatic retry, artifacts, Actions cache, raster work,
+# source download, package replacement, IAM, bucket settings, deletion or deployment.
