@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # One-time keyless direct-WIF authorization. Defaults to PLAN ONLY.
+# google.subject uses short GitHub repository-id + ref (OIDC sub exceeds 127 bytes).
 set -euo pipefail
 PROJECT=rrgh-nonproduction
 NUMBER=843975209563
@@ -12,7 +13,7 @@ BRANCH=lane20/offline-production-preflight-20261029
 WORKFLOW=offline-map-producer-access.yml
 WORKFLOW_REF="ryanredrivergorgehiker/red-river-gorge-hiker/.github/workflows/$WORKFLOW@refs/heads/$BRANCH"
 CONDITION="assertion.repository_id=='$REPO_ID' && assertion.repository_owner_id=='$OWNER_ID' && assertion.ref=='refs/heads/$BRANCH' && assertion.event_name=='push' && assertion.workflow_ref=='$WORKFLOW_REF'"
-MAPPING="google.subject=assertion.sub,attribute.repository_id=assertion.repository_id"
+MAPPING="google.subject=assertion.repository_id+':'+assertion.ref,attribute.repository_id=assertion.repository_id"
 MEMBER="principalSet://iam.googleapis.com/projects/$NUMBER/locations/global/workloadIdentityPools/$POOL/attribute.repository_id/$REPO_ID"
 STAGING="gs://$BUCKET/engineering/map-production/"
 LEGACY="gs://$BUCKET/packages/offline/gorge-base/2026.10.08.1/"
@@ -42,7 +43,7 @@ fi
 gcloud iam workload-identity-pools providers list --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --format=json > "$REVIEW_DIR/providers.json"
 python3 -c 'import json,sys; rows=json.load(open(sys.argv[1])); assert all(p["name"].rsplit("/",1)[-1]==sys.argv[2] for p in rows), "Unexpected provider in dedicated pool; STOP"' "$REVIEW_DIR/providers.json" "$PROVIDER"
 if gcloud iam workload-identity-pools providers describe "$PROVIDER" --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --format=json > "$REVIEW_DIR/provider.json" 2>/dev/null; then
-  RRGH_EXPECTED_CONDITION="$CONDITION" python3 -c 'import json,os,sys; p=json.load(open(sys.argv[1])); assert p.get("attributeCondition")==os.environ["RRGH_EXPECTED_CONDITION"] and p.get("oidc",{}).get("issuerUri") in ("https://token.actions.githubusercontent.com","https://token.actions.githubusercontent.com/") and not p.get("disabled",False), "Existing provider differs; STOP"; m=p.get("attributeMapping",{}); assert m.get("google.subject")=="assertion.sub" and m.get("attribute.repository_id")=="assertion.repository_id", "Existing mapping differs"; assert not p.get("oidc",{}).get("allowedAudiences"), "Unexpected custom audiences; STOP"' "$REVIEW_DIR/provider.json"
+  RRGH_EXPECTED_CONDITION="$CONDITION" RRGH_EXPECTED_SUBJECT="assertion.repository_id+':'+assertion.ref" python3 -c 'import json,os,sys; p=json.load(open(sys.argv[1])); assert p.get("attributeCondition")==os.environ["RRGH_EXPECTED_CONDITION"] and p.get("oidc",{}).get("issuerUri") in ("https://token.actions.githubusercontent.com","https://token.actions.githubusercontent.com/") and not p.get("disabled",False), "Existing provider differs; STOP"; m=p.get("attributeMapping",{}); assert m.get("google.subject")==os.environ["RRGH_EXPECTED_SUBJECT"] and m.get("attribute.repository_id")=="assertion.repository_id", "Existing mapping differs"; assert not p.get("oidc",{}).get("allowedAudiences"), "Unexpected custom audiences; STOP"' "$REVIEW_DIR/provider.json"
 else
   gcloud iam workload-identity-pools providers create-oidc "$PROVIDER" --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --issuer-uri='https://token.actions.githubusercontent.com' --attribute-mapping="$MAPPING" --attribute-condition="$CONDITION" --display-name='RRGH bounded map build'
 fi
