@@ -1,0 +1,4 @@
+RRGH restricted map-producer identity preflight trigger
+2026-10-29
+Purpose: live, read-only GitHub OIDC authentication and accepted Base metadata access; explicit signing-secret 403 requirement.
+No maps, packages, deployments, IAM or production resources are changed by this file.
