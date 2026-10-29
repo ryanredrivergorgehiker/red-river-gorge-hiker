@@ -1,0 +1,43 @@
+name: RRGH offline map producer - isolated GCS preflight
+# Template: integration onto the EXACT authorized engineering branch is required.
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-producer-access.yml, .github/map-producer-auth-trigger.txt]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: rrgh-map-producer-auth-preflight
+  cancel-in-progress: false
+jobs:
+  read-only:
+    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && github.event_name == 'push' && github.ref == 'refs/heads/lane20/offline-production-preflight-20261029'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Authenticate using direct WIF — no deployment service account
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Verify accepted Base metadata and deny signing-key access
+        shell: bash
+        run: |
+          set -euo pipefail
+          P=gs://rrgh-nonproduction-protected-packages/packages/offline/gorge-base/2026.10.08.1
+          for item in gorge-base.rrghpkg manifest.json; do
+            gcloud storage objects describe "$P/$item" --format='value(name,size,generation)' >/dev/null
+          done
+          if gcloud storage objects describe gs://rrgh-nonproduction-protected-packages/backend-secrets/offline-lease/keyring-v1.json --format='value(name)' >/dev/null 2>&1; then
+            echo 'BLOCK: producer could read a backend signing secret' >&2
+            exit 9
+          fi
+          echo 'PASS: Base metadata permitted; signing secret denied; no download/upload/deploy.'
+# No Actions artifact, cache, Firebase, deployment or GCS write.
