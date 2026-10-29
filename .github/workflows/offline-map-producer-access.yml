@@ -87,15 +87,23 @@ jobs:
             exit 14
           fi
           grep -Eqi '412|Precondition|conditionNotMet' precondition.err || { echo 'BLOCK: create-if-absent failed for unexpected reason' >&2; exit 15; }
-          if gcloud storage cp replacement.txt "$DEST" --quiet 2>overwrite.err; then
-            echo 'BLOCK: producer can overwrite its existing staged object' >&2
-            exit 16
-          fi
-          if ! grep -Eqi '403|PERMISSION_DENIED|AccessDenied|Permission denied' overwrite.err; then
-            echo 'BLOCK: no explicit IAM overwrite denial; rejected overwrite diagnostic follows:' >&2
-            sed -n '1,15p' overwrite.err >&2
+          # Cloud SDK masks the attempted overwrite denial as GcsApiError(''); check HTTP.
+          # The target is ONLY this run's disposable checkpoint, never accepted map objects.
+          OBJ="engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
+          ENCODED="$(OBJ="$OBJ" python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["OBJ"],safe=""))')"
+          ACCESS_TOKEN="$(gcloud auth print-access-token)"
+          STATUS="$(curl --silent --show-error --retry 0 --output overwrite-api.json --write-out '%{http_code}' --header "Authorization: Bearer $ACCESS_TOKEN" --header 'Content-Type: text/plain' --data-binary @replacement.txt "https://storage.googleapis.com/upload/storage/v1/b/rrgh-nonproduction-protected-packages/o?uploadType=media&name=$ENCODED")"
+          unset ACCESS_TOKEN
+          if [[ "$STATUS" != 403 ]]; then
+            echo "BLOCK: direct GCS overwrite produced HTTP $STATUS instead of explicit 403" >&2
             exit 17
           fi
+          python3 - <<'PY'
+import json
+with open('overwrite-api.json') as f: j=json.load(f)
+assert j.get('error',{}).get('code') == 403, 'Expected Google Cloud permission denial'
+print('PASS: direct Cloud Storage overwrite denied with HTTP 403')
+PY
           gcloud storage cp "$DEST" final-check.txt --quiet
           cmp -s checkpoint.txt final-check.txt || { echo 'BLOCK: original staged content changed' >&2; exit 18; }
           echo "PASS: unique create-only staged checkpoint; condition 412; overwrite IAM 403; bytes intact; sha256=$(sha256sum checkpoint.txt | cut -d' ' -f1)"
