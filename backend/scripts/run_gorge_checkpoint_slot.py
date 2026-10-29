@@ -88,8 +88,12 @@ def execute(args,plan,region,evidence):
     for selection in plan.get('cacheDeltas',{}).get(str(args.slot),[]):
         # Entries/root are explicit private planning inputs, never CLI discovery.
         for raw,info in pack_delta(selection['root'],selection['entries'],selection.get('knownHashes',[])):
-            cache_refs.append({'ref':asdict(slot.put(raw)), 'members':info['members']})
-    final=slot.finish({'completedJobReceipts':completed,'cachePacks':cache_refs})
+            # Large member catalogs have their own metered, hash-pinned object.
+            # No provenance is omitted to fit a compact final receipt.
+            catalog={'format':'rrgh-cache-pack-catalog-v1',
+                     'ref':asdict(slot.put(raw)), 'members':info['members']}
+            cache_refs.append(asdict(slot.put_catalog(catalog)))
+    final=slot.finish({'completedJobReceipts':completed,'cacheCatalogs':cache_refs})
     (root/'FINAL-RECOVERY-POINTER.json').write_bytes(canonical(asdict(final)))
     return {'jobsCompleted':len(completed),'slot':args.slot,'bulkProductionEnabled':False,
             'cloudCheckpointSaved':True,'budgetAllocationNotRefunded':True}

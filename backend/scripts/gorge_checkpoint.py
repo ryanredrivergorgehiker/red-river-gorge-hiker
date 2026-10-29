@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 import re
 import threading
 import time
+import zlib
 from urllib.parse import quote, urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError
@@ -25,6 +26,11 @@ PREFIX = 'engineering/map-production/'
 MAX_PACK = 64 * 2**20
 MAX_RECEIPT = 2**20
 MAX_METADATA = 16384
+COMPACT_CLAIM = 4096
+COMPACT_RECEIPT = 16384
+MAX_CATALOG = 256 * 1024
+MAX_DECODED_CATALOG = 4 * 2**20
+RECORD_MAGIC = b'RRGH-CHECKPOINT-Z1\n'
 DIMENSIONS = ('storedBytes', 'egressBytes', 'classARequests', 'classBRequests',
               'sourceBytes', 'sourceRequests', 'seconds', 'attempts')
 SHA = re.compile(r'[0-9a-f]{64}\Z')
@@ -36,6 +42,38 @@ def canonical(value):
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def bookkeeping_bounds(plan):
+    profile = plan.get('bookkeepingProfile', 'legacy-v1')
+    if profile == 'legacy-v1':
+        return MAX_RECEIPT, MAX_RECEIPT
+    if profile == 'compact-v2':
+        return COMPACT_CLAIM, COMPACT_RECEIPT
+    raise ValueError('Unknown bookkeeping profile')
+
+
+def encode_record(value, maximum, compact=False, decoded_maximum=MAX_RECEIPT):
+    """Lossless metadata encoding; never truncate provenance to meet a budget."""
+    raw = canonical(value)
+    if len(raw) > decoded_maximum:
+        raise ValueError('Decoded record bound exceeded')
+    encoded = RECORD_MAGIC + zlib.compress(raw, 9) if compact else raw
+    if len(encoded) > maximum:
+        raise ValueError('Encoded record bound exceeded')
+    return encoded
+
+
+def decode_record(raw, decoded_maximum=MAX_RECEIPT):
+    if raw.startswith(RECORD_MAGIC):
+        decoder = zlib.decompressobj()
+        decoded = decoder.decompress(raw[len(RECORD_MAGIC):], decoded_maximum + 1)
+        if len(decoded) > decoded_maximum or not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:
+            raise ValueError('Invalid or oversized compressed record')
+        raw = decoded
+    if len(raw) > decoded_maximum:
+        raise ValueError('Decoded record bound exceeded')
+    return json.loads(raw)
 
 
 def integer(n):
@@ -106,12 +144,13 @@ def validate_plan(plan, now=None):
     if not SHA.fullmatch(plan['sourceSnapshotSHA256']):
         raise ValueError('Source snapshot required')
     slots = plan['slots']
+    claim_bound, receipt_bound = bookkeeping_bounds(plan)
     if not isinstance(slots,list) or not 1<=len(slots)<=10000:
         raise ValueError('Explicit finite slot allocation required')
     totals = dict.fromkeys(DIMENSIONS,0)
     for slot in slots:
         meter = Meter(slot)
-        if slot['classARequests']<2 or slot['storedBytes']<2*MAX_RECEIPT or slot['egressBytes']<2*(MAX_METADATA+1) or slot['seconds']<1:
+        if slot['classARequests']<2 or slot['storedBytes']<claim_bound+receipt_bound or slot['egressBytes']<2*(MAX_METADATA+1) or slot['seconds']<1:
             raise ValueError('Slot must reserve claim and final receipt overhead')
         for k in totals: totals[k] += meter.caps[k]
     if set(plan['limits'])!=set(DIMENSIONS):
@@ -120,7 +159,10 @@ def validate_plan(plan, now=None):
         if v>integer(plan['limits'][k]):
             raise ValueError('Slot allocations exceed cumulative '+k)
     assignments=plan.get('slotJobs',{})
-    completed=set(plan.get('completedJobIDs',[])); counts={}
+    completed=set(plan.get('completedJobIDs',[]))
+    counts=dict(plan.get('priorAttemptCounts',{}))
+    if any(not isinstance(job,str) or integer(count)>2 for job,count in counts.items()):
+        raise ValueError('Invalid inherited attempt history')
     for index,jobs in assignments.items():
         if not index.isdigit() or str(int(index))!=index or int(index)>=len(slots) or len(jobs)!=len(set(jobs)):
             raise ValueError('Invalid slot job assignments')
@@ -142,7 +184,20 @@ def require_live_allowance(plan, evidence, now=None):
     approved = Decimal(str(amount)); reserve = Decimal(str(a.get('reservedWorstCaseUSD')))
     if not approved.is_finite() or not reserve.is_finite() or not 0<reserve<=approved:
         raise ValueError('Invalid funded reservation')
-    if a.get('ongoingStorageAcknowledged') is not True:
+    prepaid_drill = a.get('scope') == 'one-off-recovery-drill'
+    if prepaid_drill:
+        # One explicit incremental allowance includes finite prepaid storage.
+        # This never grants a separate recurring allowance or assumes deletion.
+        if (plan.get('purpose')!='one-off-recovery-drill' or len(plan['slots'])!=2
+                or plan['limits']['sourceBytes'] or plan['limits']['sourceRequests']
+                or plan['limits']['attempts'] or plan.get('slotJobs')
+                or plan['limits']['storedBytes']>16*2**20
+                or plan['limits']['egressBytes']>16*2**20
+                or plan['limits']['classARequests']>20
+                or plan['limits']['classBRequests']>40
+                or approved>Decimal('.05')):
+            raise ValueError('One-off drill allowance cannot fund production')
+    elif a.get('ongoingStorageAcknowledged') is not True:
         raise ValueError('No lifecycle: ongoing storage obligation must be acknowledged')
     rates=evidence.get('planningRates',{})
     r={k:Decimal(str(rates.get(k))) for k in ('storageUSDPerGiBMonth','egressUSDPerGiB','classAUSDPer1000','classBUSDPer1000')}
@@ -156,7 +211,7 @@ def require_live_allowance(plan, evidence, now=None):
     worst=(monthly*months+c['egressBytes']/gib*r['egressUSDPerGiB']+
            Decimal(c['classARequests'])/1000*r['classAUSDPer1000']+
            Decimal(c['classBRequests'])/1000*r['classBUSDPer1000'])*Decimal('1.2')
-    if reserve<worst or Decimal(str(a.get('approvedRecurringStorageUSDPerMonth',0)))<monthly*Decimal('1.2'):
+    if reserve<worst or (not prepaid_drill and Decimal(str(a.get('approvedRecurringStorageUSDPerMonth',0)))<monthly*Decimal('1.2')):
         raise ValueError('Reservation omits capped usage or continuing storage')
     if evidence.get('github',{}).get('hardCeilingUSD')!=350 or evidence['github'].get('stopAtLimitVerified') is not True:
         raise ValueError('Actions stop required')
@@ -260,13 +315,17 @@ class Slot:
         expiry=datetime.fromisoformat(plan['expiresAt'].replace('Z','+00:00'))
         self.meter.deadline=min(self.meter.deadline,time.monotonic()+(expiry-datetime.now(timezone.utc)).total_seconds())
         self.prefix=PREFIX+'plans/'+digest(canonical(plan))+'/'
+        self.claim_bound, self.receipt_bound = bookkeeping_bounds(plan)
+        self.compact = plan.get('bookkeepingProfile') == 'compact-v2'
+        if not isinstance(owner, str) or len(owner.encode()) > 256:
+            raise ValueError('Bounded owner identifier required')
         claim=canonical({'format':'rrgh-slot-claim-v1','planSHA256':digest(canonical(plan)),
                          'slot':index,'owner':owner,'allocation':plan['slots'][index]})
-        if len(claim)>MAX_RECEIPT: raise ValueError('Oversized claim')
-        self.meter.reserve(classARequests=1,storedBytes=MAX_RECEIPT,egressBytes=MAX_METADATA+1)
+        if len(claim)>self.claim_bound: raise ValueError('Oversized claim')
+        # Reserve both writes atomically BEFORE the first network operation.
+        self.meter.reserve(classARequests=2,storedBytes=self.claim_bound+self.receipt_bound,
+                           egressBytes=2*(MAX_METADATA+1))
         self.claim=store.create(self.prefix+f'slots/{index:05d}/claim.json',claim)
-        # Conservatively keep MAX_RECEIPT reserved for both claim and receipt.
-        self.meter.reserve(classARequests=1,storedBytes=MAX_RECEIPT,egressBytes=MAX_METADATA+1)
 
     def put(self, raw, kind='packs'):
         if self.closed or kind not in ('packs','outputs','indexes') or not 0<len(raw)<=MAX_PACK:
@@ -288,9 +347,9 @@ class Slot:
     def commit_job(self, job_id, result):
         if self.closed or not re.fullmatch(r'[a-z0-9-]+',job_id):raise ValueError('Invalid job receipt')
         if job_id not in self.plan.get('slotJobs',{}).get(str(self.index),[]):raise ValueError('Unallocated job')
-        raw=canonical({'format':'rrgh-checkpoint-job-v1','job':job_id,'slot':self.index,
-                       'planSHA256':digest(canonical(self.plan)),'result':result})
-        if len(raw)>MAX_RECEIPT:raise ValueError('Job receipt too large')
+        raw=encode_record({'format':'rrgh-checkpoint-job-v1','job':job_id,'slot':self.index,
+                       'planSHA256':digest(canonical(self.plan)),'result':result},
+                       self.receipt_bound, self.compact)
         self.meter.reserve(classARequests=1,storedBytes=len(raw),egressBytes=MAX_METADATA+1)
         return self.store.create(self.prefix+f'slots/{self.index:05d}/jobs/{job_id}.json',raw)
 
@@ -301,7 +360,7 @@ class Slot:
         self.meter.reserve(classBRequests=1,egressBytes=MAX_METADATA+1)
         ref,raw=self.store.receipt(self.prefix+f'slots/{prior_index:05d}/jobs/{job_id}.json',
             lambda size:self.meter.reserve(classBRequests=1,egressBytes=size+1))
-        obj=json.loads(raw)
+        obj=decode_record(raw)
         if obj.get('format')!='rrgh-checkpoint-job-v1' or obj.get('job')!=job_id or obj.get('slot')!=prior_index or obj.get('planSHA256')!=digest(canonical(self.plan)):
             raise ValueError('Recovered job receipt identity mismatch')
         return ref,obj
@@ -312,7 +371,7 @@ class Slot:
         self.meter.reserve(classBRequests=1,egressBytes=MAX_METADATA+1)
         ref,raw=self.store.receipt(self.prefix+f'slots/{prior_index:05d}/receipt.json',
             lambda size:self.meter.reserve(classBRequests=1,egressBytes=size+1))
-        obj=json.loads(raw)
+        obj=decode_record(raw)
         if obj.get('format')!='rrgh-slot-receipt-v1' or obj.get('slot')!=prior_index or obj.get('planSHA256')!=digest(canonical(self.plan)):
             raise ValueError('Recovered receipt identity mismatch')
         claim=Ref(**obj['claim'])
@@ -322,13 +381,21 @@ class Slot:
 
     def finish(self, result):
         if self.closed: raise ValueError('Slot is closed')
-        raw=canonical({'format':'rrgh-slot-receipt-v1','claim':asdict(self.claim),
+        raw=encode_record({'format':'rrgh-slot-receipt-v1','claim':asdict(self.claim),
                        'planSHA256':digest(canonical(self.plan)),'slot':self.index,
                        'nonrefundableAllocation':self.plan['slots'][self.index],
-                       'used':self.meter.used,'result':result})
-        if len(raw)>MAX_RECEIPT: raise ValueError('Receipt bound exceeded')
+                       'used':self.meter.used,'result':result},self.receipt_bound,self.compact)
         self.closed=True  # Any failure is ambiguous; never repeat this write.
         return self.store.create(self.prefix+f'slots/{self.index:05d}/receipt.json',raw)
+
+    def put_catalog(self, value):
+        raw = encode_record(value, MAX_CATALOG, True, MAX_DECODED_CATALOG)
+        return self.put(raw, 'indexes')
+
+    def get_catalog(self, ref):
+        if ref.bytes > MAX_CATALOG:
+            raise ValueError('Catalog exceeds bound')
+        return decode_record(self.get(ref), MAX_DECODED_CATALOG)
 
 
 def pack_delta(root, entries, known_hashes=(), maximum=MAX_PACK):
