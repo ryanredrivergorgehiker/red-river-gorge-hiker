@@ -74,3 +74,53 @@ Official protocol references:
 - https://docs.cloud.google.com/storage/docs/performing-resumable-uploads
 - https://docs.cloud.google.com/storage/docs/resumable-uploads
 - https://docs.cloud.google.com/iam/docs/workload-identity-federation
+
+## Connection audit and implemented private input, later October 29
+
+The existing GitHub connection was freshly verified against the authenticated
+account and repository: it reports admin, maintain and push access. No connector
+reauthentication is needed. Its exposed API explicitly excludes Actions-secret
+operations, and there is no authenticated GitHub CLI in the seed runtime. Account
+permissions and available connector operations are separate capabilities.
+
+The earlier assumption that Library could directly issue a runner-readable seed
+URL was incomplete: current materialization returns a workspace path and no URL.
+Browser sign-in alone was therefore not a complete transfer solution.
+
+The existing private Drive connector DOES return provider-signed, expiring,
+read-only single-file download references. A 7,126-byte saved report was fetched
+through such a reference with HTTP200 and its exact SHA256, without additional
+authentication. No bearer URL or signature was logged or published.
+
+Whole-seed upload was rejected before action invocation by a 100MiB connector
+limit. The original ZIP was then split into four transport parts (80MiB each
+for the first three; 57,942,303 bytes for the fourth). All four were saved using
+the existing Drive connection and private engineering folder. Remote size and
+owner-only permission metadata match. The original complete ZIP remains intact;
+its SHA256 was preserved during splitting. No map processing was repeated.
+
+`fetch_gorge_private_seed.py` now consumes a single Actions secret named
+`RRGH_STAGE_SEED_TRANSFER`: a JSON descriptor of four freshly issued private
+references. It requires the exact existing producer workflow context, validates
+the host, read-only scope and expiry, bounds each response, pins every part hash
+and the original whole-seed hash, and atomically publishes only a complete
+verified file in private runner temporary storage. No redirects or retries;
+errors suppress credential-bearing URLs. Six focused offline tests passed.
+
+The descriptor must be issued immediately before the run, passed only through
+the Actions-secret UI/API and removed after use. Do not save it in reports,
+source, workflow arguments, artifacts or logs. The existing WIF mapping uses
+repository ID plus ref; no identity or Google IAM change is required.
+
+The exact missing account operation is creation of that private Actions secret
+in this repository (REST equivalent: create/update repository Actions secret).
+The existing Cloud Browser remains signed out; its last visible result is
+incorrect credentials. An owner-completed sign-in in that browser enables the
+secret-settings operation, while the existing connector continues all source
+and CI work. No new authentication was requested during this audit.
+
+GCS seed acceptance, accepted Base vector/weather validation and the twelve-job
+run remain pending. GCS object operations and stage spending remain zero;
+$0.35 unused and $7.65 locked. Remote part hashes will be checked by the receiver;
+Drive metadata alone is not claimed as remote SHA validation. No production
+workflow was changed or dispatched by this source-only addition.
