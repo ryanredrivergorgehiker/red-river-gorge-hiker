@@ -24,6 +24,9 @@ def fixture():
                    'publicAccessPrevention': 'enforced'},
         'runner': {'repositoryVisibility': 'public', 'label': 'ubuntu-latest',
                    'artifactUploads': False, 'actionsCache': False},
+        'cacheStrategy': {'mode':'full','retainedCacheBytes':564951223050,
+                          'selectiveRecoveryBytes':0,'checkpointOverheadBytes':0,
+                          'selectionEvidence':'fixture-only'},
         'retentionLiabilityAcknowledged': True,
         'acceptedPrivateInputsVerified': True,
         'implementationEvidence': {k: 'fixture-only' for k in REQUIRED_CONTROLS},
@@ -43,7 +46,7 @@ class CostGateTests(unittest.TestCase):
 
     def test_stale_or_future_evidence_fails(self):
         for t in ['2026-10-27T19:00:00+00:00','2026-10-30T19:00:00+00:00']:
-            f,c=fixture();c['bucket']['observedAt']=t
+            f,c=fixture();c['githubBilling']['observedAt']=t
             self.assertFalse(assess(f,c,NOW)['fullProductionPreflightPassed'])
 
     def test_five_and_fifteen_dollar_headroom_fail_full_cache_scenario(self):
@@ -80,6 +83,22 @@ class CostGateTests(unittest.TestCase):
         r=assess(f,c,NOW)
         self.assertFalse(r['fullProductionPreflightPassed'])
         self.assertTrue(any('storage cannot' in b for b in r['blockers']))
+
+    def test_selective_cache_does_not_require_entire_source_estimate(self):
+        f,c=fixture();c['cacheStrategy']={'mode':'selective','retainedCacheBytes':2**30,
+            'selectiveRecoveryBytes':2**30,'checkpointOverheadBytes':2**30,
+            'receiptObjectCount':5000,'selectionEvidence':'fixture-only'}
+        c['proposedLimits']['storedBytes']=24*2**30
+        self.assertTrue(assess(f,c,NOW)['fullProductionPreflightPassed'])
+
+    def test_credit_does_not_fill_missing_allowance(self):
+        f,c=fixture();c['gcsBilling']['approvedRemainingUSD']=None
+        c['gcsBilling']['trialCreditUSD']=300.00
+        self.assertFalse(assess(f,c,NOW)['fullProductionPreflightPassed'])
+
+    def test_selective_recovery_must_be_budgeted(self):
+        f,c=fixture();c['cacheStrategy']['selectiveRecoveryBytes']=10*2**30
+        self.assertFalse(assess(f,c,NOW)['fullProductionPreflightPassed'])
 
     def test_existing_reservations_count_against_headroom(self):
         f,c=fixture();c['gcsBilling']['alreadyReservedUSD']=5

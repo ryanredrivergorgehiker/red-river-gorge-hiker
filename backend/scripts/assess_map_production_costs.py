@@ -85,7 +85,7 @@ def assess(forecast, controls, now=None):
         raise ValueError('At least 20 percent contingency required')
     reserved_cost = cap_cost * (1 + margin)
     blockers = []
-    for section in ['githubBilling', 'gcsBilling', 'bucket']:
+    for section in ['githubBilling', 'gcsBilling']:
         evidence = controls.get(section, {})
         if not evidence.get('evidenceReference') or not recent(evidence.get('observedAt'), now):
             blockers.append(section + ': current evidence missing or older than 24 hours')
@@ -107,7 +107,7 @@ def assess(forecast, controls, now=None):
     bucket = controls.get('bucket', {})
     if bucket.get('name') != 'rrgh-nonproduction-protected-packages' or bucket.get('storageClass') != 'STANDARD':
         blockers.append('Existing bucket and Standard storage class not verified')
-    if not bucket.get('location') or bucket.get('rateProfileVerified') is not True:
+    if not bucket.get('evidenceReference') or not bucket.get('location') or bucket.get('rateProfileVerified') is not True:
         blockers.append('Bucket location/rate profile not verified')
     if bucket.get('uniformAccessVerified') is not True or bucket.get('publicAccessPrevention') != 'enforced':
         blockers.append('Existing bucket protections not verified')
@@ -119,11 +119,23 @@ def assess(forecast, controls, now=None):
             blockers.append('Production-scale control unverified: ' + name)
     if controls.get('acceptedPrivateInputsVerified') is not True:
         blockers.append('Accepted private vector/weather input recovery incomplete')
-    if stored < source + 2 * output:
-        blockers.append('Declared storage cannot retain the forecast cache plus outputs and verification copy')
+    strategy = controls.get('cacheStrategy', {})
+    retained = number(strategy.get('retainedCacheBytes', source), 'retained cache bytes')
+    overhead = number(strategy.get('checkpointOverheadBytes', 0), 'checkpoint overhead')
+    recovery = number(strategy.get('selectiveRecoveryBytes', retained), 'selective recovery bytes')
+    if strategy.get('mode') not in ('selective', 'full') or not strategy.get('selectionEvidence'):
+        blockers.append('Explicit verified cache-retention selection required')
+    if retained > source or (strategy.get('mode') == 'full' and retained != source):
+        blockers.append('Cache-retention declaration contradicts the source forecast')
+    if stored < retained + 2 * output + overhead:
+        blockers.append('Declared storage cannot retain selected caches plus outputs and checkpoint overhead')
+    if read < output + recovery:
+        blockers.append('Egress allowance cannot cover package verification and selective recovery')
     if read < output:
         blockers.append('Egress allowance cannot cover one complete package verification read')
-    if class_a < packed_count + 34750 + 244:
+    selected_packs = math.ceil(retained / (64 * 2**20))
+    receipt_count = number(strategy.get('receiptObjectCount', 34750), 'receipt objects')
+    if class_a < selected_packs + receipt_count + 244:
         blockers.append('Class A ceiling omits packed cache, job receipts, or package/checkpoint objects')
     return {
         'format': 'rrgh-production-cost-gate-v1',
@@ -131,12 +143,14 @@ def assess(forecast, controls, now=None):
         'fullProductionPreflightPassed': not blockers,
         'productionDispatched': False,
         'scenarios': scenarios,
+        'selectedRetainedCacheBytes': int(retained),
+        'selectiveRecoveryBytes': int(recovery),
         'proposedWorstCaseGCSUSD': float(cap_cost),
         'proposedGCSReservationWithContingencyUSD': float(reserved_cost),
         'blockers': blockers,
         'notes': ['No account balance, rate location, deletion, lifecycle, free tier or credit is assumed.',
                   'Packed-object count is a lower bound; shard boundaries and partial packs increase it.',
-                  'This assessor is not yet wired into a durable production executor.',
+                  'Checkpoint slots and guarded workers require separately verified live integration.',
                   'Passing does not validate imagery, authorize deployment or establish a regional release.'],
     }
 
