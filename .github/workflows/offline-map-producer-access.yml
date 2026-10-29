@@ -51,4 +51,83 @@ jobs:
           fi
           echo 'PASS: Base metadata permitted; signing secret denied; no download/upload/deploy.'
 # No Actions artifact, cache, Firebase, deployment or GCS write.
-
+  bounded-stage:
+    needs: read-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authenticate restricted producer identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Create one small immutable object and verify overwrite protection
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="gs://rrgh-nonproduction-protected-packages/engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
+          printf 'RRGH isolated producer checkpoint; commit=%s\n' "$GITHUB_SHA" > checkpoint.txt
+          printf 'RRGH replacement must be denied; commit=%s\n' "$GITHUB_SHA" > replacement.txt
+          [[ "$(wc -c < checkpoint.txt)" -lt 512 ]] || { echo 'BLOCK: payload exceeds 512-byte test cap'; exit 11; }
+          gcloud storage cp checkpoint.txt "$DEST" --if-generation-match=0 --quiet
+          gcloud storage objects describe "$DEST" --format='value(name,size,generation)' > object-metadata.txt
+          [[ -s object-metadata.txt ]] || { echo 'BLOCK: metadata is missing'; exit 12; }
+          gcloud storage cp "$DEST" immediate-check.txt --quiet
+          cmp -s checkpoint.txt immediate-check.txt || { echo 'BLOCK: uploaded bytes mismatch'; exit 13; }
+          if gcloud storage cp replacement.txt "$DEST" --if-generation-match=0 --quiet 2>precondition.err; then
+            echo 'BLOCK: existing object unexpectedly accepted create-if-absent overwrite' >&2
+            exit 14
+          fi
+          grep -Eqi '412|Precondition|conditionNotMet' precondition.err || { echo 'BLOCK: create-if-absent failed for unexpected reason' >&2; exit 15; }
+          if gcloud storage cp replacement.txt "$DEST" --quiet 2>overwrite.err; then
+            echo 'BLOCK: producer can overwrite its existing staged object' >&2
+            exit 16
+          fi
+          grep -Eqi '403|PERMISSION_DENIED|AccessDenied|Permission denied' overwrite.err || { echo 'BLOCK: no explicit IAM overwrite denial' >&2; exit 17; }
+          gcloud storage cp "$DEST" final-check.txt --quiet
+          cmp -s checkpoint.txt final-check.txt || { echo 'BLOCK: original staged content changed' >&2; exit 18; }
+          echo "PASS: unique create-only staged checkpoint; condition 412; overwrite IAM 403; bytes intact; sha256=$(sha256sum checkpoint.txt | cut -d' ' -f1)"
+  independent-recovery:
+    needs: bounded-stage
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reauthenticate restricted producer identity on fresh runner
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Recover checkpoint without local artifacts or a persistent credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="gs://rrgh-nonproduction-protected-packages/engineering/map-production/ci-checkpoints/$GITHUB_SHA/checkpoint.txt"
+          printf 'RRGH isolated producer checkpoint; commit=%s\n' "$GITHUB_SHA" > expected.txt
+          gcloud storage cp "$DEST" recovered.txt --quiet
+          cmp -s expected.txt recovered.txt || { echo 'BLOCK: independent checkpoint recovery hash/bytes mismatch'; exit 21; }
+          gcloud storage objects describe "$DEST" --format='value(name,size,generation)' >/dev/null
+          ERROR_FILE="$(mktemp)"
+          trap 'rm -f "$ERROR_FILE"' EXIT
+          if gcloud storage objects describe gs://rrgh-nonproduction-protected-packages/backend-secrets/offline-lease/keyring-v1.json --format='value(name)' >/dev/null 2>"$ERROR_FILE"; then
+            echo 'BLOCK: signing secret unexpectedly accessible during independent recovery' >&2
+            exit 22
+          fi
+          grep -Eq 'HTTPError 403:|PERMISSION_DENIED' "$ERROR_FILE" || { echo 'BLOCK: missing explicit signing-secret permission denial' >&2; exit 23; }
+          echo "PASS: independent runner restored identical checkpoint bytes; signing secret explicitly denied; sha256=$(sha256sum recovered.txt | cut -d' ' -f1)"
+# Bounded staging exercise only: <512 bytes uploaded; no delete, listing, Firebase deploy or package publication.
