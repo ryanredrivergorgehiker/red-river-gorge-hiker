@@ -159,13 +159,19 @@ def run_stage(plan,evidence,region,root,store,opener):
     slot=Slot(store,plan,0,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
     try:
         initial,proof,roots=bootstrap(slot,plan,evidence,handoff,root)
-    except Exception:
+    except Exception as error:
         if not slot.closed:
             refs=[]
             for p in (root/'sessions').glob('*.json') if (root/'sessions').exists() else []:
                 j=json.loads(p.read_bytes())
                 if j.get('uploadedRef'):refs.append({'ref':j['uploadedRef'],'accepted':j.get('accepted') is True})
-            slot.finish({'status':'failed','phase':'bootstrap','preservedIngress':refs,'gcs':opener.summary()})
+            from gorge_stage_inputs import BaseValidationError
+            diagnostic=({'code':error.code,'evidence':error.evidence}
+                        if isinstance(error,BaseValidationError)
+                        else {'code':'bootstrap-unclassified','errorClass':type(error).__name__})
+            slot.finish({'status':'failed','phase':'bootstrap','preservedIngress':refs,
+                         'diagnostic':diagnostic,'gcs':opener.summary()})
+            print(json.dumps({'bootstrapDiagnostic':diagnostic},sort_keys=True),flush=True)
         raise
     signal('bootstrap_ready')
     # Bind runtime proof to the immutable bootstrap receipt without changing the

@@ -13,7 +13,9 @@ from gorge_checkpoint import (BUCKET, Ref, canonical, digest, integer,
                               relative_path, require_live_allowance)
 
 BASE_KEY='packages/offline/gorge-base/2026.10.08.1/gorge-base.rrghpkg'
-BASE_SHA='3204fd6294be8bbee177ee33d35ef39e45d42843f228e196fc3e30404db175fe'
+# Deployed catalog authority: runs 37793475399 and 37823038637.
+# 3204fd... was a superseded preflight build, not the protected object.
+BASE_SHA='92542003f2d6d11b9b1c9fa04ec44284c5ea492df5d30bb95079a06969014da9'
 BASE_BYTES=140984320
 VECTORS={'hydro-flowline','hydro-waterbody','local-roads','forest-service-trails',
  'state-park-trails','forest-service-roads','forest-ownership','wilderness',

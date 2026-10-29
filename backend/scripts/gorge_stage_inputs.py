@@ -25,6 +25,15 @@ from inspect_gorge_stage_handoff import inspect_handoff
 SHARED_NEW_CAP=32*2**20
 PROOF_CAP=4*2**20
 
+class BaseValidationError(ValueError):
+    """Finite diagnostic codes; never include protected bytes or credentials."""
+    def __init__(self, code, evidence=None):
+        if code not in {'base-metadata', 'base-generation', 'base-length', 'base-sha256', 'base-md5'}:
+            raise ValueError('Unknown Base diagnostic')
+        self.code=code
+        self.evidence=evidence or {}
+        super().__init__(code)
+
 
 def private_write(path, raw):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
@@ -74,11 +83,15 @@ def base_read(slot, destination):
     raw,_=get(endpoint,MAX_METADATA);m=json.loads(raw);generation=str(m.get('generation',''))
     if (m.get('bucket')!=BUCKET or m.get('name')!=BASE_KEY or str(m.get('size'))!=str(BASE_BYTES)
             or not re.fullmatch('[1-9][0-9]*',generation)):
-        raise ValueError('Accepted Base metadata changed')
+        raise BaseValidationError('base-metadata')
     raw,h=get(endpoint+'?'+urlencode({'alt':'media','generation':generation,'ifGenerationMatch':generation}),BASE_BYTES)
-    if (h.get('x-goog-generation')!=generation or len(raw)!=BASE_BYTES or digest(raw)!=BASE_SHA
-            or base64.b64encode(hashlib.md5(raw,usedforsecurity=False).digest()).decode()!=m.get('md5Hash')):
-        raise ValueError('Accepted Base generation/hash mismatch')
+    audit={'generation':generation,'expectedBytes':BASE_BYTES,'receivedBytes':len(raw),
+           'expectedSHA256':BASE_SHA,'receivedSHA256':digest(raw)}
+    if h.get('x-goog-generation')!=generation:raise BaseValidationError('base-generation',audit)
+    if len(raw)!=BASE_BYTES:raise BaseValidationError('base-length',audit)
+    if audit['receivedSHA256']!=BASE_SHA:raise BaseValidationError('base-sha256',audit)
+    if base64.b64encode(hashlib.md5(raw,usedforsecurity=False).digest()).decode()!=m.get('md5Hash'):
+        raise BaseValidationError('base-md5',audit)
     private_write(destination,raw)
     return {'bucket':BUCKET,'key':BASE_KEY,'generation':generation,'bytes':BASE_BYTES,'sha256':BASE_SHA}
 
