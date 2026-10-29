@@ -1,4 +1,4 @@
-name: RRGH authorized twelve-job private production stage
+name: RRGH reconcile the reserved private input gate
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
@@ -10,84 +10,88 @@ concurrency:
   group: rrgh-map-producer-auth-preflight
   cancel-in-progress: false
 jobs:
-  bounded-stage:
+  reserved-reconciliation:
     if: >-
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute the released 35-cent twelve-job stage 20261029'
+      github.event.head_commit.message == 'Lane20: reconcile reserved input gate without raster retry 20261029'
     runs-on: ubuntu-latest
-    timeout-minutes: 160
-    outputs:
-      worker_receipt: ${{ steps.producer.outputs.worker_receipt }}
+    timeout-minutes: 6
     steps:
-      - name: Checkout exact reviewed stage source without persisted credentials
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: f0a00243b0a931a54e5f1eb5f152113f154c896c
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Verify original stage allocation
+        run: python3 backend/scripts/gorge_stage_coordinator.py --phase plan
+      - uses: google-github-actions/auth@v3
         with:
-          python-version: '3.12'
-      - name: Verify finite release and exact source before authentication
-        run: python backend/scripts/gorge_stage_coordinator.py --phase plan
-      - name: Receive exact private seed without exposing references
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Use only the previously unused recovery slot for bounded receipt and Base inspection
         env:
-          RRGH_STAGE_SEED_TRANSFER: ${{ secrets.RRGH_STAGE_SEED_TRANSFER }}
+          PYTHONPATH: backend/scripts
         run: |
-          umask 077
-          mkdir -p "$RUNNER_TEMP/rrgh-private"
-          python backend/scripts/fetch_gorge_private_seed.py --destination "$RUNNER_TEMP/rrgh-private/seed.zip"
-      - name: Install pinned processing dependencies
-        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
-      - name: Authenticate existing restricted direct WIF identity
-        uses: google-github-actions/auth@v3
-        with:
-          project_id: rrgh-nonproduction
-          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
-          create_credentials_file: true
-          export_environment_variables: true
-      - name: Set up existing Cloud SDK access
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: rrgh-nonproduction
-      - name: Stage private inputs then execute at most the twelve approved jobs
-        id: producer
-        run: python backend/scripts/gorge_stage_coordinator.py --phase stage
-  independent-recovery:
-    needs: bounded-stage
-    if: >-
-      always() && github.run_attempt == 1 &&
-      needs.bounded-stage.outputs.worker_receipt == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Fresh checkout of exact reviewed source
-        uses: actions/checkout@v4
-        with:
-          ref: f0a00243b0a931a54e5f1eb5f152113f154c896c
-          persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Verify unchanged finite recovery allocation
-        run: python backend/scripts/gorge_stage_coordinator.py --phase plan
-      - name: Install pinned validation dependencies
-        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
-      - name: Reauthenticate the same restricted identity
-        uses: google-github-actions/auth@v3
-        with:
-          project_id: rrgh-nonproduction
-          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
-          create_credentials_file: true
-          export_environment_variables: true
-      - name: Set up existing Cloud SDK access
-        uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: rrgh-nonproduction
-      - name: Verify exact-generation cache and output recovery on fresh runner
-        run: python backend/scripts/gorge_stage_coordinator.py --phase recovery
-# No dispatch, rerun, artifacts, Actions cache, deployment, IAM, bucket change or package replacement.
+          python3 - <<'PY'
+          import json, tarfile, io, base64, hashlib, re
+          from dataclasses import asdict
+          from urllib.parse import quote, urlencode
+          from urllib.request import Request
+          from gorge_checkpoint import GCS, Slot, canonical, BUCKET, MAX_METADATA
+          from gorge_stage_coordinator import configuration, CountedOpener, token
+          from gorge_stage_preflight import BASE_KEY, BASE_BYTES, BASE_SHA
+          from fetch_gorge_private_seed import CONTEXT
+          import os
+          if any(os.environ.get(k)!=v for k,v in CONTEXT.items()): raise ValueError('Workflow context')
+          plan,evidence,region=configuration()
+          opener=CountedOpener();store=GCS(plan,evidence,token,opener)
+          slot=Slot(store,plan,2,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
+          ref,receipt=slot.recover_receipt(0)
+          result={'priorBootstrapReceipt':asdict(ref),'priorBootstrap':receipt['result'],'rasterAttempts':0}
+          endpoint='https://storage.googleapis.com/storage/v1/b/'+BUCKET+'/o/'+quote(BASE_KEY,safe='')
+          def request(url,maximum,headers=None):
+           slot.meter.reserve(classBRequests=1,egressBytes=maximum+1)
+           req=Request(url,headers={'Authorization':'Bearer '+token(),'Accept-Encoding':'identity',**(headers or {})})
+           with opener(req,timeout=60) as r:
+            raw=r.read(maximum+1)
+            if len(raw)>maximum or r.geturl()!=url:raise ValueError('Bounded response')
+            return raw,{k.lower():v for k,v in r.headers.items()},r.status
+          meta=json.loads(request(endpoint,MAX_METADATA)[0])
+          size=int(meta['size']);generation=str(meta['generation'])
+          if meta['bucket']!=BUCKET or meta['name']!=BASE_KEY or not re.fullmatch('[1-9][0-9]*',generation):raise ValueError('Base metadata')
+          result['baseMetadata']={'bytes':size,'expectedBytes':BASE_BYTES,'generation':generation,'md5Hash':meta.get('md5Hash'),'crc32c':meta.get('crc32c')}
+          url=endpoint+'?'+urlencode({'alt':'media','generation':generation,'ifGenerationMatch':generation})
+          windows=[(0,min(size,65536)),(max(0,size-2*2**20),min(size,2*2**20))]
+          manifests=[]
+          for start,length in windows:
+           raw,h,status=request(url,length,{'Range':f'bytes={start}-{start+length-1}'})
+           if status!=206 or len(raw)!=length or h.get('x-goog-generation')!=generation:raise ValueError('Base range identity')
+           if h.get('content-range')!=f'bytes {start}-{start+length-1}/{size}':raise ValueError('Base range extent')
+           for local in range((-start)%512,len(raw)-512+1,512):
+            block=raw[local:local+512]
+            try:info=tarfile.TarInfo.frombuf(block,'utf-8','strict')
+            except (tarfile.TarError,ValueError,UnicodeError):continue
+            if info.name in ('NATIVE-MAP.json','PACKAGE-MANIFEST.json','MANIFEST.json'):
+             data_offset=start+local+512
+             if not info.isfile() or not 0<info.size<=4*2**20:raise ValueError('Manifest bound')
+             if local+512+info.size<=len(raw):body=raw[local+512:local+512+info.size]
+             else:
+              body,hh,ss=request(url,info.size,{'Range':f'bytes={data_offset}-{data_offset+info.size-1}'})
+              if ss!=206 or hh.get('x-goog-generation')!=generation or len(body)!=info.size:raise ValueError('Manifest range')
+             m=json.loads(body)
+             manifests.append({'name':info.name,'bytes':info.size,'sha256':hashlib.sha256(body).hexdigest(),'offset':data_offset,
+               'schemaVersion':m.get('schemaVersion'),'packageID':m.get('packageID'),'packageVersion':m.get('packageVersion'),
+               'keys':list(m),'vectorIDs':[v.get('id') for v in m.get('vectors',[])],
+               'weatherPresent':bool(m.get('weatherManifest')),'staticAssetCount':len(m.get('staticAssets',[]))})
+          result['manifestMetadata']=manifests;result['gcsBeforeFinalReceipt']=opener.summary()
+          out=slot.finish(result)
+          print(json.dumps({'reconciliation':result,'reconciliationRef':asdict(out),'gcsIncludingFinalReceipt':opener.summary()},sort_keys=True))
+          PY
+# No seed upload, source request, raster attempt, retry, artifact or deployment.
