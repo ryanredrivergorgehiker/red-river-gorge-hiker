@@ -7,7 +7,7 @@ import unittest
 import zlib
 from pathlib import Path
 from gorge_checkpoint import (Slot,Ref,canonical,digest,encode_record,decode_record,bookkeeping_bounds,
-    COMPACT_CLAIM,COMPACT_RECEIPT,MAX_RECEIPT,MAX_CATALOG,RECORD_MAGIC,validate_plan)
+    COMPACT_CLAIM,COMPACT_RECEIPT,MAX_RECEIPT,MAX_CATALOG,RECORD_MAGIC,validate_plan,recover_members)
 from test_gorge_checkpoint import DiskStore,plan
 from forecast_gorge_checkpoint_campaign import (build_graph,capacity,allocate_exact,selected_cache,
     PROFILES,BOUNDS,cost,GIB,validate_envelope)
@@ -75,6 +75,37 @@ class CompactTests(unittest.TestCase):
         self.p['priorAttemptCounts']['pending']=2
         with self.assertRaises(ValueError):validate_plan(self.p)
 
+class RangeRecoveryTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name);self.p=plan()
+        self.store=DiskStore(self.root/'objects');self.writer=Slot(self.store,self.p,0,'writer')
+        ref=self.writer.put(b'aaaaBBBBccccdddd')
+        self.manifest=[{'ref':asdict(ref),'members':[{'path':str(i),'offset':i*4,'bytes':4,'sha256':digest(raw)} for i,raw in enumerate([b'aaaa',b'BBBB',b'cccc',b'dddd'])]}]
+        self.reader=Slot(DiskStore(self.store.root),self.p,1,'reader')
+    def tearDown(self):self.tmp.cleanup()
+    def test_contiguous_members_one_read_with_every_hash_preserved(self):
+        recover_members(self.reader,self.manifest,{'1','2','3'},self.root/'out')
+        self.assertEqual(len(self.reader.store.reads),1);self.assertEqual(self.reader.store.reads[0][1:],(4,12))
+        self.assertEqual((self.root/'out/2').read_bytes(),b'cccc')
+    def test_unselected_gap_is_never_downloaded(self):
+        recover_members(self.reader,self.manifest,{'0','2'},self.root/'out')
+        self.assertEqual([r[1:] for r in self.reader.store.reads],[(0,4),(8,4)])
+    def test_read_and_probe_limits_fail_before_io_or_partial_publication(self):
+        self.reader.meter.caps['classBRequests']=1
+        with self.assertRaises(ValueError):recover_members(self.reader,self.manifest,{'0','2'},self.root/'out')
+        self.assertEqual(self.reader.store.reads,[]);self.assertFalse((self.root/'out.partial').exists())
+        self.reader.meter.caps['classBRequests']=20
+        self.reader.meter.caps['egressBytes']=self.reader.meter.used['egressBytes']+8
+        with self.assertRaises(ValueError):recover_members(self.reader,self.manifest,{'0','2'},self.root/'out')
+        self.assertEqual(self.reader.store.reads,[])
+    def test_corrupt_selected_hash_and_overlap_do_not_publish(self):
+        bad=copy.deepcopy(self.manifest);bad[0]['members'][1]['sha256']='0'*64
+        with self.assertRaises(ValueError):recover_members(self.reader,bad,{'0','1'},self.root/'bad')
+        self.assertFalse((self.root/'bad').exists())
+        bad=copy.deepcopy(self.manifest);bad[0]['members'][1]['offset']=2
+        count=len(self.reader.store.reads)
+        with self.assertRaises(ValueError):recover_members(self.reader,bad,{'0'},self.root/'overlap')
+        self.assertEqual(len(self.reader.store.reads),count)
 class ForecastTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

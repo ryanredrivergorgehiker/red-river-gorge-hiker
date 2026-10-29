@@ -17,7 +17,10 @@ SHA256 and GCS MD5 cover the stored bytes. Decoding rejects truncation, trailing
 streams and expansion above 1 MiB. All original provenance and member hashes
 survive; exceeding a bound stops instead of truncating evidence. Larger cache
 member catalogs use separate generation/hash-pinned objects: at most 256 KiB
-encoded and 4 MiB decoded. Catalog writes/reads are charged to the same slot.
+encoded and 4 MiB decoded. Catalog writes/reads are charged to the same slot. Contiguous selected members from the same exact
+generation share one bounded range read; gaps are never fetched. Each member
+still receives its own SHA256 check before the destination is published.
+Read counts and the extra bounded-reader probe byte are checked before I/O.
 
 `priorAttemptCounts` carries previous attempts into the two-attempt limit.
 Claims remain immutable and nonrefundable, including ambiguous failures. A
@@ -25,8 +28,8 @@ new plan is not permission to reset previous campaign usage. The offline
 forecaster checks category totals, source/rescue allocations, operation bounds,
 recomputed costs and the absence of approval/dispatch flags.
 
-The changed adapter passed 21 affected regression tests; 15 focused compact
-record/forecast tests passed, followed by one targeted check of the added
+The changed adapter passed 21 affected regression tests; 19 focused compact
+record/forecast/range tests passed, followed by one targeted check of the added
 cumulative-envelope assertions. Twenty saved real job receipts round-trip
 without losing a field: 105,469 plain bytes become 32,315 encoded bytes;
 largest encoded record 2,949 bytes. No imagery was rendered for this check.
@@ -89,7 +92,9 @@ not stop retained-storage charges; no lifecycle or deletion is assumed.
 
 The private plan names twelve unfinished jobs: two adjacent source windows for
 each of five raster layers, plus two overviews whose children already exist in
-R4. Its explicit reusable selection is 4,457 blocks / 292,093,952 bytes. It also
+R4. Its explicit reusable selection is 4,457 blocks / 292,093,952 bytes. Contiguous packing needs five bounded
+range reads rather than 4,457, with zero overfetch and every member hash retained.
+This is an exact metadata layout result, not another live recovery test. It also
 requires measured intake of the accepted 13 vector layers and weather members.
 Proposed limits: 1 GiB stored, 1 GiB read, 200 A / 500 B, 2 GiB official-source
 transfer, 2,000 source requests, twelve attempts, three hours and one worker.

@@ -431,11 +431,10 @@ def pack_delta(root, entries, known_hashes=(), maximum=MAX_PACK):
 
 
 
-def recover_members(slot, manifest, requested_paths, destination):
-    """Fetch only selected members, verify hash BEFORE atomic installation."""
-    root=Path(destination).resolve()
-    if root.exists(): raise ValueError('Recovery requires a new destination')
+def recovery_ranges(manifest, requested_paths):
+    """Combine adjacent selected bytes only; never fetch gaps or whole caches."""
     requested=set(requested_paths); catalog={}
+    extents={}
     for pack in manifest:
         ref=Ref(**pack['ref'])
         for e in pack['members']:
@@ -443,16 +442,46 @@ def recover_members(slot, manifest, requested_paths, destination):
             if path in catalog or not SHA.fullmatch(e['sha256']) or e['bytes']<=0 or e['offset']+e['bytes']>ref.bytes:
                 raise ValueError('Invalid recovery catalog')
             catalog[path]=(ref,e)
+            extents.setdefault(ref,[]).append((e['offset'],e['offset']+e['bytes']))
+    for values in extents.values():
+        ordered=sorted(values)
+        if any(a[1]>b[0] for a,b in zip(ordered,ordered[1:])):
+            raise ValueError('Overlapping recovery members')
     if not requested<=catalog.keys(): raise ValueError('Missing requested recovery members')
     total=sum(catalog[p][1]['bytes'] for p in requested)
-    if total>slot.meter.caps['egressBytes']-slot.meter.used['egressBytes']:
+    selected={}
+    for path in requested:
+        ref,e=catalog[path];selected.setdefault(ref,[]).append(e)
+    ranges=[]
+    for ref,members in sorted(selected.items(),key=lambda x:(x[0].key,x[0].generation)):
+        group=[];start=end=0
+        for e in sorted(members,key=lambda e:e['offset']):
+            if group and (e['offset']!=end or e['offset']+e['bytes']-start>MAX_PACK):
+                ranges.append((ref,start,end-start,group));group=[]
+            if not group:start=e['offset']
+            group.append(e);end=e['offset']+e['bytes']
+        if group:ranges.append((ref,start,end-start,group))
+    return ranges,total
+
+
+def recover_members(slot, manifest, requested_paths, destination):
+    """Fetch only selected ranges; per-member hashes precede atomic publication."""
+    root=Path(destination).resolve()
+    if root.exists(): raise ValueError('Recovery requires a new destination')
+    requested=set(requested_paths)
+    ranges,total=recovery_ranges(manifest,requested)
+    if (total+len(ranges)>slot.meter.caps['egressBytes']-slot.meter.used['egressBytes']
+            or len(ranges)>slot.meter.caps['classBRequests']-slot.meter.used['classBRequests']):
         raise ValueError('Selective recovery exceeds remaining egress')
     # Stage all requested bytes before publishing destination; no partial success.
     temp=root.with_name(root.name+'.partial')
     temp.mkdir(parents=True,exist_ok=False)
-    for path in sorted(requested):
-        ref,e=catalog[path];raw=slot.get(ref,e['offset'],e['bytes'],e['sha256'])
-        p=temp/path;p.parent.mkdir(parents=True,exist_ok=True)
-        with p.open('xb') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    for ref,start,length,members in ranges:
+        raw=slot.get(ref,start,length)
+        for e in members:
+            data=raw[e['offset']-start:e['offset']-start+e['bytes']]
+            if digest(data)!=e['sha256']:raise ValueError('Selected member hash mismatch')
+            p=temp/e['path'];p.parent.mkdir(parents=True,exist_ok=True)
+            with p.open('xb') as stream:stream.write(data);stream.flush();os.fsync(stream.fileno())
     temp.rename(root)
     return {'files':len(requested),'recoveredBytes':total}
