@@ -91,7 +91,11 @@ jobs:
             echo 'BLOCK: producer can overwrite its existing staged object' >&2
             exit 16
           fi
-          grep -Eqi '403|PERMISSION_DENIED|AccessDenied|Permission denied' overwrite.err || { echo 'BLOCK: no explicit IAM overwrite denial' >&2; exit 17; }
+          if ! grep -Eqi '403|PERMISSION_DENIED|AccessDenied|Permission denied' overwrite.err; then
+            echo 'BLOCK: no explicit IAM overwrite denial; rejected overwrite diagnostic follows:' >&2
+            sed -n '1,15p' overwrite.err >&2
+            exit 17
+          fi
           gcloud storage cp "$DEST" final-check.txt --quiet
           cmp -s checkpoint.txt final-check.txt || { echo 'BLOCK: original staged content changed' >&2; exit 18; }
           echo "PASS: unique create-only staged checkpoint; condition 412; overwrite IAM 403; bytes intact; sha256=$(sha256sum checkpoint.txt | cut -d' ' -f1)"
