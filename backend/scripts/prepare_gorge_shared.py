@@ -14,13 +14,13 @@ from build_gorge_map_bundles import safe_path
 from validate_gorge_shared import validate_sun,validate_shared,VECTORS
 
 
-def prepare(base,sun,out):
+def prepare(base,sun,out,accepted_sun_manifest_sha256=None):
  base=Path(base);sun=Path(sun);out=Path(out)
  if 'public' in out.resolve().parts or Path(__file__).resolve().parents[2] in [out.resolve(),*out.resolve().parents]:raise ValueError('Private output outside checkout required')
  m=json.loads((base/'NATIVE-MAP.json').read_text())
  if m['packageID']!='gorge-base' or m['schemaVersion'] not in (3,4):raise ValueError('Accepted native lineage required')
  if set(v['id'] for v in m['vectors'])!=VECTORS:raise ValueError('Missing accepted vectors')
- sunlight=validate_sun(sun);files={};prefix=m['websiteAssetsRoot'].rstrip('/')
+ sunlight=validate_sun(sun,accepted_sun_manifest_sha256);files={};prefix=m['websiteAssetsRoot'].rstrip('/')
  def copy(src,path,sha):
   safe_path(path)
   if src.is_symlink():raise ValueError('Symlink input')

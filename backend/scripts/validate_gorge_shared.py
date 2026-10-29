@@ -1,5 +1,6 @@
 """Validate native shared dependencies against immutable content receipts."""
 import json
+import re
 from pathlib import Path
 from shapely.geometry import box
 from shapely.ops import unary_union
@@ -8,8 +9,10 @@ from benchmark_gorge_pipeline import AOI
 
 VECTORS={'hydro-flowline','hydro-waterbody','local-roads','forest-service-trails','state-park-trails','forest-service-roads','forest-ownership','wilderness','special-management','national-forest-land','county-boundaries','community-informal','oil-gas-wells'}
 
-def validate_sun(root):
+def validate_sun(root, accepted_manifest_sha256=None):
     root=Path(root);p=root/'data/map/rrg-lidar-sun-mobile-manifest.json';m=json.loads(p.read_text())
+    if accepted_manifest_sha256 is not None and digest(p.read_bytes())!=accepted_manifest_sha256:
+        raise ValueError('Accepted Sunlight manifest changed')
     if (m.get('boundsWgs84')!=AOI or not m.get('fullGorgeCoverageVerified') or m.get('minimumElevationFeet')!=1100
         or not m.get('acceptedHardLipReusedVerbatim') or m.get('acceptedSectorsPreserved')!=30):raise ValueError('Full accepted Sunlight lineage required')
     sectors=m['sectors']
@@ -26,7 +29,12 @@ def validate_sun(root):
                 from PIL import Image
                 with Image.open(path) as im:im.load()
                 files.append(e)
-        if 'hardFile' in s and digest((root/s['hardFile']).read_bytes())!=s['sourceHardSha256']:raise ValueError('Hard-rim receipt mismatch')
+        if 'hardFile' in s:
+            authoring=root/s['hardFile']
+            if authoring.exists():
+                if digest(authoring.read_bytes())!=s['sourceHardSha256']:raise ValueError('Hard-rim receipt mismatch')
+            elif accepted_manifest_sha256 is None or not re.fullmatch('[0-9a-f]{64}',s.get('sourceHardSha256','')):
+                raise ValueError('Missing authoring geometry requires the pinned accepted raster manifest')
     files.append({'file':str(p.relative_to(root)),'bytes':p.stat().st_size,'sha256':digest(p.read_bytes())})
     return files
 

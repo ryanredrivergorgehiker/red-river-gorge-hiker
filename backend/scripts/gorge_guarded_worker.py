@@ -60,7 +60,12 @@ class SourceOpener:
         elif host=='basemap.nationalmap.gov' and p.path.startswith('/arcgis/rest/services/USGSTopo/MapServer'):
             maximum=500_001 if '/tile/' in p.path else 1_000_001
         else:raise ValueError('Unapproved source endpoint')
-        self.meter.reserve(sourceRequests=1,sourceBytes=maximum)
+        reservation={'sourceRequests':1,'sourceBytes':maximum}
+        # Optional coordinator cache-growth suballocation. Reserve before HTTP,
+        # including metadata slack; never refund short responses or failed I/O.
+        if self.meter.caps['storedBytes']:
+            reservation['storedBytes']=maximum+8192
+        self.meter.reserve(**reservation)
         entry={'method':request.get_method(),'reservedResponseBytes':maximum,
                'receivedBodyBytes':0,'status':None}
         self.entries.append(entry)
@@ -72,7 +77,7 @@ class SourceOpener:
             raise
 
 
-def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps, seconds):
+def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps, seconds, growth_cap=None):
     """Reserve entire child allowance before subprocess; crashes get no refunds."""
     plan=json.loads(Path(plan_path).read_bytes())
     if not any(j['id']==job_id for j in plan['jobs']):raise ValueError('Job absent from pinned plan')
@@ -90,6 +95,10 @@ def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps
     byte_cap=integer(source_caps['sourceBytes']);request_cap=integer(source_caps['sourceRequests'])
     slot.meter.reserve(attempts=1,seconds=seconds,sourceBytes=byte_cap,sourceRequests=request_cap)
     caps={k:0 for k in slot.meter.caps};caps.update(sourceBytes=byte_cap,sourceRequests=request_cap,seconds=seconds)
+    if growth_cap is not None:
+        caps['storedBytes']=integer(growth_cap)
+        # A zero remaining growth allocation must forbid all new source I/O.
+        if not growth_cap:caps.update(sourceBytes=0,sourceRequests=0)
     payload={'plan':str(Path(plan_path).resolve()),'planSHA256':expected,'job':job_id,
              'root':str(root),'cogCache':str(Path(cog_cache).resolve()),
              'serviceCache':str(Path(service_cache).resolve()),'caps':caps}
