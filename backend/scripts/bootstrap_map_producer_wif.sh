@@ -29,14 +29,20 @@ fi
 command -v gcloud >/dev/null
 command -v python3 >/dev/null
 [[ "$(gcloud config get-value project 2>/dev/null)" == "$PROJECT" ]] || { echo 'Wrong GCP project' >&2; exit 3; }
-gcloud storage buckets describe "gs://$BUCKET" --project="$PROJECT" --format=json |
+[[ "$(gcloud projects describe "$PROJECT" --format='value(projectNumber)')" == "$NUMBER" ]] || { echo 'Wrong GCP project number' >&2; exit 3; }
+REVIEW_DIR="$(mktemp -d)"
+trap 'rm -rf "$REVIEW_DIR"' EXIT
+# --raw is required: the CLI normally standardizes IAM fields into flat keys.
+gcloud storage buckets describe "gs://$BUCKET" --project="$PROJECT" --raw --format=json |
   python3 -c 'import sys,json; x=json.load(sys.stdin); c=x.get("iamConfiguration",x.get("iam_configuration",{})); u=c.get("uniformBucketLevelAccess",c.get("uniform_bucket_level_access",{})); p=c.get("publicAccessPrevention",c.get("public_access_prevention","")); assert u.get("enabled") is True and p == "enforced", "Existing bucket protection absent"'
 if ! gcloud iam workload-identity-pools describe "$POOL" --project="$PROJECT" --location=global >/dev/null 2>&1; then
   gcloud iam workload-identity-pools create "$POOL" --project="$PROJECT" --location=global --display-name='RRGH isolated map production' --description='Nondeploying keyless GitHub map processing'
 fi
-if gcloud iam workload-identity-pools providers describe "$PROVIDER" --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --format=json > /tmp/rrgh-map-wif-review.json 2>/dev/null; then
-  RRGH_EXPECTED_CONDITION="$CONDITION" python3 -c 'import json,os; p=json.load(open("/tmp/rrgh-map-wif-review.json")); assert p.get("attributeCondition")==os.environ["RRGH_EXPECTED_CONDITION"] and p.get("oidc",{}).get("issuerUri") in ("https://token.actions.githubusercontent.com","https://token.actions.githubusercontent.com/") and not p.get("disabled",False), "Existing provider differs; STOP"; m=p.get("attributeMapping",{}); assert m.get("google.subject")=="assertion.sub" and m.get("attribute.repository_id")=="assertion.repository_id", "Existing mapping differs"'
-  rm -f /tmp/rrgh-map-wif-review.json
+# A different provider in the same pool could mint the same mapped principal.
+gcloud iam workload-identity-pools providers list --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --format=json > "$REVIEW_DIR/providers.json"
+python3 -c 'import json,sys; rows=json.load(open(sys.argv[1])); assert all(p["name"].rsplit("/",1)[-1]==sys.argv[2] for p in rows), "Unexpected provider in dedicated pool; STOP"' "$REVIEW_DIR/providers.json" "$PROVIDER"
+if gcloud iam workload-identity-pools providers describe "$PROVIDER" --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --format=json > "$REVIEW_DIR/provider.json" 2>/dev/null; then
+  RRGH_EXPECTED_CONDITION="$CONDITION" python3 -c 'import json,os,sys; p=json.load(open(sys.argv[1])); assert p.get("attributeCondition")==os.environ["RRGH_EXPECTED_CONDITION"] and p.get("oidc",{}).get("issuerUri") in ("https://token.actions.githubusercontent.com","https://token.actions.githubusercontent.com/") and not p.get("disabled",False), "Existing provider differs; STOP"; m=p.get("attributeMapping",{}); assert m.get("google.subject")=="assertion.sub" and m.get("attribute.repository_id")=="assertion.repository_id", "Existing mapping differs"; assert not p.get("oidc",{}).get("allowedAudiences"), "Unexpected custom audiences; STOP"' "$REVIEW_DIR/provider.json"
 else
   gcloud iam workload-identity-pools providers create-oidc "$PROVIDER" --project="$PROJECT" --location=global --workload-identity-pool="$POOL" --issuer-uri='https://token.actions.githubusercontent.com' --attribute-mapping="$MAPPING" --attribute-condition="$CONDITION" --display-name='RRGH bounded map build'
 fi
@@ -51,3 +57,4 @@ for role in roles/storage.objectCreator roles/storage.objectViewer; do
 done
 gcloud storage managed-folders add-iam-policy-binding "$LEGACY" --project="$PROJECT" --member="$MEMBER" --role=roles/storage.objectViewer --quiet
 echo 'IAM setup completed; no deploy/package publication. Run separate metadata-only preflight.'
+
