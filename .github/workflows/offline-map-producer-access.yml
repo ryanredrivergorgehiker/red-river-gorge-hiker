@@ -98,12 +98,7 @@ jobs:
             echo "BLOCK: direct GCS overwrite produced HTTP $STATUS instead of explicit 403" >&2
             exit 17
           fi
-          python3 - <<'PY'
-import json
-with open('overwrite-api.json') as f: j=json.load(f)
-assert j.get('error',{}).get('code') == 403, 'Expected Google Cloud permission denial'
-print('PASS: direct Cloud Storage overwrite denied with HTTP 403')
-PY
+          python3 -c 'import json; j=json.load(open("overwrite-api.json")); assert j.get("error",{}).get("code") == 403, "Expected Google Cloud permission denial"; print("PASS: direct Cloud Storage overwrite denied with HTTP 403")'
           gcloud storage cp "$DEST" final-check.txt --quiet
           cmp -s checkpoint.txt final-check.txt || { echo 'BLOCK: original staged content changed' >&2; exit 18; }
           echo "PASS: unique create-only staged checkpoint; condition 412; overwrite IAM 403; bytes intact; sha256=$(sha256sum checkpoint.txt | cut -d' ' -f1)"
