@@ -50,7 +50,8 @@ def token():
 
 
 def execute(args,plan,region,evidence):
-    require_live_allowance(plan,evidence)
+    from gorge_stage_preflight import require_stage_release, require_input_proof, install_prior_tiles
+    require_stage_release(plan,evidence)
     expected={'GITHUB_REPOSITORY_ID':'1325611891','GITHUB_REPOSITORY_OWNER_ID':'313924954',
       'GITHUB_REF':'refs/heads/lane20/offline-production-preflight-20261029',
       'GITHUB_EVENT_NAME':'push',
@@ -66,8 +67,13 @@ def execute(args,plan,region,evidence):
     jobs=plan.get('slotJobs',{}).get(str(args.slot),[])
     policies=plan.get('jobPolicies',{})
     if any(j not in policies for j in jobs):raise ValueError('Every job needs explicit source/time bounds')
+    if not args.input_proof or not args.prior_root or not args.shared_root:
+        raise ValueError('Generation-pinned private input proof required before cloud operations')
+    verified=require_input_proof(plan,json.loads(args.input_proof.read_bytes()),
+        {'cog':args.cog_cache,'service':args.service_cache,'prior':args.prior_root,'shared':args.shared_root})
     store=GCS(plan,evidence,token);slot=Slot(store,plan,args.slot,os.environ.get('GITHUB_RUN_ID',''))
     root.mkdir(parents=True,exist_ok=False);completed=[]
+    install_prior_tiles(verified,root)
     # Source caches are intentionally supplied as prevalidated local selections.
     # The driver never searches GCS, imports every cache, or recreates old ledgers.
     for job in jobs:
@@ -104,6 +110,7 @@ def main():
     for name in ('plan','region-plan','evidence'):p.add_argument('--'+name,required=True,type=Path)
     p.add_argument('--slot',type=int,default=0);p.add_argument('--execute',action='store_true')
     p.add_argument('--output',type=Path);p.add_argument('--cog-cache',type=Path);p.add_argument('--service-cache',type=Path)
+    p.add_argument('--input-proof',type=Path);p.add_argument('--prior-root',type=Path);p.add_argument('--shared-root',type=Path)
     args=p.parse_args();plan=json.loads(args.plan.read_bytes());region=json.loads(args.region_plan.read_bytes())
     evidence=json.loads(args.evidence.read_bytes());totals=preflight(plan,region,Path(__file__).parent)
     if args.execute:

@@ -20,19 +20,27 @@ from gorge_checkpoint import Meter, NoRedirect, canonical, digest, integer, rela
 
 
 class LimitedResponse:
-    def __init__(self,response,maximum):
-        self.response=response;self.remaining=maximum
+    def __init__(self,response,maximum,entry=None):
+        self.response=response;self.remaining=maximum;self.entry=entry
     def __enter__(self):return self
     def __exit__(self,*args):return self.response.__exit__(*args)
     def __getattr__(self,name):return getattr(self.response,name)
     def read(self,size=-1):
         if size<0 or size>self.remaining:raise ValueError('Unbounded source response read')
-        raw=self.response.read(size);self.remaining-=len(raw);return raw
+        raw=self.response.read(size);self.remaining-=len(raw)
+        if self.entry is not None:self.entry['receivedBodyBytes']+=len(raw)
+        return raw
 
 
 class SourceOpener:
     def __init__(self,meter,opener=None):
         self.meter=meter;self.opener=opener or build_opener(NoRedirect()).open
+        self.entries=[]
+    def summary(self):
+        return {'operations':len(self.entries),
+                'receivedBodyBytes':sum(e['receivedBodyBytes'] for e in self.entries),
+                'reservedResponseBytes':sum(e['reservedResponseBytes'] for e in self.entries),
+                'statuses':[e['status'] for e in self.entries]}
     def __call__(self,request,timeout=None):
         url=request.full_url;p=urlparse(url)
         if p.scheme!='https' or p.username or p.password or p.port or p.fragment:
@@ -53,7 +61,15 @@ class SourceOpener:
             maximum=500_001 if '/tile/' in p.path else 1_000_001
         else:raise ValueError('Unapproved source endpoint')
         self.meter.reserve(sourceRequests=1,sourceBytes=maximum)
-        return LimitedResponse(self.opener(request,timeout=min(timeout or 45,45)),maximum)
+        entry={'method':request.get_method(),'reservedResponseBytes':maximum,
+               'receivedBodyBytes':0,'status':None}
+        self.entries.append(entry)
+        try:
+            response=self.opener(request,timeout=min(timeout or 45,45));entry['status']=response.status
+            return LimitedResponse(response,maximum,entry)
+        except Exception as error:
+            entry['status']=getattr(error,'code',None)
+            raise
 
 
 def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps, seconds):
@@ -79,12 +95,17 @@ def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps
              'serviceCache':str(Path(service_cache).resolve()),'caps':caps}
     with ticket.open('xb') as f:f.write(canonical(payload));f.flush();os.fsync(f.fileno())
     log=root/('gate-c-'+job_id+'.log')
+    started=time.monotonic()
     with log.open('xb') as stream:
         result=subprocess.run([sys.executable,str(Path(__file__).resolve()),'--ticket',str(ticket)],
             stdout=stream,stderr=subprocess.STDOUT,timeout=seconds,check=False,
             env={**os.environ,'GDAL_NUM_THREADS':'1','OPENBLAS_NUM_THREADS':'1'})
     if result.returncode:raise RuntimeError('Bounded worker failed; reservation retained')
-    return validate_receipt(plan,job_id,root)
+    receipt=validate_receipt(plan,job_id,root)
+    usage=json.loads(ticket.with_suffix('.usage.json').read_bytes())
+    if usage.get('completed') is not True:raise ValueError('Completed source-usage receipt required')
+    receipt['execution']={'wallSeconds':round(time.monotonic()-started,6),'sourceUsage':usage}
+    return receipt
 
 
 def validate_receipt(plan, job_id, root):
@@ -134,12 +155,19 @@ def child(ticket):
         return original(*args,**kwargs)
     engine.Cache=cache;services.urlopen=opener
     job=next(j for j in plan['jobs'] if j['id']==p['job'])
-    receipt=engine.worker(plan,job,p['root'],p['cogCache'],p['serviceCache'])
-    # Retain the existing engine's recipe convention; don't rewrite old receipts.
     from benchmark_gorge_pipeline import json_bytes
     from cached_cog_source import atomic
-    atomic(Path(p['root'])/'receipts'/(job['id']+'.json'),json_bytes(receipt))
-    atomic(ticket.with_suffix('.usage.json'),canonical(meter.used))
+    completed=False
+    try:
+        receipt=engine.worker(plan,job,p['root'],p['cogCache'],p['serviceCache'])
+        # Retain the existing recipe convention; never rewrite old receipts.
+        atomic(Path(p['root'])/'receipts'/(job['id']+'.json'),json_bytes(receipt))
+        completed=True
+    finally:
+        # Failures retain observed partial counts. A killed process still keeps
+        # its full durable parent allocation; missing usage never means zero.
+        atomic(ticket.with_suffix('.usage.json'),canonical({'reserved':meter.used,
+            'actual':opener.summary(),'completed':completed}))
 
 
 if __name__=='__main__':
