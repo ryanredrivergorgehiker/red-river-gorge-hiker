@@ -68,6 +68,16 @@ class Cache:
         self.lock = RLock()
         self.opener = opener
         self.db = sqlite3.connect(self.root / "cache.sqlite", check_same_thread=False)
+        try:
+            # A worker can be interrupted between durable checkpoints. Check
+            # secondary indexes before any source lookup or budget reservation;
+            # do not repair them or reset ledgers implicitly.
+            integrity = self.db.execute("PRAGMA integrity_check(10)").fetchall()
+            if integrity != [("ok",)]:
+                raise ValueError("Source cache SQLite integrity failure; preserve and repair explicitly")
+        except Exception:
+            self.close()
+            raise
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.executescript("""
           CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, ceiling INTEGER);
