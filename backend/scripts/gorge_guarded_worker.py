@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from urllib.request import build_opener
 from urllib.parse import urlparse
 
@@ -68,6 +69,8 @@ def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps
     root=Path(root).resolve();root.mkdir(parents=True,exist_ok=True)
     ticket=root/('gate-c-'+job_id+'.json')
     if ticket.exists():raise ValueError('Local job reservation already consumed')
+    if seconds > slot.meter.deadline-time.monotonic():
+        raise ValueError('Child cannot finish within remaining slot deadline')
     byte_cap=integer(source_caps['sourceBytes']);request_cap=integer(source_caps['sourceRequests'])
     slot.meter.reserve(attempts=1,seconds=seconds,sourceBytes=byte_cap,sourceRequests=request_cap)
     caps={k:0 for k in slot.meter.caps};caps.update(sourceBytes=byte_cap,sourceRequests=request_cap,seconds=seconds)

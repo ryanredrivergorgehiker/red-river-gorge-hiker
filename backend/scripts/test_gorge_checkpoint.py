@@ -197,6 +197,17 @@ class CheckpointTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate_receipt(region,'x',root)
         self.assertEqual(self.store.creates,0)
 
+    def test_child_does_not_start_if_slot_time_is_insufficient(self):
+        import time
+        region={'jobs':[{'id':'x'}]};p=copy.deepcopy(self.p)
+        p['regionPlanSHA256']=digest(canonical(region));p['slotJobs']={'0':['x']}
+        slot=Slot(self.store,p,0,'time-test');slot.meter.deadline=time.monotonic()+1
+        path=self.root/'region.json';path.write_bytes(canonical(region))
+        with self.assertRaisesRegex(ValueError,'remaining slot deadline'):
+            run_job(slot,path,'x',self.root/'worker',self.root/'cog',self.root/'service',
+                    {'sourceBytes':1,'sourceRequests':1},10)
+        self.assertFalse((self.root/'worker/gate-c-x.json').exists())
+
     def test_driver_default_preflight_checks_code_and_plan_pins(self):
         from run_gorge_checkpoint_slot import code_snapshot,preflight
         source=self.root/'scripts';source.mkdir();(source/'engine.py').write_text('#fixture')
