@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: verify corrected partial-recovery wave004 20261030'
+      github.event.head_commit.message == 'Lane20: persist checked wave004 140 jobs 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -99,7 +99,7 @@ jobs:
           test "$(git rev-parse FETCH_HEAD)" = "70c647a8acbdf1c7c3db6aa4323db0e704763e58"
           git config user.name 'rrgh-plan-prep[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- backend/config/gorge-campaign-wave-004-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-003-20261030/PLAN.json backend/config/gorge-campaign-wave-003-20261030/REGION-PLAN.json.z.b64
+          git add -- backend/config/gorge-campaign-wave-004-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-004-20261030/PLAN.json backend/config/gorge-campaign-wave-004-20261030/REGION-PLAN.json.z.b64
           test "$(git diff --cached --name-only | wc -l)" -eq 3
           git diff --cached --check
           git commit -m 'Lane20: persist verified wave004 after partial recovery [skip ci]'
