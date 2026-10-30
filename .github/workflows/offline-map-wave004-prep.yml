@@ -1,0 +1,114 @@
+name: RRGH verified partial-recovery successor planning (no cloud access)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave004-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave004-prep-isolated
+  cancel-in-progress: false
+jobs:
+  prepare-config:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: persist validated wave004 after partial recovery 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 70c647a8acbdf1c7c3db6aa4323db0e704763e58
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned native validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Build and validate next finite plan using pinned prior recovery
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,copy,json,zlib,sys
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest,require_live_allowance
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          src=Path('backend/config/gorge-campaign-wave-003-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-003-20261030')
+          old=json.loads((src/'PLAN.json').read_bytes())
+          env=json.loads((src/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
+          done=95
+          assert len(old['approvedJobIDs'])==236 and len(region['jobs'])==236
+          assert [j['id'] for j in region['jobs']]==old['approvedJobIDs']
+          assert old['approvedJobIDs'][done-1]=='leaf-on-16-17550-25322'
+          assert old['approvedJobIDs'][done]=='leaf-on-16-17550-25323'
+          assert old['campaign']['sequence']==3 and len(old['completedJobIDs'])==320
+          assert old['limits']['attempts']==236 and old['slots'][1]['attempts']==236
+          next_jobs=region['jobs'][done+1:]
+          remaining=[j['id'] for j in next_jobs]
+          assert len(remaining)==140 and not set(remaining)&set(old['completedJobIDs'])
+          assert old['approvedJobIDs'][done] not in remaining # failed attempt quarantined
+          recovery={'bytes':1469,'generation':'1793377088551615','key':'engineering/map-production/plans/35216cd323736d29321570e034acfb1ff70d325b761e5e8dfd2a88e365509504/slots/00002/receipt.json','sha256':'b256a386519c18b6a8c5d59bef8b3bcdba9734ce53ef4588df80d42a6772004c'}}
+          next_carry={'chargedUSD':'2.746011453853321075439453125','storedBytes':6050577399,'priorCompletedJobs':415,'priorRasterTiles':4963,'priorSunlightAssets':320}
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=4
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=next_carry
+          plan['completedJobIDs']+=old['approvedJobIDs'][:done]
+          plan['approvedJobIDs']=remaining
+          plan['slotJobs']={'1':remaining}
+          plan['jobPolicies']={key:old['jobPolicies'][key] for key in remaining}
+          plan['priorAttemptCounts'].update({key:plan['priorAttemptCounts'].get(key,0)+1 for key in old['approvedJobIDs'][:done+1]})
+          assert plan['priorAttemptCounts'].get('leaf-on-16-17550-25323')==1
+          assert all(v<=2 for v in plan['priorAttemptCounts'].values())
+          plan['slots'][1]['attempts']=len(remaining)
+          plan['limits']['attempts']=len(remaining)
+          region['jobs']=next_jobs
+          assert 'gorge_campaign.py' in region['engineHashes']
+          region['engineHashes']['gorge_campaign.py']=digest(Path('backend/scripts/gorge_campaign.py').read_bytes())
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          assert admit(plan,env)['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert len(plan['completedJobIDs'])==415 and len(set(plan['completedJobIDs']))==415
+          assert set(plan['approvedJobIDs']).isdisjoint(plan['completedJobIDs'])
+          assert plan['campaign']['sequence']==old['campaign']['sequence']+1
+          dst.mkdir(parents=True,exist_ok=False)
+          (dst/'PLAN.json').write_bytes(canonical(plan))
+          (dst/'ALLOWANCE.json').write_bytes(canonical(env))
+          (dst/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          from gorge_campaign import configuration
+          checked_plan,checked_env,checked_region=configuration(dst)
+          assert len(checked_region['jobs'])==140 and len(checked_plan['completedJobIDs'])==415
+          assert checked_plan['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
+          print(json.dumps({'status':'offline-plan-verified','previousRecovery':recovery,'oldJobs':236,'newJobs':140,'priorCompleted':415,'newTiles':sum(len(j['outputTiles']) for j in next_jobs),'planSHA256':digest(canonical(plan)),'sourceSnapshotSHA256':plan['sourceSnapshotSHA256'],'reservedUSD':env['cloudStorageAllowance']['reservedWorstCaseUSD']},sort_keys=True))
+          PY
+      - name: Commit validated plan only to exact engineering source branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "70c647a8acbdf1c7c3db6aa4323db0e704763e58"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "70c647a8acbdf1c7c3db6aa4323db0e704763e58"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-003-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-003-20261030/PLAN.json backend/config/gorge-campaign-wave-003-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist verified wave004 after partial recovery [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+      - name: Export only public-repository plan metadata for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave004-review-only
+          path: backend/config/gorge-campaign-wave-003-20261030/
+          retention-days: 1
+          if-no-files-found: error
+# No Cloud credentials, source payloads, GCS access or production execution. One ephemeral GitHub token writes only the reviewed config.
