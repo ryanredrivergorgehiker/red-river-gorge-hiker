@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: rrgh-wave005-prep
+  group: rrgh-wave005-prep-source-covered-v2
   cancel-in-progress: false
 jobs:
   generate:
@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: prepare covered regional wave005 with gap disclosure 20261030'
+      github.event.head_commit.message == 'Lane20: validate wave005 source coverage with isolated prep 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
