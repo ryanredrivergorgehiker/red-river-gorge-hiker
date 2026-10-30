@@ -296,6 +296,23 @@ def produce(plan,evidence,region,root,store,opener,owner):
     except Exception as error:
         import traceback
         failure={'errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]}
+        # The child already writes an immutable local usage/exception record on
+        # a normal Python failure. Preserve its *structured non-secret* reason
+        # for review before spending a second and final job attempt. Never
+        # print raw child stdout, source URLs, exception messages or tokens.
+        if 'job' in locals() and job in plan['approvedJobIDs']:
+            failure['lastJobConsidered']=job
+            child_usage=root/'worker'/('gate-c-'+job+'.usage.json')
+            if child_usage.is_file():
+                child=json.loads(child_usage.read_bytes())
+                reason=child.get('diagnostic')
+                if isinstance(reason,dict):
+                    frames=reason.get('frames',[])
+                    failure['child']={'errorClass':str(reason.get('errorClass',''))[:80],
+                        'frames':[{'file':Path(t.get('file','')).name[:100],
+                                   'line':int(t.get('line',0)),
+                                   'function':str(t.get('function',''))[:100]}
+                                  for t in frames[-8:] if isinstance(t,dict)]}
     # Future raw public ranges remain a bounded working cache. Save the complete
     # ledger, exact source pins and successful outputs, without multiplying raw
     # cache storage/recovery costs. Existing accepted raw packs remain untouched.
