@@ -4,7 +4,7 @@ on:
     branches: [lane20/offline-production-preflight-20261029]
     paths: [.github/workflows/offline-map-wave008-prep.yml]
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: rrgh-wave008-offline-prep
   cancel-in-progress: false
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: b61a46dcb33d13d94e8e50d859d5e0d1aa0dbc8c
-          persist-credentials: true
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
