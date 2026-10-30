@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-006-20261030'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-007-20261030'
 OUTPUT_CAP=512*2**20
 TILE_CAP=512*1024
 WORKING_CACHE_CAP=6*2**30
@@ -274,6 +274,7 @@ def produce(plan,evidence,region,root,store,opener,owner):
         raise
     slot=Slot(store,plan,1,owner);opener.deadline=slot.meter.deadline
     completed=[];outputs=0;failure=None;stopped=None;start=time.monotonic();sourcebytes=0;sourcerequests=0
+    sourcegaps=[]
     try:
         for job in plan['approvedJobIDs']:
             expected=next(j for j in region['jobs'] if j['id']==job)
@@ -286,7 +287,35 @@ def produce(plan,evidence,region,root,store,opener,owner):
             working+=sum(p.stat().st_size for p in (root/'working-service').glob('*.bin'))
             if working+plan['jobPolicies'][job]['sourceBytes']>WORKING_CACHE_CAP:
                 stopped='working cache bound reached before next attempt';break
-            receipt=bounded_child(slot,plan,root/'REGION-PLAN.json',job,root)
+            policy=plan['jobPolicies'][job]
+            if any(slot.meter.used[k]+policy[k]>slot.meter.caps[k] for k in ('sourceBytes','sourceRequests')):
+                stopped='source allowance exhausted before next attempt';break
+            if slot.meter.used['attempts']+1>slot.meter.caps['attempts']:
+                stopped='attempt allowance exhausted before next job';break
+            if policy['seconds']+180>slot.meter.deadline-time.monotonic():
+                stopped='worker deadline reserve reached before next attempt';break
+            try:
+                receipt=bounded_child(slot,plan,root/'REGION-PLAN.json',job,root)
+            except RuntimeError:
+                # Only a verified original-source pixel-gap ValueError may be
+                # skipped. The child consumes its FULL reservation on failure;
+                # every other failure is fatal. Do not rerender skipped jobs.
+                usage=root/'worker'/('gate-c-'+job+'.usage.json')
+                if usage.is_file():
+                    child=json.loads(usage.read_bytes())
+                    reason=child.get('diagnostic')
+                    if (child.get('completed') is False
+                        and isinstance(reason,dict)
+                        and reason.get('errorClass')=='ValueError'
+                        and reason.get('failureCode')=='SOURCE_PIXEL_GAP'
+                        and any(f.get('file')=='benchmark_gorge_pipeline.py'
+                                and f.get('function')=='mosaic'
+                                for f in reason.get('frames',[]) if isinstance(f,dict))):
+                        sourcegaps.append(job)
+                        emit(job=job,status='source-pixel-gap-quarantined',
+                             attemptConsumed=True,sourceQualityUnchanged=True)
+                        continue
+                raise
             if any(e['bytes']>TILE_CAP for e in receipt['outputs']):raise ValueError('Full quality output bound; never recompress')
             ref=checkpoint_job(slot,receipt,root/'worker');completed.append(asdict(ref))
             outputs+=sum(e['bytes'] for e in receipt['outputs'])
@@ -319,11 +348,12 @@ def produce(plan,evidence,region,root,store,opener,owner):
     states=state_snapshot(root);state_ref=save_large(slot,states)
     details={'completedJobReceipts':completed,'stateRef':state_ref,'sourceBytesReceived':sourcebytes,'sourceRequests':sourcerequests,
         'outputBytes':outputs,'seconds':round(time.monotonic()-start,3),'failure':failure,'stoppedBeforeNextAttempt':stopped,
+        'sourcePixelGapJobs':sourcegaps,'pixelGapAttemptsConsumed':len(sourcegaps),
         'rawCachePolicy':plan['cachePolicy'],'gcs':opener.summary()}
     detail_ref=save_large(slot,details)
-    status='failed' if failure else 'bounded-stop' if stopped else 'complete'
+    status='failed' if failure else 'bounded-stop' if stopped or sourcegaps else 'complete'
     ref=slot.finish({'status':status,'detailRef':detail_ref,'jobs':len(completed),'outputBytes':outputs,'stateRef':state_ref,'gcs':opener.summary()})
-    signal('worker_receipt');emit(phase='production',status=status,receiptRef=asdict(ref),jobs=len(completed),outputBytes=outputs,sourceBytes=sourcebytes,sourceRequests=sourcerequests,diagnostic=failure,stopped=stopped,gcsIncludingReceipt=opener.summary())
+    signal('worker_receipt');emit(phase='production',status=status,receiptRef=asdict(ref),jobs=len(completed),outputBytes=outputs,sourceBytes=sourcebytes,sourceRequests=sourcerequests,diagnostic=failure,stopped=stopped,sourcePixelGapJobs=sourcegaps,gcsIncludingReceipt=opener.summary())
     if failure:raise RuntimeError('Production stopped with preserved completed jobs')
 
 def assemble(slot,records,root):
@@ -384,6 +414,8 @@ def recover(plan,region,root,store,opener,owner):
             'workerReceipt':asdict(workerref),'bootstrapReceipt':asdict(bootref),'detailRef':worker['result']['detailRef'],
             'sourceBytesReceived':detail['sourceBytesReceived'],'sourceRequests':detail['sourceRequests'],
             'producerSeconds':detail['seconds'],'settlement':ledger,'nextCarry':nextcarry,
+            'sourcePixelGapJobs':detail.get('sourcePixelGapJobs',[]),
+            'pixelGapAttemptsConsumed':detail.get('pixelGapAttemptsConsumed',0),
             'allOutputHashesAndPixelsVerified':True,'allNewPackageChunksReadBack':True,'allExistingCachesPreserved':True}
     except Exception as exc:
         import traceback
