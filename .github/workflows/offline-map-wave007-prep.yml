@@ -1,0 +1,145 @@
+name: RRGH Wave007 source-gap quarantine regression and offline plan
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave007-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave007-offline-prep
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: verify wave007 typed-gap guard and plan 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 58a783a845afea2eb22bf2a99e94c6eb77976ef4
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned processing dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify typed source gap classification preserves all other fail-closed paths
+        run: python backend/scripts/test_gorge_source_gap_guard.py -v
+      - name: Compile producer and guarded worker
+        run: python -m py_compile backend/scripts/gorge_campaign.py backend/scripts/gorge_guarded_worker.py
+      - name: Generate and validate immutable successor with exact recovered predecessor
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,copy,json,zlib,sys
+          from collections import Counter
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          from gorge_campaign import configuration
+          
+          src=Path('backend/config/gorge-campaign-wave-006-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-007-20261030')
+          old=json.loads((src/'PLAN.json').read_bytes())
+          env=json.loads((src/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
+          assert old['campaign']['sequence']==6 and len(old['completedJobIDs'])==652
+          assert len(old['approvedJobIDs'])==192 and len(region['jobs'])==192
+          assert old['approvedJobIDs']==[j['id'] for j in region['jobs']]
+          assert old['approvedJobIDs'][15]=='leaf-off-16-17548-25317'
+          assert all(x.startswith('leaf-off-') for x in old['approvedJobIDs'][:16])
+          assert old['approvedJobIDs'][64].startswith('leaf-on-')
+          assert old['approvedJobIDs'][128].startswith('usgs-topo-')
+          old_done=old['approvedJobIDs'][:15]
+          failed='leaf-off-16-17548-25317'
+          recovery={'bytes':1434,'generation':'1793390220340119',
+           'key':'engineering/map-production/plans/448323f1fc6f0a9c941c4e614e0b3ee8562b17d134f01fe52e5c9f5f63ec306d/slots/00002/receipt.json',
+           'sha256':'2629a0a21322a50000063500fd1240b5c2aa804bc7c04f81a126b5f408b59a56'}
+          carry={'chargedUSD':'4.111702520270049571990966797',
+           'storedBytes':9321097776,'priorCompletedJobs':667,'priorRasterTiles':6663,'priorSunlightAssets':320}
+          completed=old['completedJobIDs']+old_done
+          assert len(completed)==667 and len(set(completed))==667
+          quarantined={'leaf-on-16-17550-25323','terrain-16-17538-25318',failed}
+          # Process USGS first so independent verification will preserve clean topo
+          # even if a later NAIP-specific issue occurs. A verified DEM/leaf-off source
+          # pixel gap cannot be silently retried or downgraded.
+          selected=[j for j in region['jobs'] if j['layer']=='usgs-topo']+[
+           j for j in region['jobs'] if j['layer']=='leaf-on']
+          ids=[j['id'] for j in selected]
+          assert len(ids)==128 and len(set(ids))==128 and not set(ids)&set(completed)
+          assert not set(ids)&quarantined
+          assert Counter(j['layer'] for j in selected)=={'usgs-topo':64,'leaf-on':64}
+          assert sum(len(j['outputTiles']) for j in selected)==1408
+          assert all(j['operation'] in ('source-window','usgs-tile') for j in selected)
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=7
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=carry
+          plan['completedJobIDs']=completed
+          plan['approvedJobIDs']=ids
+          plan['slotJobs']={'1':ids}
+          plan['jobPolicies']={j:old['jobPolicies'][j] for j in ids}
+          prior=plan['priorAttemptCounts']
+          for jid in old['approvedJobIDs'][:16]:
+              prior[jid]=prior.get(jid,0)+1
+          assert prior[failed]==1
+          assert prior['leaf-on-16-17550-25323']==1 and prior['terrain-16-17538-25318']==1
+          assert all(v<=2 for v in prior.values())
+          plan['slots'][1]['attempts']=128
+          plan['limits']['attempts']=128
+          region['jobs']=selected
+          for f in ('gorge_campaign.py','gorge_guarded_worker.py'):
+              if f in region['engineHashes']:
+                  region['engineHashes'][f]=digest((Path('backend/scripts')/f).read_bytes())
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          ad=admit(plan,env)
+          assert ad['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert float(ad['cumulativeAdmissionUSD'])<25 and float(ad['monthlyAdmissionUSD'])<1
+          dst.mkdir(parents=True,exist_ok=False)
+          (dst/'PLAN.json').write_bytes(canonical(plan))
+          (dst/'ALLOWANCE.json').write_bytes(canonical(env))
+          (dst/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          p,e,r=configuration(dst)
+          assert p['approvedJobIDs']==ids and len(p['completedJobIDs'])==667
+          assert p['campaign']['previousRecovery']==recovery and p['campaign']['carry']==carry
+          assert p['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
+          assert p['regionPlanSHA256']==digest(canonical(r))
+          print(json.dumps({'phase':'offline-wave007-verified','selectedJobs':len(ids),
+           'expectedTiles':sum(len(j['outputTiles']) for j in r['jobs']),
+           'acceptedPrior':len(completed),'quarantined':sorted(quarantined),
+           'deferredLeafOff':48,'deferredTerrain':94,
+           'sourceSHA256':p['sourceSnapshotSHA256'],'planSHA256':digest(canonical(p)),
+           'admission':ad},sort_keys=True))
+          PY
+      - name: Commit only exact validated immutable configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "58a783a845afea2eb22bf2a99e94c6eb77976ef4"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "58a783a845afea2eb22bf2a99e94c6eb77976ef4"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-007-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-007-20261030/PLAN.json backend/config/gorge-campaign-wave-007-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist typed-gap guarded Wave007 after partial recovery [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+      - name: Archive short-lived nonsecret plan review
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave007-review-only
+          path: backend/config/gorge-campaign-wave-007-20261030/
+          retention-days: 1
+          if-no-files-found: error
+# No GCS identity, cloud raster job, source imagery, or token export.
