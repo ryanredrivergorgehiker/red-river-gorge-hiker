@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: offline plan prep for verified wave003 20261030'
+      github.event.head_commit.message == 'Lane20: offline plan prep with pinned dependencies 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Install pinned native validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
       - name: Build and validate next finite plan using pinned prior recovery
         shell: bash
         run: |
