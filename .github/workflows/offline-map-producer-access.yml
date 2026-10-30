@@ -16,16 +16,16 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute second approved adjacent twelve-job stage 20261030'
+      github.event.head_commit.message == 'Lane20: continue second approved adjacent stage after dependency-proof correction 20261030'
     runs-on: ubuntu-latest
-    timeout-minutes: 145
+    timeout-minutes: 140
     outputs:
       worker_receipt: ${{ steps.producer.outputs.worker_receipt }}
     steps:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 2282786b7d69e0e0ade2af486e5f2ffb8c11eb32
+          ref: 339cf15b598e389f9b3d26f34be076599304f6f3
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -55,12 +55,12 @@ jobs:
       always() && github.run_attempt == 1 &&
       needs.bounded-stage.outputs.worker_receipt == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 30
     steps:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 2282786b7d69e0e0ade2af486e5f2ffb8c11eb32
+          ref: 339cf15b598e389f9b3d26f34be076599304f6f3
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -83,5 +83,5 @@ jobs:
           project_id: rrgh-nonproduction
       - name: Independently recover and verify every new output and checkpoint
         run: python backend/scripts/gorge_second_stage.py --phase recovery
-# Two sequential jobs, maximum 180 minutes total; no artifacts, cache, dispatch,
+# Two sequential jobs, maximum 170 minutes plus retained 10-minute old slot; no artifacts, cache, dispatch,
 # automatic rerun, secret, deployment, IAM, bucket change or package replacement.
