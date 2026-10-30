@@ -16,7 +16,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute independently validated wave007 quarantine 20261030'
+      github.event.head_commit.message == 'Lane20: execute verified new-territory wave008 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 354c8a9081b531bd4192fc3fdf2e9c38f0979820
+          ref: fd0ea1375765b69087c7e47224d289140e06d642
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -46,7 +46,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Recover accepted inputs and execute up to 128 finite jobs
+      - name: Recover accepted inputs and execute up to 224 finite jobs
         id: producer
         run: python backend/scripts/gorge_campaign.py --phase produce
   independent-recovery:
@@ -60,7 +60,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 354c8a9081b531bd4192fc3fdf2e9c38f0979820
+          ref: fd0ea1375765b69087c7e47224d289140e06d642
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -83,5 +83,5 @@ jobs:
           project_id: rrgh-nonproduction
       - name: Independently recover and verify every new output and checkpoint
         run: python backend/scripts/gorge_campaign.py --phase recovery
-# Two sequential jobs, maximum 220 minutes. Finite 128-job scope and cumulative USD25 ledger.
+# Two sequential jobs, maximum 220 minutes. Finite 224-job scope and cumulative USD25 ledger.
 # Existing keyless identity; no artifacts, raw source uploads, reruns, deployment or security changes.
