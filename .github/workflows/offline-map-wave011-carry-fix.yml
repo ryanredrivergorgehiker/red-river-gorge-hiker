@@ -1,0 +1,90 @@
+name: RRGH Wave011 exact verified-raster carry correction (offline)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave011-carry-fix.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave011-offline-carry-correction
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: reconcile wave011 verified raster carry 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exactly the immutable Wave011 planning source
+        uses: actions/checkout@v4
+        with:
+          ref: c5ec50de121302bcf7db009d94b59016407e2af0
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install exact pinned validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify and repair only inherited verified raster carry
+        shell: bash
+        run: |
+          python backend/scripts/test_gorge_source_gap_guard.py -v
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign import configuration
+          root=Path('backend/config/gorge-campaign-wave-011-20261030')
+          pfile=root/'PLAN.json'
+          efile=root/'ALLOWANCE.json'
+          plan=json.loads(pfile.read_bytes())
+          env=json.loads(efile.read_bytes())
+          carry=plan['campaign']['carry']
+          assert plan['campaign']['sequence']==11
+          assert len(plan['approvedJobIDs'])==128
+          assert len(plan['completedJobIDs'])==1146
+          assert carry=={'chargedUSD':'5.013203284343367815017700196',
+                         'storedBytes':11187267502,'priorCompletedJobs':1146,
+                         'priorRasterTiles':9954,'priorSunlightAssets':320}
+          assert plan['campaign']['previousRecovery']=={
+            'bytes':1519,'generation':'1793400342499547',
+            'key':'engineering/map-production/plans/31ac42e17bad0ca40fe364323c5ee071baf43e469aab3cb0074a103b172b59ce/slots/00002/receipt.json',
+            'sha256':'ca56dfbcc054ebccfbe337825437c556cfcc9842bd9df20fd6dbd11ac262b97d'}
+          assert env['cloudStorageAllowance']['planSHA256']==digest(canonical(plan))
+          prior=digest(canonical(plan))
+          carry['priorRasterTiles']=11362
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          pfile.write_bytes(canonical(plan))
+          efile.write_bytes(canonical(env))
+          verified,allowance,region=configuration(root)
+          assert verified==plan and allowance==env
+          assert not set(plan['approvedJobIDs'])&set(plan['completedJobIDs'])
+          quarantined={k for k,n in plan['priorAttemptCounts'].items()
+                       if n>0 and k not in plan['completedJobIDs']}
+          assert len(quarantined)==19 and not quarantined.intersection(plan['approvedJobIDs'])
+          print(json.dumps({'phase':'corrected-offline-wave011',
+            'oldPlanSHA256':prior,'verifiedPlanSHA256':digest(canonical(plan)),
+            'acceptedJobs':1146,'acceptedTiles':11362,
+            'priorVerifiedReceipt':plan['campaign']['previousRecovery'],
+            'quarantined':len(quarantined),
+            'approvedNewJobs':len(plan['approvedJobIDs'])},sort_keys=True))
+          PY
+      - name: Commit only two corrected immutable planning files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "c5ec50de121302bcf7db009d94b59016407e2af0"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "c5ec50de121302bcf7db009d94b59016407e2af0"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-011-20261030/PLAN.json backend/config/gorge-campaign-wave-011-20261030/ALLOWANCE.json
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git diff --cached --check
+          git commit -m 'Lane20: reconcile Wave011 immutable verified raster carry [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+# No GCS, credentials, cloud production, source download, tile generation or deployment. Retire temporary contents:write after use.
