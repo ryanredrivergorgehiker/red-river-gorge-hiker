@@ -16,7 +16,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute source-covered new-region wave005 20261030'
+      github.event.head_commit.message == 'Lane20: execute wave006 after DEM pixel-gap quarantine 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 442778843d954ced751026c015b2afd70e19afce
+          ref: 790b2d98aa7195b863d2d9daaaa85c4e24de9fba
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -46,7 +46,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Recover accepted inputs and execute up to 512 finite jobs
+      - name: Recover accepted inputs and execute up to 192 finite jobs
         id: producer
         run: python backend/scripts/gorge_campaign.py --phase produce
   independent-recovery:
@@ -60,7 +60,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 442778843d954ced751026c015b2afd70e19afce
+          ref: 790b2d98aa7195b863d2d9daaaa85c4e24de9fba
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
