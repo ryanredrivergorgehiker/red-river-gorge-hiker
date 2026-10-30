@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: prepare verified wave005 from full regional graph 20261030'
+      github.event.head_commit.message == 'Lane20: prepare covered regional wave005 with gap disclosure 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -38,7 +38,7 @@ jobs:
           from gorge_checkpoint import canonical,digest
           from gorge_campaign_budget import admit,cost
           from run_gorge_checkpoint_slot import code_snapshot
-          from forecast_gorge_checkpoint_campaign import build_graph,morton
+          from forecast_gorge_checkpoint_campaign import bbox,coords,intersects,morton,PROFILES
           from gorge_campaign import configuration
           
           src=Path('backend/config/gorge-campaign-wave-004-20261030')
@@ -64,11 +64,43 @@ jobs:
           quarantined='leaf-on-16-17550-25323'
           assert quarantined not in completed and old['priorAttemptCounts'][quarantined]==1
           
-          # Generate the complete 34,750-job source window / overview dependency graph
-          # from the already preserved, official-source inventory; select no overview yet.
-          graph=build_graph(region,[])
-          assert graph['statistics']['jobs']==34750
-          index={j['id']:j for j in graph['jobs']}
+          # Build only real source-covered z16 windows from the inherited official inventory.
+          # The full Gorge may contain missing-source locations. Report each gap, do not
+          # invent imagery or silently mark the regional coverage as complete.
+          grids={z:coords(z) for z in (16,17,18)}
+          index={}
+          missing={}
+          theoretical=0
+          for group,layers in PROFILES.items():
+              for layer,maxz in layers.items():
+                  family='dem' if layer=='terrain' else layer
+                  sources=region['inventory']['sources'].get(family,[])
+                  gap=0
+                  for x,y in sorted(grids[16],key=lambda xy:morton(*xy)):
+                      theoretical+=1
+                      if layer=='usgs-topo':
+                          selected_sources=[]
+                      else:
+                          b=bbox(16,x,y,1/512 if layer=='terrain' else 0)
+                          selected_sources=[src['id'] for src in sources if intersects(src['bbox'],b)]
+                          if not selected_sources:
+                              gap+=1
+                              continue
+                      outputs=[]
+                      for z in range(16,maxz+1):
+                          n=2**(z-16)
+                          for dx in range(n):
+                              for dy in range(n):
+                                  xx,yy=x*n+dx,y*n+dy
+                                  if (xx,yy) in grids[z]:outputs.append([z,xx,yy])
+                      jobid=f'{layer}-16-{x}-{y}'
+                      assert jobid not in index and outputs
+                      index[jobid]={'id':jobid,'layer':layer,'group':group,
+                          'z':16,'x':x,'y':y,'operation':'usgs-tile' if layer=='usgs-topo' else 'source-window',
+                          'sourceIDs':selected_sources,'dependencies':[],'outputTiles':outputs,'preservedComplete':False}
+                  missing[layer]=gap
+          assert theoretical>15000 and len(index)>5000
+          assert any(v>0 for v in missing.values()) # the missing-source condition is explicit
           assert all(jid in index for jid in completed)
           for job in region['jobs']:
               reference=index[job['id']]
@@ -84,7 +116,7 @@ jobs:
               prior=[index[jid] for jid in completed if index[jid]['layer']==layer and index[jid]['z']==16]
               assert prior,'Previous regional foothold absent: '+layer
               seenxy=[(x['x'],x['y']) for x in prior]
-              eligible=[j for j in graph['jobs'] if j['layer']==layer and j['z']==16
+              eligible=[j for j in index.values() if j['layer']==layer and j['z']==16
                   and j['operation'] in ('source-window','usgs-tile')
                   and j['id'] not in completedset and j['id']!=quarantined
                   and attempts.get(j['id'],0)==0 and (j['sourceIDs'] or layer=='usgs-topo')]
@@ -148,7 +180,7 @@ jobs:
           assert checked_plan['campaign']['previousRecovery']==recovery
           assert checked_plan['campaign']['carry']==carry
           assert checked_plan['campaign']['sequence']==5
-          print(json.dumps({'status':'verified-offline-only','regionalGraphJobs':len(graph['jobs']),
+          print(json.dumps({'status':'verified-offline-only','candidateSourceCoveredWindows':len(index),'sourceMissingWindowsByLayer':missing,'theoreticalZ16Windows':theoretical,
            'jobs':len(ids),'outputTiles':sum(len(j['outputTiles']) for j in selected),
            'layerCounts':dict(Counter(j['layer'] for j in selected)),'priorRecoveredJobs':len(completed),
            'quarantined':quarantined,'nextPlanSHA256':digest(canonical(plan)),
