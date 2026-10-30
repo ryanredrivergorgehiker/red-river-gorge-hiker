@@ -78,9 +78,11 @@ def fixture(plan,region):
     ref=store.seed(PREFIX+'fixtures/inputs',bytes(payload))
     for c in catalogs:c['ref']=ref
     plan['cacheRanges']=catalogs
+    oldref=store.seed(PREFIX+'fixtures/closed-preflight',canonical({'format':'rrgh-slot-receipt-v1','planSHA256':plan['continuation']['previousPlanSHA256'],'slot':0,'nonrefundableAllocation':plan['continuation']['retainedAllocation'],'used':{'attempts':0},'result':{'status':'failed'}}))
+    plan['continuation']['closedPreflightReceipt']=oldref
     base={'bucket':'rrgh-nonproduction-protected-packages','key':s.BASE_KEY,'generation':'1791470288796565','bytes':s.BASE_BYTES,'sha256':s.BASE_SHA}
     proof={'format':'rrgh-stage-input-proof-v1','acceptedBase':base,'checkpointRefs':[ref],'files':files,
-        'priorReceipts':[{'job':j}for j in plan['completedJobIDs'][:20]],
+        'priorReceipts':[{'job':j}for j in plan['acceptedPriorDependencies']],
         'cogSelection':{'format':'rrgh-selected-cog-v1','originLedgerSHA256':'0'*64,'sources':sources,'blocks':blocks,'entries':entries,'selectedBytes':19202048}}
     h={};h['proof']=store.seed(PREFIX+'fixtures/proof',canonical(proof))
     h['bootstrap']=store.seed(PREFIX+'fixtures/bootstrap',canonical({'format':'rrgh-slot-receipt-v1','result':{'inputProofValidated':True,'proofRef':h['proof'],'acceptedBase':base,'vectorValidation':{'vectorLayers':13,'vectorFeatures':19789}}}))

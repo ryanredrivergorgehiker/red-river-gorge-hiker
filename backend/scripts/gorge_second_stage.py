@@ -57,8 +57,17 @@ def configuration(directory=CONFIG):
         raise ValueError('Full quality preservation capacity differs')
     if (len(plan['slots'])!=3 or plan['slots'][0]['egressBytes']<128*2**20
         or plan['slots'][1]['storedBytes']<512*2**20 or plan['slots'][2]['egressBytes']<760*2**20
-        or plan['slots'][1]['classARequests']<180 or plan['slots'][2]['classBRequests']<400):
+        or plan['slots'][1]['classARequests']<174 or plan['slots'][2]['classBRequests']<320):
         raise ValueError('Complete production and independent recovery must be prepaid')
+    continuation=plan.get('continuation',{})
+    old=json.loads((SOURCE.parent/'config/gorge-second-stage-initial-20261030/PLAN.json').read_bytes())
+    if (continuation.get('previousPlanSHA256')!=digest(canonical(old))
+        or continuation.get('previousPlanSHA256')!='96d4dc0ed6ba530bbe84ae9d0bed57e832a56e069ee266fec8e89858504e22e7'
+        or continuation.get('retainedAllocation')!=old['slots'][0]
+        or continuation.get('unstartedSlots')!=[1,2] or continuation.get('refundsApplied') is not False):
+        raise ValueError('Original preflight allocation must remain fully reserved')
+    for k in DIMENSIONS:
+        if old['slots'][0][k]+sum(x[k]for x in plan['slots'])>LIMITS[k]:raise ValueError('Cumulative second stage ceiling exceeded')
     for k in ('sourceBytes','sourceRequests','seconds'):
         if sum(plan['jobPolicies'][j][k] for j in JOBS)>plan['slots'][1][k]:raise ValueError('Child allocations exceed worker')
     if plan['githubBilling']['spentUSD']!='281.53' or plan['githubBilling']['headroomUSD']!='68.47' or not plan['githubBilling']['stopAtLimitVerified']:
@@ -129,7 +138,7 @@ def bootstrap(slot,plan,region,root):
     if (base!=initial['result']['acceptedBase'] or base['key']!=BASE_KEY or base['sha256']!=BASE_SHA
         or base['bytes']!=BASE_BYTES or base['generation']!='1791470288796565'):
         raise ValueError('Accepted Base pin changed')
-    if sorted(r['job'] for r in proof['priorReceipts'])!=sorted(plan['completedJobIDs'][:20]):raise ValueError('R4 receipt inventory changed')
+    if sorted(r['job'] for r in proof['priorReceipts'])!=sorted(plan['acceptedPriorDependencies']):raise ValueError('Accepted dependency receipt inventory changed')
     # Source cache extents must be present verbatim in the accepted private proof.
     lookup={(e['kind'],e['path']):e for e in proof['files']}
     selected=[]
@@ -188,10 +197,22 @@ def bootstrap(slot,plan,region,root):
 def produce(plan,evidence,region,root,store,opener,owner):
     slot=Slot(store,plan,0,owner);opener.deadline=slot.meter.deadline
     try:
-        fence=create_fence(slot,PREFIX+'campaign-stages/'+STAGE+'.json',{'format':'rrgh-campaign-stage-release-v1',
+        c=plan['continuation'];old=record(slot,c['closedPreflightReceipt'])
+        if (old.get('planSHA256')!=c['previousPlanSHA256'] or old.get('slot')!=0
+            or old.get('nonrefundableAllocation')!=c['retainedAllocation']
+            or old['result'].get('status')!='failed' or old['used']['attempts']!=0):raise ValueError('Closed preflight authority differs')
+        # Retain the WHOLE old preflight slot, including time and failure padding.
+        # Create-only fences prove the old worker/recovery claims never existed.
+        old_prefix=PREFIX+'plans/'+c['previousPlanSHA256']+'/'
+        fences=[]
+        for index in (1,2):
+            fences.append(create_fence(slot,old_prefix+f'slots/{index:05d}/claim.json',{
+                'format':'rrgh-unstarted-slot-fence-v1','oldPlanSHA256':c['previousPlanSHA256'],'slot':index,
+                'successorPlanSHA256':digest(canonical(plan)),'owner':owner,'rasterAttempts':0}))
+        fence=create_fence(slot,old_prefix+'successor.json',{'format':'rrgh-second-stage-continuation-v1',
             'ownerApproval':APPROVAL,'planSHA256':digest(canonical(plan)),'claim':asdict(slot.claim),
-            'releasedUSD':'0.35','priorReleasedUSD':'0.35','lockedUSD':'7.30','priorHistory':plan['history'],
-            'priorAllocationsNotRefunded':True})
+            'releasedUSD':'0.35','lockedUSD':'7.30','retainedAllocation':c['retainedAllocation'],
+            'closedReceipt':c['closedPreflightReceipt'],'unstartedSlotFences':fences,'refundsApplied':False})
         initial=bootstrap(slot,plan,region,root);initial['releaseFence']=fence
         ref=slot.finish({**initial,'status':'ready','gcsBeforeReceipt':opener.summary()})
         print(json.dumps({'phase':'bootstrap','receiptRef':asdict(ref),'result':initial,'gcsIncludingReceipt':opener.summary()},sort_keys=True),flush=True)
