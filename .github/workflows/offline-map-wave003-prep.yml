@@ -1,0 +1,93 @@
+name: RRGH offline successor plan preparation (no cloud access)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave003-prep.yml]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-wave003-prep
+  cancel-in-progress: false
+jobs:
+  prepare-config:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: offline plan prep for verified wave003 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7aea43840752f3f4249bbdad1fcd62924126c85e
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Build and validate next finite plan using pinned prior recovery
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,copy,json,zlib,sys
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest,require_live_allowance
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          src=Path('backend/config/gorge-campaign-wave-002-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-003-20261030')
+          old=json.loads((src/'PLAN.json').read_bytes())
+          env=json.loads((src/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
+          done=276
+          assert len(old['approvedJobIDs'])==512 and len(region['jobs'])==512
+          assert [j['id'] for j in region['jobs']]==old['approvedJobIDs']
+          assert old['approvedJobIDs'][done-1]=='leaf-off-16-17544-25326'
+          assert old['campaign']['sequence']==2 and len(old['completedJobIDs'])==44
+          assert old['limits']['attempts']==512 and old['slots'][1]['attempts']==512
+          next_jobs=region['jobs'][done:]
+          remaining=[j['id'] for j in next_jobs]
+          assert len(remaining)==236 and not set(remaining)&set(old['completedJobIDs'])
+          recovery={'bytes':1516,'generation':'1793373681594629','key':'engineering/map-production/plans/640f203ca95768718869e100f2ab09f20e71e430266d0f5bb631186bbd51e1ac/slots/00002/receipt.json','sha256':'1e2f4efe260a81f9f55931aaa8086fd0a9ced614d4be2f267f6f3e4e33e247d0'}
+          next_carry={'chargedUSD':'2.100411453853321075439453125','storedBytes':4439964663,'priorCompletedJobs':320,'priorRasterTiles':2968,'priorSunlightAssets':320}
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=3
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=next_carry
+          plan['completedJobIDs']+=old['approvedJobIDs'][:done]
+          plan['approvedJobIDs']=remaining
+          plan['slotJobs']={'1':remaining}
+          plan['jobPolicies']={key:old['jobPolicies'][key] for key in remaining}
+          plan['priorAttemptCounts'].update({key:plan['priorAttemptCounts'].get(key,0)+1 for key in old['approvedJobIDs'][:done]})
+          assert all(v<=2 for v in plan['priorAttemptCounts'].values())
+          plan['slots'][1]['attempts']=len(remaining)
+          plan['limits']['attempts']=len(remaining)
+          region['jobs']=next_jobs
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          assert admit(plan,env)['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert len(plan['completedJobIDs'])==320 and len(set(plan['completedJobIDs']))==320
+          assert set(plan['approvedJobIDs']).isdisjoint(plan['completedJobIDs'])
+          assert plan['campaign']['sequence']==old['campaign']['sequence']+1
+          dst.mkdir(parents=True,exist_ok=False)
+          (dst/'PLAN.json').write_bytes(canonical(plan))
+          (dst/'ALLOWANCE.json').write_bytes(canonical(env))
+          (dst/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          from gorge_campaign import configuration
+          checked_plan,checked_env,checked_region=configuration(dst)
+          assert len(checked_region['jobs'])==236 and len(checked_plan['completedJobIDs'])==320
+          assert checked_plan['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
+          print(json.dumps({'status':'offline-plan-verified','previousRecovery':recovery,'oldJobs':512,'newJobs':236,'priorCompleted':320,'newTiles':sum(len(j['outputTiles']) for j in next_jobs),'planSHA256':digest(canonical(plan)),'sourceSnapshotSHA256':plan['sourceSnapshotSHA256'],'reservedUSD':env['cloudStorageAllowance']['reservedWorstCaseUSD']},sort_keys=True))
+          PY
+      - name: Export only public-repository plan metadata for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave003-review-only
+          path: backend/config/gorge-campaign-wave-003-20261030/
+          retention-days: 1
+          if-no-files-found: error
+# No Cloud credentials, source payloads, secrets, GCS access or production execution.
