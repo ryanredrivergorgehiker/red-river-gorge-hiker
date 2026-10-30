@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-003-20261030'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-004-20261030'
 OUTPUT_CAP=512*2**20
 TILE_CAP=512*1024
 WORKING_CACHE_CAP=6*2**30
