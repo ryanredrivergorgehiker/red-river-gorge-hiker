@@ -32,7 +32,7 @@ from inspect_gorge_stage_handoff import inspect_handoff
 from fetch_gorge_private_seed import CONTEXT
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-stage-reconciled-20261029'
+CONFIG=SOURCE.parent/'config/gorge-base-inventory-20261029'
 GROWTH_CAP=224*2**20
 TILE_CAP=512*1024
 TOTAL_OUTPUT_CAP=108*TILE_CAP
@@ -305,14 +305,17 @@ def recover(plan,evidence,region,root,store,opener):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['plan','stage','recovery'],default='plan');args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['plan','stage','recovery','inventory'],default='plan');args=p.parse_args()
     try:
         plan,evidence,region=configuration()
         if args.phase=='plan':
             print(json.dumps({'planSHA256':digest(canonical(plan)),'jobs':len(plan['approvedJobIDs']),
                 'maximumReservedUSD':evidence['cloudStorageAllowance']['reservedWorstCaseUSD'],'bulkProductionEnabled':False}));return
         root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener)
-        if args.phase=='stage':run_stage(plan,evidence,region,root,store,opener)
+        if args.phase=='inventory':
+            from gorge_base_inventory import inventory
+            inventory(plan,evidence,root,store,opener)
+        elif args.phase=='stage':run_stage(plan,evidence,region,root,store,opener)
         else:recover(plan,evidence,region,root,store,opener)
     except Exception as error:
         print(json.dumps({'phase':args.phase,'status':'failed-closed','errorClass':type(error).__name__,
