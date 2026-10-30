@@ -174,7 +174,16 @@ def child(ticket):
         completed=True
     except Exception as error:
         import traceback
-        diagnostic={'errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]}
+        frames=[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]
+        # A precise typed classification, never a raw exception message, is
+        # safe to persist in immutable recovery metadata. All other failures
+        # retain the original fail-closed behavior.
+        pixel_gap=(isinstance(error,ValueError)
+            and str(error).startswith('Original source pixel gap: ')
+            and any(f['file']=='benchmark_gorge_pipeline.py' and f['function']=='mosaic'
+                    for f in frames))
+        diagnostic={'errorClass':type(error).__name__,'frames':frames,
+            'failureCode':'SOURCE_PIXEL_GAP' if pixel_gap else 'UNCLASSIFIED'}
         raise
     finally:
         # Failures retain observed partial counts. A killed process still keeps
