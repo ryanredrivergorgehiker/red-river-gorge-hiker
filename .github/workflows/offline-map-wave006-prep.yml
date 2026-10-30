@@ -1,0 +1,151 @@
+name: RRGH wave006 partial-recovery non-terrain plan (offline only)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave006-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave006-offline-prep
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: prepare wave006 excluding terrain pixel gaps 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 183606f44b6449fee6939283af40fc1010ec523a
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install original map dependency locks
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Prepare and independently validate exact finite successor without cloud access
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, copy, json, zlib, sys
+          from pathlib import Path
+          from collections import Counter
+          sys.path.insert(0, 'backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          from gorge_campaign import configuration
+          
+          old_dir=Path('backend/config/gorge-campaign-wave-005-20261030')
+          new_dir=Path('backend/config/gorge-campaign-wave-006-20261030')
+          old=json.loads((old_dir/'PLAN.json').read_bytes())
+          env=json.loads((old_dir/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((old_dir/'REGION-PLAN.json.z.b64').read_bytes())))
+          assert old['campaign']['sequence']==5 and len(old['completedJobIDs'])==555
+          assert len(old['approvedJobIDs'])==384 and len(region['jobs'])==384
+          assert old['approvedJobIDs']==[j['id'] for j in region['jobs']]
+          assert old['approvedJobIDs'][96]=='terrain-16-17539-25317'
+          failed='terrain-16-17538-25318'
+          assert old['approvedJobIDs'][97]==failed
+          assert old['priorAttemptCounts']['leaf-on-16-17550-25323']==1
+          done=old['approvedJobIDs'][:97]
+          quarantined='leaf-on-16-17550-25323'
+          assert len(done)==97 and all(j.startswith('hiking-') for j in done[:96])
+          assert done[-1].startswith('terrain-') and len(set(done))==97
+          
+          # Wave005 finished with partial-verified RECOVERY, not a successful producer.
+          # Even though the prior allocation failed, it remains fully charged.
+          recovery={'bytes':1454,'generation':'1793384633970441',
+           'key':'engineering/map-production/plans/6f460c2e02264d5ae7f18b5ca1436e2f58aa02fca3e98a12dcc158355ba266f2/slots/00002/receipt.json',
+           'sha256':'c55290a49e4f7ed34b8e615b7b71f9d5e6a7e2690d867a3ffe3bca12d3739d89'}
+          carry={'chargedUSD':'3.466102520270049571990966797',
+           'storedBytes':7710485040,'priorCompletedJobs':652,
+           'priorRasterTiles':6348,'priorSunlightAssets':320}
+          accepted=old['completedJobIDs']+done
+          assert len(accepted)==652 and len(set(accepted))==652
+          all_old=set(old['approvedJobIDs'])
+          # Terrain needs a pixel-coverage audit before further jobs; do not spend a
+          # second attempt on either failed job.
+          selected=[j for j in region['jobs'] if j['layer'] in ('leaf-off','leaf-on','usgs-topo')]
+          ids=[j['id'] for j in selected]
+          counts=Counter(j['layer'] for j in selected)
+          assert counts=={'leaf-off':64,'leaf-on':64,'usgs-topo':64},counts
+          assert len(ids)==192 and len(set(ids))==192
+          assert not set(ids)&set(accepted)
+          assert failed not in ids and quarantined not in ids
+          assert all(j['operation'] in ('source-window','usgs-tile') for j in selected)
+          assert sum(len(j['outputTiles']) for j in selected)==64*21+64*21+64
+          
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=6
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=carry
+          plan['completedJobIDs']=accepted
+          plan['approvedJobIDs']=ids
+          plan['slotJobs']={'1':ids}
+          plan['jobPolicies']={i:old['jobPolicies'][i] for i in ids}
+          prior=plan['priorAttemptCounts']
+          for job in old['approvedJobIDs'][:98]:
+              prior[job]=prior.get(job,0)+1
+          assert prior[failed]==1 and prior[quarantined]==1
+          assert all(n<=2 for n in prior.values())
+          assert len(set(accepted)&set(ids))==0
+          # The 94 untouched DEM jobs remain explicitly unresolved; none are accepted.
+          remaining_terrain=[j['id'] for j in region['jobs'][98:] if j['layer']=='terrain']
+          assert len(remaining_terrain)==94 and not set(remaining_terrain)&set(ids)
+          plan['slots'][1]['attempts']=192
+          plan['limits']['attempts']=192
+          region['jobs']=selected
+          region['engineHashes']['gorge_campaign.py']=digest(Path('backend/scripts/gorge_campaign.py').read_bytes())
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          admission=admit(plan,env)
+          assert admission['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert float(admission['cumulativeAdmissionUSD'])<25
+          assert float(admission['monthlyAdmissionUSD'])<1
+          new_dir.mkdir(parents=True,exist_ok=False)
+          (new_dir/'PLAN.json').write_bytes(canonical(plan))
+          (new_dir/'ALLOWANCE.json').write_bytes(canonical(env))
+          (new_dir/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          p,e,r=configuration(new_dir)
+          assert p['campaign']['previousRecovery']==recovery
+          assert p['campaign']['carry']==carry
+          assert p['approvedJobIDs']==ids and len(p['completedJobIDs'])==652
+          assert p['regionPlanSHA256']==digest(canonical(r))
+          print(json.dumps({'status':'validated-offline-no-cloud',
+           'completedPrior':len(accepted),'newJobs':len(ids),
+           'newExpectedTiles':sum(len(j['outputTiles']) for j in selected),
+           'deferredTerrainJobs':len(remaining_terrain),
+           'failedTerrainQuarantined':failed,'failedLeafOnQuarantined':quarantined,
+           'counts':dict(counts),'planSHA256':digest(canonical(p)),
+           'sourceSHA256':p['sourceSnapshotSHA256'],'admission':admission},sort_keys=True))
+          PY
+      - name: Commit only immutable validated metadata into exact engineering source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "183606f44b6449fee6939283af40fc1010ec523a"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "183606f44b6449fee6939283af40fc1010ec523a"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-006-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-006-20261030/PLAN.json backend/config/gorge-campaign-wave-006-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist verified wave006 non-terrain successor [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+      - name: Save offline planning evidence without map source imagery
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave006-review-only
+          path: backend/config/gorge-campaign-wave-006-20261030/
+          retention-days: 1
+          if-no-files-found: error
+# No cloud creds/identity, new raster production, secrets, source imagery or deployment.
