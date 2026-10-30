@@ -1,0 +1,178 @@
+name: RRGH offline wave005 regional production plan (no cloud access)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave005-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave005-prep
+  cancel-in-progress: false
+jobs:
+  generate:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: prepare verified wave005 from full regional graph 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8427b083da2e36c1831d0a9517d798c62b11780a
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install existing pinned map dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Generate finite full-region successor and validate offline
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,copy,json,math,zlib,sys
+          from pathlib import Path
+          from collections import Counter
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          from forecast_gorge_checkpoint_campaign import build_graph,morton
+          from gorge_campaign import configuration
+          
+          src=Path('backend/config/gorge-campaign-wave-004-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-005-20261030')
+          old=json.loads((src/'PLAN.json').read_bytes())
+          env=json.loads((src/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
+          policies=json.loads(Path('backend/config/gorge-campaign-wave-002-20261030/PLAN.json').read_bytes())['jobPolicies']
+          assert old['campaign']['sequence']==4 and len(old['completedJobIDs'])==415
+          assert len(old['approvedJobIDs'])==140 and len(region['jobs'])==140
+          assert old['approvedJobIDs']==[j['id'] for j in region['jobs']]
+          assert all(j['operation'] in ('source-window','usgs-tile') for j in region['jobs'])
+          
+          # Exact successfully recovered predecessor; never infer completion from a green workflow alone.
+          recovery={'bytes':1487,'generation':'1793378849065876',
+          'key':'engineering/map-production/plans/e11959e32040faea116e7f956c295026dd972fdd161982f43e2e8ca748141f86/slots/00002/receipt.json',
+          'sha256':'1611efbb499785e6df9eada57bf679bad0c18bdf6d0ab44ef9f93f2cfe73e049'}
+          carry={'chargedUSD':'2.820502520270049571990966797',
+          'storedBytes':6099872304,'priorCompletedJobs':555,'priorRasterTiles':5863,'priorSunlightAssets':320}
+          assert old['campaign']['previousRecovery'] and old['campaign']['carry']['priorCompletedJobs']==415
+          completed=old['completedJobIDs']+old['approvedJobIDs']
+          assert len(completed)==555 and len(set(completed))==555
+          quarantined='leaf-on-16-17550-25323'
+          assert quarantined not in completed and old['priorAttemptCounts'][quarantined]==1
+          
+          # Generate the complete 34,750-job source window / overview dependency graph
+          # from the already preserved, official-source inventory; select no overview yet.
+          graph=build_graph(region,[])
+          assert graph['statistics']['jobs']==34750
+          index={j['id']:j for j in graph['jobs']}
+          assert all(jid in index for jid in completed)
+          for job in region['jobs']:
+              reference=index[job['id']]
+              assert job['sourceIDs']==reference['sourceIDs'],job['id']
+              assert job['outputTiles']==reference['outputTiles'],job['id']
+              assert job['operation']==reference['operation'],job['id']
+          
+          limits={'hiking':96,'terrain':96,'leaf-off':64,'leaf-on':64,'usgs-topo':64}
+          selected=[]
+          completedset=set(completed)
+          attempts=old['priorAttemptCounts']
+          for layer,limit in limits.items():
+              prior=[index[jid] for jid in completed if index[jid]['layer']==layer and index[jid]['z']==16]
+              assert prior,'Previous regional foothold absent: '+layer
+              seenxy=[(x['x'],x['y']) for x in prior]
+              eligible=[j for j in graph['jobs'] if j['layer']==layer and j['z']==16
+                  and j['operation'] in ('source-window','usgs-tile')
+                  and j['id'] not in completedset and j['id']!=quarantined
+                  and attempts.get(j['id'],0)==0 and (j['sourceIDs'] or layer=='usgs-topo')]
+              eligible.sort(key=lambda j:(min(abs(j['x']-x)+abs(j['y']-y) for x,y in seenxy),
+                  morton(j['x'],j['y']),j['id']))
+              chosen=eligible[:limit]
+              assert len(chosen)==limit,(layer,len(chosen))
+              # Group neighboring source windows to maximize cache reuse within each layer.
+              chosen.sort(key=lambda j:(tuple(j['sourceIDs']),morton(j['x'],j['y']),j['id']))
+              selected.extend(chosen)
+          
+          ids=[j['id'] for j in selected]
+          assert len(ids)==384 and len(set(ids))==384 and not set(ids)&(completedset|{quarantined})
+          assert all(j['operation']!='overview' for j in selected)
+          assert {j['layer'] for j in selected}==set(limits)
+          assert sum(len(j['outputTiles']) for j in selected)>3000
+          
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=5
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=carry
+          plan['completedJobIDs']=completed
+          plan['approvedJobIDs']=ids
+          plan['slotJobs']={'1':ids}
+          priorcounts=plan['priorAttemptCounts']
+          for j in old['approvedJobIDs']:
+              priorcounts[j]=priorcounts.get(j,0)+1
+          assert priorcounts[quarantined]==1 and all(0<=v<=2 for v in priorcounts.values())
+          bylayer={}
+          for jobid,policy in policies.items():
+              layer=jobid.rsplit('-',3)[0]
+              if layer in bylayer:assert bylayer[layer]==policy
+              else:bylayer[layer]=policy
+          assert set(bylayer)==set(limits)
+          plan['jobPolicies']={j['id']:bylayer[j['layer']] for j in selected}
+          plan['slots'][1]['attempts']=len(ids)
+          plan['limits']['attempts']=len(ids)
+          
+          region['jobs']=selected
+          region['engineHashes']['gorge_campaign.py']=digest(Path('backend/scripts/gorge_campaign.py').read_bytes())
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          admission=admit(plan,env)
+          assert admission['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert float(admission['monthlyAdmissionUSD'])<1.0
+          assert set(plan['completedJobIDs']).isdisjoint(plan['approvedJobIDs'])
+          assert plan['priorAttemptCounts'][quarantined]==1
+          assert all(j['id'] not in set(plan['completedJobIDs']) for j in selected)
+          assert len(region['jobs'])==384 and len(plan['completedJobIDs'])==555
+          
+          dst.mkdir(parents=True,exist_ok=False)
+          (dst/'PLAN.json').write_bytes(canonical(plan))
+          (dst/'ALLOWANCE.json').write_bytes(canonical(env))
+          (dst/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          checked_plan,checked_env,checked_region=configuration(dst)
+          assert checked_plan['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
+          assert checked_plan['regionPlanSHA256']==digest(canonical(checked_region))
+          assert checked_plan['campaign']['previousRecovery']==recovery
+          assert checked_plan['campaign']['carry']==carry
+          assert checked_plan['campaign']['sequence']==5
+          print(json.dumps({'status':'verified-offline-only','regionalGraphJobs':len(graph['jobs']),
+           'jobs':len(ids),'outputTiles':sum(len(j['outputTiles']) for j in selected),
+           'layerCounts':dict(Counter(j['layer'] for j in selected)),'priorRecoveredJobs':len(completed),
+           'quarantined':quarantined,'nextPlanSHA256':digest(canonical(plan)),
+           'priorRecovery':recovery,'admission':admission},sort_keys=True))
+          PY
+      - name: Commit exact validated metadata to engineering branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "8427b083da2e36c1831d0a9517d798c62b11780a"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "8427b083da2e36c1831d0a9517d798c62b11780a"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-005-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-005-20261030/PLAN.json backend/config/gorge-campaign-wave-005-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist verified new-region wave005 config [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+      - name: Record private-independent-free planning receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave005-region-plan-review-only
+          path: backend/config/gorge-campaign-wave-005-20261030/
+          retention-days: 1
+          if-no-files-found: error
+# No GCS permissions, raster processing, source pixels, credential sharing or deployment.
