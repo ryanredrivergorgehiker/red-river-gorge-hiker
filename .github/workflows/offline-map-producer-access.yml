@@ -1,4 +1,4 @@
-name: RRGH audited stage continuation and independent recovery
+name: RRGH final approved overview and independent recovery
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
@@ -16,30 +16,23 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute measured indexed twelve-job continuation 20261029'
+      github.event.head_commit.message == 'Lane20: execute approved final terrain overview 20261029'
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 3
     outputs:
-      worker_receipt: ${{ steps.producer.outputs.worker_receipt }}
+      final_overview_complete: ${{ steps.producer.outputs.final_overview_complete }}
     steps:
       - name: Checkout exact reviewed stage source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: c08b81945f8f34945ab936fb957e9669e5c43224
+          ref: 93419c8c2d464fdf601d9c502aac9f4501f6b93e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Verify finite release and exact source before authentication
-        run: python backend/scripts/gorge_stage_coordinator.py --phase plan
-      - name: Receive exact private seed without exposing references
-        env:
-          RRGH_STAGE_SEED_TRANSFER: ${{ secrets.RRGH_STAGE_SEED_TRANSFER }}
-        run: |
-          umask 077
-          mkdir -p "$RUNNER_TEMP/rrgh-private"
-          python backend/scripts/fetch_gorge_private_seed.py --destination "$RUNNER_TEMP/rrgh-private/seed.zip"
+        run: python backend/scripts/gorge_final_overview.py --phase plan
       - name: Install pinned processing dependencies
         run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
       - name: Authenticate existing restricted direct WIF identity
@@ -53,28 +46,28 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Reuse measured private Base index, verify genuine inputs and run original twelve jobs
+      - name: Verify closed history and recover four children for final overview
         id: producer
-        run: python backend/scripts/gorge_stage_coordinator.py --phase stage
+        run: python backend/scripts/gorge_final_overview.py --phase produce
   independent-recovery:
     needs: bounded-stage
     if: >-
       always() && github.run_attempt == 1 &&
-      needs.bounded-stage.outputs.worker_receipt == 'true'
+      needs.bounded-stage.outputs.final_overview_complete == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 3
     steps:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: c08b81945f8f34945ab936fb957e9669e5c43224
+          ref: 93419c8c2d464fdf601d9c502aac9f4501f6b93e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Verify unchanged finite recovery allocation
-        run: python backend/scripts/gorge_stage_coordinator.py --phase plan
+        run: python backend/scripts/gorge_final_overview.py --phase plan
       - name: Install pinned validation dependencies
         run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
       - name: Reauthenticate the same restricted identity
@@ -89,5 +82,5 @@ jobs:
         with:
           project_id: rrgh-nonproduction
       - name: Verify exact-generation cache and output recovery on fresh runner
-        run: python backend/scripts/gorge_stage_coordinator.py --phase recovery
+        run: python backend/scripts/gorge_final_overview.py --phase recovery
 # No dispatch, rerun, artifacts, Actions cache, deployment, IAM, bucket change or package replacement.
