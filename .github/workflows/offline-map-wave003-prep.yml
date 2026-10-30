@@ -4,7 +4,7 @@ on:
     branches: [lane20/offline-production-preflight-20261029]
     paths: [.github/workflows/offline-map-wave003-prep.yml]
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: rrgh-wave003-prep
   cancel-in-progress: false
@@ -14,14 +14,14 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: offline plan prep with updated engine pin 20261030'
+      github.event.head_commit.message == 'Lane20: persist validated wave003 configuration 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
           ref: 7aea43840752f3f4249bbdad1fcd62924126c85e
-          persist-credentials: false
+          persist-credentials: true
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -87,6 +87,20 @@ jobs:
           assert checked_plan['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
           print(json.dumps({'status':'offline-plan-verified','previousRecovery':recovery,'oldJobs':512,'newJobs':236,'priorCompleted':320,'newTiles':sum(len(j['outputTiles']) for j in next_jobs),'planSHA256':digest(canonical(plan)),'sourceSnapshotSHA256':plan['sourceSnapshotSHA256'],'reservedUSD':env['cloudStorageAllowance']['reservedWorstCaseUSD']},sort_keys=True))
           PY
+      - name: Commit validated plan only to exact engineering source branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "7aea43840752f3f4249bbdad1fcd62924126c85e"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "7aea43840752f3f4249bbdad1fcd62924126c85e"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-003-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-003-20261030/PLAN.json backend/config/gorge-campaign-wave-003-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist verified wave003 successor config [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
       - name: Export only public-repository plan metadata for review
         uses: actions/upload-artifact@v4
         with:
@@ -94,4 +108,4 @@ jobs:
           path: backend/config/gorge-campaign-wave-003-20261030/
           retention-days: 1
           if-no-files-found: error
-# No Cloud credentials, source payloads, secrets, GCS access or production execution.
+# No Cloud credentials, source payloads, GCS access or production execution. One ephemeral GitHub token writes only the reviewed config.
