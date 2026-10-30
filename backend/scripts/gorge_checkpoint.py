@@ -312,6 +312,7 @@ class Slot:
             raise ValueError('Invalid slot')
         self.store=store; self.plan=plan; self.index=index
         self.meter=Meter(plan['slots'][index]); self.closed=False
+        self.confirmed_creates={}
         expiry=datetime.fromisoformat(plan['expiresAt'].replace('Z','+00:00'))
         self.meter.deadline=min(self.meter.deadline,time.monotonic()+(expiry-datetime.now(timezone.utc)).total_seconds())
         self.prefix=PREFIX+'plans/'+digest(canonical(plan))+'/'
@@ -330,9 +331,18 @@ class Slot:
     def put(self, raw, kind='packs'):
         if self.closed or kind not in ('packs','outputs','indexes') or not 0<len(raw)<=MAX_PACK:
             raise ValueError('Invalid checkpoint write')
-        self.meter.reserve(classARequests=1,storedBytes=len(raw),egressBytes=MAX_METADATA+1)
         key=self.prefix+f'slots/{self.index:05d}/{kind}/'+digest(raw)
-        return self.store.create(key,raw)
+        # Reuse only this live slot's positively confirmed immutable creation.
+        # Identical SQLite snapshots can occur across different overview jobs.
+        # Do not probe remote objects, catch/retry 412, or refund failed writes.
+        if key in self.confirmed_creates:
+            ref=self.confirmed_creates[key]
+            if ref.bytes!=len(raw) or ref.sha256!=digest(raw):raise ValueError('Confirmed checkpoint identity mismatch')
+            return ref
+        self.meter.reserve(classARequests=1,storedBytes=len(raw),egressBytes=MAX_METADATA+1)
+        ref=self.store.create(key,raw)
+        self.confirmed_creates[key]=ref
+        return ref
 
     def get(self, ref, start=0, length=None, expected_sha256=None):
         if self.closed: raise ValueError('Slot is closed')
