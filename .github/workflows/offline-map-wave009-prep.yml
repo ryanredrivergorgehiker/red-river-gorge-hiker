@@ -44,7 +44,14 @@ jobs:
           from gorge_campaign import configuration
           
           src=Path('backend/config/gorge-campaign-wave-008-20261030')
-          dst=Path('backend/config/gorge-campaign-wave-008-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-009-20261030')
+          # Pin canonical producer to next immutable scope before hashing it.
+          campaign_py=Path('backend/scripts/gorge_campaign.py')
+          previous_config="CONFIG=SOURCE.parent/'config/gorge-campaign-wave-008-20261030'"
+          next_config="CONFIG=SOURCE.parent/'config/gorge-campaign-wave-009-20261030'"
+          original_source=campaign_py.read_text()
+          assert original_source.count(previous_config)==1
+          campaign_py.write_text(original_source.replace(previous_config,next_config))
           old=json.loads((src/'PLAN.json').read_bytes())
           env=json.loads((src/'ALLOWANCE.json').read_bytes())
           region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
@@ -202,8 +209,8 @@ jobs:
           test "$(git rev-parse FETCH_HEAD)" = "fd0ea1375765b69087c7e47224d289140e06d642"
           git config user.name 'rrgh-plan-prep[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- backend/config/gorge-campaign-wave-008-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-008-20261030/PLAN.json backend/config/gorge-campaign-wave-008-20261030/REGION-PLAN.json.z.b64
-          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git add -- backend/scripts/gorge_campaign.py backend/config/gorge-campaign-wave-009-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-009-20261030/PLAN.json backend/config/gorge-campaign-wave-009-20261030/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 4
           git diff --cached --check
           git commit -m 'Lane20: persist verified wave009 source-backed successor [skip ci]'
           git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
