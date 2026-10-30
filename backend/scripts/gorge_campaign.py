@@ -1,0 +1,356 @@
+#!/usr/bin/env python3
+"""Finite source-local production wave under immutable USD25 cumulative authority.
+
+Reuses the accepted renderer, private inputs and keyless identity. Future public
+source ranges are working cache, not mandatory durable output. Existing caches
+are immutable; complete output checkpoints and source ledgers are preserved.
+No deployment, deletion, IAM change, unbounded dispatcher or implicit retry.
+"""
+import argparse,base64,json,math,os,shutil,sqlite3,subprocess,sys,time,zlib
+from dataclasses import asdict
+from pathlib import Path
+from types import SimpleNamespace
+from gorge_checkpoint import (GCS,Slot,Ref,Meter,DIMENSIONS,PREFIX,MAX_PACK,canonical,digest,
+    decode_record,encode_record,require_live_allowance,recover_members,pack_delta)
+from gorge_campaign_budget import CAMPAIGN,APPROVAL,admit,settle,add_usage
+from gorge_stage_coordinator import CountedOpener,private_root,signal,verify_outputs
+from gorge_stage_inputs import private_write,PROOF_CAP
+from gorge_stage_preflight import BASE_KEY,BASE_SHA,BASE_BYTES
+from gorge_stage_reconcile import create_fence
+from gorge_guarded_worker import run_job,checkpoint_job
+from gorge_second_stage import recover_catalogs,record,proof_catalogs,neighboring_paths
+from gorge_cache_selection import select_cog_cache,seed_selected_cog
+from run_gorge_checkpoint_slot import code_snapshot,token
+
+SOURCE=Path(__file__).resolve().parent
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-000-20261030'
+OUTPUT_CAP=512*2**20
+TILE_CAP=512*1024
+WORKING_CACHE_CAP=6*2**30
+STATE_RAW_CAP=64*2**20
+STATE_ENCODED_CAP=16*2**20
+
+def configuration(directory=CONFIG):
+    directory=Path(directory)
+    plan=json.loads((directory/'PLAN.json').read_bytes());evidence=json.loads((directory/'ALLOWANCE.json').read_bytes())
+    decoder=zlib.decompressobj();raw=decoder.decompress(base64.b64decode((directory/'REGION-PLAN.json.z.b64').read_bytes()),8*2**20)
+    if not decoder.eof or decoder.unused_data or decoder.unconsumed_tail:raise ValueError('Bounded region required')
+    region=json.loads(raw);admit(plan,evidence);require_live_allowance(plan,evidence)
+    if plan['sourceSnapshotSHA256']!=code_snapshot(SOURCE) or digest(canonical(region))!=plan['regionPlanSHA256']:
+        raise ValueError('Exact source/region pin changed')
+    from build_gorge_map_bundles import PROFILE
+    if region['profiles']!=PROFILE or region['format']!='rrgh-region-plan-v1':raise ValueError('Full quality profile changed')
+    for name,sha in region['engineHashes'].items():
+        if Path(name).name!=name or digest((SOURCE/name).read_bytes())!=sha:raise ValueError('Engine pin changed')
+    jobs=plan['approvedJobIDs']
+    if [j['id'] for j in region['jobs']]!=jobs or plan['slotJobs']!={'1':jobs} or len(set(jobs))!=len(jobs):
+        raise ValueError('Exact finite job assignment required')
+    if any(j in plan['completedJobIDs'] for j in jobs):raise ValueError('Completed job cannot run again')
+    if len(plan['completedJobIDs'])!=plan['campaign']['carry']['priorCompletedJobs']:
+        raise ValueError('Accepted inventory mismatch')
+    if plan['cachePolicy']!='preserve-existing-working-public-ranges-source-pinned-v1':raise ValueError('Cache policy changed')
+    if len(plan['slots'])!=3 or plan['slots'][1]['storedBytes']<OUTPUT_CAP+64*2**20 or plan['slots'][2]['egressBytes']<2*OUTPUT_CAP+128*2**20:
+        raise ValueError('Full output/recovery/assembly must be prepaid')
+    if set(plan['jobPolicies'])!=set(jobs):raise ValueError('Missing bounded job policy')
+    return plan,evidence,region
+
+def emit(**value):print(json.dumps(value,sort_keys=True),flush=True)
+
+def state_snapshot(root):
+    """Bounded, lossless snapshots of NEW working ledgers; no original mutation."""
+    records={}
+    for kind,file in [('cog','cache.sqlite'),('service','requests.sqlite')]:
+        p=root/('working-'+kind)/file;out=root/(kind+'-state.sqlite')
+        with sqlite3.connect('file:'+str(p)+'?mode=ro',uri=True) as src:
+            if src.execute('PRAGMA integrity_check(10)').fetchall()!=[('ok',)]:raise ValueError('Source ledger corruption')
+            with sqlite3.connect(out) as dst:src.backup(dst)
+        raw=out.read_bytes()
+        if len(raw)>STATE_RAW_CAP:raise ValueError('Ledger expansion bound')
+        records[kind]={'bytes':len(raw),'sha256':digest(raw),'zlib':base64.b64encode(zlib.compress(raw,9)).decode()}
+    return records
+
+def check_states(records,root):
+    for kind,r in records.items():
+        if kind not in ('cog','service') or not 0<r['bytes']<=STATE_RAW_CAP:raise ValueError('State bound')
+        dec=zlib.decompressobj();raw=dec.decompress(base64.b64decode(r['zlib']),r['bytes']+1)
+        if not dec.eof or dec.unused_data or dec.unconsumed_tail or len(raw)!=r['bytes'] or digest(raw)!=r['sha256']:
+            raise ValueError('State hash/length mismatch')
+        p=root/(kind+'.sqlite');private_write(p,raw)
+        with sqlite3.connect('file:'+str(p)+'?mode=ro',uri=True) as db:
+            if db.execute('PRAGMA integrity_check(10)').fetchall()!=[('ok',)]:raise ValueError('Recovered ledger integrity')
+    return {'ledgers':len(records),'hashesAndSQLiteVerified':True,'rawRangesAreTransientForNewWorkingCache':True}
+
+def load_large(slot,ref,limit=STATE_ENCODED_CAP):
+    ref=Ref(**ref)
+    if ref.bytes>limit:raise ValueError('Bounded metadata object required')
+    return decode_record(slot.get(ref),128*2**20)
+
+def save_large(slot,obj,limit=STATE_ENCODED_CAP):
+    return asdict(slot.put(encode_record(obj,limit,True,128*2**20),'indexes'))
+
+def bootstrap(slot,plan,region,root):
+    c=plan['campaign'];h=plan['history']
+    # Same sequence can be claimed only once across all source/config revisions.
+    if c['sequence']:
+        previous=record(slot,c['previousRecovery'])['result']
+        if previous.get('status')!='verified' or previous['settlement']['sequence']!=c['sequence']-1:
+            raise ValueError('Previous recovery must close successfully')
+        carry=previous['nextCarry']
+        if carry!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
+    fence=create_fence(slot,PREFIX+'campaigns/'+CAMPAIGN+f"/wave-{c['sequence']:05d}.json",{
+        'format':'rrgh-campaign-wave-claim-v1','campaign':CAMPAIGN,'ownerApproval':APPROVAL,
+        'planSHA256':digest(canonical(plan)),'slotClaim':asdict(slot.claim),'previousRecovery':c.get('previousRecovery'),
+        'carry':c['carry'],'allocation':plan['limits'],'ceilingUSD':'25.00'})
+    initial=record(slot,h['acceptedBootstrap']);accepted=record(slot,h['secondRecovery'])
+    oldworker=record(slot,h['secondWorker'])
+    if (initial['result'].get('inputProofValidated') is not True or
+        initial['result']['vectorValidation']['vectorLayers']!=13 or initial['result']['vectorValidation']['vectorFeatures']!=19789 or
+        accepted['result'].get('status')!='verified' or accepted['result']['production']['jobs']!=12 or accepted['result']['production']['files']!=116 or
+        accepted['result']['workerReceipt']!=h['secondWorker'] or oldworker['result']['status']!='complete'):
+        raise ValueError('Accepted private input/second-stage lineage changed')
+    proof=record(slot,h['proof'],'rrgh-stage-input-proof-v1')
+    b=proof['acceptedBase']
+    if (initial['result']['proofRef']!=h['proof'] or b!=initial['result']['acceptedBase'] or b['key']!=BASE_KEY or b['sha256']!=BASE_SHA
+        or b['bytes']!=BASE_BYTES or b['generation']!='1791470288796565'):
+        raise ValueError('Accepted Base identity mismatch')
+    shared=[e for e in proof['files'] if e['kind']=='shared']
+    if len(shared)!=340 or sum(e['bytes'] for e in shared)!=73865407:raise ValueError('Shared inventory differs')
+    # Accepted shared bytes stay in prior immutable checkpoints; raster workers
+    # need their proof, not another full 73.9MB shared-input download.
+    selected_paths={e['path'].removeprefix('cog-cache/') for cat in h['originalCacheRanges'] for e in cat['members']}
+    selected=[e for e in proof['files'] if e['kind']=='cog' and e['path'] in selected_paths]
+    if len(selected)!=293:raise ValueError('Original selected cache inventory differs')
+    original_files=[{**e,'path':'cog/'+e['path']} for e in selected]
+    service_files=[{**e,'path':'service/'+e['path']} for e in proof['files'] if e['kind']=='service' and e['path'] in h['serviceMetadataPaths']]
+    if len(service_files)!=2:raise ValueError('NAIP service metadata missing')
+    original_files+=service_files
+    recover_catalogs(slot,proof_catalogs(proof,original_files),[e['path'] for e in original_files],root/'seed')
+    cats=[slot.get_catalog(Ref(**ref)) for ref in oldworker['result']['cacheCatalogs']]
+    paths=[e['path'] for cat in cats for e in cat['members'] if e['path'].startswith(('cog/','service/'))]
+    last_job=plan['history']['secondStageLastJob']
+    last_state=f'state/{last_job}/cog.sqlite.z1'
+    if sum(e['path']==last_state for cat in cats for e in cat['members'])!=1:raise ValueError('Latest source ledger snapshot missing')
+    recover_catalogs(slot,cats,paths+[last_state],root/'seed')
+    from gorge_state_snapshot import decode
+    private_write(root/'seed/cog/cache.sqlite',decode((root/'seed'/last_state).read_bytes()))
+    with sqlite3.connect('file:'+str(root/'seed/cog/cache.sqlite')+'?mode=ro',uri=True) as db:
+        keys=db.execute('SELECT identity,number FROM blocks').fetchall()
+    selection=select_cog_cache(root/'seed/cog',keys)
+    seed_selected_cog(selection,root/'seed/cog',root/'working-cog',region['sourceLimits']['cogBytes'])
+    if c['sequence']:
+        # Carry exact pins forward even when newly obtained public raw ranges
+        # were intentionally transient. Refetch can never silently adopt a
+        # newer source version after a completed wave.
+        prior_detail=load_large(slot,previous['detailRef'])
+        prior_states=load_large(slot,prior_detail['stateRef'])
+        pins=root/'prior-state';pins.mkdir();check_states(prior_states,pins)
+        with sqlite3.connect('file:'+str(pins/'cog.sqlite')+'?mode=ro',uri=True) as src, sqlite3.connect(root/'working-cog/cache.sqlite') as dst:
+            for url,identity,metadata in src.execute('SELECT url,identity,metadata FROM sources'):
+                old=dst.execute('SELECT identity FROM sources WHERE url=?',(url,)).fetchone()
+                if old and old[0]!=identity:raise ValueError('Prior source identity conflict')
+                dst.execute('INSERT OR IGNORE INTO sources VALUES (?,?,?)',(url,identity,metadata))
+            dst.commit()
+    service=root/'working-service';service.mkdir(mode=0o700)
+    for p in (root/'seed/service').iterdir():
+        if p.suffix in ('.json','.bin'):os.link(p,service/p.name)
+    from benchmark_ky_naip_usgs import ServiceCache
+    svc=ServiceCache(service,byte_limit=region['sourceLimits']['serviceBytes'],request_limit=region['sourceLimits']['serviceRequests']);svc.close()
+    (root/'worker').mkdir(mode=0o700)
+    private_write(root/'REGION-PLAN.json',canonical(region))
+    # New sources are pinned by the established source HEAD/If-Match path before
+    # their first pixel read. Accepted cached identities never silently refresh.
+    ticket=root/'HANDOFF.json';private_write(ticket,canonical({'root':str(root),'region':region,'plan':plan}))
+    r=subprocess.run([sys.executable,str(Path(__file__).resolve()),'--handoff',str(ticket)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=120)
+    if r.returncode or json.loads(r.stdout).get('networkOperations')!=0:raise ValueError('Integrated worker handoff failed')
+    # Only real old neighboring tiles are read for independent edge comparison.
+    neighbors=[]
+    for ref in oldworker['result']['completedJobReceipts']:
+        old=record(slot,ref,'rrgh-checkpoint-job-v1')
+        wanted={e['path'] for e in neighboring_paths(region,old['result']['originalReceipt']['outputs'])}
+        for cat in old['result']['outputPacks']:
+            es=[{**e,'path':'prior/'+e['path']} for e in cat['members'] if e['path'] in wanted]
+            if es:neighbors.append({'ref':cat['ref'],'members':es})
+    old_files=[e for e in proof['files'] if e['kind']=='prior']
+    es=[{**e,'path':'prior/'+e['path']} for e in neighboring_paths(region,old_files)]
+    neighbors+=proof_catalogs(proof,es)
+    return {'inputProofValidated':True,'proofRef':h['proof'],'acceptedBase':b,'sharedBytesReusedWithoutTransfer':73865407,
+        'selectedCOGBytes':selection['selectedBytes'],'selectedCOGBlocks':len(keys),'neighbors':neighbors,
+        'campaignFence':fence,'workingCachePolicy':plan['cachePolicy'],'workerHandoff':json.loads(r.stdout)}
+
+def handoff(ticket):
+    import socket
+    def block(*args,**kwargs):raise RuntimeError('No network during integrated handoff')
+    socket.socket.connect=block;socket.create_connection=block
+    p=json.loads(Path(ticket).read_bytes());root=Path(p['root']);region=p['region'];plan=p['plan']
+    import orchestrate_gorge_region as engine
+    from cached_cog_source import Cache,official_url
+    from benchmark_ky_naip_usgs import ServiceCache,NAIP
+    from build_gorge_map_bundles import PROFILE
+    if region['profiles']!=PROFILE:raise ValueError('Recipe profile mismatch')
+    sources={s['id']:s for values in region['inventory']['sources'].values() for s in values}
+    for j in region['jobs']:
+        if j['id'] in plan['completedJobIDs'] or not j['outputTiles']:raise ValueError('Invalid job')
+        for sid in j['sourceIDs']:
+            if j['layer']!='leaf-on':official_url(sources[sid]['url'])
+        if j['operation']=='overview':raise ValueError('First sustained wave must use explicit source windows')
+    cache=Cache(root/'working-cog',limit=region['sourceLimits']['cogBytes'],maximum_limit=1_000_000_000_000);cache.close()
+    service=ServiceCache(root/'working-service',byte_limit=region['sourceLimits']['serviceBytes'],request_limit=region['sourceLimits']['serviceRequests'])
+    meta,_=service.fetch(NAIP,{'f':'pjson'});service.close()
+    if not json.loads(meta):raise ValueError('NAIP metadata absent')
+    emit(workerHandoffValidated=True,jobs=len(region['jobs']),networkOperations=0)
+
+def bounded_child(slot,plan,region_path,job,root):
+    policy=plan['jobPolicies'][job]
+    timeout=policy['seconds']
+    for k in ('sourceBytes','sourceRequests'):
+        if slot.meter.used[k]+policy[k]>slot.meter.caps[k]:raise ValueError('Stop before new source reservation exceeds wave')
+    if timeout+180>slot.meter.deadline-time.monotonic():raise ValueError('Time reserved for checkpoint closure')
+    if slot.meter.used['attempts']+1>slot.meter.caps['attempts']:raise ValueError('Attempt ceiling')
+    allocation={'job':job,'policy':policy,'workingCacheCeiling':WORKING_CACHE_CAP,'priorUsed':slot.meter.used.copy()}
+    reservation=slot.put(canonical({'format':'rrgh-campaign-child-reservation-v1',**allocation}),'indexes')
+    childcaps=dict.fromkeys(DIMENSIONS,0);childcaps.update(policy,attempts=1)
+    proxy=SimpleNamespace(plan=slot.plan,index=slot.index,meter=Meter(childcaps))
+    started=time.monotonic();success=False
+    try:
+        receipt=run_job(proxy,region_path,job,root/'worker',root/'working-cog',root/'working-service',policy,timeout)
+        use=receipt['execution']['sourceUsage']['reserved']
+        charged={'sourceBytes':use['sourceBytes'],'sourceRequests':use['sourceRequests'],'attempts':1,'seconds':math.ceil(time.monotonic()-started)}
+        slot.meter.reserve(**charged);success=True
+        receipt['campaignReservation']={'ref':asdict(reservation),'allocation':allocation,'retained':charged,
+            'confirmedUnused':{k:policy[k]-charged[k] for k in ('sourceBytes','sourceRequests','seconds')}}
+        return receipt
+    finally:
+        if not success:
+            # Ambiguous child consumes its whole allowance. No refund, rerun or
+            # later job is allowed after this path.
+            slot.meter.reserve(sourceBytes=policy['sourceBytes'],sourceRequests=policy['sourceRequests'],attempts=1,seconds=timeout)
+
+def produce(plan,evidence,region,root,store,opener,owner):
+    boot=Slot(store,plan,0,owner);opener.deadline=boot.meter.deadline
+    try:
+        initial=bootstrap(boot,plan,region,root);initialref=save_large(boot,initial)
+        ref=boot.finish({'status':'ready','inputProofValidated':True,'bootstrapDataRef':initialref,'gcs':opener.summary()})
+        signal('bootstrap_ready');emit(phase='bootstrap',receiptRef=asdict(ref),sharedBytesDownloaded=0,selectedCacheBytes=initial['selectedCOGBytes'],gcsIncludingReceipt=opener.summary())
+    except Exception as error:
+        if not boot.closed:boot.finish({'status':'failed','errorClass':type(error).__name__,'gcs':opener.summary()})
+        raise
+    slot=Slot(store,plan,1,owner);opener.deadline=slot.meter.deadline
+    completed=[];outputs=0;failure=None;stopped=None;start=time.monotonic();sourcebytes=0;sourcerequests=0
+    try:
+        for job in plan['approvedJobIDs']:
+            expected=next(j for j in region['jobs'] if j['id']==job)
+            if outputs+len(expected['outputTiles'])*TILE_CAP>OUTPUT_CAP:
+                stopped='output envelope reached before next attempt';break
+            if shutil.disk_usage(root).free<2*2**30:
+                stopped='runner capacity reserve reached';break
+            with sqlite3.connect('file:'+str(root/'working-cog/cache.sqlite')+'?mode=ro',uri=True) as db:
+                working=db.execute('SELECT COALESCE(SUM(bytes),0) FROM blocks').fetchone()[0]
+            working+=sum(p.stat().st_size for p in (root/'working-service').glob('*.bin'))
+            if working+plan['jobPolicies'][job]['sourceBytes']>WORKING_CACHE_CAP:
+                stopped='working cache bound reached before next attempt';break
+            receipt=bounded_child(slot,plan,root/'REGION-PLAN.json',job,root)
+            if any(e['bytes']>TILE_CAP for e in receipt['outputs']):raise ValueError('Full quality output bound; never recompress')
+            ref=checkpoint_job(slot,receipt,root/'worker');completed.append(asdict(ref))
+            outputs+=sum(e['bytes'] for e in receipt['outputs'])
+            sourcebytes+=receipt['execution']['sourceUsage']['actual']['receivedBodyBytes']
+            sourcerequests+=receipt['execution']['sourceUsage']['actual']['operations']
+            emit(job=job,completedJobs=len(completed),jobTiles=len(receipt['outputs']),outputBytes=outputs,sourceBytes=sourcebytes,sourceRequests=sourcerequests,durableJobReceipt=asdict(ref))
+    except Exception as error:
+        import traceback
+        failure={'errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]}
+    # Future raw public ranges remain a bounded working cache. Save the complete
+    # ledger, exact source pins and successful outputs, without multiplying raw
+    # cache storage/recovery costs. Existing accepted raw packs remain untouched.
+    states=state_snapshot(root);state_ref=save_large(slot,states)
+    details={'completedJobReceipts':completed,'stateRef':state_ref,'sourceBytesReceived':sourcebytes,'sourceRequests':sourcerequests,
+        'outputBytes':outputs,'seconds':round(time.monotonic()-start,3),'failure':failure,'stoppedBeforeNextAttempt':stopped,
+        'rawCachePolicy':plan['cachePolicy'],'gcs':opener.summary()}
+    detail_ref=save_large(slot,details)
+    status='failed' if failure else 'bounded-stop' if stopped else 'complete'
+    ref=slot.finish({'status':status,'detailRef':detail_ref,'jobs':len(completed),'outputBytes':outputs,'stateRef':state_ref,'gcs':opener.summary()})
+    signal('worker_receipt');emit(phase='production',status=status,receiptRef=asdict(ref),jobs=len(completed),outputBytes=outputs,sourceBytes=sourcebytes,sourceRequests=sourcerequests,diagnostic=failure,stopped=stopped,gcsIncludingReceipt=opener.summary())
+    if failure:raise RuntimeError('Production stopped with preserved completed jobs')
+
+def assemble(slot,records,root):
+    from build_gorge_map_bundles import PROFILE,partition,write_part
+    grouped={g:[] for g in PROFILE}
+    for record in records:
+        for e in record['result']['originalReceipt']['outputs']:
+            fields=e['path'].split('/');layer=fields[1]
+            group=next(g for g,ls in PROFILE.items() if layer in ls)
+            grouped[group].append({**e,'source':str(root/'outputs'/e['path']),'layer':layer,'z':int(fields[2]),'x':int(fields[3]),'y':int(Path(fields[4]).stem)})
+    result=[]
+    for group,entries in grouped.items():
+        if not entries:continue
+        folder=root/'parts'/group;folder.mkdir(parents=True)
+        for items in partition(group,entries):
+            part=write_part(group,items,folder);p=folder/part['file'];chunks=[]
+            with p.open('rb') as stream:
+                offset=0
+                while raw:=stream.read(MAX_PACK):
+                    ref=slot.put(raw,'outputs');chunks.append({'offset':offset,'ref':asdict(ref)})
+                    # Read back each generation-pinned stored chunk. Original
+                    # raster recovery on this separate runner supplies assembly.
+                    if slot.get(ref)!=raw:raise ValueError('Stored package chunk mismatch')
+                    offset+=len(raw)
+            result.append({'group':group,**part,'chunks':chunks,'regionalReady':False,'nativePartBoundsPass':part['byteCount']<=256000000 and part['fileCount']<=60000})
+    return result
+
+def recover(plan,region,root,store,opener,owner):
+    slot=Slot(store,plan,2,owner);opener.deadline=slot.meter.deadline
+    status='failed';error=None;result={};boot=None;worker=None
+    try:
+        bootref,boot=slot.recover_receipt(0)
+        if boot['result'].get('status')!='ready':raise ValueError('Bootstrap not accepted')
+        initial=load_large(slot,boot['result']['bootstrapDataRef'])
+        workerref,worker=slot.recover_receipt(1)
+        detail=load_large(slot,worker['result']['detailRef'])
+        records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in detail['completedJobReceipts']]
+        if any(r['planSHA256']!=digest(canonical(plan)) or r['slot']!=1 for r in records):raise ValueError('Output lineage changed')
+        catalogs=[c for r in records for c in r['result']['outputPacks']]
+        paths=[e['path'] for c in catalogs for e in c['members']]
+        if paths:recover_catalogs(slot,catalogs,paths,root/'outputs')
+        neighbors=initial['neighbors'];oldpaths=[e['path'] for c in neighbors for e in c['members']]
+        if oldpaths:recover_catalogs(slot,neighbors,oldpaths,root/'old')
+        qa=verify_outputs(plan,region,records,root/'outputs',root/'old') if records else {'jobs':0,'files':0,'bytes':0,'seams':[]}
+        (root/'state').mkdir();states=check_states(load_large(slot,detail['stateRef']),root/'state')
+        parts=assemble(slot,records,root) if records else []
+        qa['sourceLedgerVerification']=states;qa['parts']=parts;qa['regionComplete']=False
+        qaref=save_large(slot,qa)
+        completed=worker['result']['status'] in ('complete','bounded-stop')
+        used=add_usage(boot['used'],worker['used'],slot.meter.used)
+        ledger=settle(plan,used,completed)
+        nextcarry={'chargedUSD':ledger['chargedUSD'],'storedBytes':ledger['storedBytes'],
+            'priorCompletedJobs':plan['campaign']['carry']['priorCompletedJobs']+qa['jobs'],
+            'priorRasterTiles':plan['campaign']['carry']['priorRasterTiles']+qa['files'],'priorSunlightAssets':320}
+        status='verified' if completed else 'partial-verified'
+        result={'status':status,'jobs':qa['jobs'],'tiles':qa['files'],'outputBytes':qa['bytes'],'qaRef':qaref,
+            'packageParts':len(parts),'packageBytes':sum(p['byteCount'] for p in parts),'adjacentEdgesMeasured':len(qa['seams']),
+            'workerReceipt':asdict(workerref),'bootstrapReceipt':asdict(bootref),'detailRef':worker['result']['detailRef'],
+            'sourceBytesReceived':detail['sourceBytesReceived'],'sourceRequests':detail['sourceRequests'],
+            'producerSeconds':detail['seconds'],'settlement':ledger,'nextCarry':nextcarry,
+            'allOutputHashesAndPixelsVerified':True,'allNewPackageChunksReadBack':True,'allExistingCachesPreserved':True}
+    except Exception as exc:
+        import traceback
+        error={'errorClass':type(exc).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(exc.__traceback__)]}
+        result.update(status='failed',diagnostic=error,allWaveAllocationsRetained=True)
+    result['gcsBeforeReceipt']=opener.summary();ref=slot.finish(result)
+    emit(phase='independent-recovery',receiptRef=asdict(ref),result=result,gcsIncludingReceipt=opener.summary())
+    if error:raise RuntimeError('Independent recovery failed closed')
+
+def main():
+    ap=argparse.ArgumentParser();ap.add_argument('--phase',choices=['plan','produce','recovery'],default='plan');ap.add_argument('--handoff');a=ap.parse_args()
+    if a.handoff:handoff(a.handoff);return
+    try:
+        plan,evidence,region=configuration()
+        if a.phase=='plan':emit(planSHA256=digest(canonical(plan)),jobs=len(region['jobs']),tiles=sum(len(j['outputTiles']) for j in region['jobs']),**admit(plan,evidence));return
+        if os.environ.get('GITHUB_RUN_ATTEMPT')!='1':raise ValueError('Rerun prohibited')
+        root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener);owner=os.environ['GITHUB_RUN_ID']
+        if a.phase=='produce':produce(plan,evidence,region,root,store,opener,owner)
+        else:recover(plan,region,root,store,opener,owner)
+    except Exception as error:
+        import traceback
+        emit(phase=a.phase,status='failed-closed',errorClass=type(error).__name__,frames=[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)],automaticRetryPermitted=False)
+        raise SystemExit(2) from None
+
+if __name__=='__main__':main()
