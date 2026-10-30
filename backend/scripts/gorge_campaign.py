@@ -234,13 +234,29 @@ def handoff(ticket):
     if not json.loads(meta):raise ValueError('NAIP metadata absent')
     emit(workerHandoffValidated=True,jobs=len(region['jobs']),networkOperations=0)
 
+
+def producer_reservation_stop(used,caps,policy):
+    """Return a safe bounded-stop reason before a child reservation is written.
+
+    Failed source-pixel attempts retain their *full* seconds allocation. The
+    source-byte and attempt guards alone must not allow a later Meter.reserve
+    failure to convert resource exhaustion into an unrelated fatal error.
+    """
+    if any(used[k]+policy[k]>caps[k] for k in ('sourceBytes','sourceRequests')):
+        return 'source allowance exhausted before next attempt'
+    if used['attempts']+1>caps['attempts']:
+        return 'attempt allowance exhausted before next job'
+    if used['seconds']+policy['seconds']>caps['seconds']:
+        return 'worker seconds allowance exhausted before next attempt'
+    return None
+
+
 def bounded_child(slot,plan,region_path,job,root):
     policy=plan['jobPolicies'][job]
     timeout=policy['seconds']
-    for k in ('sourceBytes','sourceRequests'):
-        if slot.meter.used[k]+policy[k]>slot.meter.caps[k]:raise ValueError('Stop before new source reservation exceeds wave')
+    reason=producer_reservation_stop(slot.meter.used,slot.meter.caps,policy)
+    if reason:raise ValueError('Stop before new child reservation: '+reason)
     if timeout+180>slot.meter.deadline-time.monotonic():raise ValueError('Time reserved for checkpoint closure')
-    if slot.meter.used['attempts']+1>slot.meter.caps['attempts']:raise ValueError('Attempt ceiling')
     allocation={'job':job,'policy':policy,'workingCacheCeiling':WORKING_CACHE_CAP,'priorUsed':slot.meter.used.copy()}
     reservation=slot.put(canonical({'format':'rrgh-campaign-child-reservation-v1',**allocation}),'indexes')
     childcaps=dict.fromkeys(DIMENSIONS,0);childcaps.update(policy,attempts=1)
@@ -307,10 +323,8 @@ def produce(plan,evidence,region,root,store,opener,owner):
             if working+plan['jobPolicies'][job]['sourceBytes']>WORKING_CACHE_CAP:
                 stopped='working cache bound reached before next attempt';break
             policy=plan['jobPolicies'][job]
-            if any(slot.meter.used[k]+policy[k]>slot.meter.caps[k] for k in ('sourceBytes','sourceRequests')):
-                stopped='source allowance exhausted before next attempt';break
-            if slot.meter.used['attempts']+1>slot.meter.caps['attempts']:
-                stopped='attempt allowance exhausted before next job';break
+            stopped=producer_reservation_stop(slot.meter.used,slot.meter.caps,policy)
+            if stopped:break
             if policy['seconds']+180>slot.meter.deadline-time.monotonic():
                 stopped='worker deadline reserve reached before next attempt';break
             try:
