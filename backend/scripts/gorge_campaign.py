@@ -263,6 +263,25 @@ def bounded_child(slot,plan,region_path,job,root):
             # later job is allowed after this path.
             slot.meter.reserve(sourceBytes=policy['sourceBytes'],sourceRequests=policy['sourceRequests'],attempts=1,seconds=timeout)
 
+def is_verified_original_pixel_gap(child):
+    """Only a fully typed native pixel-gap failure may be skipped.
+
+    The attempt and entire reserved resource allowance were already consumed.
+    This predicate must never accept arbitrary RuntimeError, a missing usage
+    receipt, a child timeout, or a failed output integrity check.
+    """
+    if not isinstance(child,dict) or child.get('completed') is not False:
+        return False
+    reason=child.get('diagnostic')
+    return (isinstance(reason,dict) and reason.get('errorClass')=='ValueError'
+        and reason.get('failureCode')=='SOURCE_PIXEL_GAP'
+        and isinstance(reason.get('frames'),list)
+        and any(isinstance(f,dict)
+                and f.get('file')=='benchmark_gorge_pipeline.py'
+                and f.get('function')=='mosaic'
+                for f in reason['frames']))
+
+
 def produce(plan,evidence,region,root,store,opener,owner):
     boot=Slot(store,plan,0,owner);opener.deadline=boot.meter.deadline
     try:
@@ -303,14 +322,7 @@ def produce(plan,evidence,region,root,store,opener,owner):
                 usage=root/'worker'/('gate-c-'+job+'.usage.json')
                 if usage.is_file():
                     child=json.loads(usage.read_bytes())
-                    reason=child.get('diagnostic')
-                    if (child.get('completed') is False
-                        and isinstance(reason,dict)
-                        and reason.get('errorClass')=='ValueError'
-                        and reason.get('failureCode')=='SOURCE_PIXEL_GAP'
-                        and any(f.get('file')=='benchmark_gorge_pipeline.py'
-                                and f.get('function')=='mosaic'
-                                for f in reason.get('frames',[]) if isinstance(f,dict))):
+                    if is_verified_original_pixel_gap(child):
                         sourcegaps.append(job)
                         emit(job=job,status='source-pixel-gap-quarantined',
                              attemptConsumed=True,sourceQualityUnchanged=True)
