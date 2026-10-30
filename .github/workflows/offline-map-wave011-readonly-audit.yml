@@ -1,0 +1,124 @@
+name: RRGH Wave011 immutable checkpoint read-only incident audit
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave011-readonly-audit.yml]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: rrgh-wave011-readonly-checkpoint-audit
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: inspect Wave011 checkpointed outputs read-only 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact Wave011 immutable production source
+        uses: actions/checkout@v4
+        with:
+          ref: b32cbc4eece99f930b39df76eadc6328703e2f1c
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned map validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Authenticate existing restricted keyless identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Inspect immutable failed-wave checkpoints with zero GCS writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json,sys,tempfile
+          from dataclasses import asdict
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import GCS,Ref,Meter,DIMENSIONS,canonical,digest,decode_record
+          from gorge_campaign import configuration,load_large,check_states
+          from gorge_second_stage import record,recover_catalogs
+          from gorge_stage_coordinator import verify_outputs
+          from run_gorge_checkpoint_slot import token
+          plan,env,region=configuration()
+          expected='03edea40b63ad8d937064e10f7b221445a55da1fa87f7689657a70efab3d96eb'
+          assert digest(canonical(plan))==expected and plan['campaign']['sequence']==11
+          assert plan['campaign']['carry']['priorCompletedJobs']==1146
+          assert plan['campaign']['carry']['priorRasterTiles']==11362
+          assert len(plan['approvedJobIDs'])==128
+          # One short-lived WIF exchange for this bounded fresh runner; never log it.
+          bearer=token()
+          class ReadOnlyGCS(GCS):
+              def create(self,*a,**k):raise RuntimeError('All GCS creates prohibited in incident audit')
+              def _request(self,method,*args,**kwargs):
+                  if method!='GET':raise RuntimeError('Non-GET GCS call prohibited')
+                  return super()._request(method,*args,**kwargs)
+          storage=ReadOnlyGCS(plan,env,lambda:bearer)
+          caps=dict.fromkeys(DIMENSIONS,0)
+          caps.update(seconds=900,classBRequests=650,egressBytes=256*2**20)
+          class ReadOnlySlot:
+              def __init__(self):
+                  self.meter=Meter(caps)
+              def get(self,ref,start=0,length=None,expected_sha256=None):
+                  length=ref.bytes if length is None else length
+                  self.meter.reserve(classBRequests=1,egressBytes=length+1)
+                  raw=storage.read(ref,start,length)
+                  if expected_sha256 is not None and digest(raw)!=expected_sha256:
+                      raise ValueError('Selected read-only member SHA mismatch')
+                  return raw
+          slot=ReadOnlySlot()
+          prod=Ref(key='engineering/map-production/plans/'+expected+
+                   '/slots/00001/receipt.json',
+                   generation='1793401709392186',bytes=728,
+                   sha256='eaf01977e64789af249b51e12046a6007613ace8523271716fc8921455d0920c')
+          producer=decode_record(slot.get(prod))
+          assert producer['planSHA256']==expected and producer['slot']==1
+          assert producer['result']['status']=='failed' and producer['result']['jobs']==64
+          details=load_large(slot,producer['result']['detailRef'])
+          assert len(details['completedJobReceipts'])==64 and details['sourcePixelGapJobs']==[]
+          records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in details['completedJobReceipts']]
+          jobs=[r['job'] for r in records]
+          assert len(jobs)==len(set(jobs))==64 and set(jobs)==set(plan['approvedJobIDs'][:64])
+          assert all(j.startswith('usgs-topo-16-') and r['slot']==1 and r['planSHA256']==expected
+                     for j,r in zip(jobs,records))
+          catalog=[c for r in records for c in r['result']['outputPacks']]
+          paths=[e['path'] for c in catalog for e in c['members']]
+          assert len(paths)==len(set(paths)) and paths
+          root=Path(tempfile.mkdtemp(prefix='rrgh-wave011-readonly-'))
+          recover_catalogs(slot,catalog,paths,root/'outputs')
+          # Discover the exact bootstrap reference via producer detail only when
+          # stored evidence contains it; otherwise perform new-tile QA without
+          # inventing bootstrap metadata or declaring seam-complete recovery.
+          qa=verify_outputs(plan,region,records,root/'outputs',None)
+          assert qa['jobs']==64 and qa['files']==64 and qa['pixelsDecoded']
+          states=check_states(load_large(slot,details['stateRef']),root/'state')
+          assert states['hashesAndSQLiteVerified']
+          result={'status':'read-only-partial-qa-verified-not-accepted',
+                  'checkedJobs':qa['jobs'],'newOutputTiles':qa['files'],
+                  'newTileHashesPixelsVerified':True,
+                  'newNewAdjacentEdges':qa['adjacentEdgesMeasured'],
+                  'priorNeighborEdgesNotChecked':True,
+                  'nativePackagingNotAssembledOrStored':True,
+                  'historicalInventoryUnchanged':{'jobs':1146,'tiles':11362,'sunlight':320},
+                  'sourcePixelGaps':0,'quarantinedHistoricalAttempts':19,
+                  'gcsWrites':0,'gcsReadRequests':slot.meter.used['classBRequests'],
+                  'gcsReservedEgressBytes':slot.meter.used['egressBytes'],
+                  'stateLedgersVerified':states['ledgers'],
+                  'wave011ProducerReceipt':asdict(prod)}
+          print(json.dumps(result,sort_keys=True),flush=True)
+          PY
+# Forensic read-only validation only. No cloud slot claims, mutations, source masters,
+# retries, signing keys, package publication, entitlement changes or deployment.
