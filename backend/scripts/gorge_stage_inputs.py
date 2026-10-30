@@ -28,7 +28,9 @@ PROOF_CAP=4*2**20
 class BaseValidationError(ValueError):
     """Finite diagnostic codes; never include protected bytes or credentials."""
     def __init__(self, code, evidence=None):
-        if code not in {'base-metadata', 'base-generation', 'base-length', 'base-sha256', 'base-md5'}:
+        if code not in {'base-metadata', 'base-generation', 'base-length', 'base-sha256', 'base-md5',
+                        'base-archive-path', 'base-archive-type', 'base-archive-duplicate',
+                        'base-required-member'}:
             raise ValueError('Unknown Base diagnostic')
         self.code=code
         self.evidence=evidence or {}
@@ -96,14 +98,38 @@ def base_read(slot, destination):
     return {'bucket':BUCKET,'key':BASE_KEY,'generation':generation,'bytes':BASE_BYTES,'sha256':BASE_SHA}
 
 
+def base_member_index(tar):
+    """Accept the deployed GNU tar's single ./ prefix without relaxing paths.
+
+    No extraction APIs are used. Reject aliases, traversal, links and special
+    members before reading the manifest, including in unused package members.
+    """
+    index={};seen=set()
+    for member in tar.getmembers():
+        name=member.name
+        if name in ('.','./'):
+            if not member.isdir() or '.' in seen:
+                raise BaseValidationError('base-archive-duplicate')
+            seen.add('.');continue
+        if name.startswith('./'):name=name[2:]
+        try:relative_path(name)
+        except (ValueError,TypeError):raise BaseValidationError('base-archive-path') from None
+        if name=='.' or '\x00' in name:raise BaseValidationError('base-archive-path')
+        if name in seen:raise BaseValidationError('base-archive-duplicate')
+        seen.add(name)
+        if not (member.isfile() or member.isdir()):raise BaseValidationError('base-archive-type')
+        if member.isfile():index[name]=member
+    return index
+
+
 def extract_base_inputs(archive, destination):
     root=Path(destination);root.mkdir(mode=0o700,exist_ok=False)
     with tarfile.open(archive,'r:') as tar:
-        members=tar.getmembers();names=[m.name for m in members]
-        if len(names)!=len(set(names)):raise ValueError('Duplicate Base member')
-        index={m.name:m for m in members}
+        index=base_member_index(tar)
         def read(name, maximum):
-            relative_path(name);m=index[name]
+            relative_path(name)
+            if name not in index:raise BaseValidationError('base-required-member')
+            m=index[name]
             if not m.isfile() or not 0<m.size<=maximum:raise ValueError('Unsafe Base member')
             return tar.extractfile(m).read()
         raw=read('NATIVE-MAP.json',4*2**20);m=json.loads(raw)
