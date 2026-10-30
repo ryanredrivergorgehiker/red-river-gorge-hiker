@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-000-20261030'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-001-20261030'
 OUTPUT_CAP=512*2**20
 TILE_CAP=512*1024
 WORKING_CACHE_CAP=6*2**30
@@ -88,15 +88,47 @@ def load_large(slot,ref,limit=STATE_ENCODED_CAP):
 def save_large(slot,obj,limit=STATE_ENCODED_CAP):
     return asdict(slot.put(encode_record(obj,limit,True,128*2**20),'indexes'))
 
+def merge_recovered(source,destination):
+    """Merge independently verified deltas without replacing any prior bytes."""
+    for p in Path(source).rglob('*'):
+        if not p.is_file():continue
+        target=Path(destination)/p.relative_to(source)
+        if target.exists():
+            if target.is_symlink() or target.read_bytes()!=p.read_bytes():raise ValueError('Recovered delta collision')
+        else:
+            target.parent.mkdir(parents=True,exist_ok=True);os.link(p,target)
+
 def bootstrap(slot,plan,region,root):
     c=plan['campaign'];h=plan['history']
     # Same sequence can be claimed only once across all source/config revisions.
     if c['sequence']:
-        previous=record(slot,c['previousRecovery'])['result']
-        if previous.get('status')!='verified' or previous['settlement']['sequence']!=c['sequence']-1:
-            raise ValueError('Previous recovery must close successfully')
-        carry=previous['nextCarry']
-        if carry!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
+        if c.get('failedBootstrap'):
+            from decimal import Decimal
+            from gorge_campaign_budget import cost
+            prior=c['failedBootstrap']
+            priorplan=json.loads((CONFIG.parent/'gorge-campaign-wave-000-20261030/PLAN.json').read_bytes())
+            if (digest(canonical(priorplan))!=prior['planSHA256'] or priorplan['limits']!=prior['fullWaveAllocation']
+                or priorplan['campaign']['carry']!=prior['carry'] or priorplan['campaign']['sequence']+1!=c['sequence']
+                or prior['receiptKey']!=PREFIX+'plans/'+prior['planSHA256']+'/slots/00000/receipt.json'):
+                raise ValueError('Failed allocation lineage mismatch')
+            slot.meter.reserve(classBRequests=1,egressBytes=65537)
+            oldref,raw=slot.store.receipt(prior['receiptKey'],lambda size:slot.meter.reserve(classBRequests=1,egressBytes=size+1))
+            closed=decode_record(raw)
+            if (closed['planSHA256']!=prior['planSHA256'] or closed['slot']!=0 or closed['result'].get('status')!='failed'
+                or closed['nonrefundableAllocation']!=priorplan['slots'][0]
+                or closed['used']['attempts'] or closed['used']['sourceBytes']):raise ValueError('Unconfirmed failed bootstrap')
+            expected={**prior['carry'],'chargedUSD':str(Decimal(prior['carry']['chargedUSD'])+cost(prior['fullWaveAllocation'])),
+                'storedBytes':prior['carry']['storedBytes']+prior['fullWaveAllocation']['storedBytes']}
+            if c['carry']!=expected or c['previousRecovery']!={'failedBootstrapReceiptKey':prior['receiptKey']}:
+                raise ValueError('Failed wave entire allocation must remain charged')
+            previous=None
+            emit(phase='previous-failure-retained',receiptRef=asdict(oldref),retainedFullAllocation=prior['fullWaveAllocation'],
+                actualRecordedUsage=closed['used'],gcsBeforePriorReceipt=closed['result'].get('gcs'))
+        else:
+            previous=record(slot,c['previousRecovery'])['result']
+            if previous.get('status')!='verified' or previous['settlement']['sequence']!=c['sequence']-1:
+                raise ValueError('Previous recovery must close successfully')
+            if previous['nextCarry']!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
     fence=create_fence(slot,PREFIX+'campaigns/'+CAMPAIGN+f"/wave-{c['sequence']:05d}.json",{
         'format':'rrgh-campaign-wave-claim-v1','campaign':CAMPAIGN,'ownerApproval':APPROVAL,
         'planSHA256':digest(canonical(plan)),'slotClaim':asdict(slot.claim),'previousRecovery':c.get('previousRecovery'),
@@ -130,14 +162,15 @@ def bootstrap(slot,plan,region,root):
     last_job=plan['history']['secondStageLastJob']
     last_state=f'state/{last_job}/cog.sqlite.z1'
     if sum(e['path']==last_state for cat in cats for e in cat['members'])!=1:raise ValueError('Latest source ledger snapshot missing')
-    recover_catalogs(slot,cats,paths+[last_state],root/'seed')
+    recover_catalogs(slot,cats,paths+[last_state],root/'second-seed')
+    merge_recovered(root/'second-seed',root/'seed')
     from gorge_state_snapshot import decode
     private_write(root/'seed/cog/cache.sqlite',decode((root/'seed'/last_state).read_bytes()))
     with sqlite3.connect('file:'+str(root/'seed/cog/cache.sqlite')+'?mode=ro',uri=True) as db:
         keys=db.execute('SELECT identity,number FROM blocks').fetchall()
     selection=select_cog_cache(root/'seed/cog',keys)
     seed_selected_cog(selection,root/'seed/cog',root/'working-cog',region['sourceLimits']['cogBytes'])
-    if c['sequence']:
+    if c['sequence'] and previous is not None:
         # Carry exact pins forward even when newly obtained public raw ranges
         # were intentionally transient. Refetch can never silently adopt a
         # newer source version after a completed wave.

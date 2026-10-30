@@ -47,6 +47,21 @@ class CampaignTests(unittest.TestCase):
         key=PREFIX+'campaigns/test/wave-00000.json'
         controller.create_fence(slot,key,{'plan':'a'})
         with self.assertRaises(RuntimeError):controller.create_fence(slot,key,{'plan':'b'})
+    def test_two_generation_pinned_cache_deltas_merge_without_overwrite(self):
+        store=MemoryStore();slot=Slot(store,self.plan,0,'test')
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);first=root/'first';second=root/'second'
+            for dest,entries in [(first,{'cog/old':b'old-cache','service/meta':b'same'}),(second,{'cog/new':b'new-cache','service/meta':b'same'})]:
+                catalogs=[]
+                for path,raw in entries.items():
+                    ref=slot.put(raw)
+                    catalogs.append({'ref':asdict(ref),'members':[{'path':path,'offset':0,'bytes':len(raw),'sha256':digest(raw)}]})
+                controller.recover_catalogs(slot,catalogs,list(entries),dest)
+            controller.merge_recovered(second,first)
+            self.assertEqual((first/'cog/old').read_bytes(),b'old-cache');self.assertEqual((first/'cog/new').read_bytes(),b'new-cache')
+            third=root/'third';third.mkdir();(third/'cog').mkdir();(third/'cog/old').write_bytes(b'conflict')
+            with self.assertRaises(ValueError):controller.merge_recovered(third,first)
+            self.assertEqual((first/'cog/old').read_bytes(),b'old-cache')
     def test_large_metadata_survives_full_slot_handoff(self):
         store=MemoryStore();slot=Slot(store,self.plan,1,'test')
         obj={'refs':[{'key':str(n),'sha':digest(str(n).encode())} for n in range(512)]}
