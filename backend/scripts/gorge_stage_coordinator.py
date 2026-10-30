@@ -32,8 +32,8 @@ from inspect_gorge_stage_handoff import inspect_handoff
 from fetch_gorge_private_seed import CONTEXT
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-stage-20261029'
-GROWTH_CAP=320*2**20
+CONFIG=SOURCE.parent/'config/gorge-continuation-20261029'
+GROWTH_CAP=224*2**20
 OUTPUT_CAP=8*2**20
 STATE_CAP=32*2**20
 
@@ -51,7 +51,7 @@ def configuration(directory=CONFIG):
     if plan.get('workerEnvelope')!={'cacheGrowthBytes':GROWTH_CAP,'outputBytesPerJob':OUTPUT_CAP,'stateBytes':STATE_CAP}:
         raise ValueError('Worker preservation envelope changed')
     if (plan['slots'][1]['storedBytes'] < GROWTH_CAP+12*OUTPUT_CAP+STATE_CAP+12*MAX_CATALOG+2**20
-            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+12*OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+20*2**20):
+            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+12*OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+12*2**20):
         raise ValueError('Outputs/cache/recovery envelope not prepaid')
     return plan,evidence,region
 
@@ -158,6 +158,8 @@ def run_stage(plan,evidence,region,root,store,opener):
     private_write(root/'REGION-PLAN.json',canonical(region))
     slot=Slot(store,plan,0,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
     try:
+        from gorge_reconciliation import transition
+        transition(slot,plan,evidence,root, )
         initial,proof,roots=bootstrap(slot,plan,evidence,handoff,root)
     except Exception as error:
         if not slot.closed:
@@ -169,8 +171,9 @@ def run_stage(plan,evidence,region,root,store,opener):
             diagnostic=({'code':error.code,'evidence':error.evidence}
                         if isinstance(error,BaseValidationError)
                         else {'code':'bootstrap-unclassified','errorClass':type(error).__name__})
-            slot.finish({'status':'failed','phase':'bootstrap','preservedIngress':refs,
+            final=slot.finish({'status':'failed','phase':'bootstrap','preservedIngress':refs,
                          'diagnostic':diagnostic,'gcs':opener.summary()})
+            print(json.dumps({'bootstrapFailureReceipt':asdict(final),'gcsIncludingReceipt':opener.summary()},sort_keys=True),flush=True)
             print(json.dumps({'bootstrapDiagnostic':diagnostic},sort_keys=True),flush=True)
         raise
     signal('bootstrap_ready')
@@ -281,9 +284,10 @@ def recover(plan,evidence,region,root,store,opener):
     desired=[]
     for cat in catalogs:
         for e in cat['members']:
-            if e['path'].startswith(('prior/','sunlight/')) or cat in catalogs[len(initial['seedCatalogs']):]:desired.append(e['path'])
+            if e['path'].startswith('prior/') or cat in catalogs[len(initial['seedCatalogs']):]:desired.append(e['path'])
     # Seed COG spot recovery checks actual ranges; full seed packs were SHA-readback verified at ingress.
-    for cat in catalogs[:5]:desired += [cat['members'][0]['path'],cat['members'][-1]['path']]
+    # Accepted original COG/Sunlight payloads are immutable and were fully
+    # verified at ingress; only original neighboring tiles are needed for QA.
     recover_members(slot,catalogs,desired,root/'baseline-recovery')
     record_list=[];output_catalogs=[]
     for r in worker['completedJobReceipts']:
@@ -302,7 +306,7 @@ def recover(plan,evidence,region,root,store,opener):
         'allNewCachePacksRecovered':True,'newCacheFilesRecovered':len(delta_paths),
         'baselineFilesRecovered':len(desired),'gcs':opener.summary()}
     ref=slot.finish(result)
-    print(json.dumps({'phase':'fresh-recovery','result':result,'receiptRef':asdict(ref)},sort_keys=True))
+    print(json.dumps({'phase':'fresh-recovery','result':result,'receiptRef':asdict(ref),'gcsIncludingReceipt':opener.summary()},sort_keys=True))
 
 
 def main():

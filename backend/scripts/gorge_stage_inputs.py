@@ -107,6 +107,7 @@ def extract_base_inputs(archive, destination):
             if not m.isfile() or not 0<m.size<=maximum:raise ValueError('Unsafe Base member')
             return tar.extractfile(m).read()
         raw=read('NATIVE-MAP.json',4*2**20);m=json.loads(raw)
+        print(json.dumps({'acceptedBaseManifest':{'schemaVersion':m.get('schemaVersion'),'packageID':m.get('packageID'),'packageVersion':m.get('packageVersion'),'vectorIDs':[e.get('id') for e in m.get('vectors',[])],'staticAssetCount':len(m.get('staticAssets',[])),'weatherPresent':bool(m.get('weatherManifest')),'manifestBytes':len(raw),'manifestSHA256':digest(raw)}},sort_keys=True),flush=True)
         if m.get('packageID')!='gorge-base' or m.get('packageVersion')!='2026.10.08.1':raise ValueError('Base version mismatch')
         private_write(root/'NATIVE-MAP.json',raw)
         entries=m['vectors']+[m['weatherManifest']]+[e for e in m['staticAssets'] if 'rrg-lidar-sun' not in e['path']]
@@ -117,6 +118,18 @@ def extract_base_inputs(archive, destination):
             seen.add(name);raw=read(name,SHARED_NEW_CAP);count+=len(raw)
             if count>SHARED_NEW_CAP or digest(raw)!=e['sha256']:raise ValueError('Base input bound/hash mismatch')
             private_write(root/name,raw)
+        static_images=0;static_json=0
+        for e in m['staticAssets']:
+            if 'rrg-lidar-sun' in e['path']:continue
+            path=root/e['path']
+            if path.suffix.lower() in ('.png','.jpg','.jpeg','.webp'):
+                from PIL import Image
+                with Image.open(path) as image:
+                    image.load()
+                    if min(image.size)<=0:raise ValueError('Invalid accepted static image')
+                static_images+=1
+            elif path.suffix.lower() in ('.json','.geojson'):
+                json.loads(path.read_bytes());static_json+=1
         # Parse the accepted vector data as well as validating its signed lineage.
         vector_features=0
         for e in m['vectors']:
@@ -128,7 +141,7 @@ def extract_base_inputs(archive, destination):
             vector_features+=len(v['features'])
         if vector_features==0:raise ValueError('All accepted vectors empty')
         json.loads((root/m['weatherManifest']['path']).read_bytes())
-    return {'vectorLayers':len(m['vectors']),'vectorFeatures':vector_features,'copiedBytes':count}
+    return {'vectorLayers':len(m['vectors']),'vectorFeatures':vector_features,'copiedBytes':count,'staticImagesDecoded':static_images,'staticJSONParsed':static_json}
 
 
 def bootstrap(slot, plan, evidence, handoff, root):
@@ -136,22 +149,33 @@ def bootstrap(slot, plan, evidence, handoff, root):
     packs,_=inspect_handoff(plan,evidence,handoff)
     # Check the *native* resumable envelope before starting any pack upload.
     needed={k:0 for k in ('storedBytes','classARequests','classBRequests','egressBytes')}
-    for p,_ in packs:
+    reuse=plan.get('seedIngress')=='reuse-generation-pinned-v1'
+    for p,_ in ([] if reuse else packs):
         for k,v in reservation(p.stat().st_size).items():needed[k]+=v
         needed['classARequests']+=1;needed['storedBytes']+=256*1024;needed['egressBytes']+=MAX_METADATA+1
     needed['storedBytes']+=SHARED_NEW_CAP+PROOF_CAP+256*1024
     needed['classARequests']+=3
-    needed['classBRequests']+=4
-    needed['egressBytes']+=BASE_BYTES+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)
+    needed['classBRequests']+=4+(6 if reuse else 0)
+    needed['egressBytes']+=BASE_BYTES+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)+(6*(256*1024+1) if reuse else 0)
     if any(slot.meter.used[k]+v>slot.meter.caps[k] for k,v in needed.items()):
         raise ValueError('Complete native ingress/input envelope does not fit')
     unpacked=root/'inputs';unpacked.mkdir(mode=0o700)
     journals=root/'sessions';journals.mkdir(mode=0o700)
     refs=[];files=[];catalog_refs=[];ingress=[]
     for i,(p,catalog) in enumerate(packs):
-        result=put_file(slot,p,p.stat().st_size,catalog['sha256'],journals/f'{i}.json')
-        ref=result['ref'];refs.append(ref);ingress.append(result)
-        catalog_ref=slot.put_catalog({'format':'rrgh-cache-pack-catalog-v1','ref':ref,'members':catalog['members']})
+        if reuse:
+            from gorge_checkpoint import Ref
+            ref=plan['reconciliation']['seedRefs'][i]
+            catalog_ref=Ref(**plan['reconciliation']['seedCatalogRefs'][i])
+            preserved=slot.get_catalog(catalog_ref)
+            if preserved!={'format':'rrgh-cache-pack-catalog-v1','ref':ref,'members':catalog['members']}:
+                raise ValueError('Preserved seed catalog changed')
+            result={'ref':ref,'reused':True,'newSeedUploadBytes':0}
+        else:
+            result=put_file(slot,p,p.stat().st_size,catalog['sha256'],journals/f'{i}.json')
+            ref=result['ref']
+            catalog_ref=slot.put_catalog({'format':'rrgh-cache-pack-catalog-v1','ref':ref,'members':catalog['members']})
+        refs.append(ref);ingress.append(result)
         catalog_refs.append(asdict(catalog_ref))
         raw=p.read_bytes()
         for e in catalog['members']:
@@ -160,7 +184,9 @@ def bootstrap(slot, plan, evidence, handoff, root):
         # Only object references/counters are public evidence, never their bytes.
         print(json.dumps({'seedPackAccepted':i,'ref':ref,'catalogRef':asdict(catalog_ref)},sort_keys=True),flush=True)
     base=base_read(slot,root/'accepted-base.rrghpkg')
+    print(json.dumps({'acceptedBaseVerified':base},sort_keys=True),flush=True)
     vector_result=extract_base_inputs(root/'accepted-base.rrghpkg',root/'accepted-base')
+    print(json.dumps({'baseInputsVerified':vector_result},sort_keys=True),flush=True)
     from prepare_gorge_shared import prepare
     sun_manifest=next(e for e in files if e['path']=='sunlight/data/map/rrg-lidar-sun-mobile-manifest.json')
     prepared=prepare(root/'accepted-base',unpacked/'sunlight',root/'shared',sun_manifest['sha256'])
@@ -201,6 +227,8 @@ def bootstrap(slot, plan, evidence, handoff, root):
     result={'seedBytes':SEED_BYTES,'seedSHA256':SEED_SHA256,'seedPacks':refs[:len(packs)],
        'seedCatalogs':catalog_refs,'sharedCatalogs':shared_catalogs,'proofRef':asdict(proof_ref),
        'acceptedBase':base,'vectorValidation':vector_result,'ingress':ingress,'inputProofValidated':True}
+    if reuse:result['transition']=json.loads((root/'TRANSITION.json').read_bytes())
     final=slot.finish(result)
+    print(json.dumps({'bootstrapVerified':{'acceptedBase':base,'vectorValidation':vector_result,'proofRef':asdict(proof_ref),'receiptRef':asdict(final)},'gcsIncludingReceipt':slot.store.opener.summary()},sort_keys=True),flush=True)
     private_write(root/'BOOTSTRAP-RECEIPT-REF.json',canonical(asdict(final)))
     return result,proof,roots

@@ -49,6 +49,11 @@ def inspect_handoff(plan,evidence,directory):
         # the complete catalog ceiling rather than assuming compressed size.
         stored+=len(data)+MAX_CATALOG;operations+=2
         packs.append((p,catalog))
+    if plan.get('seedIngress')=='reuse-generation-pinned-v1':
+        refs=plan['reconciliation']['seedRefs']
+        if len(refs)!=len(packs) or any(ref['bytes']!=p.stat().st_size or ref['sha256']!=c['sha256'] for ref,(p,c) in zip(refs,packs)):
+            raise ValueError('Preserved seed identity changed')
+        stored=4096+16384;operations=2
     if stored>slot['storedBytes'] or operations>slot['classARequests'] or operations*(MAX_METADATA+1)>slot['egressBytes']:
         raise ValueError('Import exceeds its prepaid slot')
     return packs,{'payloadBytes':sum(p.stat().st_size for p,_ in packs),

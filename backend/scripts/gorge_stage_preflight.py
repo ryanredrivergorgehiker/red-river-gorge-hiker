@@ -27,6 +27,8 @@ CEILINGS={'storedBytes':2**30,'egressBytes':2**30,'classARequests':200,
 
 def require_stage_release(plan,evidence):
     require_live_allowance(plan,evidence)
+    from gorge_reconciliation import validate_reconciliation
+    validate_reconciliation(plan,evidence)
     release=evidence.get('stageRelease',{})
     required={'campaignApprovedUSD':Decimal('8'),'releasedUSD':Decimal('.35'),
               'lockedUSD':Decimal('7.65'),'approvedRecurringUSDPerMonth':Decimal('1')}
