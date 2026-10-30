@@ -16,7 +16,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute verified new-territory wave010 20261030'
+      github.event.head_commit.message == 'Lane20: execute verified new-territory wave011 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 70a621d22327ef3897eb754bd6ffb8f6e41d47fe
+          ref: b32cbc4eece99f930b39df76eadc6328703e2f1c
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -60,7 +60,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 70a621d22327ef3897eb754bd6ffb8f6e41d47fe
+          ref: b32cbc4eece99f930b39df76eadc6328703e2f1c
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -83,5 +83,5 @@ jobs:
           project_id: rrgh-nonproduction
       - name: Independently recover and verify every new output and checkpoint
         run: python backend/scripts/gorge_campaign.py --phase recovery
-# Wave010: 128 new topo-first and leaf-on jobs, 1408 planned tiles; independent recovery and cumulative USD25 ceiling. Exactly pinned verified source and quarantine protections.
+# Wave011: 128 new topo-first / leaf-on source-backed jobs, 1408 planned tiles. Exact Wave010 recovered carry (1146 jobs / 11362 tiles), 19 consumed attempts excluded; separate fresh-runner recovery, USD25 ceiling. Exactly pinned verified source and quarantine protections.
 # Existing keyless identity; no artifacts, raw source uploads, reruns, deployment or security changes.
