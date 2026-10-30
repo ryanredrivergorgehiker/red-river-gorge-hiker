@@ -1,0 +1,40 @@
+name: RRGH WIF token cache fail-closed regression (offline only)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wif-cache-regression.yml]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-wif-cache-offline-regression
+  cancel-in-progress: false
+jobs:
+  test:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: validate bounded cached WIF token offline 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7464724b4ea247f734c4c8c110541103fcd35af9
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run bounded token and source-gap tests without cloud credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python backend/scripts/test_gorge_wif_token_cache.py -v
+          python backend/scripts/test_gorge_source_gap_guard.py -v
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'backend/scripts')
+          from run_gorge_checkpoint_slot import code_snapshot
+          from pathlib import Path
+          print('EXACT REVIEWED SOURCE SNAPSHOT',code_snapshot(Path('backend/scripts')))
+          PY
+# No id-token, cloud access, GCS writes, packages, production or deployment.
