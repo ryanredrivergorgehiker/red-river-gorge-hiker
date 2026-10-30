@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-001-20261030'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-002-20261030'
 OUTPUT_CAP=512*2**20
 TILE_CAP=512*1024
 WORKING_CACHE_CAP=6*2**30
@@ -126,8 +126,10 @@ def bootstrap(slot,plan,region,root):
                 actualRecordedUsage=closed['used'],gcsBeforePriorReceipt=closed['result'].get('gcs'))
         else:
             previous=record(slot,c['previousRecovery'])['result']
-            if previous.get('status')!='verified' or previous['settlement']['sequence']!=c['sequence']-1:
+            if previous.get('status') not in ('verified','partial-verified') or previous['settlement']['sequence']!=c['sequence']-1:
                 raise ValueError('Previous recovery must close successfully')
+            if previous['status']=='partial-verified' and not previous['settlement']['ambiguousAllocationRetained']:
+                raise ValueError('Partial recovery must retain full ambiguous allocation')
             if previous['nextCarry']!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
     fence=create_fence(slot,PREFIX+'campaigns/'+CAMPAIGN+f"/wave-{c['sequence']:05d}.json",{
         'format':'rrgh-campaign-wave-claim-v1','campaign':CAMPAIGN,'ownerApproval':APPROVAL,
@@ -243,6 +245,9 @@ def bounded_child(slot,plan,region_path,job,root):
     reservation=slot.put(canonical({'format':'rrgh-campaign-child-reservation-v1',**allocation}),'indexes')
     childcaps=dict.fromkeys(DIMENSIONS,0);childcaps.update(policy,attempts=1)
     proxy=SimpleNamespace(plan=slot.plan,index=slot.index,meter=Meter(childcaps))
+    # The 600-second child reservation sits inside the longer parent deadline.
+    # run_job independently enforces its subprocess timeout and source caps.
+    proxy.meter.deadline=slot.meter.deadline
     started=time.monotonic();success=False
     try:
         receipt=run_job(proxy,region_path,job,root/'worker',root/'working-cog',root/'working-service',policy,timeout)

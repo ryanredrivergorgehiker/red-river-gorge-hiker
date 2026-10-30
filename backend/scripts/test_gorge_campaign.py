@@ -82,6 +82,17 @@ class CampaignTests(unittest.TestCase):
             with self.assertRaises(TimeoutError):controller.bounded_child(slot,self.plan,Path('unused'),job,Path('unused'))
         self.assertEqual(slot.meter.used['sourceBytes'],self.plan['jobPolicies'][job]['sourceBytes'])
         self.assertEqual(slot.meter.used['seconds'],600)
+    def test_actual_worker_handoff_uses_parent_admission_deadline(self):
+        store=MemoryStore();slot=Slot(store,self.plan,1,'test');job=self.plan['approvedJobIDs'][0]
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);path=root/'region.json';path.write_bytes(canonical(self.region))
+            def completed_child(args,**kwargs):
+                ticket=Path(args[-1]);ticket.with_suffix('.usage.json').write_text(json.dumps({'completed':True,'reserved':{'sourceBytes':0,'sourceRequests':0}}))
+                return SimpleNamespace(returncode=0)
+            with patch('gorge_guarded_worker.subprocess.run',side_effect=completed_child),patch('gorge_guarded_worker.validate_receipt',return_value={'outputs':[]}):
+                receipt=controller.bounded_child(slot,self.plan,path,job,root)
+            self.assertEqual(slot.meter.used['attempts'],1);self.assertEqual(slot.meter.used['sourceBytes'],0)
+            self.assertEqual(receipt['execution']['sourceUsage']['reserved']['sourceRequests'],0)
     def test_512_job_scope_preserves_every_old_job(self):
         self.assertEqual(len(self.plan['approvedJobIDs']),512)
         self.assertFalse(set(self.plan['approvedJobIDs'])&set(self.plan['completedJobIDs']))
