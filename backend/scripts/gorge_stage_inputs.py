@@ -22,7 +22,7 @@ from gorge_stage_preflight import BASE_BYTES, BASE_KEY, BASE_SHA
 from fetch_gorge_private_seed import SEED_BYTES, SEED_SHA256
 from inspect_gorge_stage_handoff import inspect_handoff
 
-SHARED_NEW_CAP=32*2**20
+SHARED_NEW_CAP=63*2**20
 PROOF_CAP=4*2**20
 
 class BaseValidationError(ValueError):
@@ -122,10 +122,11 @@ def base_member_index(tar):
     return index
 
 
-def extract_base_inputs(archive, destination):
+def extract_base_inputs(archive, destination,verified_index=None):
     root=Path(destination);root.mkdir(mode=0o700,exist_ok=False)
     options={'fileobj':archive} if hasattr(archive,'read') else {'name':archive}
-    with tarfile.open(mode='r:',**options) as tar:
+    from contextlib import nullcontext
+    with (nullcontext(verified_index) if verified_index is not None else tarfile.open(mode='r:',**options)) as tar:
         index=base_member_index(tar)
         def read(name, maximum):
             relative_path(name)
@@ -183,13 +184,15 @@ def bootstrap(slot, plan, evidence, handoff, root):
     needed['storedBytes']+=SHARED_NEW_CAP+PROOF_CAP+256*1024
     needed['classARequests']+=3
     needed['classBRequests']+=4+(6 if reuse else 0)
-    selective=plan.get('acceptedBaseAccess')=='verified-generation-selective-v1'
-    needed['egressBytes']+=(56*2**20 if selective else BASE_BYTES)+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)+(6*(256*1024+1) if reuse else 0)
+    indexed=plan.get('acceptedBaseAccess')=='verified-generation-indexed-v1'
+    selective=indexed or plan.get('acceptedBaseAccess')=='verified-generation-selective-v1'
+    base_bytes=plan['acceptedBaseIndex']['requiredSharedBytes']+plan['acceptedBaseIndex']['ref']['bytes']+1 if indexed else 56*2**20 if selective else BASE_BYTES
+    needed['egressBytes']+=base_bytes+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)+(6*(256*1024+1) if reuse else 0)
     if selective:
         # Shared/proof writes reserve their actual exact size below; their
         # independent full readback is prepaid in the recovery slot.
         needed['egressBytes']-=SHARED_NEW_CAP+PROOF_CAP
-        needed['classBRequests']+=220
+        needed['classBRequests']+=plan['acceptedBaseIndex']['requiredMembers']+1 if indexed else 220
     if any(slot.meter.used[k]+v>slot.meter.caps[k] for k,v in needed.items()):
         raise ValueError('Complete native ingress/input envelope does not fit')
     unpacked=root/'inputs';unpacked.mkdir(mode=0o700)
@@ -216,7 +219,10 @@ def bootstrap(slot, plan, evidence, handoff, root):
             files.append({**e,'checkpointIndex':i})
         # Only object references/counters are public evidence, never their bytes.
         print(json.dumps({'seedPackAccepted':i,'ref':ref,'catalogRef':asdict(catalog_ref)},sort_keys=True),flush=True)
-    if selective:
+    if indexed:
+        from gorge_indexed_base import extract_indexed
+        base,vector_result=extract_indexed(slot,plan,root/'accepted-base')
+    elif selective:
         from gorge_base_ranges import extract_accepted
         base,vector_result=extract_accepted(slot,root/'accepted-base')
     else:

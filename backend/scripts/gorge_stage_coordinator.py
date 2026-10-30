@@ -32,11 +32,12 @@ from inspect_gorge_stage_handoff import inspect_handoff
 from fetch_gorge_private_seed import CONTEXT
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-base-inventory-20261029'
+CONFIG=SOURCE.parent/'config/gorge-indexed-stage-20261029'
 GROWTH_CAP=224*2**20
 TILE_CAP=512*1024
-TOTAL_OUTPUT_CAP=108*TILE_CAP
-STATE_CAP=32*2**20
+TOTAL_OUTPUT_CAP=32*2**20
+STATE_CAP=12*2**20
+RECOVERY_OVERHEAD=8*2**20
 
 
 def configuration(directory=CONFIG):
@@ -52,7 +53,7 @@ def configuration(directory=CONFIG):
     if plan.get('workerEnvelope')!={'cacheGrowthBytes':GROWTH_CAP,'outputBytesPerTile':TILE_CAP,'totalOutputBytes':TOTAL_OUTPUT_CAP,'stateBytes':STATE_CAP}:
         raise ValueError('Worker preservation envelope changed')
     if (plan['slots'][1]['storedBytes'] < GROWTH_CAP+TOTAL_OUTPUT_CAP+STATE_CAP+12*MAX_CATALOG+2**20
-            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+TOTAL_OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+12*2**20):
+            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+TOTAL_OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+RECOVERY_OVERHEAD):
         raise ValueError('Outputs/cache/recovery envelope not prepaid')
     return plan,evidence,region
 
@@ -138,7 +139,9 @@ def snapshot_cache(cog, service, destination, job, known, state_used):
         with sqlite3.connect('file:'+str(database)+'?mode=ro',uri=True) as src:
             if src.execute('PRAGMA integrity_check(10)').fetchall()!=[('ok',)]:raise ValueError('Cache ledger integrity failure')
             with sqlite3.connect(target) as dst:src.backup(dst)
-        raw=target.read_bytes();state_used+=len(raw)
+        from gorge_state_snapshot import encode
+        raw=encode(target.read_bytes());encoded=target.with_suffix('.sqlite.z1');private_write(encoded,raw);target.unlink();target=encoded
+        state_used+=len(raw)
         if state_used>STATE_CAP:raise ValueError('Preservation state capacity reached')
         entries.append({'path':target.relative_to(dest).as_posix(),'bytes':len(raw),'sha256':digest(raw)})
     return entries,new_paths,state_used
@@ -183,13 +186,15 @@ def run_stage(plan,evidence,region,root,store,opener):
     cog=root/'working-cog';known={'cog/'+p.relative_to(cog).as_posix() for p in cog.glob('blocks/*/*')}
     known|={'service/'+p.name for p in service.iterdir() if p.suffix in ('.bin','.json')}
     slot=Slot(store,plan,1,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
-    completed=[];deltas=[];growth=0;state_bytes=0;attempts=0;source_bytes=0;source_requests=0;start=time.monotonic();failure=None
+    completed=[];deltas=[];growth=0;state_bytes=0;output_bytes=0;attempts=0;source_bytes=0;source_requests=0;start=time.monotonic();failure=None
     try:
         for job in plan['approvedJobIDs']:
             policy=plan['jobPolicies'][job];attempts+=1;job_error=None;receipt=None
             try:
                 receipt=run_job(slot,root/'REGION-PLAN.json',job,output,cog,service,policy,policy['seconds'],growth_cap=GROWTH_CAP-growth)
                 if any(e['bytes']>TILE_CAP for e in receipt['outputs']) or sum(e['bytes'] for e in receipt['outputs'])>len(next(j for j in region['jobs'] if j['id']==job)['outputTiles'])*TILE_CAP:raise ValueError('Encoded output preservation cap exceeded')
+                output_bytes+=sum(e['bytes'] for e in receipt['outputs'])
+                if output_bytes>TOTAL_OUTPUT_CAP:raise ValueError('Cumulative output preservation cap exceeded')
             except Exception as error:
                 job_error=error
                 import traceback
@@ -294,12 +299,14 @@ def recover(plan,evidence,region,root,store,opener):
     delta_catalogs=[slot.get_catalog(Ref(**r)) for r in worker['cacheCatalogs']]
     delta_paths=[e['path'] for c in delta_catalogs for e in c['members']]
     if delta_paths:recover_members(slot,delta_catalogs,delta_paths,root/'cache-recovery')
+    from gorge_state_snapshot import recover as recover_state
+    states=[recover_state(root/'cache-recovery'/p) for p in delta_paths if p.startswith('state/') and p.endswith('.sqlite.z1')]
     qa=verify_outputs(plan,region,record_list,root/'output-recovery',root/'baseline-recovery') if output_paths else {'jobs':0,'files':0,'bytes':0}
     raw=canonical(qa);qa_ref=slot.put(raw,'indexes')
     result={'status':'verified' if worker['status']=='complete' and qa['jobs']==12 else 'partial-preservation-verified',
         'production':{k:v for k,v in qa.items() if k!='seams'},'qaRef':asdict(qa_ref),
         'allNewCachePacksRecovered':True,'newCacheFilesRecovered':len(delta_paths),
-        'baselineFilesRecovered':len(desired),'gcs':opener.summary()}
+        'baselineFilesRecovered':len(desired),'sqliteSnapshotsVerified':len(states),'gcs':opener.summary()}
     ref=slot.finish(result)
     print(json.dumps({'phase':'fresh-recovery','result':result,'receiptRef':asdict(ref),'gcsIncludingReceipt':opener.summary()},sort_keys=True))
 

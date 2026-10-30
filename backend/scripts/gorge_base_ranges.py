@@ -16,8 +16,9 @@ BASE_AUTHORITY={'bucket':BUCKET,'key':BASE_KEY,'bytes':BASE_BYTES,
                 'generation':GENERATION,'sha256':BASE_SHA}
 
 class AcceptedBaseRanges(io.RawIOBase):
-    def __init__(self,slot):
+    def __init__(self,slot,*,maximum_bytes=56*2**20,maximum_requests=220,maximum_member=32*2**20,window=65536):
         super().__init__();self.slot=slot;self.position=0;self.cache=[];self.received=0;self.requests=0
+        self.maximum_bytes=maximum_bytes;self.maximum_requests=maximum_requests;self.maximum_member=maximum_member;self.window=window
         self.endpoint='https://storage.googleapis.com/storage/v1/b/'+BUCKET+'/o/'+quote(BASE_KEY,safe='')
         slot.meter.reserve(classBRequests=1,egressBytes=MAX_METADATA+1)
         raw=self._get(self.endpoint+'?'+urlencode({'generation':GENERATION}),MAX_METADATA)
@@ -47,16 +48,16 @@ class AcceptedBaseRanges(io.RawIOBase):
         if not 0<=at<=BASE_BYTES:raise ValueError('Archive seek outside accepted object')
         self.position=at;return at
     def read(self,size=-1):
-        if size<0 or size>32*2**20:raise ValueError('Unbounded Base member read')
+        if size<0 or size>self.maximum_member:raise ValueError('Unbounded Base member read')
         size=min(size,BASE_BYTES-self.position)
         if size==0:return b''
         start=self.position
         for offset,body in self.cache:
             if offset<=start and start+size<=offset+len(body):
                 self.position+=size;return body[start-offset:start-offset+size]
-        length=min(max(size,65536),BASE_BYTES-start)
+        length=min(max(size,self.window),BASE_BYTES-start)
         # Upper bound covers archive header windows plus all required payloads.
-        if self.received+length>56*2**20 or self.requests>=220:raise ValueError('Selective Base envelope exceeded')
+        if self.received+length>self.maximum_bytes or self.requests>=self.maximum_requests:raise ValueError('Selective Base envelope exceeded')
         self.slot.meter.reserve(classBRequests=1,egressBytes=length+1)
         self.requests+=1;self.received+=length
         url=self.endpoint+'?'+urlencode({'alt':'media','generation':GENERATION,'ifGenerationMatch':GENERATION})
