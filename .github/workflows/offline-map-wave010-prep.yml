@@ -236,4 +236,5 @@ jobs:
           path: backend/config/gorge-campaign-wave-010-20261030/
           retention-days: 1
           if-no-files-found: error
+# Wave010 zero-output Wave009 recovery carried exactly; hiking deferred.
 # Offline planning only. Temporary contents:write must be retired after plan commit. No GCS credentials, source images, map production or public deployment.
