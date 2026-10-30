@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: persist validated wave004 after partial recovery 20261030'
+      github.event.head_commit.message == 'Lane20: verify corrected partial-recovery wave004 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -38,7 +38,7 @@ jobs:
           from gorge_campaign_budget import admit,cost
           from run_gorge_checkpoint_slot import code_snapshot
           src=Path('backend/config/gorge-campaign-wave-003-20261030')
-          dst=Path('backend/config/gorge-campaign-wave-003-20261030')
+          dst=Path('backend/config/gorge-campaign-wave-004-20261030')
           old=json.loads((src/'PLAN.json').read_bytes())
           env=json.loads((src/'ALLOWANCE.json').read_bytes())
           region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
@@ -53,7 +53,7 @@ jobs:
           remaining=[j['id'] for j in next_jobs]
           assert len(remaining)==140 and not set(remaining)&set(old['completedJobIDs'])
           assert old['approvedJobIDs'][done] not in remaining # failed attempt quarantined
-          recovery={'bytes':1469,'generation':'1793377088551615','key':'engineering/map-production/plans/35216cd323736d29321570e034acfb1ff70d325b761e5e8dfd2a88e365509504/slots/00002/receipt.json','sha256':'b256a386519c18b6a8c5d59bef8b3bcdba9734ce53ef4588df80d42a6772004c'}}
+          recovery={'bytes':1469,'generation':'1793377088551615','key':'engineering/map-production/plans/35216cd323736d29321570e034acfb1ff70d325b761e5e8dfd2a88e365509504/slots/00002/receipt.json','sha256':'b256a386519c18b6a8c5d59bef8b3bcdba9734ce53ef4588df80d42a6772004c'}
           next_carry={'chargedUSD':'2.746011453853321075439453125','storedBytes':6050577399,'priorCompletedJobs':415,'priorRasterTiles':4963,'priorSunlightAssets':320}
           plan=copy.deepcopy(old)
           plan['campaign']['sequence']=4
@@ -99,7 +99,7 @@ jobs:
           test "$(git rev-parse FETCH_HEAD)" = "70c647a8acbdf1c7c3db6aa4323db0e704763e58"
           git config user.name 'rrgh-plan-prep[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- backend/config/gorge-campaign-wave-003-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-003-20261030/PLAN.json backend/config/gorge-campaign-wave-003-20261030/REGION-PLAN.json.z.b64
+          git add -- backend/config/gorge-campaign-wave-004-20261030/ALLOWANCE.json backend/config/gorge-campaign-wave-003-20261030/PLAN.json backend/config/gorge-campaign-wave-003-20261030/REGION-PLAN.json.z.b64
           test "$(git diff --cached --name-only | wc -l)" -eq 3
           git diff --cached --check
           git commit -m 'Lane20: persist verified wave004 after partial recovery [skip ci]'
@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rrgh-wave004-review-only
-          path: backend/config/gorge-campaign-wave-003-20261030/
+          path: backend/config/gorge-campaign-wave-004-20261030/
           retention-days: 1
           if-no-files-found: error
 # No Cloud credentials, source payloads, GCS access or production execution. One ephemeral GitHub token writes only the reviewed config.
