@@ -1,4 +1,4 @@
-name: RRGH final approved overview and independent recovery
+name: RRGH second bounded map stage and independent recovery
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
@@ -16,23 +16,23 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute approved final terrain overview 20261029'
+      github.event.head_commit.message == 'Lane20: execute second approved adjacent twelve-job stage 20261030'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 145
     outputs:
-      final_overview_complete: ${{ steps.producer.outputs.final_overview_complete }}
+      worker_receipt: ${{ steps.producer.outputs.worker_receipt }}
     steps:
-      - name: Checkout exact reviewed stage source without persisted credentials
+      - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 93419c8c2d464fdf601d9c502aac9f4501f6b93e
+          ref: 2282786b7d69e0e0ade2af486e5f2ffb8c11eb32
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Verify finite release and exact source before authentication
-        run: python backend/scripts/gorge_final_overview.py --phase plan
+        run: python backend/scripts/gorge_second_stage.py --phase plan
       - name: Install pinned processing dependencies
         run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
       - name: Authenticate existing restricted direct WIF identity
@@ -46,31 +46,31 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Verify closed history and recover four children for final overview
+      - name: Recover accepted inputs and execute exactly twelve new jobs
         id: producer
-        run: python backend/scripts/gorge_final_overview.py --phase produce
+        run: python backend/scripts/gorge_second_stage.py --phase produce
   independent-recovery:
     needs: bounded-stage
     if: >-
       always() && github.run_attempt == 1 &&
-      needs.bounded-stage.outputs.final_overview_complete == 'true'
+      needs.bounded-stage.outputs.worker_receipt == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 35
     steps:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 93419c8c2d464fdf601d9c502aac9f4501f6b93e
+          ref: 2282786b7d69e0e0ade2af486e5f2ffb8c11eb32
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Verify unchanged finite recovery allocation
-        run: python backend/scripts/gorge_final_overview.py --phase plan
+        run: python backend/scripts/gorge_second_stage.py --phase plan
       - name: Install pinned validation dependencies
         run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
-      - name: Reauthenticate the same restricted identity
+      - name: Authenticate the same restricted identity
         uses: google-github-actions/auth@v3
         with:
           project_id: rrgh-nonproduction
@@ -81,6 +81,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Verify exact-generation cache and output recovery on fresh runner
-        run: python backend/scripts/gorge_final_overview.py --phase recovery
-# No dispatch, rerun, artifacts, Actions cache, deployment, IAM, bucket change or package replacement.
+      - name: Independently recover and verify every new output and checkpoint
+        run: python backend/scripts/gorge_second_stage.py --phase recovery
+# Two sequential jobs, maximum 180 minutes total; no artifacts, cache, dispatch,
+# automatic rerun, secret, deployment, IAM, bucket change or package replacement.
