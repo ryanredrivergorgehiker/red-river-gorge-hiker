@@ -124,7 +124,8 @@ def base_member_index(tar):
 
 def extract_base_inputs(archive, destination):
     root=Path(destination);root.mkdir(mode=0o700,exist_ok=False)
-    with tarfile.open(archive,'r:') as tar:
+    options={'fileobj':archive} if hasattr(archive,'read') else {'name':archive}
+    with tarfile.open(mode='r:',**options) as tar:
         index=base_member_index(tar)
         def read(name, maximum):
             relative_path(name)
@@ -182,7 +183,13 @@ def bootstrap(slot, plan, evidence, handoff, root):
     needed['storedBytes']+=SHARED_NEW_CAP+PROOF_CAP+256*1024
     needed['classARequests']+=3
     needed['classBRequests']+=4+(6 if reuse else 0)
-    needed['egressBytes']+=BASE_BYTES+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)+(6*(256*1024+1) if reuse else 0)
+    selective=plan.get('acceptedBaseAccess')=='verified-generation-selective-v1'
+    needed['egressBytes']+=(56*2**20 if selective else BASE_BYTES)+SHARED_NEW_CAP+PROOF_CAP+8*(MAX_METADATA+1)+(6*(256*1024+1) if reuse else 0)
+    if selective:
+        # Shared/proof writes reserve their actual exact size below; their
+        # independent full readback is prepaid in the recovery slot.
+        needed['egressBytes']-=SHARED_NEW_CAP+PROOF_CAP
+        needed['classBRequests']+=220
     if any(slot.meter.used[k]+v>slot.meter.caps[k] for k,v in needed.items()):
         raise ValueError('Complete native ingress/input envelope does not fit')
     unpacked=root/'inputs';unpacked.mkdir(mode=0o700)
@@ -209,13 +216,21 @@ def bootstrap(slot, plan, evidence, handoff, root):
             files.append({**e,'checkpointIndex':i})
         # Only object references/counters are public evidence, never their bytes.
         print(json.dumps({'seedPackAccepted':i,'ref':ref,'catalogRef':asdict(catalog_ref)},sort_keys=True),flush=True)
-    base=base_read(slot,root/'accepted-base.rrghpkg')
+    if selective:
+        from gorge_base_ranges import extract_accepted
+        base,vector_result=extract_accepted(slot,root/'accepted-base')
+    else:
+        base=base_read(slot,root/'accepted-base.rrghpkg')
+        vector_result=extract_base_inputs(root/'accepted-base.rrghpkg',root/'accepted-base')
     print(json.dumps({'acceptedBaseVerified':base},sort_keys=True),flush=True)
-    vector_result=extract_base_inputs(root/'accepted-base.rrghpkg',root/'accepted-base')
     print(json.dumps({'baseInputsVerified':vector_result},sort_keys=True),flush=True)
     from prepare_gorge_shared import prepare
     sun_manifest=next(e for e in files if e['path']=='sunlight/data/map/rrg-lidar-sun-mobile-manifest.json')
     prepared=prepare(root/'accepted-base',unpacked/'sunlight',root/'shared',sun_manifest['sha256'])
+    # Preserve the accepted manifest itself for future metadata-free recovery.
+    native=(root/'accepted-base/NATIVE-MAP.json').read_bytes()
+    private_write(root/'shared/ACCEPTED-NATIVE-MAP.json',native)
+    prepared['files'].append({'file':'ACCEPTED-NATIVE-MAP.json','bytes':len(native),'sha256':digest(native)})
     # Reuse already staged Sunlight extents; only new shared dependencies are uploaded.
     sun={e['path'][len('sunlight/'):]:e for e in files if e['path'].startswith('sunlight/')}
     shared=[];new=[]
@@ -229,7 +244,8 @@ def bootstrap(slot, plan, evidence, handoff, root):
     if sum(e['bytes'] for e in new)>SHARED_NEW_CAP:raise ValueError('Shared input cap exceeded')
     shared_catalogs=[]
     for raw,cat in pack_delta(root/'shared',new):
-        ref=slot.put(raw);slot.get(ref)  # exact-generation complete SHA verification
+        ref=slot.put(raw)
+        if not selective:slot.get(ref)  # Fresh recovery verifies every new byte.
         index=len(refs);refs.append(asdict(ref))
         shared_catalogs.append(asdict(slot.put_catalog({'format':'rrgh-cache-pack-catalog-v1','ref':asdict(ref),'members':cat['members']})))
         shared += [{**e,'kind':'shared','checkpointIndex':index} for e in cat['members']]
@@ -248,12 +264,16 @@ def bootstrap(slot, plan, evidence, handoff, root):
     from gorge_stage_preflight import require_input_proof
     roots={'cog':unpacked/'cog-cache','service':unpacked/'service-cache','prior':unpacked/'prior','shared':root/'shared'}
     require_input_proof({**plan,'inputProofSHA256':digest(raw)},proof,roots)
-    proof_ref=slot.put(raw,'indexes');slot.get(proof_ref)
+    proof_ref=slot.put(raw,'indexes')
+    if not selective:slot.get(proof_ref)
     private_write(root/'INPUT-PROOF.json',raw)
     result={'seedBytes':SEED_BYTES,'seedSHA256':SEED_SHA256,'seedPacks':refs[:len(packs)],
        'seedCatalogs':catalog_refs,'sharedCatalogs':shared_catalogs,'proofRef':asdict(proof_ref),
        'acceptedBase':base,'vectorValidation':vector_result,'ingress':ingress,'inputProofValidated':True}
     if reuse:result['transition']=json.loads((root/'TRANSITION.json').read_bytes())
+    from gorge_worker_handoff import prepare_worker
+    region=json.loads((root/'REGION-PLAN.json').read_bytes())
+    result['workerHandoff']=prepare_worker(plan,region,proof,roots,root)
     final=slot.finish(result)
     print(json.dumps({'bootstrapVerified':{'acceptedBase':base,'vectorValidation':vector_result,'proofRef':asdict(proof_ref),'receiptRef':asdict(final)},'gcsIncludingReceipt':slot.store.opener.summary()},sort_keys=True),flush=True)
     private_write(root/'BOOTSTRAP-RECEIPT-REF.json',canonical(asdict(final)))

@@ -166,17 +166,21 @@ def child(ticket):
     job=next(j for j in plan['jobs'] if j['id']==p['job'])
     from benchmark_gorge_pipeline import json_bytes
     from cached_cog_source import atomic
-    completed=False
+    completed=False;diagnostic=None
     try:
         receipt=engine.worker(plan,job,p['root'],p['cogCache'],p['serviceCache'])
         # Retain the existing recipe convention; never rewrite old receipts.
         atomic(Path(p['root'])/'receipts'/(job['id']+'.json'),json_bytes(receipt))
         completed=True
+    except Exception as error:
+        import traceback
+        diagnostic={'errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]}
+        raise
     finally:
         # Failures retain observed partial counts. A killed process still keeps
         # its full durable parent allocation; missing usage never means zero.
         atomic(ticket.with_suffix('.usage.json'),canonical({'reserved':meter.used,
-            'actual':opener.summary(),'completed':completed}))
+            'actual':opener.summary(),'completed':completed,'diagnostic':diagnostic}))
 
 
 if __name__=='__main__':

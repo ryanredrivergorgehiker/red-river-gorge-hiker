@@ -18,6 +18,9 @@ MIN_CARRY={'storedBytes':308693877+COMPACT_RECEIPT,'egressBytes':451641069+2**20
 def validate_reconciliation(plan,evidence):
     r=plan.get('reconciliation')
     if r is None:return
+    if r.get('format')=='rrgh-stage-reconciliation-v2':
+        from gorge_stage_reconcile import validate
+        return validate(plan,evidence)
     original=r['originalPlan']
     if (digest(canonical(original))!=ORIGINAL or r.get('originalPlanSHA256')!=ORIGINAL
         or r.get('format')!='rrgh-one-time-reconciliation-v1'
@@ -49,6 +52,9 @@ def transition(slot,plan,evidence,root):
     This costs the NEW bootstrap meter. No old claim is reopened or changed.
     A prior old worker claim or competing transition returns 412 and stops.
     """
+    if plan['reconciliation'].get('format')=='rrgh-stage-reconciliation-v2':
+        from gorge_stage_reconcile import transition as stage_transition
+        return stage_transition(slot,plan,evidence,root)
     validate_reconciliation(plan,evidence);r=plan['reconciliation']
     key=PREFIX+'plans/'+ORIGINAL+'/slots/00001/claim.json'
     raw=canonical({'format':'rrgh-one-time-reconciliation-fence-v1',

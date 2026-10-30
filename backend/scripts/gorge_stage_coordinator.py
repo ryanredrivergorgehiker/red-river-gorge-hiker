@@ -32,9 +32,10 @@ from inspect_gorge_stage_handoff import inspect_handoff
 from fetch_gorge_private_seed import CONTEXT
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-continuation-20261029'
+CONFIG=SOURCE.parent/'config/gorge-stage-reconciled-20261029'
 GROWTH_CAP=224*2**20
-OUTPUT_CAP=8*2**20
+TILE_CAP=512*1024
+TOTAL_OUTPUT_CAP=108*TILE_CAP
 STATE_CAP=32*2**20
 
 
@@ -48,10 +49,10 @@ def configuration(directory=CONFIG):
     require_stage_release(plan,evidence);preflight(plan,region,SOURCE)
     if plan.get('inputBinding')!='bootstrap-generation-pinned-proof-v1' or plan.get('inputProofSHA256') is not None:
         raise ValueError('Coordinator requires its exact bootstrap input binding')
-    if plan.get('workerEnvelope')!={'cacheGrowthBytes':GROWTH_CAP,'outputBytesPerJob':OUTPUT_CAP,'stateBytes':STATE_CAP}:
+    if plan.get('workerEnvelope')!={'cacheGrowthBytes':GROWTH_CAP,'outputBytesPerTile':TILE_CAP,'totalOutputBytes':TOTAL_OUTPUT_CAP,'stateBytes':STATE_CAP}:
         raise ValueError('Worker preservation envelope changed')
-    if (plan['slots'][1]['storedBytes'] < GROWTH_CAP+12*OUTPUT_CAP+STATE_CAP+12*MAX_CATALOG+2**20
-            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+12*OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+12*2**20):
+    if (plan['slots'][1]['storedBytes'] < GROWTH_CAP+TOTAL_OUTPUT_CAP+STATE_CAP+12*MAX_CATALOG+2**20
+            or plan['slots'][2]['egressBytes'] < GROWTH_CAP+TOTAL_OUTPUT_CAP+STATE_CAP+SHARED_NEW_CAP+PROOF_CAP+12*2**20):
         raise ValueError('Outputs/cache/recovery envelope not prepaid')
     return plan,evidence,region
 
@@ -163,6 +164,7 @@ def run_stage(plan,evidence,region,root,store,opener):
         initial,proof,roots=bootstrap(slot,plan,evidence,handoff,root)
     except Exception as error:
         if not slot.closed:
+            import traceback
             refs=[]
             for p in (root/'sessions').glob('*.json') if (root/'sessions').exists() else []:
                 j=json.loads(p.read_bytes())
@@ -170,25 +172,14 @@ def run_stage(plan,evidence,region,root,store,opener):
             from gorge_stage_inputs import BaseValidationError
             diagnostic=({'code':error.code,'evidence':error.evidence}
                         if isinstance(error,BaseValidationError)
-                        else {'code':'bootstrap-unclassified','errorClass':type(error).__name__})
+                        else {'code':'bootstrap-unclassified','errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]})
             final=slot.finish({'status':'failed','phase':'bootstrap','preservedIngress':refs,
                          'diagnostic':diagnostic,'gcs':opener.summary()})
             print(json.dumps({'bootstrapFailureReceipt':asdict(final),'gcsIncludingReceipt':opener.summary()},sort_keys=True),flush=True)
             print(json.dumps({'bootstrapDiagnostic':diagnostic},sort_keys=True),flush=True)
         raise
     signal('bootstrap_ready')
-    # Bind runtime proof to the immutable bootstrap receipt without changing the
-    # durable plan namespace or resetting any allocation.
-    require_input_proof({**plan,'inputProofSHA256':initial['proofRef']['sha256']},proof,roots)
-    from gorge_cache_selection import seed_selected_cog
-    seed_selected_cog(proof['cogSelection'],roots['cog'],root/'working-cog',region['sourceLimits']['cogBytes'])
-    service=root/'working-service';service.mkdir(mode=0o700)
-    for p in Path(roots['service']).iterdir():private_write(service/p.name,p.read_bytes())
-    from benchmark_ky_naip_usgs import ServiceCache
-    svc=ServiceCache(service,byte_limit=region['sourceLimits']['serviceBytes'],request_limit=region['sourceLimits']['serviceRequests']);svc.close()
-    output=root/'worker';output.mkdir(mode=0o700)
-    verified=require_input_proof({**plan,'inputProofSHA256':initial['proofRef']['sha256']},proof,roots)
-    install_prior_tiles(verified,output)
+    output=root/'worker';service=root/'working-service'
     cog=root/'working-cog';known={'cog/'+p.relative_to(cog).as_posix() for p in cog.glob('blocks/*/*')}
     known|={'service/'+p.name for p in service.iterdir() if p.suffix in ('.bin','.json')}
     slot=Slot(store,plan,1,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
@@ -198,12 +189,16 @@ def run_stage(plan,evidence,region,root,store,opener):
             policy=plan['jobPolicies'][job];attempts+=1;job_error=None;receipt=None
             try:
                 receipt=run_job(slot,root/'REGION-PLAN.json',job,output,cog,service,policy,policy['seconds'],growth_cap=GROWTH_CAP-growth)
-                if sum(e['bytes'] for e in receipt['outputs'])>OUTPUT_CAP:raise ValueError('Encoded output preservation cap exceeded')
-            except Exception as error:job_error=error
+                if any(e['bytes']>TILE_CAP for e in receipt['outputs']) or sum(e['bytes'] for e in receipt['outputs'])>len(next(j for j in region['jobs'] if j['id']==job)['outputTiles'])*TILE_CAP:raise ValueError('Encoded output preservation cap exceeded')
+            except Exception as error:
+                job_error=error
+                import traceback
+                print(json.dumps({'workerDiagnostic':{'job':job,'errorClass':type(error).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(error.__traceback__)]}}),flush=True)
             usage_path=output/('gate-c-'+job+'.usage.json')
             if usage_path.exists():
                 usage=json.loads(usage_path.read_bytes());growth+=usage['reserved']['storedBytes']
                 source_bytes+=usage['actual']['receivedBodyBytes'];source_requests+=usage['actual']['operations']
+                if usage.get('diagnostic'):print(json.dumps({'childDiagnostic':usage['diagnostic'],'job':job}),flush=True)
             else:
                 growth=GROWTH_CAP  # Ambiguous child: no later source requests permitted.
             # Preservation precedes success receipt and the next job, including failures.
