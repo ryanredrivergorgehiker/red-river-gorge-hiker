@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: rrgh-wave005-prep-source-covered-v3
+  group: rrgh-wave005-prep-source-covered-v4
   cancel-in-progress: false
 jobs:
   generate:
@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: correct highzoom-only regional eligibility 20261030'
+      github.event.head_commit.message == 'Lane20: include only supported completed z16 keys 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -113,7 +113,7 @@ jobs:
           completedset=set(completed)
           attempts=old['priorAttemptCounts']
           for layer,limit in limits.items():
-              prior=[index[jid] for jid in completed if index[jid]['layer']==layer and index[jid]['z']==16]
+              prior=[index[jid] for jid in completed if jid in index and index[jid]['layer']==layer and index[jid]['z']==16]
               assert prior,'Previous regional foothold absent: '+layer
               seenxy=[(x['x'],x['y']) for x in prior]
               eligible=[j for j in index.values() if j['layer']==layer and j['z']==16
