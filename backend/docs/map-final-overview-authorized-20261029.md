@@ -1,0 +1,19 @@
+# Authorized final terrain overview continuation
+
+Owner approval dated October 29, 2026 raises only this stage's cumulative attempt ceiling from twelve to thirteen, exclusively for `terrain-15-8772-12661`. The $0.35 release, locked $7.65, all other original resource ceilings, protected packages and restricted direct WIF identity remain unchanged.
+
+The preceding production run 40990810532 has eleven durable jobs / 107 independently recovered tiles. Its final overview reached checkpointing but the duplicate state-pack create failed. All prior claims, receipts, failures and full byte reservations remain preserved. The repaired `Slot.put` from f183adaad9800f396546169d816c7c191e3544ba is used unchanged.
+
+The new source `gorge_final_overview.py` runs the existing native overview worker exactly once, using four accepted child ranges totaling 89,547 bytes. No seed transfer, Base archive read, completed-job rendering, cache reconstruction or official-source request is permitted. It verifies the three preceding closed claims/receipts, eleven job receipts, prior independent QA, accepted dependency catalog and child hashes before writing an immutable successor and beginning the native child.
+
+Only forty demonstrably unused Class B reservations from the closed recovery slot are reassigned. That slot allocated 282, reserved and observed 62, and finished with all-successful HTTP results. Its entire byte, Class A, time and other reservations remain charged. The failed producer's full allocation and every older failure/padding remain charged. No existing record is modified or reopened.
+
+The combined new allocation is 1 MiB storage, 2 MiB GCS response bytes, eight Class A, forty Class B, zero official-source bytes/requests, one attempt and 360 seconds. The producer and separate fresh recovery runner each have a three-minute workflow timeout and independent 180-second slot deadline. Producer: 768 KiB storage, 1 MiB reads, 5 A / 30 B; recovery: 256 KiB storage, 1 MiB reads, 3 A / 10 B. The $0.002 subreservation is inside the existing $0.35 release.
+
+Cumulative reserved totals become 674,741,945 storage bytes; 1,073,605,499 read bytes; 200 A; 500 B; 2 GiB official-source transfer; 2,000 source requests; 10,589 seconds; thirteen attempts. The original read ceiling has 136,325 bytes unallocated. All previous successful jobs remain excluded from assignments.
+
+Fresh recovery downloads the final job receipt/output by exact generation and hash, reuses the accepted eleven-job recovery evidence, checks the complete twelve-job receipt set, and independently verifies the final image's size, grid, pixels, alpha, nonblank content and quadrant alignment against the four accepted children. In-memory pixel QA creates no production artifact. Final QA and receipts remain in the restricted private GCS prefix; no protected images, source bytes or credentials are emitted to Actions artifacts or logs.
+
+Seven focused offline checks passed: complete production-to-fresh-recovery using the real native child with synthetic images; duplicate claim rejection; closed-slot/ambiguous-history/missing-job/changed-dependency rejection; zero-source fail-closed handling; cumulative limit and exact attempt binding. No passing native iOS CI, prior benchmark, live recovery drill or accepted Base validation was repeated. The original genuine children were not rendered during these tests.
+
+The new finite plan expires October 30 at 05:00 UTC (October 30 at 1:00 a.m. Eastern). This is an execution window, not an extension to the six-minute incremental allocation. A unique push message, exact source checkout, run-attempt-one requirement, serialized workflow, create-only claim and predecessor successor fence prohibit automatic retry. This continuation authorizes no subsequent paid stage, campaign dispatch, IAM/bucket/Firebase change, accepted package replacement or iPhone acceptance test.
