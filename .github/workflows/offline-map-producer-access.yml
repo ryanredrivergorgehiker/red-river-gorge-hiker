@@ -1,4 +1,4 @@
-name: RRGH one-time reconciled twelve-job stage
+name: RRGH audited stage continuation and independent recovery
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
@@ -16,16 +16,16 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute one-time reconciled stage 20261029'
+      github.event.head_commit.message == 'Lane20: execute audited twelve-job continuation 20261029'
     runs-on: ubuntu-latest
-    timeout-minutes: 157
+    timeout-minutes: 155
     outputs:
       worker_receipt: ${{ steps.producer.outputs.worker_receipt }}
     steps:
       - name: Checkout exact reviewed stage source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 8fac639fd887f1b1a43847bfe5bcca6cfdd05fa0
+          ref: f2406312c668d476ec7236895b66ffc868f60e95
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -53,7 +53,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Fence old worker, validate reused inputs, then run the original twelve jobs
+      - name: Settle historical slots, verify full native handoff, run original twelve jobs
         id: producer
         run: python backend/scripts/gorge_stage_coordinator.py --phase stage
   independent-recovery:
@@ -62,12 +62,12 @@ jobs:
       always() && github.run_attempt == 1 &&
       needs.bounded-stage.outputs.worker_receipt == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 20
     steps:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 8fac639fd887f1b1a43847bfe5bcca6cfdd05fa0
+          ref: f2406312c668d476ec7236895b66ffc868f60e95
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
