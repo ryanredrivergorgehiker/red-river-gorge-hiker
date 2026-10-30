@@ -88,7 +88,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: audit Wave011 immutable checkpoints within restricted workflow 20261030'
+      github.event.head_commit.message == 'Lane20: verify Wave011 neighbor edges and local package read-only 20261030'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -175,17 +175,56 @@ jobs:
           # Discover the exact bootstrap reference via producer detail only when
           # stored evidence contains it; otherwise perform new-tile QA without
           # inventing bootstrap metadata or declaring seam-complete recovery.
-          qa=verify_outputs(plan,region,records,root/'outputs',None)
+          boot=Ref(key='engineering/map-production/plans/'+expected+'/slots/00000/receipt.json',
+                   generation='1793401291750355',bytes=622,
+                   sha256='ddf341a8a99175c0f9ed6b6901359dc0baf6c709834dc8c5fde0893d20ebabea')
+          initial_receipt=decode_record(slot.get(boot))
+          assert initial_receipt['planSHA256']==expected and initial_receipt['slot']==0
+          assert initial_receipt['result']['status']=='ready'
+          initial=load_large(slot,initial_receipt['result']['bootstrapDataRef'])
+          neighbors=initial['neighbors']
+          oldpaths=[e['path'] for c in neighbors for e in c['members']]
+          assert len(oldpaths)==len(set(oldpaths))
+          if oldpaths:
+              recover_catalogs(slot,neighbors,oldpaths,root/'old')
+          qa=verify_outputs(plan,region,records,root/'outputs',root/'old')
           assert qa['jobs']==64 and qa['files']==64 and qa['pixelsDecoded']
+          # Build native intermediate parts ONLY in the isolated runner's local
+          # filesystem: no GCS writes and no public package deployment.
+          from build_gorge_map_bundles import PROFILE,partition,write_part
+          groups={g:[] for g in PROFILE}
+          for result_record in records:
+              for e in result_record['result']['originalReceipt']['outputs']:
+                  fields=e['path'].split('/')
+                  layer=fields[1]
+                  group=next(g for g,ls in PROFILE.items() if layer in ls)
+                  groups[group].append({**e,'source':str(root/'outputs'/e['path']),
+                                       'layer':layer,'z':int(fields[2]),'x':int(fields[3]),
+                                       'y':int(Path(fields[4]).stem)})
+          local_parts=[]
+          for group,entries in groups.items():
+              if not entries:continue
+              folder=root/'parts'/group
+              folder.mkdir(parents=True,exist_ok=True)
+              for items in partition(group,entries):
+                  item=write_part(group,items,folder)
+                  part_path=folder/item['file']
+                  assert part_path.stat().st_size==item['byteCount']
+                  assert item['byteCount']<=256000000 and item['fileCount']<=60000
+                  local_parts.append({'group':group,'byteCount':item['byteCount'],
+                                      'fileCount':item['fileCount'],'sha256':digest(part_path.read_bytes())})
+          assert local_parts and sum(p['fileCount'] for p in local_parts)>=64
           (root/'state').mkdir(mode=0o700)
           states=check_states(load_large(slot,details['stateRef']),root/'state')
           assert states['hashesAndSQLiteVerified']
           result={'status':'read-only-partial-qa-verified-not-accepted',
                   'checkedJobs':qa['jobs'],'newOutputTiles':qa['files'],
                   'newTileHashesPixelsVerified':True,
-                  'newNewAdjacentEdges':qa['adjacentEdgesMeasured'],
-                  'priorNeighborEdgesNotChecked':True,
-                  'nativePackagingNotAssembledOrStored':True,
+                  'newAndPriorAdjacentEdges':qa['adjacentEdgesMeasured'],
+                  'priorNeighborEdgesChecked':True,
+                  'neighborFilesRecovered':len(oldpaths),
+                  'localPackagePartsVerified':local_parts,
+                  'nativePackagingNotStoredOrPublished':True,
                   'historicalInventoryUnchanged':{'jobs':1146,'tiles':11362,'sunlight':320},
                   'sourcePixelGaps':0,'quarantinedHistoricalAttempts':19,
                   'gcsWrites':0,'gcsReadRequests':slot.meter.used['classBRequests'],
