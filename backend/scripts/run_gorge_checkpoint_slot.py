@@ -10,6 +10,8 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import threading
+import time
 
 from gorge_checkpoint import (GCS, Slot, canonical, digest, validate_plan,
                               require_live_allowance, pack_delta)
@@ -39,14 +41,32 @@ def preflight(plan, region, source_dir):
     return totals
 
 
+# Process-local only: never persist or log the bearer credential. The existing
+# WIF login emits a one-hour access token; use a much shorter 10-minute cache.
+# This avoids requesting a new external credential for every immutable GCS GET.
+_TOKEN_LOCK=threading.Lock()
+_TOKEN_VALUE=None
+_TOKEN_UNTIL=0.0
+_TOKEN_CACHE_SECONDS=600
+
 def token():
-    # Standard gcloud setup uses the existing short-lived dedicated WIF identity.
-    result=subprocess.run(['gcloud','auth','print-access-token','--quiet'],
-        stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=False,timeout=30,text=True)
-    value=result.stdout.strip()
-    if result.returncode or not value or any(c.isspace() for c in value):
-        raise RuntimeError('Short-lived WIF credential unavailable')
-    return value
+    global _TOKEN_VALUE,_TOKEN_UNTIL
+    with _TOKEN_LOCK:
+        now=time.monotonic()
+        if _TOKEN_VALUE is not None and now<_TOKEN_UNTIL:
+            return _TOKEN_VALUE
+        # No retry, fallback or extension of stale credentials. Unexpected
+        # auth failure still stops all cloud work and preserves prior receipts.
+        result=subprocess.run(['gcloud','auth','print-access-token','--quiet'],
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=False,timeout=30,text=True)
+        value=result.stdout.strip()
+        if result.returncode or not value or any(c.isspace() for c in value):
+            _TOKEN_VALUE=None
+            _TOKEN_UNTIL=0.0
+            raise RuntimeError('Short-lived WIF credential unavailable')
+        _TOKEN_VALUE=value
+        _TOKEN_UNTIL=time.monotonic()+_TOKEN_CACHE_SECONDS
+        return value
 
 
 def execute(args,plan,region,evidence):
