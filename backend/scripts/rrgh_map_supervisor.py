@@ -149,11 +149,25 @@ def gh(path, token, *, raw=False):
                  "Accept": "application/vnd.github+json",
                  "X-GitHub-Api-Version": "2022-11-28",
                  "User-Agent": "RRGH-read-only-supervisor"})
+    class SafeRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, old_req, fp, code, msg, headers, newurl):
+            from urllib.parse import urlsplit
+            host = urlsplit(newurl).hostname
+            require(host is not None and newurl.startswith("https://"), "Unsafe GitHub log redirect")
+            redirected = super().redirect_request(old_req, fp, code, msg, headers, newurl)
+            if redirected is None:
+                return None
+            # GitHub's signed log URL is another host: never forward API bearer.
+            if host != "api.github.com":
+                redirected.remove_header("Authorization")
+                redirected.remove_unredirected_header("Authorization")
+            return redirected
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        client = urllib.request.build_opener(SafeRedirect)
+        with client.open(req, timeout=30) as response:
             data = response.read(12_000_000)
     except urllib.error.HTTPError as e:
-        raise Halt("GitHub read HTTP " + str(e.code)) from None
+        raise Halt("GitHub read HTTP " + str(e.code) + " at " + path.split("?")[0]) from None
     return data.decode("utf-8") if raw else json.loads(data)
 
 
