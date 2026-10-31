@@ -146,7 +146,7 @@ def prepare(root, verified):
           not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
     check(Counter(j["layer"] for j in picked) == limits, "Layer mix changed")
     expected_tiles = sum(len(j["outputTiles"]) for j in picked)
-    check(expected_tiles == 5632, "Unexpected tile count")
+    check(expected_tiles == 5632, "Unexpected tile count: "+str(expected_tiles))
 
     policy = {}
     for jid, perjob in old["jobPolicies"].items():
