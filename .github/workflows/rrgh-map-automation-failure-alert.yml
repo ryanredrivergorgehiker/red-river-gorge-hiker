@@ -12,13 +12,9 @@ permissions:
   issues: write
 jobs:
   owner-alert:
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.event.workflow_run.run_attempt == 1 &&
-      contains(fromJSON('["failure","cancelled","timed_out","startup_failure","action_required"]'),
-               github.event.workflow_run.conclusion) &&
-      contains(fromJSON('["lane20/unattended-supervisor-20261031","lane20/offline-production-preflight-20261029"]'),
-               github.event.workflow_run.head_branch)
+    # The watched workflow names already restrict scope. Do not gate on
+    # absent optional workflow_run payload fields such as run_attempt.
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
