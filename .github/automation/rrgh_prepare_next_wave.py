@@ -36,7 +36,7 @@ def prepare(root, verified):
 
     code_path = root / "backend/scripts/gorge_campaign.py"
     original_code = code_path.read_text()
-    match = re.search(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-(\\d{3})-(\\d{8})'", original_code)
+    match = re.search(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-(\d{3})-(\d{8})'", original_code)
     check(match is not None, "Missing canonical source configuration pointer")
     wave = int(match.group(1))
     date = match.group(2)
