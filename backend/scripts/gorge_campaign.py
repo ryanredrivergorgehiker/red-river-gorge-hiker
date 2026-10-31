@@ -198,7 +198,8 @@ def bootstrap(slot,plan,region,root):
         # Carry exact pins forward even when newly obtained public raw ranges
         # were intentionally transient. Refetch can never silently adopt a
         # newer source version after a completed wave.
-        prior_detail=load_large(slot,previous['detailRef'])
+        detail_ref=historical_worker['detailRef'] if c['sequence']==12 else previous['detailRef']
+        prior_detail=load_large(slot,detail_ref)
         prior_states=load_large(slot,prior_detail['stateRef'])
         pins=root/'prior-state';pins.mkdir();check_states(prior_states,pins)
         with sqlite3.connect('file:'+str(pins/'cog.sqlite')+'?mode=ro',uri=True) as src, sqlite3.connect(root/'working-cog/cache.sqlite') as dst:
