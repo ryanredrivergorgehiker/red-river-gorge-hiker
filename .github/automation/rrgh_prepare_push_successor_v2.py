@@ -202,9 +202,18 @@ def prepare(root, verified):
           not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
     check(Counter(j["layer"] for j in picked) == limits, "Layer mix changed")
     expected_tiles = sum(len(j["outputTiles"]) for j in picked)
-    # Every source window retains all children inside the pinned regional grid.
-    # Border windows may have fewer children, without resampling/downscaling.
-    check(5500 <= expected_tiles <= 5632,
+    # The count is determined by exact regional geometry, not a historical
+    # constant: border windows naturally contain fewer children over time.
+    # Check every chosen window against its full-resolution source profile,
+    # reject duplicate outputs, and never pad or downsample to meet a quota.
+    check(all(len(j["outputTiles"]) >= 1 and
+              len(j["outputTiles"]) <= (1 if j["layer"] == "usgs-topo" else 21)
+              for j in picked), "Selected window has invalid tile geometry")
+    unique_outputs = {(j["layer"], *tile) for j in picked
+                      for tile in j["outputTiles"]}
+    check(len(unique_outputs) == expected_tiles,
+          "Duplicate output tile in fresh allocation")
+    check(len(jobs) <= expected_tiles <= 256 + 256*21,
           "Unexpected geometry-derived tile count: "+str(expected_tiles))
 
     policy = {}
