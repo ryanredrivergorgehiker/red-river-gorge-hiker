@@ -1,0 +1,133 @@
+name: RRGH Wave011 recovery-only immutable plan (offline)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave011-salvage-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave011-salvage-plan
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: validate exact Wave011 recovery-only plan 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact immutable salvage implementation
+        uses: actions/checkout@v4
+        with:
+          ref: 2edc649994e6b3a853f3cdf1864f9c5c61249a62
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Validate old immutable source and generate separately bounded plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile backend/scripts/gorge_wave011_salvage.py
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          from datetime import datetime,timezone
+          from decimal import Decimal
+          from dataclasses import asdict
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest,DIMENSIONS
+          from gorge_campaign_budget import CAMPAIGN,APPROVAL,RATES,cost,monthly
+          from run_gorge_checkpoint_slot import code_snapshot
+          from gorge_wave011_salvage import source,PRODUCER,BOOT,OLD_SHA
+          old,region=source()
+          assert datetime.now(timezone.utc).isoformat().startswith('2026-10-30')
+          assert len(old['completedJobIDs'])==1146 and len(old['approvedJobIDs'])==128
+          stage={'storedBytes':6*2**20,'egressBytes':12*2**20,
+                 'classARequests':12,'classBRequests':350,
+                 'sourceBytes':0,'sourceRequests':0,'seconds':1200,'attempts':0}
+          recover={'storedBytes':128*2**10,'egressBytes':12*2**20,
+                   'classARequests':3,'classBRequests':350,
+                   'sourceBytes':0,'sourceRequests':0,'seconds':1200,'attempts':0}
+          limits={k:stage[k]+recover[k] for k in DIMENSIONS}
+          plan=dict(old)
+          plan.update({
+            'purpose':'wave011-checkpoint-salvage-only',
+            'expiresAt':'2026-11-03T00:00:00Z',
+            'sourceSnapshotSHA256':code_snapshot(Path('backend/scripts')),
+            'approvedJobIDs':old['approvedJobIDs'][:64],
+            'slotJobs':{},
+            'jobPolicies':{},
+            'slots':[stage,recover],
+            'limits':limits,
+            'originalPlanSHA256':OLD_SHA,
+            'originalProducer':asdict(PRODUCER),
+            'originalBootstrap':asdict(BOOT),
+            'sourceBytesAllowed':0,
+            'bookkeepingProfile':'compact-v2',
+            'bulkProductionEnabled':False,
+            'deleteAllowed':False,
+            'automaticRetryPermitted':False,
+            'maxConcurrency':1,
+            'campaign':{
+              'id':CAMPAIGN,'ownerApproval':APPROVAL,
+              'ceilingUSD':'25.00','storageTargetUSDPerMonth':'1.00',
+              'chargedConservativeCarryUSD':'5.658803284343367815017700196',
+              'storedConservativeCarryBytes':12797880214}
+          })
+          # No mutation of originals, no new source job attempts, no old plan
+          # claim reuse; new SHA prefix funds two one-shot recovery jobs only.
+          amount=cost(limits)
+          assert amount<Decimal('.02')
+          assert monthly(12797880214+limits['storedBytes'])<Decimal('1')
+          evidence={'planningRates':RATES,
+            'github':{'hardCeilingUSD':350,'stopAtLimitVerified':True},
+            'cloudStorageAllowance':{
+              'approvedUSD':'0.02','reservedWorstCaseUSD':str(amount),
+              'approvalReference':APPROVAL,
+              'approvedRecurringStorageUSDPerMonth':'1.00',
+              'chargedRetentionMonths':1,
+              'ongoingStorageAcknowledged':True,
+              'planSHA256':digest(canonical(plan))}}
+          root=Path('backend/config/gorge-wave011-recovery-only-20261030')
+          assert not root.exists()
+          root.mkdir()
+          (root/'PLAN.json').write_bytes(canonical(plan))
+          (root/'ALLOWANCE.json').write_bytes(canonical(evidence))
+          from gorge_wave011_salvage import validate
+          p,e,o,r,charge=validate()
+          assert p==plan and e==evidence
+          assert len({j for j,n in plan['priorAttemptCounts'].items()
+                      if n and j not in plan['completedJobIDs']})==19
+          assert len(set(plan['approvedJobIDs'])&set(plan['completedJobIDs']))==0
+          assert plan['approvedJobIDs']==old['approvedJobIDs'][:64]
+          print(json.dumps({'phase':'verified-offline-wave011-recovery-only',
+            'planSHA256':digest(canonical(plan)),
+            'sourceSnapshotSHA256':plan['sourceSnapshotSHA256'],
+            'acceptedCarryJobs':1146,'acceptedCarryTiles':11362,
+            'salvageJobCount':64,'expectedSalvageTiles':64,
+            'newProductionJobs':0,'sourceAttempts':0,
+            'priorFailedWaveReservationRetained':True,
+            'extraBoundedReserveUSD':str(charge),
+            'worstCumulativeUSD':str(Decimal('5.658803284343367815017700196')+charge),
+            'storageEstimateUSDPerMonth':str(monthly(12797880214+limits['storedBytes'])),
+            'sourceProducer':asdict(PRODUCER)},sort_keys=True))
+          PY
+      - name: Commit only the approved recovery plan and allowance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "2edc649994e6b3a853f3cdf1864f9c5c61249a62"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "2edc649994e6b3a853f3cdf1864f9c5c61249a62"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-wave011-recovery-only-20261030/PLAN.json backend/config/gorge-wave011-recovery-only-20261030/ALLOWANCE.json
+          test "$(git diff --cached --name-only | wc -l)" -eq 2
+          git diff --cached --check
+          git commit -m 'Lane20: pin separate Wave011 two-slot recovery plan [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+# Temporary contents write for immutable plan only; retire after success.
