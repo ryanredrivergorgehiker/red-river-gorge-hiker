@@ -184,7 +184,13 @@ jobs:
           plan['slots'][1]['attempts']=128
           plan['limits']['attempts']=128
           region['jobs']=selected
-          region['engineHashes']['gorge_campaign.py']=digest(Path('backend/scripts/gorge_campaign.py').read_bytes())
+          # These two reviewed modules changed since the Wave011 source pin:
+          # canonical bootstrap now accepts the verified salvage lineage; token
+          # reuse is already independently regression-tested. All remaining
+          # engine hashes stay pinned to their prior immutable values.
+          for changed in ('gorge_campaign.py','run_gorge_checkpoint_slot.py'):
+              assert changed in region['engineHashes']
+              region['engineHashes'][changed]=digest((Path('backend/scripts')/changed).read_bytes())
           plan['regionPlanSHA256']=digest(canonical(region))
           plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
           env['cloudStorageAllowance']['approvedUSD']='0.6456'
