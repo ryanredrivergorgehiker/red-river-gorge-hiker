@@ -10,6 +10,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 import run_gorge_checkpoint_slot as subject
 
 class TokenCacheTest(unittest.TestCase):
+    def test_proactive_refresh_window_is_120_seconds(self):
+        self.assertEqual(subject._TOKEN_CACHE_SECONDS,120)
+
     def setUp(self):
         subject._TOKEN_VALUE=None
         subject._TOKEN_UNTIL=0.0
@@ -25,7 +28,10 @@ class TokenCacheTest(unittest.TestCase):
                 self.assertEqual(subject.token(),'opaque-bearer-token')
                 self.assertEqual(subject.token(),'opaque-bearer-token')
                 self.assertEqual(cmd.call_count,1)
-                tick.return_value=701.0
+                tick.return_value=219.0
+                self.assertEqual(subject.token(),'opaque-bearer-token')
+                self.assertEqual(cmd.call_count,1)
+                tick.return_value=221.0
                 self.assertEqual(subject.token(),'opaque-bearer-token')
                 self.assertEqual(cmd.call_count,2)
                 self.assertEqual(cmd.call_args.kwargs['timeout'],30)
@@ -36,7 +42,7 @@ class TokenCacheTest(unittest.TestCase):
         with patch.object(subject.time,'monotonic',return_value=100.0) as tick:
             with patch.object(subject.subprocess,'run',side_effect=[ok,bad]) as cmd:
                 self.assertEqual(subject.token(),'opaque-bearer-token')
-                tick.return_value=701.0
+                tick.return_value=221.0
                 with self.assertRaisesRegex(RuntimeError,'credential unavailable'):
                     subject.token()
                 self.assertIsNone(subject._TOKEN_VALUE)
