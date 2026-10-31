@@ -54,10 +54,16 @@ jobs:
         run: |
           python .github/automation/rrgh_prepare_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json
           python source-checkout/backend/scripts/gorge_campaign.py --phase plan
-          grep -Fq "c['ceilingUSD']" source-checkout/backend/scripts/gorge_campaign.py
-          grep -q 'gorge-full-quality-125usd-20261031' source-checkout/backend/scripts/gorge_campaign_budget.py
-          test -f source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json
-          test -f source-checkout/backend/config/gorge-campaign-wave-023-20261031/PLAN.json
+          python3 - <<'PY'
+          from pathlib import Path
+          code=Path('source-checkout/backend/scripts/gorge_campaign.py').read_text()
+          budget=Path('source-checkout/backend/scripts/gorge_campaign_budget.py').read_text()
+          assert "c['ceilingUSD']" in code, 'New campaign fence source was not migrated'
+          assert 'gorge-full-quality-125usd-20261031' in budget, 'New budget source not installed'
+          assert Path('source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json').is_file()
+          assert Path('source-checkout/backend/config/gorge-campaign-wave-023-20261031/PLAN.json').is_file()
+          print('SYNTHETIC_MIGRATION_FILES_VERIFIED: old plan intact, new exact budget and fence')
+          PY
           echo "SYNTHETIC_FORWARD_ONLY_POLICY_MIGRATION_QA_PASS: ZERO GITHUB WRITES, ZERO CLOUD CALLS"
       - name: Verify GitHub source lease, budget plan and atomic publication preconditions — READ ONLY
         env:
