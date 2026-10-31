@@ -1,0 +1,61 @@
+name: RRGH forward-only Wave023 synthetic offline end-to-end QA
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-wave023-offline-qa.yml
+permissions:
+  contents: read
+jobs:
+  test-local-migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2ff6abcc084b578c75cf0dedbfa63ccf3b6b535a
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install locked source-window builder dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Produce EXPLICITLY SYNTHETIC receipt for offline successor-policy tests only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64,json,sys,zlib
+          from pathlib import Path
+          sys.path.insert(0,'source-checkout/backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          root=Path('source-checkout/backend/config/gorge-campaign-wave-022-push-20261031')
+          p=json.loads((root/'PLAN.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((root/'REGION-PLAN.json.z.b64').read_bytes())))
+          plan_sha=digest(canonical(p))
+          ref={'key':f'engineering/map-production/plans/{plan_sha}/slots/00002/receipt.json',
+               'generation':'1','bytes':1536,'sha256':'c'*64}
+          report={'verified':True,'dispatchAuthorized':False,'wave':22,
+             'acceptedJobs':len(p['completedJobIDs'])+len(p['approvedJobIDs']),
+             'acceptedRasterTiles':p['campaign']['carry']['priorRasterTiles']+sum(len(j['outputTiles']) for j in region['jobs']),
+             'historicalExclusions':45,'sunlightAssets':320,
+             'planSHA256':plan_sha,'receiptRef':ref,'receiptSHA256':ref['sha256'],
+             'nextCarry':{'chargedUSD':'8.00','storedBytes':16300000000,
+                          'priorCompletedJobs':len(p['completedJobIDs'])+len(p['approvedJobIDs']),
+                          'priorRasterTiles':p['campaign']['carry']['priorRasterTiles']+sum(len(j['outputTiles']) for j in region['jobs']),
+                          'priorSunlightAssets':320}}
+          Path('/tmp/rrgh-synthetic-never-publish.json').write_text(json.dumps(report))
+          print('SYNTHETIC ONLY: no valid GCS generation/receipt; publisher not authorized')
+          PY
+      - name: Fully simulate strict forward-only USD125/USD2 Wave023 source migration OFFLINE
+        run: |
+          python .github/automation/rrgh_prepare_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+          grep -q "'ceilingUSD':c\['ceilingUSD'\]" source-checkout/backend/scripts/gorge_campaign.py
+          grep -q 'gorge-full-quality-125usd-20261031' source-checkout/backend/scripts/gorge_campaign_budget.py
+          test -f source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json
+          test -f source-checkout/backend/config/gorge-campaign-wave-023-20261031/PLAN.json
+          echo "SYNTHETIC_FORWARD_ONLY_POLICY_MIGRATION_QA_PASS: ZERO GITHUB WRITES, ZERO CLOUD CALLS"
