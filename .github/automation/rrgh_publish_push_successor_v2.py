@@ -103,8 +103,22 @@ def check_local(root, audit):
           "Previously accepted work overlap")
     excluded = {jid for jid, v in plan["priorAttemptCounts"].items()
                 if v > 0 and jid not in plan["completedJobIDs"]}
-    guard(len(excluded) == 45 and
+    guard(len(excluded) == (45 if prior_seq <= 22 else 46) and
           not excluded & set(plan["approvedJobIDs"]), "Quarantine overlap")
+    if prior_seq == 23:
+        recovered = audit.get("partialCompletedJobIDs")
+        guard(audit.get("partialRecovered") is True and
+              audit.get("run") == 41225003991 and
+              isinstance(recovered, list) and len(recovered) == 207 and
+              recovered == prior["approvedJobIDs"][:207] and
+              audit.get("failedJobID") == prior["approvedJobIDs"][207] and
+              plan["completedJobIDs"] == prior["completedJobIDs"] + recovered and
+              audit["failedJobID"] in excluded and
+              plan["priorAttemptCounts"].get(audit["failedJobID"]) == 1,
+              "Exact partial-recovery quarantine or accepted-prefix mismatch")
+    else:
+        guard(audit.get("partialRecovered") is False,
+              "Unexpected partial recovery outside pinned incident")
     guard(plan["maxConcurrency"] == 1 and
           plan["automaticRetryPermitted"] is False, "Concurrency/retry guard changed")
     guard(plan["bucket"] == "rrgh-nonproduction-protected-packages", "Wrong cloud bucket")
