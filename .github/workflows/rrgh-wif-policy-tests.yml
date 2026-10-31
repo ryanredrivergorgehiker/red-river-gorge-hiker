@@ -1,0 +1,48 @@
+name: RRGH limited Cloud IAM policy regression check
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-wif-policy-tests.yml
+      - backend/scripts/upgrade_map_producer_wif_20261031.sh
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate IAM-only shell syntax and exact privilege fences
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=backend/scripts/upgrade_map_producer_wif_20261031.sh
+          bash -n "$file"
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('backend/scripts/upgrade_map_producer_wif_20261031.sh').read_text()
+          required=[
+            'RRGH_AUTHORIZE_AUTONOMOUS_WIF',
+            'YES_LIMITED_WORKFLOW_DISPATCH',
+            "assertion.repository_id=='1325611891'",
+            "assertion.repository_owner_id=='313924954'",
+            'lane20/offline-production-preflight-20261029',
+            'offline-map-producer-access.yml',
+            'offline-map-restricted-dispatch.yml',
+            "assertion.event_name=='push'",
+            "assertion.event_name=='workflow_dispatch'",
+            'providers update-oidc',
+            '--attribute-condition="$NEW"',
+            'check_state after',
+          ]
+          assert all(x in s for x in required), 'Missing exact allowlist or readback guard'
+          assert 'set -euo pipefail' in s
+          assert '--attribute-mapping=' not in s, 'Unexpected subject mapping change'
+          assert 'add-iam-policy-binding' not in s, 'Unexpected permission expansion'
+          assert 'service-accounts' not in s, 'Unexpected service account change'
+          assert 'storage' not in s, 'Unexpected GCS IAM change'
+          print('WIF POLICY PRECHECK PASS: syntax, exact claims, authorizer, readback, no IAM grant mutations')
+          PY
