@@ -17,7 +17,7 @@ REPO = "ryanredrivergorgehiker/red-river-gorge-hiker"
 BRANCH = "lane20/offline-production-preflight-20261029"
 WORKFLOW = "offline-map-producer-access.yml"
 PREFIX = "engineering/map-production/plans/"
-RUN_RE = re.compile(r"^Lane20: execute verified new-territory wave(\\d{3}) 20261031$")
+RUN_RE = re.compile(r"^Lane20: execute verified new-territory wave(\d{3}) 20261031$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 EXCLUDED = 45
 SUNLIGHT = 320
@@ -111,7 +111,7 @@ def audit_run(run, jobs, receipt_lines):
     require(decimal(settlement.get("remainingAuthorityUSD")) >= 0, "Negative remaining authority")
     require(type(reference.get("bytes")) is int and 0 < reference["bytes"] < 100000,
             "Invalid recovery receipt size")
-    require(re.fullmatch(r"\\d+", str(reference.get("generation", ""))) is not None,
+    require(re.fullmatch(r"\d+", str(reference.get("generation", ""))) is not None,
             "Invalid immutable generation")
     require(SHA256.fullmatch(str(reference.get("sha256", ""))) is not None,
             "Invalid receipt SHA")
