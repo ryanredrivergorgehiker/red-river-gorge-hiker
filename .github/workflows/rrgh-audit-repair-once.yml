@@ -1,0 +1,52 @@
+name: RRGH one-time dependency security remediation
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-audit-repair-once.yml
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-one-time-audit-repair
+  cancel-in-progress: false
+jobs:
+  repair:
+    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated PR branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reproduce installed lockfile before repair
+        run: npm ci
+      - name: Repair advisories within allowed semantic ranges
+        run: npm audit fix --no-fund
+      - name: Verify required vulnerability thresholds
+        run: |
+          npm audit --audit-level=critical
+          npm audit --omit=dev --audit-level=high
+      - name: Verify application, catalog, and repository checks
+        run: |
+          npm run check
+          python3 -m unittest discover -s tests -p 'test*.py' -v
+      - name: Commit only verified dependency repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF}" = "refs/heads/lane20/unattended-supervisor-20261031"
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Dependency lockfile already satisfies checks; no write necessary"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- package.json package-lock.json
+          git commit -m 'Lane20: repair audited npm dependencies after full validation'
+          git push origin HEAD:refs/heads/lane20/unattended-supervisor-20261031
