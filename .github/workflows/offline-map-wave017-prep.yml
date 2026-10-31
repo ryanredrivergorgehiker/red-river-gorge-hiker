@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate corrected immutable Wave017 publication path 20261031'
+      github.event.head_commit.message == 'Lane20: publish validated Wave017 with distinct source and branch pins 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -227,7 +227,7 @@ jobs:
           repo='ryanredrivergorgehiker/red-river-gorge-hiker'
           branch='lane20/map-producer-iam-design-20261029'
           expected='5bab0afac4039e2439d54b9b257224e7daa97be5'
-          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==expected
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()=='7ba7fdfc3e3951e8ceb93ef809899a7b2bac5b32'
           token=os.environ['GH_TOKEN']
           assert token
           headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json',
