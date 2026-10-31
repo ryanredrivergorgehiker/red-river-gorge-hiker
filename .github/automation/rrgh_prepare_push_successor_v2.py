@@ -85,6 +85,9 @@ def prepare(root, verified):
     budget = importlib.import_module("gorge_campaign_budget")
     budget = importlib.reload(budget)
     admit, cost = budget.admit, budget.cost
+    # Read the migrated engine again before rewriting its CONFIG pointer.
+    # Otherwise the legacy source variable would silently undo the v2 fence.
+    original_code = code_path.read_text()
     prior_plan_sha = digest(canonical(old))
     check(verified["planSHA256"] == prior_plan_sha, "Previous plan digest mismatch")
     ref = verified["receiptRef"]
