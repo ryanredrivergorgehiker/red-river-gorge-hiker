@@ -5,6 +5,7 @@ on:
       - RRGH automated restricted map producer
       - RRGH guarded map supervisor (read-only pilot)
       - RRGH one-wave guarded dispatch pilot
+      - RRGH map failure alert smoke test
     types: [completed]
 permissions:
   contents: read
