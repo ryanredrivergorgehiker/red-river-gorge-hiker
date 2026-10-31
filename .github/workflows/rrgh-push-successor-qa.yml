@@ -1,0 +1,44 @@
+name: RRGH original-identity successor source QA
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-push-successor-qa.yml
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compile and inspect plan and CAS publisher without cloud credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile .github/automation/rrgh_prepare_push_successor.py .github/automation/rrgh_publish_push_successor.py
+          python3 - <<'PY'
+          from pathlib import Path
+          planner=Path('.github/automation/rrgh_prepare_push_successor.py').read_text()
+          publisher=Path('.github/automation/rrgh_publish_push_successor.py').read_text()
+          required_p=['[-]push','priorAttemptCounts','historicalExclusions',
+             'sourceSnapshotSHA256','maxConcurrency','automaticRetryPermitted',
+             'code_snapshot','priorRasterTiles','Original restricted push identity']
+          for marker in required_p:
+              if marker not in planner:
+                  raise AssertionError('Planner missing safety marker '+marker)
+          required_u=['git/ref/heads/','force": False','NEXT_SOURCE_PUBLISHED_AWAITING_ORIGINAL_PUSH',
+              'BOUNDED_SOURCE_ONLY','offline-map-producer-access.yml',
+              'verify','planSHA256','prior_seq','checkout']
+          for marker in required_u:
+              if marker not in publisher:
+                  raise AssertionError('Publisher missing marker '+marker)
+          assert 'actions/workflows/'+'' in publisher
+          assert '/dispatches' not in publisher
+          print('ORIGINAL_PUSH_SUCCESSOR_QA_PASS: source files compile; boundary and CAS checks retained')
+          PY
