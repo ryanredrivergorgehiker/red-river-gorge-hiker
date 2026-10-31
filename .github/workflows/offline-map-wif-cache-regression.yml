@@ -13,13 +13,13 @@ jobs:
     if: >-
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate bounded cached WIF token offline 20261030'
+      github.event.head_commit.message == 'Lane20: validate 120-second WIF token refresh offline 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 7464724b4ea247f734c4c8c110541103fcd35af9
+          ref: 8db282eff3c657bf68a57c5ae4717e01452f48ea
           persist-credentials: false
       - uses: actions/setup-python@v6
         with:
