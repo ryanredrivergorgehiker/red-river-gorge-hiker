@@ -82,7 +82,7 @@ jobs:
           else
             # The historical Wave022 fixture is intentionally stale after
             # real Wave023+ publication. Only exact CAS rejection is success.
-            printf '%s\\n' "$output" | grep -Fx 'PUBLISHER_STOP: Source branch changed; compare-and-swap stop'
+            echo "$output" | grep -Fq 'PUBLISHER_STOP: Source branch changed; compare-and-swap stop'
             echo 'PUBLISHER_STALE_LEASE_REJECTION_PASS: no writes or Cloud requests'
           fi
 
