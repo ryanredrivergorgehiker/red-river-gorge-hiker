@@ -115,7 +115,12 @@ def check_local(root, audit):
           "Cloud allowance not exact-plan-bound")
     guard(re.search(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-022-20261031'",
                     code.read_text()) is not None, "Source not pinned to new scope")
-    paths = [code, new_dir/"PLAN.json", new_dir/"ALLOWANCE.json", region_file]
+    identity = root / "backend/scripts/fetch_gorge_private_seed.py"
+    ctx = identity.read_text()
+    guard("'GITHUB_EVENT_NAME':'workflow_dispatch'" in ctx and
+          ".github/workflows/offline-map-restricted-dispatch.yml@refs/heads/" +
+          WORKER_BRANCH in ctx, "New producer workflow identity is not source-pinned")
+    paths = [code, identity, new_dir/"PLAN.json", new_dir/"ALLOWANCE.json", region_file]
     entries = []
     for file in paths:
         payload = file.read_text(encoding="utf-8")
@@ -143,6 +148,11 @@ def publish(root, audit, token, *, dry_run):
     # Do not dispatch if required workflow files are not on BOTH branches.
     api("GET", "contents/.github/workflows/"+WORKER_FILE+"?ref=main", token)
     api("GET", "contents/.github/workflows/"+WORKER_FILE+"?ref="+WORKER_BRANCH, token)
+    active = api("GET", "actions/workflows/"+WORKER_FILE+
+                 "/runs?branch="+WORKER_BRANCH+"&per_page=30", token)
+    guard(not any(r.get("status") in ("queued","in_progress","waiting","requested")
+                  for r in active.get("workflow_runs", [])),
+          "Another restricted producer remains active; never overlap")
     old = api("GET", "git/commits/"+branch, token)
     tree = api("POST", "git/trees", token, {
         "base_tree": old["tree"]["sha"], "tree": plan["entries"]})
