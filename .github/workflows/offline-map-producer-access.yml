@@ -308,3 +308,47 @@ jobs:
           project_id: rrgh-nonproduction
       - name: Independently recover source records and read back every new part
         run: python backend/scripts/gorge_wave011_salvage.py --phase independent
+
+  rrgh-identity-policy-readonly:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.event_name == 'push' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: inspect existing keyless IAM provider condition read-only 20261031'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Authenticate with exact original restricted push identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - name: Install existing Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Read IAM provider condition flags without disclosing full policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud iam workload-identity-pools providers describe github-map-build \
+            --project=rrgh-nonproduction --location=global \
+            --workload-identity-pool=rrgh-map-production \
+            --format=json > "${RUNNER_TEMP}/rrgh-iam-provider.json"
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'rrgh-iam-provider.json'
+          obj=json.loads(p.read_text())
+          cond=obj.get('attributeCondition','')
+          print(json.dumps({'status':'IAM_POLICY_READ_ONLY',
+                            'hasEventGate':'event_name' in cond,
+                            'hasWorkflowGate':'workflow_ref' in cond or 'workflow' in cond,
+                            'hasRefGate':'ref' in cond,
+                            'hasRepositoryGate':'repository' in cond,
+                            'providerDisabled':obj.get('disabled',False)},
+                           sort_keys=True))
+          PY
