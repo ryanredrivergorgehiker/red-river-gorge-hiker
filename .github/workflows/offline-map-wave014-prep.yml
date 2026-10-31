@@ -1,0 +1,237 @@
+name: RRGH Wave014 new-geography plan (offline, no cloud)
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/workflows/offline-map-wave014-prep.yml]
+permissions:
+  contents: write
+concurrency:
+  group: rrgh-wave014-offline-prep
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: validate new-territory wave014 source-backed plan 20261031'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d10393a0a2e2bc7e3e3646ec586e2df94c528cc8
+          persist-credentials: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install locked map processing dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Check strict source-gap fault quarantine stays fail-closed
+        run: python backend/scripts/test_gorge_source_gap_guard.py -v
+      - name: Generate new-geography candidate from original pinned imagery inventory
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64,copy,json,sys,zlib
+          from collections import Counter
+          from pathlib import Path
+          sys.path.insert(0,'backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign_budget import admit,cost
+          from run_gorge_checkpoint_slot import code_snapshot
+          from forecast_gorge_checkpoint_campaign import bbox,coords,intersects,morton,PROFILES
+          from gorge_campaign import configuration
+          
+          src=Path('backend/config/gorge-campaign-wave-013-20261031')
+          dst=Path('backend/config/gorge-campaign-wave-014-20261031')
+          # Canonical source pin is already committed at the exact checkout SHA.
+          campaign_py=Path('backend/scripts/gorge_campaign.py')
+          assert "CONFIG=SOURCE.parent/'config/gorge-campaign-wave-014-20261031'" in campaign_py.read_text()
+          old=json.loads((src/'PLAN.json').read_bytes())
+          env=json.loads((src/'ALLOWANCE.json').read_bytes())
+          region=json.loads(zlib.decompress(base64.b64decode((src/'REGION-PLAN.json.z.b64').read_bytes())))
+          assert old['campaign']['sequence']==13
+          assert len(old['completedJobIDs'])==1338 and len(old['approvedJobIDs'])==128
+          assert old['approvedJobIDs']==[j['id'] for j in region['jobs']]
+          assert Counter(j['layer'] for j in region['jobs'])=={'usgs-topo':64,'leaf-on':64}
+          assert sum(len(j['outputTiles']) for j in region['jobs'])==1408
+          
+          # Wave013 complete success with independent hashes, decoded pixels,
+          # 2071 seams and 12 package parts read back. Source quality unchanged.
+          recovery={'bytes':1517,'generation':'1793407741061438',
+           'key':'engineering/map-production/plans/8d053e01d14b6a3c21900d2b67ac3e4ec8d0245c1abe12f2db163093a52479f3/slots/00002/receipt.json',
+           'sha256':'f524beb528ba47eaafccfe37824d0289bed8ca9d806805f0af56f47a1d52fe43'}
+          carry={'chargedUSD':'5.829761065069723129272460938',
+           'storedBytes':12960681907,'priorCompletedJobs':1466,
+           'priorRasterTiles':14242,'priorSunlightAssets':320}
+          accepted=old['completedJobIDs']+old['approvedJobIDs']
+          assert len(accepted)==1466 and len(set(accepted))==1466
+          prior_attempts=old['priorAttemptCounts'].copy()
+          excluded={jid for jid,n in prior_attempts.items()
+                    if n>0 and jid not in accepted}
+          ambiguous='leaf-on-16-17535-25316'
+          assert old['campaign']['ambiguousExcludedJobs']==[ambiguous]
+          assert len(excluded)==20 and ambiguous in excluded
+          assert not excluded.intersection(accepted)
+          for jid in old['approvedJobIDs']:
+              prior_attempts[jid]=prior_attempts.get(jid,0)+1
+          assert all(0<prior_attempts[jid]<=2 for jid in excluded)
+
+          # Reconstruct only current-inventory-covered z16 windows; any tile that
+          # merely intersects a COG bbox remains subject to full native pixel QA.
+          grids={z:coords(z) for z in (16,17,18)}
+          index={}
+          missing={}
+          for group,layers in PROFILES.items():
+              for layer,maxz in layers.items():
+                  family='dem' if layer=='terrain' else layer
+                  sources=region['inventory']['sources'].get(family,[])
+                  gaps=0
+                  for x,y in sorted(grids[16],key=lambda xy:morton(*xy)):
+                      if layer=='usgs-topo':
+                          sources_for_job=[]
+                      else:
+                          box=bbox(16,x,y,1/512 if layer=='terrain' else 0)
+                          sources_for_job=[f['id'] for f in sources if intersects(f['bbox'],box)]
+                          if not sources_for_job:
+                              gaps+=1
+                              continue
+                      tiles=[]
+                      for z in range(16,maxz+1):
+                          n=2**(z-16)
+                          for dx in range(n):
+                              for dy in range(n):
+                                  xx,yy=x*n+dx,y*n+dy
+                                  if (xx,yy) in grids[z]:tiles.append([z,xx,yy])
+                      jid=f'{layer}-16-{x}-{y}'
+                      assert tiles and jid not in index
+                      index[jid]={'id':jid,'layer':layer,'group':group,'z':16,'x':x,'y':y,
+                          'operation':'usgs-tile' if layer=='usgs-topo' else 'source-window',
+                          'sourceIDs':sources_for_job,'dependencies':[],'outputTiles':tiles,'preservedComplete':False}
+                  missing[layer]=gaps
+          assert len(index)==11940 and sum(missing.values())==13960
+          for prior in region['jobs']:
+              reference=index[prior['id']]
+              assert prior['sourceIDs']==reference['sourceIDs']
+              assert prior['outputTiles']==reference['outputTiles']
+          
+          # Proven successful families first; terrain/leaf-off deferred until source
+          # pixel-validity survey. Select next unused z16 neighbors of verified tiles.
+          # Defer all new hiking plus terrain/leaf-off pending original valid-pixel audit.
+          # Topo and leaf-on were previously verified; native checks remain strict.
+          limits={'usgs-topo':96,'leaf-on':96}
+          selected=[]
+          for layer,limit in limits.items():
+              landmarks=[index[jid] for jid in accepted if jid in index and index[jid]['layer']==layer]
+              assert landmarks
+              coords_done=[(j['x'],j['y']) for j in landmarks]
+              eligible=[j for j in index.values() if j['layer']==layer
+                  and j['id'] not in accepted and j['id'] not in excluded
+                  and prior_attempts.get(j['id'],0)==0
+                  and (j['sourceIDs'] or layer=='usgs-topo')]
+              eligible.sort(key=lambda j:(min(abs(j['x']-x)+abs(j['y']-y) for x,y in coords_done),
+                                          morton(j['x'],j['y']),j['id']))
+              pick=eligible[:limit]
+              assert len(pick)==limit,(layer,len(pick))
+              pick.sort(key=lambda j:(tuple(j['sourceIDs']),morton(j['x'],j['y']),j['id']))
+              selected.extend(pick)
+          
+          ids=[j['id'] for j in selected]
+          assert len(ids)==192 and len(set(ids))==192
+          assert not set(ids)&(set(accepted)|excluded)
+          assert Counter(j['layer'] for j in selected)==limits
+          expected_tiles=sum(len(j['outputTiles']) for j in selected)
+          assert expected_tiles==2112,(expected_tiles,len(ids))
+          
+          # Same established conservative funding envelope, new immutable sequence.
+          plan=copy.deepcopy(old)
+          plan['campaign']['sequence']=14
+          plan['campaign']['previousRecovery']=recovery
+          plan['campaign']['carry']=carry
+          plan['campaign']['ambiguousExcludedJobs']=[ambiguous]
+          plan['completedJobIDs']=accepted
+          plan['expiresAt']='2026-11-05T00:00:00Z'
+          plan['approvedJobIDs']=ids
+          plan['slotJobs']={'1':ids}
+          plan['priorAttemptCounts']=prior_attempts
+          assert all(prior_attempts[jid]>=1 for jid in excluded)
+          assert all(0<=v<=2 for v in prior_attempts.values())
+          assert not set(plan['completedJobIDs'])&set(plan['approvedJobIDs'])
+          
+          # Inherit exactly the per-layer guardrails from already-accepted jobs.
+          bylayer={}
+          for jid,policy in old['jobPolicies'].items():
+              layer=jid.rsplit('-',3)[0]
+              if layer in bylayer:assert bylayer[layer]==policy
+              else:bylayer[layer]=policy
+          for jid in accepted:
+              if jid.rsplit('-',3)[0]=='hiking':
+                  # Historical policy is retained in Wave005 (not regenerated).
+                  pass
+          wave005=json.loads(Path('backend/config/gorge-campaign-wave-005-20261030/PLAN.json').read_bytes())
+          for jid,policy in wave005['jobPolicies'].items():
+              layer=jid.rsplit('-',3)[0]
+              if layer in bylayer:assert bylayer[layer]==policy
+              else:bylayer[layer]=policy
+          assert all(l in bylayer for l in limits)
+          plan['jobPolicies']={j['id']:bylayer[j['layer']] for j in selected}
+          plan['slots'][1]['attempts']=192
+          plan['limits']['attempts']=192
+          region['jobs']=selected
+          # These two reviewed modules changed since the Wave011 source pin:
+          # canonical bootstrap now accepts the verified salvage lineage; token
+          # reuse is already independently regression-tested. All remaining
+          # engine hashes stay pinned to their prior immutable values.
+          for changed in ('gorge_campaign.py','run_gorge_checkpoint_slot.py'):
+              assert changed in region['engineHashes']
+              region['engineHashes'][changed]=digest((Path('backend/scripts')/changed).read_bytes())
+          plan['regionPlanSHA256']=digest(canonical(region))
+          plan['sourceSnapshotSHA256']=code_snapshot(Path('backend/scripts'))
+          env['cloudStorageAllowance']['approvedUSD']='0.6456'
+          env['cloudStorageAllowance']['reservedWorstCaseUSD']=str(cost(plan['limits']))
+          env['cloudStorageAllowance']['planSHA256']=digest(canonical(plan))
+          ad=admit(plan,env)
+          assert ad['reserveUSD']==env['cloudStorageAllowance']['reservedWorstCaseUSD']
+          assert float(ad['cumulativeAdmissionUSD'])<25
+          assert float(ad['monthlyAdmissionUSD'])<1
+          dst.mkdir(parents=True,exist_ok=False)
+          (dst/'PLAN.json').write_bytes(canonical(plan))
+          (dst/'ALLOWANCE.json').write_bytes(canonical(env))
+          (dst/'REGION-PLAN.json.z.b64').write_bytes(base64.b64encode(zlib.compress(canonical(region),9)))
+          p,e,r=configuration(dst)
+          assert p['completedJobIDs']==accepted and p['approvedJobIDs']==ids
+          assert p['campaign']['previousRecovery']==recovery
+          assert p['campaign']['carry']==carry
+          assert p['campaign']['ambiguousExcludedJobs']==[ambiguous]
+          assert p['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
+          assert p['regionPlanSHA256']==digest(canonical(r))
+          print(json.dumps({'phase':'verified-offline-wave014','jobs':len(ids),'scaleTrial':'192 = 96 topo + 96 leaf-on; same per-slot budget and concurrency',
+           'tiles':expected_tiles,'previouslyRecoveredJobs':len(accepted),
+           'exclusions':sorted(excluded),'transportAmbiguousExcluded':ambiguous,
+           'sourceWindowGapsByLayer':missing,'planSHA256':digest(canonical(p)),
+           'sourceSnapshotSHA256':p['sourceSnapshotSHA256'],'admission':ad},sort_keys=True))
+          PY
+      - name: Commit only canonical new immutable scope on exactly pinned engineering ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "d10393a0a2e2bc7e3e3646ec586e2df94c528cc8"
+          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
+          test "$(git rev-parse FETCH_HEAD)" = "d10393a0a2e2bc7e3e3646ec586e2df94c528cc8"
+          git config user.name 'rrgh-plan-prep[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- backend/config/gorge-campaign-wave-014-20261031/ALLOWANCE.json backend/config/gorge-campaign-wave-014-20261031/PLAN.json backend/config/gorge-campaign-wave-014-20261031/REGION-PLAN.json.z.b64
+          test "$(git diff --cached --name-only | wc -l)" -eq 3
+          git diff --cached --check
+          git commit -m 'Lane20: persist verified wave014 source-backed successor [skip ci]'
+          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+      - name: Preserve limited-duration metadata-only review
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-wave014-review-only
+          path: backend/config/gorge-campaign-wave-014-20261031/
+          retention-days: 1
+          if-no-files-found: error
+# Wave014 is a controlled 192-job +50% trial; exact Wave013 verified predecessor, same bounded money/memory ceilings, 20 exclusions, no retries/concurrency changes.
+# Offline planning only. Temporary contents:write must be retired after plan commit. No GCS credentials, source images, map production or public deployment.
