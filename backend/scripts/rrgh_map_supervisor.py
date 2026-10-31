@@ -160,7 +160,7 @@ def gh(path, token, *, raw=False):
             # GitHub's signed log URL is another host: never forward API bearer.
             if host != "api.github.com":
                 redirected.remove_header("Authorization")
-                redirected.remove_unredirected_header("Authorization")
+                redirected.unredirected_hdrs.pop("Authorization", None)
             return redirected
     try:
         client = urllib.request.build_opener(SafeRedirect)
