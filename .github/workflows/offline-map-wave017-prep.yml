@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate 256-job Wave017 after verified Wave016 20261031'
+      github.event.head_commit.message == 'Lane20: validate corrected immutable Wave017 publication path 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -226,7 +226,7 @@ jobs:
           
           repo='ryanredrivergorgehiker/red-river-gorge-hiker'
           branch='lane20/map-producer-iam-design-20261029'
-          expected='7ba7fdfc3e3951e8ceb93ef809899a7b2bac5b32'
+          expected='5bab0afac4039e2439d54b9b257224e7daa97be5'
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==expected
           token=os.environ['GH_TOKEN']
           assert token
@@ -242,7 +242,7 @@ jobs:
           assert current==expected,'Source branch changed; fail closed'
           parent=api('GET','git/commits/'+expected)
           paths=['ALLOWANCE.json','PLAN.json','REGION-PLAN.json.z.b64']
-          prefix='backend/config/gorge-campaign-wave-016-20261031/'
+          prefix='backend/config/gorge-campaign-wave-017-20261031/'
           entries=[]
           for name in paths:
               path=Path(prefix+name)
@@ -256,6 +256,10 @@ jobs:
           api('PATCH','git/refs/heads/'+branch,{'sha':commit['sha'],'force':False})
           check=api('GET','git/ref/heads/'+branch)['object']['sha']
           assert check==commit['sha'],'Commit ref readback mismatch'
+          # Confirm intended Wave017 tree paths are actually published.
+          tree_items=api('GET','git/trees/'+commit['sha']+'?recursive=1')['tree']
+          published={item['path'] for item in tree_items if item['type']=='blob'}
+          assert all(prefix+name in published for name in paths),'Wave017 immutable files absent from committed tree'
           print(json.dumps({'status':'immutable-wave017-published','commit':check,
                             'files':len(paths),'sourceParent':expected},sort_keys=True))
           PY
