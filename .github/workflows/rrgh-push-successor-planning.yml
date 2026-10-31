@@ -1,0 +1,57 @@
+name: RRGH guarded original-push next-wave planner
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/automation/rrgh-next-wave-request.txt
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: rrgh-next-source-only-controlled
+  cancel-in-progress: false
+jobs:
+  prepare-source:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.event_name == 'push' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout trusted controller without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout latest production source branch without credentials
+        uses: actions/checkout@v4
+        with:
+          ref: lane20/map-producer-iam-design-20261029
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Fail-closed receipt verification regression tests
+        run: python -m unittest discover -s backend/scripts -p test_rrgh_map_supervisor.py -v
+      - name: Verify latest successful original-push run AND independent receipt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPERVISOR_OUTPUT_FILE: ${{ runner.temp }}/rrgh-next-recovery.json
+        run: python backend/scripts/rrgh_map_supervisor.py
+      - name: Install locked local planner dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Build candidate using original push WIF, untouched source-backed tiles and exact recovery
+        run: python .github/automation/rrgh_prepare_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
+      - name: Verify local canonical plan, budget admission and native tiles without Cloud
+        run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Dry-run GitHub lease and all publisher gates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_publish_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
+      - name: Atomically publish verified successor SOURCE ONLY, no worker dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RRGH_ENABLE_VERIFIED_NEXT_WAVE_SOURCE: BOUNDED_SOURCE_ONLY
+        run: python .github/automation/rrgh_publish_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json" --publish
