@@ -132,7 +132,7 @@ jobs:
               coords_done=[(j['x'],j['y']) for j in landmarks]
               eligible=[j for j in index.values() if j['layer']==layer
                   and j['id'] not in accepted and j['id'] not in excluded
-                  and previous_attempts.get(j['id'],0)==0
+                  and prior_attempts.get(j['id'],0)==0
                   and (j['sourceIDs'] or layer=='usgs-topo')]
               eligible.sort(key=lambda j:(min(abs(j['x']-x)+abs(j['y']-y) for x,y in coords_done),
                                           morton(j['x'],j['y']),j['id']))
