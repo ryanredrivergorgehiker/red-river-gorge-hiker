@@ -172,7 +172,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
                         ref_job.get("key") == PREFIX + plan_sha +
                         "/slots/00001/jobs/" + jid + ".json" and
                         SHA256.fullmatch(str(ref_job.get("sha256", ""))) is not None and
-                        re.fullmatch(r"\\d+", str(ref_job.get("generation", ""))) is not None,
+                        re.fullmatch(r"\d+", str(ref_job.get("generation", ""))) is not None,
                         "Producer job receipt sequence or identity mismatch")
                 recovered_ids.append(jid)
             if item.get("phase") == "production" and item.get("status") == "failed":
