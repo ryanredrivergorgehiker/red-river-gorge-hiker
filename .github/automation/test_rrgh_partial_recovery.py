@@ -41,7 +41,7 @@ RECOVERY = {
             "ceilingUSD": "125.00", "sequence": 23, "planSHA256": PLAN,
             "chargedUSD": "8.18", "storedBytes": 17887533731,
             "storageEstimateUSDPerMonth": "0.60", "remainingAuthorityUSD": "116.82",
-            "originalAllocation": ALLOCATION, "retainedUsage": ALLOCATION,
+            "originalAllocation": dict(ALLOCATION), "retainedUsage": dict(ALLOCATION),
             "demonstrablyUnused": {k: 0 for k in ALLOCATION},
         },
     },
