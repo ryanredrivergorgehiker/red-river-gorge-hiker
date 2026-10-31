@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate and publish Wave020 576-job source-backed scope 20261031'
+      github.event.head_commit.message == 'Lane20: validate and publish Wave020 512-job source-backed scope 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -121,7 +121,7 @@ jobs:
           # pixel-validity survey. Select next unused z16 neighbors of verified tiles.
           # Defer all new hiking plus terrain/leaf-off pending original valid-pixel audit.
           # Topo and leaf-on were previously verified; native checks remain strict.
-          limits={'usgs-topo':288,'leaf-on':288}
+          limits={'usgs-topo':256,'leaf-on':256}
           selected=[]
           for layer,limit in limits.items():
               landmarks=[index[jid] for jid in accepted if jid in index and index[jid]['layer']==layer]
@@ -139,11 +139,11 @@ jobs:
               selected.extend(pick)
           
           ids=[j['id'] for j in selected]
-          assert len(ids)==576 and len(set(ids))==576
+          assert len(ids)==512 and len(set(ids))==512
           assert not set(ids)&(set(accepted)|excluded)
           assert Counter(j['layer'] for j in selected)==limits
           expected_tiles=sum(len(j['outputTiles']) for j in selected)
-          assert expected_tiles==6336,(expected_tiles,len(ids))
+          assert expected_tiles==5632,(expected_tiles,len(ids))
           
           # Same established conservative funding envelope, new immutable sequence.
           plan=copy.deepcopy(old)
@@ -177,8 +177,8 @@ jobs:
               else:bylayer[layer]=policy
           assert all(l in bylayer for l in limits)
           plan['jobPolicies']={j['id']:bylayer[j['layer']] for j in selected}
-          plan['slots'][1]['attempts']=576
-          plan['limits']['attempts']=576
+          plan['slots'][1]['attempts']=512
+          plan['limits']['attempts']=512
           assert plan['slots'][1]['classARequests']==2000
           assert 3*len(ids)+32<plan['slots'][1]['classARequests'], 'No Class-A headroom for enlarged wave'
           region['jobs']=selected
@@ -209,7 +209,7 @@ jobs:
           assert p['campaign']['ambiguousExcludedJobs']==[original_ambiguous,wave014_ambiguous]
           assert p['sourceSnapshotSHA256']==code_snapshot(Path('backend/scripts'))
           assert p['regionPlanSHA256']==digest(canonical(r))
-          print(json.dumps({'phase':'verified-offline-wave020','jobs':len(ids),'controlledExpansion':'576 = 288 topo + 288 leaf-on after independently verified Wave019; 2000 producer Class-A cap and all45 exclusions unchanged',
+          print(json.dumps({'phase':'verified-offline-wave020','jobs':len(ids),'controlledExpansion':'512 = 256 topo + 256 leaf-on, max authorized by campaign governor; 2000 producer Class-A cap and all45 exclusions unchanged',
            'tiles':expected_tiles,'previouslyRecoveredJobs':len(accepted),
            'exclusions':sorted(excluded),'transportAmbiguousExcluded':[original_ambiguous,wave014_ambiguous],
            'sourceWindowGapsByLayer':missing,'planSHA256':digest(canonical(p)),
@@ -271,5 +271,5 @@ jobs:
           path: backend/config/gorge-campaign-wave-020-20261031/
           retention-days: 1
           if-no-files-found: error
-# Wave020 controlled expansion to576 after Wave019 independent full verification. Exact Wave019 receipt,2913 accepted,45 excluded; 2000 Class-A producer cap,120s token refresh and no retries/concurrency changes.
+# Wave020 controlled expansion to512, current explicit campaign maximum, after Wave019 independent full verification. Exact Wave019 receipt,2913 accepted,45 excluded; 2000 Class-A producer cap,120s token refresh and no retries/concurrency changes.
 # Offline planning only. Temporary contents:write must be retired after plan commit. No GCS credentials, source images, map production or public deployment.
