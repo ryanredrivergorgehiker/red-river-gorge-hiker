@@ -42,12 +42,13 @@ def preflight(plan, region, source_dir):
 
 
 # Process-local only: never persist or log the bearer credential. The existing
-# WIF login emits a one-hour access token; use a much shorter 10-minute cache.
-# This avoids requesting a new external credential for every immutable GCS GET.
+# Direct WIF access-token lifetime may be shorter than the nominal service
+# token lifetime. Refresh proactively every 120 seconds, without relying on a
+# particular provider TTL or replaying any failed GCS write.
 _TOKEN_LOCK=threading.Lock()
 _TOKEN_VALUE=None
 _TOKEN_UNTIL=0.0
-_TOKEN_CACHE_SECONDS=600
+_TOKEN_CACHE_SECONDS=120
 
 def token():
     global _TOKEN_VALUE,_TOKEN_UNTIL
