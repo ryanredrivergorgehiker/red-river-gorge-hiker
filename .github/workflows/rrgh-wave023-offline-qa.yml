@@ -54,7 +54,7 @@ jobs:
         run: |
           python .github/automation/rrgh_prepare_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json
           python source-checkout/backend/scripts/gorge_campaign.py --phase plan
-          grep -q "'ceilingUSD':c\['ceilingUSD'\]" source-checkout/backend/scripts/gorge_campaign.py
+          grep -Fq "c['ceilingUSD']" source-checkout/backend/scripts/gorge_campaign.py
           grep -q 'gorge-full-quality-125usd-20261031' source-checkout/backend/scripts/gorge_campaign_budget.py
           test -f source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json
           test -f source-checkout/backend/config/gorge-campaign-wave-023-20261031/PLAN.json
