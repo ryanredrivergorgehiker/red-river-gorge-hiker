@@ -190,6 +190,22 @@ def prepare(root, verified):
     region["jobs"] = picked
     check("gorge_campaign.py" in region["engineHashes"], "Missing engine hash")
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
+    # Migration is wave-local. The previously accepted Wave021 source remains
+    # byte-identical; the successor's exact GitHub workflow claims are part of
+    # its canonical source snapshot and pinned regional engine digests.
+    context_path = root / "backend/scripts/fetch_gorge_private_seed.py"
+    context_before = context_path.read_text()
+    old_event = "'GITHUB_EVENT_NAME':'push', 'GITHUB_RUN_ATTEMPT':'1',"
+    new_event = "'GITHUB_EVENT_NAME':'workflow_dispatch', 'GITHUB_RUN_ATTEMPT':'1',"
+    old_ref = ".github/workflows/offline-map-producer-access.yml@refs/heads/lane20/offline-production-preflight-20261029"
+    new_ref = ".github/workflows/offline-map-restricted-dispatch.yml@refs/heads/lane20/offline-production-preflight-20261029"
+    check(context_before.count(old_event) == 1 and context_before.count(old_ref) == 1,
+          "Producer security context was not the reviewed legacy source")
+    context_after = context_before.replace(old_event, new_event).replace(old_ref, new_ref)
+    check(context_after != context_before, "Expected explicit workflow-claim migration")
+    context_path.write_text(context_after)
+    if "fetch_gorge_private_seed.py" in region["engineHashes"]:
+        region["engineHashes"]["fetch_gorge_private_seed.py"] = digest(context_path.read_bytes())
     plan["regionPlanSHA256"] = digest(canonical(region))
     plan["sourceSnapshotSHA256"] = code_snapshot(root / "backend/scripts")
     env["cloudStorageAllowance"]["approvedUSD"] = "0.6456"
@@ -201,6 +217,8 @@ def prepare(root, verified):
     check(float(ad["cumulativeAdmissionUSD"]) < 25 and
           float(ad["monthlyAdmissionUSD"]) < 1, "Current immutable budget admission failed")
 
+    # A worker identity-context change is a fifth immutable publication file.
+    # The publisher must commit it with the updated plan before dispatch.
     next_path.mkdir(parents=True, exist_ok=False)
     (next_path/"PLAN.json").write_bytes(canonical(plan))
     (next_path/"ALLOWANCE.json").write_bytes(canonical(env))
