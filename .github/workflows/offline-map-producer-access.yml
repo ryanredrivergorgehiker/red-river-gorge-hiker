@@ -236,3 +236,75 @@ jobs:
 # Wave011 READ-ONLY forensic audit is isolated from producer/recovery spending jobs by exact commit-message guard.
 # Wave011: 128 new topo-first / leaf-on source-backed jobs, 1408 planned tiles. Exact Wave010 recovered carry (1146 jobs / 11362 tiles), 19 consumed attempts excluded; separate fresh-runner recovery, USD25 ceiling. Exactly pinned verified source and quarantine protections.
 # Existing keyless identity; no artifacts, raw source uploads, reruns, deployment or security changes.
+
+# Separate zero-source-job Wave011 salvage; original producer/recovery gates remain unchanged.
+
+  wave011-salvage-stage:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: recover verified Wave011 checkpoints without rerendering 20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout separately verified immutable recovery-only plan
+        uses: actions/checkout@v4
+        with:
+          ref: c86eaace181a9c0107725344d506334b899ba7c7
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify no source jobs or over-budget writes before authentication
+        run: python backend/scripts/gorge_wave011_salvage.py --phase plan
+      - name: Authenticate established restricted keyless identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Save two rebuilt package parts in a NEW paid slot, then read back
+        run: python backend/scripts/gorge_wave011_salvage.py --phase stage
+
+  wave011-salvage-independent:
+    needs: wave011-salvage-stage
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.run_attempt == 1 &&
+      github.event.head_commit.message == 'Lane20: recover verified Wave011 checkpoints without rerendering 20261030' &&
+      needs.wave011-salvage-stage.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Fresh independent checkout of same pinned recovery-only plan
+        uses: actions/checkout@v4
+        with:
+          ref: c86eaace181a9c0107725344d506334b899ba7c7
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned validation dependencies
+        run: python -m pip install --disable-pip-version-check -r backend/scripts/requirements-gorge-benchmark.txt
+      - name: Re-verify same immutable allocation with no producer retry
+        run: python backend/scripts/gorge_wave011_salvage.py --phase plan
+      - name: Authenticate established restricted keyless identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Independently recover source records and read back every new part
+        run: python backend/scripts/gorge_wave011_salvage.py --phase independent
