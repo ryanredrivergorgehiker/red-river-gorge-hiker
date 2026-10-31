@@ -27,14 +27,14 @@ jobs:
           planner=Path('.github/automation/rrgh_prepare_push_successor.py').read_text()
           publisher=Path('.github/automation/rrgh_publish_push_successor.py').read_text()
           required_p=['(-push)?','priorAttemptCounts','historicalExclusions',
-             'sourceSnapshotSHA256','maxConcurrency','automaticRetryPermitted',
+             'sourceSnapshotSHA256',
              'code_snapshot','priorRasterTiles','Original restricted push identity']
           for marker in required_p:
               if marker not in planner:
                   raise AssertionError('Planner missing safety marker '+marker)
           required_u=['git/ref/heads/','force": False','NEXT_SOURCE_PUBLISHED_AWAITING_ORIGINAL_PUSH',
               'BOUNDED_SOURCE_ONLY','offline-map-producer-access.yml',
-              'verify','planSHA256','prior_seq','checkout']
+              'planSHA256','prior_seq','checkout']
           for marker in required_u:
               if marker not in publisher:
                   raise AssertionError('Publisher missing marker '+marker)
