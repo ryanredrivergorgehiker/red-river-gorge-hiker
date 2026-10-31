@@ -72,6 +72,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python .github/automation/rrgh_publish_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json
-          echo 'PUBLISHER_READ_ONLY_SMOKE_PASS: no Git commits, no dispatch, no Cloud requests'
+          set +e
+          output=$(python .github/automation/rrgh_publish_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json 2>&1)
+          status=$?
+          set -e
+          printf '%s\\n' "$output"
+          if [ "$status" -eq 0 ]; then
+            echo 'PUBLISHER_READ_ONLY_SMOKE_PASS: current source lease valid; no writes'
+          else
+            # The historical Wave022 fixture is intentionally stale after
+            # real Wave023+ publication. Only exact CAS rejection is success.
+            printf '%s\\n' "$output" | grep -Fx 'PUBLISHER_STOP: Source branch changed; compare-and-swap stop'
+            echo 'PUBLISHER_STALE_LEASE_REJECTION_PASS: no writes or Cloud requests'
+          fi
 
