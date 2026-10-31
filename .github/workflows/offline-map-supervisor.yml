@@ -7,6 +7,7 @@ on:
       - backend/scripts/rrgh_map_supervisor.py
       - backend/scripts/test_rrgh_map_supervisor.py
       - .github/automation/rrgh_prepare_next_wave.py
+      - .github/automation/rrgh_publish_next_wave.py
   workflow_dispatch:
   schedule:
     - cron: '17 * * * *'
@@ -66,4 +67,12 @@ jobs:
           python .github/automation/rrgh_prepare_next_wave.py source-checkout "${{ runner.temp }}/rrgh-verified-recovery.json"
           test -f source-checkout/backend/config/gorge-campaign-wave-022-20261031/PLAN.json
           echo "AUTO_PLANNER_LOCAL_ONLY: validated; no GitHub branch updates and no Cloud production"
+      - name: Verify atomic publication preconditions against current GitHub source ref — READ ONLY
+        if: github.event_name == 'push' && github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/automation/rrgh_publish_next_wave.py source-checkout "${{ runner.temp }}/rrgh-verified-recovery.json"
+          echo "PUBLISHER_DRY_RUN_ONLY: no commits and no workflow dispatch"
+
 
