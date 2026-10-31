@@ -132,6 +132,8 @@ def audit_run(run, jobs, receipt_lines):
         "acceptedRasterTiles": carry["priorRasterTiles"],
         "sunlightAssets": carry["priorSunlightAssets"],
         "historicalExclusions": EXCLUDED,
+        "receiptRef": reference,
+        "nextCarry": carry,
         "receiptSHA256": reference["sha256"],
         "receiptGeneration": str(reference["generation"]),
         "planSHA256": plan_sha,
@@ -193,6 +195,10 @@ def main():
     token = os.environ.get("GH_TOKEN", "")
     require(bool(token), "No GitHub read token")
     report = review(token)
+    artifact = os.environ.get("SUPERVISOR_OUTPUT_FILE")
+    if artifact:
+        with open(artifact, "w", encoding="utf-8") as fh:
+            json.dump(report, fh, sort_keys=True)
     print(json.dumps(report, sort_keys=True))
     # Deliberate pilot stop. Never launch, modify source, or silently recurse.
     print("SUPERVISOR_READ_ONLY: Production dispatch requires separate approved billing gate.")
