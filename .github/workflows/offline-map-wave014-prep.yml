@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate new-territory wave014 source-backed plan 20261031'
+      github.event.head_commit.message == 'Lane20: validate controlled 192-job wave014 source-backed plan 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
