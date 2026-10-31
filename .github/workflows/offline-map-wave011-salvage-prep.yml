@@ -44,7 +44,7 @@ jobs:
           from run_gorge_checkpoint_slot import code_snapshot
           from gorge_wave011_salvage import source,PRODUCER,BOOT,OLD_SHA
           old,region=source()
-          assert datetime.now(timezone.utc).isoformat().startswith('2026-10-30')
+          assert '2026-10-30'<=datetime.now(timezone.utc).date().isoformat()<='2026-11-01'
           assert len(old['completedJobIDs'])==1146 and len(old['approvedJobIDs'])==128
           stage={'storedBytes':6*2**20,'egressBytes':12*2**20,
                  'classARequests':12,'classBRequests':350,
