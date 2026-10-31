@@ -1,0 +1,3 @@
+RRGH supervised, connector-triggered original-push next-wave planner.
+Initial state: idle; update this file only AFTER independent recovery of the latest producer run.
+Do not update while another wave is in progress, unverified, or has consumed an ambiguous slot.
