@@ -1,0 +1,18 @@
+name: RRGH map failure alert smoke test
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-map-alert-smoke.yml
+permissions:
+  contents: read
+jobs:
+  expected-failure-no-cloud:
+    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Intentional synthetic failure for notification delivery only
+        run: |
+          echo "::error::RRGH alert smoke test — intentionally failed without Cloud access."
+          exit 1
