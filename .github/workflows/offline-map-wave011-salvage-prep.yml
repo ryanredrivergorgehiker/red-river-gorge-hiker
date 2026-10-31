@@ -4,7 +4,7 @@ on:
     branches: [lane20/offline-production-preflight-20261029]
     paths: [.github/workflows/offline-map-wave011-salvage-prep.yml]
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: rrgh-wave011-salvage-plan
   cancel-in-progress: false
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: 2edc649994e6b3a853f3cdf1864f9c5c61249a62
-          persist-credentials: true
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
