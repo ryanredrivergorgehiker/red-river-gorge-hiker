@@ -28,8 +28,8 @@ CONTEXT = {
  'GITHUB_REPOSITORY_ID':'1325611891',
  'GITHUB_REPOSITORY_OWNER_ID':'313924954',
  'GITHUB_REF':'refs/heads/lane20/offline-production-preflight-20261029',
- 'GITHUB_EVENT_NAME':'workflow_dispatch', 'GITHUB_RUN_ATTEMPT':'1',
- 'GITHUB_WORKFLOW_REF':'ryanredrivergorgehiker/red-river-gorge-hiker/.github/workflows/offline-map-restricted-dispatch.yml@refs/heads/lane20/offline-production-preflight-20261029',
+ 'GITHUB_EVENT_NAME':'push', 'GITHUB_RUN_ATTEMPT':'1',
+ 'GITHUB_WORKFLOW_REF':'ryanredrivergorgehiker/red-river-gorge-hiker/.github/workflows/offline-map-producer-access.yml@refs/heads/lane20/offline-production-preflight-20261029',
 }
 
 
