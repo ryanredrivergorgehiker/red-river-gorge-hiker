@@ -1,3 +1,10 @@
 RRGH supervised, connector-triggered original-push next-wave planner.
 Initial state: idle; update this file only AFTER independent recovery of the latest producer run.
 Do not update while another wave is in progress, unverified, or has consumed an ambiguous slot.
+
+Verification request: Wave023 from verified original-push Wave022 run 41222729846.
+Wave022 source head: 9c59ea44947c8d4c54157b8ec913b245f830a167
+Wave022 immutable plan SHA256: be130c3908e08e1c95731e822e78cca98d2aea6ab66b1764aa0963b20d772cdb
+Independent recovery: successful, 512 jobs, 5622 tiles, 30 package parts, 320 preserved Sunlight assets.
+Recovery receipt: engineering/map-production/plans/be130c3908e08e1c95731e822e78cca98d2aea6ab66b1764aa0963b20d772cdb/slots/00002/receipt.json; generation 1793467701851655; SHA256 f65a8ec88d7ef590d6574e7e91e55597369c3514b96223f6bba2ec4fd160b261.
+Request: verify original-identity successor and forward-only $125 cumulative/$2 monthly storage policy; publish source only after all offline budget, historical quarantine, pixel, receipt, and lease guards pass. No Cloud production dispatch from planner.
