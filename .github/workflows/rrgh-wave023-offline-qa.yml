@@ -4,6 +4,8 @@ on:
     branches: [lane20/unattended-supervisor-20261031]
     paths:
       - .github/workflows/rrgh-wave023-offline-qa.yml
+      - .github/automation/rrgh_prepare_push_successor_v2.py
+      - .github/automation/rrgh_publish_push_successor_v2.py
 permissions:
   contents: read
 jobs:
