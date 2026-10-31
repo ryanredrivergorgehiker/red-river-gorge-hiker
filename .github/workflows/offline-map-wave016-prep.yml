@@ -14,7 +14,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: validate controlled 192-job Wave016 after verified Wave015 20261031'
+      github.event.head_commit.message == 'Lane20: publish validated Wave016 scope using ephemeral GitHub API 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -212,20 +212,51 @@ jobs:
            'sourceWindowGapsByLayer':missing,'planSHA256':digest(canonical(p)),
            'sourceSnapshotSHA256':p['sourceSnapshotSHA256'],'admission':ad},sort_keys=True))
           PY
-      - name: Commit only canonical new immutable scope on exactly pinned engineering ref
+      - name: Publish only validated immutable scope without persisting checkout credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "f8b8c32006ce6d6e93544789ce34e79d9a044991"
-          git fetch origin refs/heads/lane20/map-producer-iam-design-20261029
-          test "$(git rev-parse FETCH_HEAD)" = "f8b8c32006ce6d6e93544789ce34e79d9a044991"
-          git config user.name 'rrgh-plan-prep[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- backend/config/gorge-campaign-wave-016-20261031/ALLOWANCE.json backend/config/gorge-campaign-wave-016-20261031/PLAN.json backend/config/gorge-campaign-wave-016-20261031/REGION-PLAN.json.z.b64
-          test "$(git diff --cached --name-only | wc -l)" -eq 3
-          git diff --cached --check
-          git commit -m 'Lane20: persist verified wave016 source-backed successor [skip ci]'
-          git push origin HEAD:refs/heads/lane20/map-producer-iam-design-20261029
+          python - <<'PY'
+          import json,os,subprocess
+          from pathlib import Path
+          import requests
+          
+          repo='ryanredrivergorgehiker/red-river-gorge-hiker'
+          branch='lane20/map-producer-iam-design-20261029'
+          expected='f8b8c32006ce6d6e93544789ce34e79d9a044991'
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==expected
+          token=os.environ['GH_TOKEN']
+          assert token
+          headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json',
+                   'X-GitHub-Api-Version':'2022-11-28'}
+          base='https://api.github.com/repos/'+repo+'/'
+          def api(method,path,payload=None):
+              response=requests.request(method,base+path,headers=headers,json=payload,timeout=45)
+              if not response.ok:
+                  raise RuntimeError('GitHub API '+method+' '+path.split('?')[0]+' HTTP '+str(response.status_code))
+              return response.json()
+          current=api('GET','git/ref/heads/'+branch)['object']['sha']
+          assert current==expected,'Source branch changed; fail closed'
+          parent=api('GET','git/commits/'+expected)
+          paths=['ALLOWANCE.json','PLAN.json','REGION-PLAN.json.z.b64']
+          prefix='backend/config/gorge-campaign-wave-016-20261031/'
+          entries=[]
+          for name in paths:
+              path=Path(prefix+name)
+              assert path.is_file() and path.stat().st_size>0
+              entries.append({'path':str(path),'mode':'100644','type':'blob',
+                              'content':path.read_text(encoding='utf-8')})
+          tree=api('POST','git/trees',{'base_tree':parent['tree']['sha'],'tree':entries})
+          commit=api('POST','git/commits',{
+              'message':'Lane20: persist verified wave016 source-backed successor [skip ci]',
+              'tree':tree['sha'],'parents':[expected]})
+          api('PATCH','git/refs/heads/'+branch,{'sha':commit['sha'],'force':False})
+          check=api('GET','git/ref/heads/'+branch)['object']['sha']
+          assert check==commit['sha'],'Commit ref readback mismatch'
+          print(json.dumps({'status':'immutable-wave016-published','commit':check,
+                            'files':len(paths),'sourceParent':expected},sort_keys=True))
+          PY
       - name: Preserve limited-duration metadata-only review
         uses: actions/upload-artifact@v4
         with:
