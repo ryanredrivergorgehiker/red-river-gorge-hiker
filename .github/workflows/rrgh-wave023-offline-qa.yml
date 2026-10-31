@@ -44,6 +44,7 @@ jobs:
              'acceptedJobs':len(p['completedJobIDs'])+len(p['approvedJobIDs']),
              'acceptedRasterTiles':p['campaign']['carry']['priorRasterTiles']+sum(len(j['outputTiles']) for j in region['jobs']),
              'historicalExclusions':45,'sunlightAssets':320,
+              'partialCompletedJobIDs':[],'failedJobID':None,
              'planSHA256':plan_sha,'receiptRef':ref,'receiptSHA256':ref['sha256'],
              'nextCarry':{'chargedUSD':'8.00','storedBytes':16300000000,
                           'priorCompletedJobs':len(p['completedJobIDs'])+len(p['approvedJobIDs']),
