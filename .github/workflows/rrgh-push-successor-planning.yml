@@ -42,16 +42,16 @@ jobs:
         run: python backend/scripts/rrgh_map_supervisor.py
       - name: Install locked local planner dependencies
         run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
-      - name: Build candidate using original push WIF, untouched source-backed tiles and exact recovery
-        run: python .github/automation/rrgh_prepare_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
+      - name: Build original push candidate with exact recovery and owner-approved forward-only budget migration
+        run: python .github/automation/rrgh_prepare_push_successor_v2.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
       - name: Verify local canonical plan, budget admission and native tiles without Cloud
         run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
       - name: Dry-run GitHub lease and all publisher gates
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python .github/automation/rrgh_publish_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
+        run: python .github/automation/rrgh_publish_push_successor_v2.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json"
       - name: Atomically publish verified successor SOURCE ONLY, no worker dispatch
         env:
           GH_TOKEN: ${{ github.token }}
           RRGH_ENABLE_VERIFIED_NEXT_WAVE_SOURCE: BOUNDED_SOURCE_ONLY
-        run: python .github/automation/rrgh_publish_push_successor.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json" --publish
+        run: python .github/automation/rrgh_publish_push_successor_v2.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json" --publish
