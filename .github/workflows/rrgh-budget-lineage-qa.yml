@@ -1,0 +1,52 @@
+name: RRGH supervisor old-and-new-budget-lineage QA
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-budget-lineage-qa.yml
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test original and successor immutable receipts, never weaken fail-closed recovery
+        run: |
+          python -m py_compile .github/automation/rrgh_map_supervisor_v2.py
+          python -m unittest discover -s backend/scripts -p test_rrgh_map_supervisor.py -v
+          python3 - <<'PY'
+          import copy,sys
+          sys.path.insert(0,'.github/automation')
+          sys.path.insert(0,'backend/scripts')
+          from rrgh_map_supervisor_v2 import audit_run,Halt
+          from test_rrgh_map_supervisor import RUN,JOBS,REPORT,lines
+          old=audit_run(copy.deepcopy(RUN),copy.deepcopy(JOBS),lines(REPORT))
+          assert old['wave']==21 and old['verified'] and old['dispatchAuthorized'] is False
+          r=copy.deepcopy(RUN)
+          q=copy.deepcopy(REPORT)
+          r['head_commit']['message']='Lane20: execute verified new-territory wave023 20261031'
+          q['result']['settlement']['sequence']=23
+          q['result']['settlement']['campaignID']='gorge-full-quality-125usd-20261031'
+          q['result']['settlement']['ceilingUSD']='125.00'
+          q['result']['settlement']['remainingAuthorityUSD']='116.00'
+          migrated=audit_run(r,copy.deepcopy(JOBS),lines(q))
+          assert migrated['wave']==23 and migrated['verified'] and migrated['dispatchAuthorized'] is False
+          cases=[]
+          bad=copy.deepcopy(q);bad['result']['settlement']['campaignID']='gorge-full-quality-25usd-20261030';cases.append((r,bad))
+          bad=copy.deepcopy(q);bad['result']['settlement']['ceilingUSD']='25.00';cases.append((r,bad))
+          bad=copy.deepcopy(q);bad['result']['allOutputHashesAndPixelsVerified']=False;cases.append((r,bad))
+          oldr=copy.deepcopy(RUN);oldr['head_commit']['message']='Lane20: execute verified new-territory wave022 20261031'
+          cases.append((oldr,q))
+          for rr,qq in cases:
+              try:audit_run(copy.deepcopy(rr),copy.deepcopy(JOBS),lines(qq))
+              except Halt:pass
+              else:raise AssertionError('Invalid old/new version transition accepted')
+          print('RRGH CAMPAIGN VERSION QA PASS: Wave21 legacy, Wave23 $125 migration and four negative cases')
+          PY
