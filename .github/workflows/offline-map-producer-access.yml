@@ -16,7 +16,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute verified new-territory wave019 20261031'
+      github.event.head_commit.message == 'Lane20: execute verified new-territory wave020 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 9fb42452c66cb0e060fe98d8c81b935e6f2c6d72
+          ref: 1d4924873fa8ea4c424d528f2e95feb8dab82fea
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -46,7 +46,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: rrgh-nonproduction
-      - name: Recover 2529 verified jobs and execute 384 source-local jobs with refreshed WIF
+      - name: Recover 2913 verified jobs and execute 512 source-local jobs with refreshed WIF
         id: producer
         run: python backend/scripts/gorge_campaign.py --phase produce
   independent-recovery:
@@ -60,7 +60,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 9fb42452c66cb0e060fe98d8c81b935e6f2c6d72
+          ref: 1d4924873fa8ea4c424d528f2e95feb8dab82fea
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
