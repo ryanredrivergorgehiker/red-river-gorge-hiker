@@ -47,4 +47,22 @@ jobs:
       - name: Inspect GitHub independent recovery without any cloud credentials
         env:
           GH_TOKEN: ${{ github.token }}
+          SUPERVISOR_OUTPUT_FILE: ${{ runner.temp }}/rrgh-verified-recovery.json
         run: python backend/scripts/rrgh_map_supervisor.py
+      - name: Checkout prior source into isolated local planning workspace
+        if: github.event_name == 'push' && github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'
+        uses: actions/checkout@v4
+        with:
+          ref: b1730500f383fe2b7e691179022dd7789b414f00
+          path: source-checkout
+          persist-credentials: false
+      - name: Install locked map dependency set for offline scope QA
+        if: github.event_name == 'push' && github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Dry-run next immutable wave from exact recovered receipt — NO CLOUD AND NO WRITES
+        if: github.event_name == 'push' && github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'
+        run: |
+          python .github/automation/rrgh_prepare_next_wave.py source-checkout "${{ runner.temp }}/rrgh-verified-recovery.json"
+          test -f source-checkout/backend/config/gorge-campaign-wave-022-20261031/PLAN.json
+          echo "AUTO_PLANNER_LOCAL_ONLY: validated; no GitHub branch updates and no Cloud production"
+
