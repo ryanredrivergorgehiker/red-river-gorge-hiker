@@ -1,14 +1,14 @@
-RRGH guarded original-push next-wave request: Wave025 from independently verified Wave024.
-Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41235826891
-Original event: push; branch lane20/offline-production-preflight-20261029; workflow .github/workflows/offline-map-producer-access.yml; original push HEAD e6b670f965bac0a28e3147bc042530665c1746fb.
-Wave024 immutable plan SHA256: c9a0a69f5b1fb2677d8c387504da717470f9a52cd63788d500d00a12203a89a6
-Exact reviewed production source: 3697a2730e2a9087e2e963c90e67b8b074e51c16
-Bounded-stage: SUCCESS; 512 distinct source-backed jobs, 5572 raster tiles, 31 package parts.
-Independent-recovery: SUCCESS; all output hashes and decoded pixels independently verified, all new package chunks read back, 9269 adjacent edges measured; 320 Sunlight assets preserved.
-Immutable independent receipt: engineering/map-production/plans/c9a0a69f5b1fb2677d8c387504da717470f9a52cd63788d500d00a12203a89a6/slots/00002/receipt.json
-Receipt generation: 1793478022077435; bytes 1547; SHA256 ffb932b6488dc9b85af54d6042f8151fb4612fe1fb2d37105c5ef79d2ef5bc49.
-Recovery status verified; independentRecoveryComplete true; no ambiguous allocation retained.
-Cumulative independently verified: 5168 completed jobs, 52574 raster tiles, 320 Sunlight assets.
-Forward-only v2 settlement: USD8.345925616493034362792968752 modeled cumulative charged, 18187340516 stored bytes, USD0.6097781086117029190063476562 monthly storage estimate; USD125 cumulative and USD2/month ceilings.
-Request: perform offline-only latest-run, receipt, pixel, historical quarantine, budget admission, source-pixel-gap, GitHub USD350 hard-stop, and lease checks; publish ONE fresh immutable Wave025 source only after all guards pass. Never dispatch Cloud from planner. Keep 45 historical quarantines and additional consumed Wave023 exclusion; no reused checkpoint slots; at most 512 new jobs; maintain original Cloud WIF push-only identity. No downsampling or fabricated source pixels. Preserve native package verification requirements.
-Unique verification request: Wave025-from-41235826891-20261031T1650-0400.
+RRGH guarded original-push next-wave request: Wave026 from independently verified Wave025.
+Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41240896196
+Original event: push; branch lane20/offline-production-preflight-20261029; workflow .github/workflows/offline-map-producer-access.yml; original push HEAD 40398ddced78a9a865c1e53fdcced30b8fd104e5.
+Wave025 immutable plan SHA256: 97f99cae2ebb84c181a9384213058d70fd0a9cbc61711e0711a6ae40a4c4f195
+Exact reviewed production source: 3a5bf7e1a3b67f2fdcc41def31056d716a3aa3ce
+Bounded-stage: SUCCESS; 512 distinct source-backed jobs, 5552 raster tiles, 31 package parts.
+Independent-recovery: SUCCESS; hashes and decoded pixels independently verified, all package chunks read back, 9187 adjacent edges measured; 320 Sunlight assets preserved.
+Immutable independent receipt: engineering/map-production/plans/97f99cae2ebb84c181a9384213058d70fd0a9cbc61711e0711a6ae40a4c4f195/slots/00002/receipt.json
+Receipt generation: 1793481278003411; bytes 1551; SHA256 129b4bf430d890a75795fb740225d006f2cd132c7ec910a7be5609c3bac232d2.
+Recovery status verified; independentRecoveryComplete true; no ambiguous allocation retained; sourcePixelGapJobs empty.
+Cumulative independently verified: 5680 completed jobs, 58126 raster tiles, 320 Sunlight assets.
+Forward-only v2 settlement: USD8.512178626728904247283935549 cumulative charged, 18488324010 stored bytes, USD0.6198693666234612464904785158 monthly storage estimate; USD125 cumulative and USD2/month ceilings.
+Request: perform offline-only latest-run, exact receipt, pixel, historical quarantine, budget admission, source-pixel-gap, GitHub USD350 hard-stop, and lease checks; publish ONE fresh immutable Wave026 source only after all guards pass. Never dispatch Cloud from planner. Keep 45 historical quarantines and additional consumed Wave023 exclusion; no reused checkpoint slots; at most 512 new jobs; maintain original Cloud WIF push-only identity. No downsampling or fabricated source pixels. Preserve native package verification requirements.
+Unique verification request: Wave026-from-41240896196-20261031T1807-0400.
