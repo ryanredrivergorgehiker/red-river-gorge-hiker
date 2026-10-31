@@ -59,3 +59,10 @@ jobs:
           test -f source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json
           test -f source-checkout/backend/config/gorge-campaign-wave-023-20261031/PLAN.json
           echo "SYNTHETIC_FORWARD_ONLY_POLICY_MIGRATION_QA_PASS: ZERO GITHUB WRITES, ZERO CLOUD CALLS"
+      - name: Verify GitHub source lease, budget plan and atomic publication preconditions — READ ONLY
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/automation/rrgh_publish_push_successor_v2.py source-checkout /tmp/rrgh-synthetic-never-publish.json
+          echo 'PUBLISHER_READ_ONLY_SMOKE_PASS: no Git commits, no dispatch, no Cloud requests'
+
