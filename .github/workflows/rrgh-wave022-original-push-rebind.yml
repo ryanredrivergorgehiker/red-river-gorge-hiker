@@ -1,0 +1,49 @@
+name: RRGH Wave022 rebind to proven original push identity
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-wave022-original-push-rebind.yml
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: rrgh-wave022-original-identity-rebind-once
+  cancel-in-progress: false
+jobs:
+  prepare-and-publish:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.run_attempt == 1 &&
+      github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout trusted offline-only Wave022 planner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact pre-auth-failed Wave022 source SHA (no credentials)
+        uses: actions/checkout@v4
+        with:
+          ref: 8547471a41c876bacfe0a45a7d130c5dcd37d6bf
+          path: source-checkout
+          persist-credentials: false
+      - name: Python locked dependency set
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install offline campaign planning dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Prepare the separate original-push Wave022 immutable plan with zero Cloud calls
+        run: python .github/automation/rrgh_wave022_original_push_rebind.py source-checkout
+      - name: Confirm new exact plan and all production admission checks without Cloud credentials
+        run: |
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+          test -f source-checkout/backend/config/gorge-campaign-wave-022-20261031/PLAN.json
+          test -f source-checkout/backend/config/gorge-campaign-wave-022-push-20261031/PLAN.json
+      - name: Publish exactly five reviewed source files through GitHub source SHA lease; NO dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_wave022_original_push_rebind.py source-checkout --publish
