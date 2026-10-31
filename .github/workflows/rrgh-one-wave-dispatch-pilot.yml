@@ -1,0 +1,56 @@
+name: RRGH one-wave guarded dispatch pilot
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-one-wave-dispatch-pilot.yml
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: rrgh-map-controller-wave022-one-time
+  cancel-in-progress: false
+jobs:
+  dispatch-one:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.ref == 'refs/heads/lane20/unattended-supervisor-20261031' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout approved one-wave supervisor
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python runtime
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Fail-closed supervisor regression suite
+        run: python -m unittest discover -s backend/scripts -p test_rrgh_map_supervisor.py -v
+      - name: Read exact independently verified previous wave
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUPERVISOR_OUTPUT_FILE: ${{ runner.temp }}/verified-wave021.json
+        run: python backend/scripts/rrgh_map_supervisor.py
+      - name: Checkout immutable source of the last accepted wave
+        uses: actions/checkout@v4
+        with:
+          ref: b1730500f383fe2b7e691179022dd7789b414f00
+          path: source-checkout
+          persist-credentials: false
+      - name: Install locked offline planning dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Construct and locally verify exactly one successor wave
+        run: python .github/automation/rrgh_prepare_next_wave.py source-checkout "${{ runner.temp }}/verified-wave021.json"
+      - name: Recheck source lease, plan, exclusions, and worker registration without writing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_publish_next_wave.py source-checkout "${{ runner.temp }}/verified-wave021.json"
+      - name: Publish source-lease-guarded Wave022 and dispatch the one-time restricted worker
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RRGH_ENABLE_ONE_WAVE_PILOT: EXPLICITLY_ENABLED_20261031
+        run: python .github/automation/rrgh_publish_next_wave.py source-checkout "${{ runner.temp }}/verified-wave021.json" --dispatch
