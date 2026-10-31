@@ -93,8 +93,8 @@ jobs:
               'ongoingStorageAcknowledged':True,
               'planSHA256':digest(canonical(plan))}}
           root=Path('backend/config/gorge-wave011-recovery-only-20261030')
-          assert not root.exists()
-          root.mkdir()
+          root.mkdir(exist_ok=True)
+          assert not (root/'PLAN.json').exists() and not (root/'ALLOWANCE.json').exists()
           (root/'PLAN.json').write_bytes(canonical(plan))
           (root/'ALLOWANCE.json').write_bytes(canonical(evidence))
           from gorge_wave011_salvage import validate
