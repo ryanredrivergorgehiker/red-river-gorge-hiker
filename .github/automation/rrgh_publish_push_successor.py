@@ -74,7 +74,7 @@ def check_local(root, audit):
     guard(SHA40.fullmatch(parent) is not None, "Invalid prior Git commit")
     previous_code = subprocess.check_output(["git", "-C", str(root), "show",
                             "HEAD:backend/scripts/gorge_campaign.py"], text=True)
-    match = re.search(r"CONFIG=SOURCE.parent/'config/(gorge-campaign-wave-\\d{3}(?:-push)?-\\d{8})'",
+    match = re.search(r"CONFIG=SOURCE.parent/'config/(gorge-campaign-wave-\d{3}(?:-push)?-\d{8})'",
                       previous_code)
     guard(match is not None and f"wave-{prior_seq:03d}" in match.group(1),
           "Prior source configuration pointer changed")
