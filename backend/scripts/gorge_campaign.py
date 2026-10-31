@@ -129,11 +129,30 @@ def bootstrap(slot,plan,region,root):
                 actualRecordedUsage=closed['used'],gcsBeforePriorReceipt=closed['result'].get('gcs'))
         else:
             previous=record(slot,c['previousRecovery'])['result']
-            if previous.get('status') not in ('verified','partial-verified') or previous['settlement']['sequence']!=c['sequence']-1:
-                raise ValueError('Previous recovery must close successfully')
-            if previous['status']=='partial-verified' and not previous['settlement']['ambiguousAllocationRetained']:
-                raise ValueError('Partial recovery must retain full ambiguous allocation')
-            if previous['nextCarry']!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
+            if c['sequence']==12:
+                if c['previousRecovery']!=WAVE011_SALVAGE or c.get('ambiguousExcludedJobs')!=[WAVE011_AMBIGUOUS]:
+                    raise ValueError('Exact Wave011 salvage source and unresolved attempt required')
+                if (previous.get('status')!='verified' or previous.get('recoveryOnly') is not True
+                    or previous.get('sourceWave')!=11 or previous.get('sourceProducer')!=WAVE011_PRODUCER
+                    or previous.get('newlyAcceptedJobs')!=64 or previous.get('newlyAcceptedTiles')!=64
+                    or previous.get('cumulativeAcceptedJobs')!=1210 or previous.get('cumulativeAcceptedTiles')!=11426
+                    or previous.get('oldWaveProductionNotRepeated') is not True
+                    or previous.get('ambiguousFirstLeafOnNotAccepted') is not True
+                    or previous.get('packageChunksIndependentReadback') is not True
+                    or previous.get('hashesPixelsEdgesSourceLedgersVerified') is not True):
+                    raise ValueError('Wave011 salvage completion not fully verified')
+                expected={'chargedUSD':'5.666507366374617815017700196','storedBytes':12804302742,
+                          'priorCompletedJobs':1210,'priorRasterTiles':11426,'priorSunlightAssets':320}
+                if c['carry']!=expected:raise ValueError('Failed-wave and salvage allocation must stay charged')
+                historical_worker=record(slot,WAVE011_PRODUCER)['result']
+                if historical_worker.get('status')!='failed' or historical_worker.get('jobs')!=64:
+                    raise ValueError('Original failed checkpoint identity changed')
+            else:
+                if previous.get('status') not in ('verified','partial-verified') or previous['settlement']['sequence']!=c['sequence']-1:
+                    raise ValueError('Previous recovery must close successfully')
+                if previous['status']=='partial-verified' and not previous['settlement']['ambiguousAllocationRetained']:
+                    raise ValueError('Partial recovery must retain full ambiguous allocation')
+                if previous['nextCarry']!=c['carry']:raise ValueError('Cumulative ledger cannot reset or silently fork')
     fence=create_fence(slot,PREFIX+'campaigns/'+CAMPAIGN+f"/wave-{c['sequence']:05d}.json",{
         'format':'rrgh-campaign-wave-claim-v1','campaign':CAMPAIGN,'ownerApproval':APPROVAL,
         'planSHA256':digest(canonical(plan)),'slotClaim':asdict(slot.claim),'previousRecovery':c.get('previousRecovery'),
