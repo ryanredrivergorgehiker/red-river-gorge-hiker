@@ -1,0 +1,51 @@
+name: RRGH map automation failure alert
+on:
+  workflow_run:
+    workflows:
+      - RRGH automated restricted map producer
+      - RRGH guarded map supervisor (read-only pilot)
+      - RRGH one-wave guarded dispatch pilot
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  issues: write
+jobs:
+  owner-alert:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.event.workflow_run.run_attempt == 1 &&
+      contains(fromJSON('["failure","cancelled","timed_out","startup_failure","action_required"]'),
+               github.event.workflow_run.conclusion) &&
+      contains(fromJSON('["lane20/unattended-supervisor-20261031","lane20/offline-production-preflight-20261029"]'),
+               github.event.workflow_run.head_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Create or refresh an assigned GitHub failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BAD_RUN: ${{ github.event.workflow_run.html_url }}
+          BAD_RESULT: ${{ github.event.workflow_run.conclusion }}
+          BAD_NAME: ${{ github.event.workflow_run.name }}
+          BAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo='ryanredrivergorgehiker/red-river-gorge-hiker'
+          title='RRGH MAP AUTOMATION FAILURE — production paused'
+          details="A guarded Red River Gorge Hiker map automation workflow reported a non-success state.
+
+          Workflow: ${BAD_NAME}
+          Result: ${BAD_RESULT}
+          Run: ${BAD_RUN}
+          Head SHA: ${BAD_SHA}
+
+          PRODUCTION SAFETY: Do not retry consumed jobs or bypass validation. Inspect the workflow and its immutable receipts before approving further production. This alert is assigned to the repository owner so that GitHub notifications may email the owner if email notifications are enabled."
+          number="$(gh issue list --repo "$repo" --state open --search 'RRGH MAP AUTOMATION FAILURE in:title' --json number --jq '.[0].number // empty')"
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --repo "$repo" --body "$details"
+            echo "Existing assigned failure issue updated; no duplicate."
+          else
+            gh issue create --repo "$repo" --title "$title" --assignee 'ryanredrivergorgehiker' --body "$details"
+          fi
