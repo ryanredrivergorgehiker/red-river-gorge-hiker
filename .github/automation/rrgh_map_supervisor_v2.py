@@ -46,10 +46,9 @@ def decimal(value):
     return n
 
 
-def audit_run(run, jobs, receipt_lines):
+def audit_run(run, jobs, receipt_lines, producer_lines=None):
     """Pure verification: unit tests require no GitHub or Google Cloud access."""
-    require(run.get("status") == "completed" and run.get("conclusion") == "success",
-            "Latest producer is not successfully completed")
+    require(run.get("status") == "completed", "Latest producer has not completed")
     require(run.get("run_attempt") == 1, "Rerun prohibited")
     require(run.get("head_branch") == BRANCH, "Producer branch mismatch")
     require(run.get("event") == "push", "Unreviewed production trigger")
@@ -59,14 +58,22 @@ def audit_run(run, jobs, receipt_lines):
     require(match is not None, "Unknown production commit message")
     sequence = int(match.group(1))
     require(sequence >= 20, "Pre-campaign run")
+    # One narrowly identified incident: the original Wave023 producer failed
+    # after 207 immutable job receipts, then independent recovery read them back.
+    # This is NOT a general permission to accept failed producer runs.
+    partial = (run.get("id") == 41225003991 and sequence == 23 and
+               run.get("head_sha") == "a0d966e92654c412e1ae6259e77feb4a005321d9")
+    require(run.get("conclusion") == ("failure" if partial else "success"),
+            "Unrecognized producer run conclusion")
     require(run.get("repository", {}).get("full_name") == REPO, "Wrong repository")
     active = [j for j in jobs if j.get("status") in ("queued", "in_progress", "waiting")]
     require(not active, "Unfinished worker jobs")
     producer = [j for j in jobs if j.get("name") == "bounded-stage"]
     recovery = [j for j in jobs if j.get("name") == "independent-recovery"]
     require(len(producer) == len(recovery) == 1, "Producer/recovery job multiplicity")
-    require(producer[0].get("conclusion") == recovery[0].get("conclusion") == "success",
-            "Producer or independent recovery failed")
+    require(producer[0].get("conclusion") == ("failure" if partial else "success") and
+            recovery[0].get("conclusion") == "success",
+            "Producer or independent recovery conclusion mismatch")
     reports = []
     for line in receipt_lines:
         if '"phase": "independent-recovery"' not in line:
@@ -84,7 +91,8 @@ def audit_run(run, jobs, receipt_lines):
     receipt = reports[0]
     result = receipt.get("result") or {}
     reference = receipt.get("receiptRef") or {}
-    require(result.get("status") == "verified", "Independent verification not complete")
+    require(result.get("status") == ("partial-verified" if partial else "verified"),
+            "Independent verification status mismatch")
     require(result.get("allOutputHashesAndPixelsVerified") is True, "Unverified pixels/hash")
     require(result.get("allNewPackageChunksReadBack") is True, "Unread package chunks")
     require(result.get("allExistingCachesPreserved") is True, "Cache preservation failed")
@@ -95,8 +103,10 @@ def audit_run(run, jobs, receipt_lines):
     require(type(jobs_count) is int and 1 <= jobs_count <= MAX_JOBS, "Invalid job count")
     carry = result.get("nextCarry") or {}
     settlement = result.get("settlement") or {}
-    require(settlement.get("independentRecoveryComplete") is True, "Unsettled recovery")
-    require(settlement.get("ambiguousAllocationRetained") is False, "Ambiguous allocation")
+    require(settlement.get("independentRecoveryComplete") is (not partial),
+            "Unexpected recovery completion")
+    require(settlement.get("ambiguousAllocationRetained") is partial,
+            "Ambiguous allocation retention mismatch")
     campaign_id = settlement.get("campaignID")
     require(campaign_id in AUTHORIZED_CAMPAIGNS, "Unknown campaign identity")
     require(campaign_id == ("gorge-full-quality-25usd-20261030" if sequence <= 22
@@ -130,10 +140,57 @@ def audit_run(run, jobs, receipt_lines):
     plan_sha = key[len(PREFIX):].split("/", 1)[0]
     require(SHA256.fullmatch(plan_sha) is not None, "Bad plan SHA")
     require(settlement.get("planSHA256") == plan_sha, "Settlement plan mismatch")
+    recovered_ids = []
+    failed_job = None
+    if partial:
+        require(plan_sha == "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb" and
+                reference["sha256"] == "3b11557e069de5362569e6567afe6351b06cc7bb47d507de2707783f2db229ed",
+                "Wave023 incident receipt identity mismatch")
+        require(jobs_count == 207 and result.get("tiles") == 207 and
+                result.get("packageParts") == 2, "Wave023 recovered subset mismatch")
+        require(settlement.get("retainedUsage") == settlement.get("originalAllocation") and
+                settlement.get("demonstrablyUnused") ==
+                {k: 0 for k in settlement.get("originalAllocation", {})},
+                "Partial allocation was not conservatively retained")
+        require(producer_lines is not None, "Original producer log required for partial recovery")
+        failure_reports = []
+        for line in producer_lines:
+            marker = line.find("{")
+            if marker < 0:
+                continue
+            try:
+                item = json.loads(line[marker:])
+            except (ValueError, TypeError):
+                continue
+            if "completedJobs" in item and "durableJobReceipt" in item:
+                number = item["completedJobs"]
+                jid = item.get("job")
+                ref_job = item["durableJobReceipt"]
+                require(type(number) is int and number == len(recovered_ids) + 1 and
+                        isinstance(jid, str) and jid.startswith("usgs-topo-16-") and
+                        jid not in recovered_ids and
+                        ref_job.get("key") == PREFIX + plan_sha +
+                        "/slots/00001/jobs/" + jid + ".json" and
+                        SHA256.fullmatch(str(ref_job.get("sha256", ""))) is not None and
+                        re.fullmatch(r"\\d+", str(ref_job.get("generation", ""))) is not None,
+                        "Producer job receipt sequence or identity mismatch")
+                recovered_ids.append(jid)
+            if item.get("phase") == "production" and item.get("status") == "failed":
+                failure_reports.append(item)
+        require(len(recovered_ids) == jobs_count and len(failure_reports) == 1,
+                "Incomplete or ambiguous producer receipt log")
+        diagnostic = failure_reports[0].get("diagnostic") or {}
+        failed_job = diagnostic.get("lastJobConsidered")
+        require(failed_job == "usgs-topo-16-17570-25321" and
+                (diagnostic.get("child") or {}).get("errorClass") == "HTTPError" and
+                failed_job not in recovered_ids, "Unexpected incident failure or job overlap")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
     return {
         "verified": True,
+        "partialRecovered": partial,
+        "partialCompletedJobIDs": recovered_ids,
+        "failedJobID": failed_job,
         "wave": sequence,
         "run": run.get("id"),
         "jobsNew": jobs_count,
@@ -196,7 +253,10 @@ def review(token):
     recovered = [j for j in jobs.get("jobs", []) if j.get("name") == "independent-recovery"]
     require(len(recovered) == 1, "Missing recovery job")
     log = gh("actions/jobs/" + str(recovered[0]["id"]) + "/logs", token, raw=True)
-    return audit_run(run, jobs.get("jobs", []), log.splitlines())
+    producer = [j for j in jobs.get("jobs", []) if j.get("name") == "bounded-stage"]
+    require(len(producer) == 1, "Missing producer job")
+    producer_log = gh("actions/jobs/" + str(producer[0]["id"]) + "/logs", token, raw=True)
+    return audit_run(run, jobs.get("jobs", []), log.splitlines(), producer_log.splitlines())
 
 
 def main():
