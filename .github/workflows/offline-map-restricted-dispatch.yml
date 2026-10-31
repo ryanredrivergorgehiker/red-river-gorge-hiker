@@ -1,0 +1,28 @@
+name: RRGH automated restricted map producer
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact immutable source and plan commit SHA
+        required: true
+        type: string
+      plan_sha256:
+        description: Exact immutable plan SHA256
+        required: true
+        type: string
+      sequence:
+        description: Monotone wave sequence
+        required: true
+        type: string
+# Default-branch registration only. Never grant Cloud identity from main.
+permissions:
+  contents: read
+jobs:
+  stop-on-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Refuse production from default branch
+        run: |
+          echo "::error::Registered workflow is not an authorized producer. Use the exact reviewed restricted branch."
+          exit 1
