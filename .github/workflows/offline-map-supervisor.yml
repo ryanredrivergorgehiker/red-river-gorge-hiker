@@ -1,0 +1,50 @@
+name: RRGH guarded map supervisor (read-only pilot)
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/offline-map-supervisor.yml
+      - backend/scripts/rrgh_map_supervisor.py
+      - backend/scripts/test_rrgh_map_supervisor.py
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_run:
+    workflows:
+      - RRGH bounded source-local map campaign and independent recovery
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: rrgh-supervisor-readonly
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      (github.event_name == 'schedule' ||
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.head_branch == 'lane20/offline-production-preflight-20261029' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.run_attempt == 1) ||
+       (github.event_name == 'push' &&
+        github.ref == 'refs/heads/lane20/unattended-supervisor-20261031'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Read only supervisor source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Python stdlib runtime
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Offline fail-closed policy regression tests
+        run: python -m unittest discover -s backend/scripts -p test_rrgh_map_supervisor.py -v
+      - name: Inspect GitHub independent recovery without any cloud credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python backend/scripts/rrgh_map_supervisor.py
