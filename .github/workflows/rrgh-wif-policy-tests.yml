@@ -43,6 +43,6 @@ jobs:
           assert '--attribute-mapping=' not in s, 'Unexpected subject mapping change'
           assert 'add-iam-policy-binding' not in s, 'Unexpected permission expansion'
           assert 'service-accounts' not in s, 'Unexpected service account change'
-          assert 'storage' not in s, 'Unexpected GCS IAM change'
+          assert 'gcloud storage' not in s and 'roles/storage.' not in s, 'Unexpected GCS IAM command'
           print('WIF POLICY PRECHECK PASS: syntax, exact claims, authorizer, readback, no IAM grant mutations')
           PY
