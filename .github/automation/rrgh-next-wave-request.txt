@@ -1,10 +1,13 @@
-RRGH supervised, connector-triggered original-push next-wave planner.
-Initial state: idle; update this file only AFTER independent recovery of the latest producer run.
-Do not update while another wave is in progress, unverified, or has consumed an ambiguous slot.
-
-Verification request: Wave023 from verified original-push Wave022 run 41222729846.
-Wave022 source head: 9c59ea44947c8d4c54157b8ec913b245f830a167
-Wave022 immutable plan SHA256: be130c3908e08e1c95731e822e78cca98d2aea6ab66b1764aa0963b20d772cdb
-Independent recovery: successful, 512 jobs, 5622 tiles, 30 package parts, 320 preserved Sunlight assets.
-Recovery receipt: engineering/map-production/plans/be130c3908e08e1c95731e822e78cca98d2aea6ab66b1764aa0963b20d772cdb/slots/00002/receipt.json; generation 1793467701851655; SHA256 f65a8ec88d7ef590d6574e7e91e55597369c3514b96223f6bba2ec4fd160b261.
-Request: verify original-identity successor and forward-only $125 cumulative/$2 monthly storage policy; publish source only after all offline budget, historical quarantine, pixel, receipt, and lease guards pass. No Cloud production dispatch from planner.
+RRGH guarded successor request: recover partial Wave023 into fresh Wave024, never replay Wave023.
+Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41225003991
+Exact original push source HEAD: a0d966e92654c412e1ae6259e77feb4a005321d9
+Wave023 immutable plan SHA256: b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb
+Producer: bounded-stage failed after 207 durable topo job receipts; last attempted usgs-topo-16-17570-25321 failed with HTTPError.
+Independent recovery: succeeded, partial-verified; 207 tile hashes/pixels and 2 package parts independently read back, 226 adjacent edges measured, 320 Sunlight assets preserved.
+Immutable independent receipt: engineering/map-production/plans/b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb/slots/00002/receipt.json
+Receipt generation: 1793468516112546; SHA256: 3b11557e069de5362569e6567afe6351b06cc7bb47d507de2707783f2db229ed
+Cumulative independently verified: 4656 jobs / 47002 raster tiles / 320 Sunlight assets.
+Conservative settlement: retain FULL Wave023 resource allocation and USD8.180023318698072433471679689 cumulative modeled charge, 17887533731 stored bytes; no ambiguous allocation refunds.
+Request only offline guard verification and source-only publication of fresh Wave024 with exact 207 recovered prefix accepted, failed attempted job quarantined in addition to the 45 historical exclusions, and 304 never-attempted Wave023 jobs eligible only under a NEW immutable plan. Do not retry any consumed slot or failed job.
+Never dispatch Cloud production from the planner. Enforce original WIF push identity, forward-only USD125/USD2 budget policy, existing GitHub USD350 hard stop, one wave at a time and at most 512 source-backed jobs.
+Verification request nonce: Wave024-from-41225003991-20261031T1543-0400.
