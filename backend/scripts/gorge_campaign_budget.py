@@ -1,9 +1,11 @@
+# FORWARD-ONLY successor policy: effective at first independently recovered Wave023+.
+# Historical Wave000-022 source, receipts, charges and GCS objects remain immutable.
 """Immutable cumulative authority for finite production waves; no network API."""
 from decimal import Decimal
 from gorge_checkpoint import DIMENSIONS, canonical, digest, integer, validate_plan
 
-CAMPAIGN='gorge-full-quality-25usd-20261030'
-APPROVAL='Owner 2026-10-30: FULL MAP PRODUCTION; cumulative USD25; no per-batch owner approval; USD1/month storage target'
+CAMPAIGN='gorge-full-quality-125usd-20261031'
+APPROVAL='Owner 2026-10-31: full-quality map production approved through cumulative USD125; up to USD2/month storage'
 RATES={'storageUSDPerGiBMonth':'.03','egressUSDPerGiB':'.23','classAUSDPer1000':'.01','classBUSDPer1000':'.001'}
 GiB=2**30
 
@@ -20,15 +22,15 @@ def add_usage(*values):return {k:sum(integer(v.get(k,0)) for v in values) for k 
 def admit(plan,evidence):
     validate_plan(plan)
     c=plan['campaign'];carry=c['carry']
-    if (c.get('id')!=CAMPAIGN or c.get('ownerApproval')!=APPROVAL or c.get('ceilingUSD')!='25.00'
-        or c.get('storageTargetUSDPerMonth')!='1.00' or plan.get('maxConcurrency')!=1
+    if (c.get('id')!=CAMPAIGN or c.get('ownerApproval')!=APPROVAL or c.get('ceilingUSD')!='125.00'
+        or c.get('storageTargetUSDPerMonth')!='2.00' or plan.get('maxConcurrency')!=1
         or plan.get('automaticRetryPermitted') is not False or len(plan['approvedJobIDs'])>512
         or not 1<=len(plan['approvedJobIDs']) or c.get('sequence',-1)<0):
         raise ValueError('Exact finite campaign authority required')
     prior=Decimal(carry['chargedUSD']);reserve=cost(plan['limits'])
-    if not prior.is_finite() or prior<Decimal('.70') or prior+reserve>Decimal('23.00'):
+    if not prior.is_finite() or prior<Decimal('.70') or prior+reserve>Decimal('123.00'):
         raise ValueError('Campaign admission would consume protected USD2 completion/recovery reserve')
-    if monthly(carry['storedBytes']+plan['limits']['storedBytes'])>Decimal('1'):
+    if monthly(carry['storedBytes']+plan['limits']['storedBytes'])>Decimal('2'):
         raise ValueError('Measured continuing storage requires owner decision')
     if c['sequence']==0:
         if carry!={'chargedUSD':'0.70','storedBytes':GiB,'priorCompletedJobs':44,'priorRasterTiles':436,'priorSunlightAssets':320}:
@@ -39,7 +41,7 @@ def admit(plan,evidence):
         raise ValueError('Allowance or rates changed')
     if Decimal(evidence['cloudStorageAllowance']['reservedWorstCaseUSD'])!=reserve:
         raise ValueError('Every resource ceiling must be prepaid')
-    if Decimal(evidence['cloudStorageAllowance']['approvedUSD'])>Decimal('25')-prior:
+    if Decimal(evidence['cloudStorageAllowance']['approvedUSD'])>Decimal('125')-prior:
         raise ValueError('Allowance exceeds cumulative remaining authority')
     b=plan['githubBilling']
     if b['hardCeilingUSD']!=350 or not b['stopAtLimitVerified'] or not b['thresholdAlertsVerified']:
@@ -62,6 +64,6 @@ def settle(plan,used,complete):
         'independentRecoveryComplete':complete,'ambiguousAllocationRetained':not complete,
         'chargedUSD':str(Decimal(carry['chargedUSD'])+cost(retained)),
         'storedBytes':carry['storedBytes']+retained['storedBytes'],
-        'ceilingUSD':'25.00','remainingAuthorityUSD':str(Decimal('25')-Decimal(carry['chargedUSD'])-cost(retained)),
+        'ceilingUSD':'125.00','remainingAuthorityUSD':str(Decimal('125')-Decimal(carry['chargedUSD'])-cost(retained)),
         'storageEstimateUSDPerMonth':str(monthly(carry['storedBytes']+retained['storedBytes'])),
         'historicalReleasedUSDRetained':'0.70','invoiceReading':False}
