@@ -95,22 +95,47 @@ def prepare(root, verified):
           "/slots/00002/receipt.json", "Previous receipt key mismatch")
     check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
 
-    accepted = old["completedJobIDs"] + old["approvedJobIDs"]
+    partial = verified.get("partialRecovered") is True
+    if partial:
+        check(wave == 23 and verified.get("run") == 41225003991 and
+              verified.get("planSHA256") ==
+              "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
+              "Only the independently audited Wave023 incident can be partially carried")
+        recovered = verified.get("partialCompletedJobIDs")
+        check(isinstance(recovered, list) and len(recovered) == 207 and
+              recovered == old["approvedJobIDs"][:207] and
+              verified.get("failedJobID") == old["approvedJobIDs"][207] and
+              verified["failedJobID"] not in recovered,
+              "Wave023 exact completed prefix and failed attempt mismatch")
+        accepted = old["completedJobIDs"] + recovered
+        attempted = old["approvedJobIDs"][:208]
+    else:
+        check(verified.get("partialCompletedJobIDs") == [] and
+              verified.get("failedJobID") is None,
+              "Unexpected partial incident metadata")
+        accepted = old["completedJobIDs"] + old["approvedJobIDs"]
+        attempted = old["approvedJobIDs"]
     check(len(accepted) == len(set(accepted)) == verified["acceptedJobs"],
           "Prior accepted jobs disagree with independent settlement")
     check(verified["acceptedRasterTiles"] >= len(accepted), "Raster count regression")
     check(verified["sunlightAssets"] == 320, "Sunlight regression")
     before_attempts = old["priorAttemptCounts"].copy()
-    excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == 45 and verified["historicalExclusions"] == 45,
-          "Historical exclusion inventory changed")
-    check(not set(accepted) & excluded, "Accepted and excluded overlap")
+    historical_excluded = {jid for jid, n in before_attempts.items()
+                           if n > 0 and jid not in accepted}
+    check(len(historical_excluded) == (45 if wave <= 23 else 46) and
+          verified["historicalExclusions"] == 45,
+          "Historical exclusions or incident quarantine changed")
+    check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
     check(old["campaign"]["ambiguousExcludedJobs"] ==
           ["leaf-on-16-17535-25316", "leaf-on-16-17556-25323"],
           "Historic two transport ambiguities changed")
-    for jid in old["approvedJobIDs"]:
+    for jid in attempted:
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
+    excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
+    check(len(excluded) == (46 if wave >= 23 else 45) and
+          (not partial or verified["failedJobID"] in excluded),
+          "Failed job must remain excluded from fresh territory")
     check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
 
     grids = {z: coords(z) for z in (16, 17, 18)}
