@@ -71,6 +71,14 @@ def prepare(root, verified):
         check(b"CAMPAIGN='gorge-full-quality-25usd-20261030'" in budget_path.read_bytes(),
               "Original Wave022 budget source changed")
         budget_path.write_bytes(template)
+        # The first v2 engine must carry the new ceiling in its immutable
+        # server-side campaign fence too, not only in the plan and settlement.
+        rebind_code = code_path.read_text()
+        old_fence = "'ceilingUSD':'25.00'"
+        check(rebind_code.count(old_fence) == 1,
+              "Legacy engine fence unexpectedly changed")
+        code_path.write_text(rebind_code.replace(old_fence,
+                                               "'ceilingUSD':c['ceilingUSD']"))
     else:
         check(budget_path.read_bytes() == template, "Existing budget successor template mismatch")
     import importlib
