@@ -1,0 +1,66 @@
+name: RRGH successor 125USD/2USD budget offline QA
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-budget-successor-qa.yml
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout isolated trusted controller
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout immutable original-push Wave022 source
+        uses: actions/checkout@v4
+        with:
+          ref: 2ff6abcc084b578c75cf0dedbfa63ccf3b6b535a
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compile forward-only policy migration and protected publisher
+        run: |
+          python -m py_compile .github/automation/rrgh_campaign_budget_v2.py
+          python -m py_compile .github/automation/rrgh_prepare_push_successor_v2.py
+          python -m py_compile .github/automation/rrgh_publish_push_successor_v2.py
+      - name: Test new owner authority and negative fail-closed budgets using zero Cloud calls
+        shell: bash
+        run: |
+          cp .github/automation/rrgh_campaign_budget_v2.py source-checkout/backend/scripts/gorge_campaign_budget.py
+          python3 - <<'PY'
+          import copy,json,sys
+          from pathlib import Path
+          sys.path.insert(0,'source-checkout/backend/scripts')
+          from gorge_checkpoint import canonical,digest
+          from gorge_campaign_budget import admit,settle,CAMPAIGN,APPROVAL
+          root=Path('source-checkout/backend/config/gorge-campaign-wave-022-push-20261031')
+          p=json.loads((root/'PLAN.json').read_text())
+          e=json.loads((root/'ALLOWANCE.json').read_text())
+          p['campaign'].update(id=CAMPAIGN,ownerApproval=APPROVAL,ceilingUSD='125.00',storageTargetUSDPerMonth='2.00',sequence=23)
+          e['cloudStorageAllowance'].update(approvalReference=APPROVAL,approvedRecurringStorageUSDPerMonth='2.00')
+          e['cloudStorageAllowance']['planSHA256']=digest(canonical(p))
+          admitted=admit(p,e)
+          assert float(admitted['cumulativeAdmissionUSD'])<123 and float(admitted['monthlyAdmissionUSD'])<2
+          used={k:0 for k in p['limits']}
+          settlement=settle(p,used,True)
+          assert settlement['ceilingUSD']=='125.00' and settlement['campaignID']==CAMPAIGN
+          for field,bad in [('ceilingUSD','125.01'),('storageTargetUSDPerMonth','20.00')]:
+              q=copy.deepcopy(p);q['campaign'][field]=bad
+              evidence=copy.deepcopy(e);evidence['cloudStorageAllowance']['planSHA256']=digest(canonical(q))
+              try:admit(q,evidence)
+              except ValueError:pass
+              else:raise AssertionError('Unauthorized policy accepted '+field)
+          q=copy.deepcopy(p)
+          q['campaign']['carry']['storedBytes']=70*2**30
+          evidence=copy.deepcopy(e);evidence['cloudStorageAllowance']['planSHA256']=digest(canonical(q))
+          try:admit(q,evidence)
+          except ValueError:pass
+          else:raise AssertionError('Over $2/month storage admitted')
+          print('BUDGET_V2_QA_PASS: positive $125/$2 and negative ceiling, storage, source validation; Cloud calls ZERO')
+          PY
