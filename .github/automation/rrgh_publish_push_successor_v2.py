@@ -129,6 +129,8 @@ def check_local(root, audit):
           "Cloud allowance not exact-plan-bound")
     expected_code_pin = f"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-{prior_seq+1:03d}-20261031'"
     guard(expected_code_pin in code.read_text(), "Source not pinned to exact successor scope")
+    guard("'ceilingUSD':c['ceilingUSD']" in code.read_text(),
+          "Forward-only campaign fence ceiling not migrated")
     identity = (root / "backend/scripts/fetch_gorge_private_seed.py").read_text()
     guard("'GITHUB_EVENT_NAME':'push'" in identity and
           ".github/workflows/offline-map-producer-access.yml@refs/heads/" + WORKER_BRANCH in identity,
