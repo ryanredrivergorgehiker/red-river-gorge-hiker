@@ -6,6 +6,7 @@ on:
       - .github/workflows/offline-map-supervisor.yml
       - backend/scripts/rrgh_map_supervisor.py
       - backend/scripts/test_rrgh_map_supervisor.py
+      - .github/automation/rrgh_prepare_next_wave.py
   workflow_dispatch:
   schedule:
     - cron: '17 * * * *'
