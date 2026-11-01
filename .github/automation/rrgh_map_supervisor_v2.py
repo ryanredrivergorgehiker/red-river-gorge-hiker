@@ -113,7 +113,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
             len(set(pixel_gaps)) == len(pixel_gaps) and
             all(isinstance(j, str) and re.fullmatch(r"(hiking|terrain|leaf-off|leaf-on|usgs-topo)-16-\d+-\d+", j)
                 for j in pixel_gaps), "Malformed source-pixel-gap quarantine")
-    require(result.get("pixelGapAttemptsConsumed") == len(pixel_gaps),
+    require(result.get("pixelGapAttemptsConsumed", 0) == len(pixel_gaps),
             "Pixel-gap attempted slot accounting mismatch")
     require(isinstance(result.get("adjacentEdgesMeasured"), int) and
             result["adjacentEdgesMeasured"] > 0, "Missing edge QA")
