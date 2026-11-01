@@ -34,3 +34,10 @@ jobs:
                 'approximateSample':r['approximateSpatialSample'],
                 'zeroRasterBytesDownloaded':True},sort_keys=True))
           PY
+      - name: Preserve public official source metadata as short-lived review artifact, no raster data
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-official-source-metadata
+          path: /tmp/rrgh-official-coverage.json
+          if-no-files-found: error
+          retention-days: 7
