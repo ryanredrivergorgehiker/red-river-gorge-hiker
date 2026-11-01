@@ -1,11 +1,12 @@
-RRGH owner-authorized guarded source-only successor request: Wave034 after independently verified Wave033.
-Requested 2026-11-01 following completed original production and independent recovery.
-Previous producer GitHub Actions run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41319492922
-Wave033 original restricted push event, exact production workflow, source commit 659c25b71da06e2f6ed1bff053eff9c304960871.
-Both bounded-stage and independent-recovery completed SUCCESS (run_attempt=1); exact source plan SHA256 ff9fb31e37292591f33b3607bab1bfa7276b457832ac11159b2a8fe274e3b009.
-Wave033 independent recovery: 512 accepted jobs, 5437 raster tiles, 27 native package parts; output hashes, decoded source pixels and all package chunks read back PASS; 9677 adjacent edges checked; no source pixel gap jobs.
-Wave033 independent immutable receipt: engineering/map-production/plans/ff9fb31e37292591f33b3607bab1bfa7276b457832ac11159b2a8fe274e3b009/slots/00002/receipt.json, generation 1793547353160856, SHA256 ae9922369fddaedee73facd5be467117a3b309bb5706b34a9c30101d6d2810e5.
-Wave033 nextCarry: 9776 accepted jobs, 101937 independently verified raster tiles, 320 Sunlight assets. Preserve every historical quarantine, consumed checkpoint, and prior partial charged attempt.
-Modeled settled Cloud charge 9.834289487897288799285888674 USD cumulative and modeled storage 0.6996884540989995002746582031 USD/month; below approved $125/$2 forward-only caps; these are estimates not invoices.
-Previously owner-confirmed GitHub stop-at-budget enabled, plan githubBilling.stopAtLimitVerified=true, hardCeilingUSD=350; never infer current account spend.
-This marker requests guarded source-only Wave034 planning, not direct Cloud dispatch. Planner must independently reverify exact receipt, plan, budgets, historical exclusions, immutable source CAS and publish NEXT source SHA only. Production must be separately triggered by owner-authenticated connector push to exact original workflow after successful planner, with no overlap.
+RRGH owner-authorized guarded source-only successor request: Wave035 after independently verified PARTIAL Wave034.
+Requested 2026-11-01 after original production failure and successful immutable independent recovery.
+Previous producer/recovery run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41324364372
+Wave034 original restricted push event, exact workflow and source commit f0456be5b19de8e83fba71179c1ff1ed495d0e09.
+Producer bounded-stage failed closed after 488 durable receipts due to upstream leaf-on NAIP URLError on fresh attempted job leaf-on-16-17575-25345. Never replay consumed slot or the failed attempted job.
+Independent recovery SUCCESS (run_attempt=1): status partial-verified, 488 accepted jobs, 4938 verified raster tiles, 20 package parts; all hashes, decoded pixels, packages read back PASS; 8964 adjacent edges; zero source-pixel gaps.
+Exact Wave034 source plan SHA256 d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd.
+Wave034 independent immutable receipt engineering/map-production/plans/d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd/slots/00002/receipt.json generation 1793550498889185 SHA256 2d72a0556885ef89a54817c68b985161b01a4622c06b066bfe0e05a5375e7802.
+Wave034 nextCarry: 10264 accepted jobs, 106875 verified raster tiles, 320 Sunlight assets; preserve 46 historical excluded jobs and quarantine failed Wave034 attempted job as the 47th exclusion.
+Conservatively retain entire 512-attempt allocation (ambiguousAllocationRetained=true; demonstrablyUnused all zero); modeled settled cumulative production USD 10.47988948789728879928588867 and modeled storage USD 0.7536884540989995002746582031/month; estimates, NOT invoices. Caps USD125/USD2.
+Previously owner-confirmed GitHub stop-at-budget enabled, source-plan githubBilling.stopAtLimitVerified=true and hardCeilingUSD=350; never invent current account spend or disable spending guard.
+This marker requests only guarded new-source Wave035 planning with immutable receipt verification, regression tests, conservative budget admission, source CAS and strict no-overlap. It does NOT dispatch Cloud production. Original owner-authenticated connector push must separately trigger Wave035 only after successful guarded source publication.
