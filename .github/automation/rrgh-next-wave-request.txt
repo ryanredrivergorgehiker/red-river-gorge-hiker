@@ -1,13 +1,10 @@
-RRGH guarded original-push next-wave request: Wave032 from independently verified Wave031.
-Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41276949138
-Original event: push; branch lane20/offline-production-preflight-20261029; workflow .github/workflows/offline-map-producer-access.yml; original source SHA 20d35b32cce7fcaae7706c1b3827b138e517ed61.
-Wave031 immutable plan SHA256: bf4e616ed639dd979363c8e15442ed7d810881cb18c9dbbe462628f844f8f54b
-Bounded-stage: SUCCESS; 512 distinct source-backed jobs, 5432 raster tiles, 31 package parts verified in independent recovery.
-Independent-recovery: SUCCESS; all output hashes and decoded pixels independently verified; every new package chunk read back; 9224 adjacent edges measured; all 320 Sunlight assets preserved; sourcePixelGapJobs empty.
-Immutable independent receipt: engineering/map-production/plans/bf4e616ed639dd979363c8e15442ed7d810881cb18c9dbbe462628f844f8f54b/slots/00002/receipt.json
-Receipt generation: 1793512444137126; bytes 1558; SHA256 698aac6e875eddb27b99cd1eb40ed715e8c91b64f4a6909845e51390c6afa3a2.
-Recovery status verified; independentRecoveryComplete true; ambiguousAllocationRetained false; no source pixel gaps.
-Cumulative independently verified: 8752 completed jobs, 91088 raster tiles, 320 Sunlight assets.
-Forward-only v2 settlement: USD9.506313798504608869552612307 cumulative charged, 20282522393 stored bytes, USD0.6800245550908148288726806640 monthly storage estimate; USD125 cumulative and USD2/month ceilings.
-Request: perform offline-only latest-run, exact immutable receipt, pixel, historical quarantine, budget admission, source-pixel-gap, GitHub USD350 hard-stop, and lease checks; publish ONE fresh immutable Wave032 source only after all guards pass. Never dispatch Cloud from planner. Keep 45 historical quarantines and additional consumed Wave023 exclusion; no reused checkpoint slots; at most 512 new jobs; maintain original Cloud WIF push-only identity. No downsampling or fabricated source pixels. Preserve native package verification requirements.
-Unique verification request: Wave032-from-41276949138-20261101T070840Z; receipt 698aac6e875eddb27b99cd1eb40ed715e8c91b64f4a6909845e51390c6afa3a2. No overlapping production permitted.
+RRGH owner-authorized guarded source-only successor request: Wave033 after independently verified Wave032.
+Requested 2026-11-01 at 10:07 Eastern because prior asynchronous task had not triggered next producer.
+Previous producer GitHub Actions run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41311121714
+Previous Wave032: original restricted push / exact workflow source commit 53023487d9f919333a4a1f0142c58f379fb203d6.
+Verified original workflow stages: bounded-stage SUCCESS and independent-recovery SUCCESS.
+Wave032 new independent recovery: 512 native source-backed jobs, 5412 tiles, 33 packaged chunks; output hashes, decoded pixels, package readback PASS; no source pixel gaps.
+Wave032 final recovery SHA256: 8ca770f8c72089eef8d4b7a5c85b72bd55a9b8730d2cc338ba15e116737e8c7e.
+Wave032 nextCarry: 9264 completed jobs, 96500 raster tiles, 320 Sunlight assets; 45 historical quarantines retained.
+Cloud modeled cumulative charge 9.669176172758466005325317385 USD and modeled storage 0.6897205956727266311645507812 USD/month, both under owner $125/$2 authority, estimates not invoices.
+No direct dispatch authorization: the guarded planner MUST inspect independent GitHub recovery itself, enforce unique source CAS, preserve all historic consumed/ambiguous slots, and publish SOURCE ONLY. Original restricted push producer must be committed separately under exact reviewed source SHA and exact commit guard after successful planner publication.
