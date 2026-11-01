@@ -1,0 +1,31 @@
+name: RRGH official KyTopo Gorge source discovery
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths: [.github/workflows/rrgh-kytopo-source-discovery.yml]
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Query official finite Kentucky KyTopo quadrangle source URLs without downloading raster imagery
+        run: python backend/scripts/discover_ky_topo_gorge_quads.py --output-json /tmp/rrgh-quad-metadata.json
+      - name: Report official quadrangle source count, never claim decoded pixel coverage
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/rrgh-quad-metadata.json'))
+          print('RRGH_OFFICIAL_KYTOPO_METADATA',json.dumps({'count':d['count'],
+            'withOriginalCOGURL':d['withOriginalCOGURL'],
+            'rasterBytesFetched':d['rasterBytesFetched'],
+            'allOriginalKeysInS3':d['allOriginalKeysInS3']},sort_keys=True))
+          PY
