@@ -217,7 +217,11 @@ def prepare(root, verified):
               "Source-pinned prior job changed")
 
     # First source-backed mixed-layer pilot uses exactly the original production families.
-    limits = {"hiking": 3, "terrain": 3, "leaf-off": 3}
+    # After verified nine-job pilot, cap at 20 exact source-backed attempts.
+    # The inherited worst-case 600-second child limits still fit 12300 seconds
+    # and original source-byte/source-request ceilings remain enforced.
+    limits = ({"hiking": 3, "terrain": 3, "leaf-off": 3} if wave < 37 else
+              {"hiking": 10, "terrain": 5, "leaf-off": 5})
     picked = []
     for layer, limit in limits.items():
         landmarks = [index[jid] for jid in accepted if jid in index and
