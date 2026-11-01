@@ -1,0 +1,43 @@
+name: RRGH original KyTopo source catalog audit
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths: [.github/workflows/rrgh-official-kytopo-listing.yml]
+permissions:
+  contents: read
+jobs:
+  original-listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Inventory official source keys, exact native object lengths only, without pixel reads
+        run: python backend/scripts/inventory_ky_topo_original_cogs.py --output-json /tmp/rrgh-ky-original-s3.json
+      - name: Resolve nine Gorge KyTopo quadrangle COG URL candidates against complete official listing
+        run: python backend/scripts/discover_ky_topo_gorge_quads.py --official-s3-listing /tmp/rrgh-ky-original-s3.json --output-json /tmp/rrgh-ky-nine-quads.json
+      - name: Report exact official candidate status, no image coverage assertion
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/rrgh-ky-nine-quads.json'))
+          s=json.load(open('/tmp/rrgh-ky-original-s3.json'))
+          print('KYTOPO_SOURCE_CANDIDATES',json.dumps({'count':d['count'],'resolved':d['withOriginalCOGURL'],
+             'allOriginalKeysInS3':d['allOriginalKeysInS3'],
+             'listingExhausted':s['listingExhausted'],'pagesRetrieved':s['pagesRetrieved'],
+             'zeroRasterBytesRead':True},sort_keys=True))
+          PY
+      - name: Preserve metadata-only original-source records for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-ky-original-map-sources
+          path: |
+            /tmp/rrgh-ky-original-s3.json
+            /tmp/rrgh-ky-nine-quads.json
+          if-no-files-found: error
+          retention-days: 7
