@@ -161,7 +161,14 @@ def check_local(root, audit):
     entries = []
     for file in paths:
         payload = file.read_text(encoding="utf-8")
-        guard(0 < len(payload) <= 500000, "Unexpected immutable file size")
+        # PLAN.json grows by up to 512 accepted IDs per wave; retain a finite,
+        # separately bounded 2 MB plan cap without relaxing all other file caps.
+        # Canonical SHA, exact receipt, budget, lease, quarantine and job guards
+        # above still apply before any source publication or Cloud dispatch.
+        max_bytes = 2_000_000 if file.name == "PLAN.json" else 500_000
+        guard(0 < len(payload) <= max_bytes,
+              f"Unexpected immutable file size: {file.relative_to(root)} "
+              f"bytes={len(payload)} limit={max_bytes}")
         entries.append({"path": str(file.relative_to(root)),
                         "mode": "100644", "type": "blob", "content": payload})
     return {"parent": parent, "sequence": prior_seq+1,
