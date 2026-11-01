@@ -96,6 +96,14 @@ def prepare(root, verified):
     check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
 
     partial = verified.get("partialRecovered") is True
+    pixel_gaps = verified.get("sourcePixelGapJobs", [])
+    check(isinstance(pixel_gaps, list) and len(set(pixel_gaps)) == len(pixel_gaps),
+          "Malformed verified pixel-gap exclusions")
+    prior_pixel_gaps = old["campaign"].get("sourcePixelGapQuarantines", [])
+    check(isinstance(prior_pixel_gaps, list) and
+          len(set(prior_pixel_gaps)) == len(prior_pixel_gaps) and
+          not set(prior_pixel_gaps) & set(old["completedJobIDs"]),
+          "Inherited original-source pixel-gap quarantine corrupted")
     if partial:
         # Exact, independently verified partial incidents only. Every consumed
         # prefix and the failing attempt are retained; never replay a checkpoint.
@@ -121,10 +129,25 @@ def prepare(root, verified):
               "Exact recovered prefix and failed attempt mismatch")
         accepted = old["completedJobIDs"] + recovered
         attempted = old["approvedJobIDs"][:count + 1]
-    else:
+    elif pixel_gaps:
         check(verified.get("partialCompletedJobIDs") == [] and
               verified.get("failedJobID") is None,
-              "Unexpected partial incident metadata")
+              "Source pixel gaps cannot be conflated with ambiguous failed allocations")
+        source_success = verified.get("sourceCompletedJobIDs")
+        check(isinstance(source_success, list) and
+              len(source_success) == verified.get("jobsNew") and
+              len(source_success) + len(pixel_gaps) == len(old["approvedJobIDs"]) and
+              set(source_success).isdisjoint(pixel_gaps) and
+              set(source_success) | set(pixel_gaps) == set(old["approvedJobIDs"]) and
+              len(set(source_success)) == len(source_success),
+              "Independent source gap evidence disagrees with exact prior allocation")
+        accepted = old["completedJobIDs"] + source_success
+        attempted = old["approvedJobIDs"]
+    else:
+        check(verified.get("partialCompletedJobIDs") == [] and
+              verified.get("failedJobID") is None and
+              verified.get("sourceCompletedJobIDs", []) == [],
+              "Unexpected incident metadata on complete ordinary wave")
         accepted = old["completedJobIDs"] + old["approvedJobIDs"]
         attempted = old["approvedJobIDs"]
     check(len(accepted) == len(set(accepted)) == verified["acceptedJobs"],
@@ -134,8 +157,9 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    check(len(historical_excluded) == (45 if wave <= 23 else
-                                       46 if wave <= 34 else 47) and
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps)
+    check(len(historical_excluded) == inherited_exclusion_count and
+          set(prior_pixel_gaps) <= historical_excluded and
           verified["historicalExclusions"] == 45,
           "Historical exclusions or incident quarantine changed")
     check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
@@ -146,8 +170,8 @@ def prepare(root, verified):
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
     excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == (45 if wave < 23 else
-                            46 if wave < 34 else 47) and
+    check(len(excluded) == inherited_exclusion_count + (1 if partial else 0) + len(pixel_gaps) and
+          set(pixel_gaps) <= excluded and
           (not partial or verified["failedJobID"] in excluded),
           "Failed job must remain excluded from fresh territory")
     check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
@@ -275,6 +299,7 @@ def prepare(root, verified):
 
     plan = copy.deepcopy(old)
     plan["campaign"]["sequence"] = wave + 1
+    plan["campaign"]["sourcePixelGapQuarantines"] = prior_pixel_gaps + pixel_gaps
     if legacy:
         plan["campaign"]["id"] = "gorge-full-quality-125usd-20261031"
         plan["campaign"]["ownerApproval"] = budget.APPROVAL
