@@ -97,18 +97,30 @@ def prepare(root, verified):
 
     partial = verified.get("partialRecovered") is True
     if partial:
-        check(wave == 23 and verified.get("run") == 41225003991 and
-              verified.get("planSHA256") ==
-              "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
-              "Only the independently audited Wave023 incident can be partially carried")
+        # Exact, independently verified partial incidents only. Every consumed
+        # prefix and the failing attempt are retained; never replay a checkpoint.
+        incidents = {
+            23: (41225003991,
+                 "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
+                 207, "usgs-topo-16-17570-25321"),
+            34: (41324364372,
+                 "d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd",
+                 488, "leaf-on-16-17575-25345"),
+        }
+        check(wave in incidents, "Unreviewed partial incident")
+        run_id, pinned_plan, count, failed = incidents[wave]
+        check(verified.get("run") == run_id and
+              verified.get("planSHA256") == pinned_plan and
+              verified.get("failedJobID") == failed,
+              "Pinned partial incident identity mismatch")
         recovered = verified.get("partialCompletedJobIDs")
-        check(isinstance(recovered, list) and len(recovered) == 207 and
-              recovered == old["approvedJobIDs"][:207] and
-              verified.get("failedJobID") == old["approvedJobIDs"][207] and
-              verified["failedJobID"] not in recovered,
-              "Wave023 exact completed prefix and failed attempt mismatch")
+        check(isinstance(recovered, list) and len(recovered) == count and
+              recovered == old["approvedJobIDs"][:count] and
+              failed == old["approvedJobIDs"][count] and
+              failed not in recovered,
+              "Exact recovered prefix and failed attempt mismatch")
         accepted = old["completedJobIDs"] + recovered
-        attempted = old["approvedJobIDs"][:208]
+        attempted = old["approvedJobIDs"][:count + 1]
     else:
         check(verified.get("partialCompletedJobIDs") == [] and
               verified.get("failedJobID") is None,
@@ -122,7 +134,8 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    check(len(historical_excluded) == (45 if wave <= 23 else 46) and
+    check(len(historical_excluded) == (45 if wave <= 23 else
+                                       46 if wave <= 34 else 47) and
           verified["historicalExclusions"] == 45,
           "Historical exclusions or incident quarantine changed")
     check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
@@ -133,7 +146,8 @@ def prepare(root, verified):
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
     excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == (46 if wave >= 23 else 45) and
+    check(len(excluded) == (45 if wave < 23 else
+                            46 if wave < 34 else 47) and
           (not partial or verified["failedJobID"] in excluded),
           "Failed job must remain excluded from fresh territory")
     check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
