@@ -111,7 +111,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
     pixel_gaps = result.get("sourcePixelGapJobs")
     require(isinstance(pixel_gaps, list) and len(pixel_gaps) <= MAX_JOBS and
             len(set(pixel_gaps)) == len(pixel_gaps) and
-            all(isinstance(j, str) and re.fullmatch(r"(hiking|terrain|leaf-off|leaf-on|usgs-topo)-16-\\d+-\\d+", j)
+            all(isinstance(j, str) and re.fullmatch(r"(hiking|terrain|leaf-off|leaf-on|usgs-topo)-16-\d+-\d+", j)
                 for j in pixel_gaps), "Malformed source-pixel-gap quarantine")
     require(result.get("pixelGapAttemptsConsumed") == len(pixel_gaps),
             "Pixel-gap attempted slot accounting mismatch")
@@ -226,7 +226,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
                         isinstance(jid, str) and jid not in source_completed and
                         item.get("key") == PREFIX+plan_sha+"/slots/00001/jobs/"+jid+".json" and
                         SHA256.fullmatch(str(item.get("sha256", ""))) is not None and
-                        re.fullmatch(r"\\d+", str(item.get("generation", ""))) is not None,
+                        re.fullmatch(r"\d+", str(item.get("generation", ""))) is not None,
                         "Missing original durable output job receipt in pixel gap wave")
                 source_completed.append(jid)
             if row.get("status") == "source-pixel-gap-quarantined":
