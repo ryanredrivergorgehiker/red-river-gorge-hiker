@@ -106,8 +106,17 @@ def check_local(root, audit):
           "Previously accepted work overlap")
     excluded = {jid for jid, v in plan["priorAttemptCounts"].items()
                 if v > 0 and jid not in plan["completedJobIDs"]}
-    guard(len(excluded) == (45 if prior_seq <= 22 else
-                            46 if prior_seq <= 33 else 47) and
+    prior_pixel_gaps = prior["campaign"].get("sourcePixelGapQuarantines", [])
+    new_pixel_gaps = audit.get("sourcePixelGapJobs", [])
+    next_pixel_gaps = plan["campaign"].get("sourcePixelGapQuarantines", [])
+    guard(isinstance(prior_pixel_gaps, list) and isinstance(new_pixel_gaps, list) and
+          len(set(prior_pixel_gaps + new_pixel_gaps)) == len(prior_pixel_gaps + new_pixel_gaps) and
+          next_pixel_gaps == prior_pixel_gaps + new_pixel_gaps,
+          "Changed source-pixel-gap quarantine lineage")
+    expected_quarantines = (45 + (1 if prior_seq >= 23 else 0) +
+                            (1 if prior_seq >= 34 else 0) + len(next_pixel_gaps))
+    guard(len(excluded) == expected_quarantines and
+          set(next_pixel_gaps) <= excluded and
           not excluded & set(plan["approvedJobIDs"]), "Quarantine overlap")
     if prior_seq in (23, 34):
         pinned = {
@@ -130,6 +139,20 @@ def check_local(root, audit):
     else:
         guard(audit.get("partialRecovered") is False,
               "Unexpected partial recovery outside pinned incidents")
+        if new_pixel_gaps:
+            success = audit.get("sourceCompletedJobIDs")
+            guard(isinstance(success, list) and
+                  len(success) == audit.get("jobsNew") and
+                  len(success)+len(new_pixel_gaps) == len(prior["approvedJobIDs"]) and
+                  set(success).isdisjoint(new_pixel_gaps) and
+                  set(success) | set(new_pixel_gaps) == set(prior["approvedJobIDs"]) and
+                  plan["completedJobIDs"] == prior["completedJobIDs"] + success and
+                  set(new_pixel_gaps) <= excluded and
+                  all(plan["priorAttemptCounts"].get(jid) == 1 for jid in prior["approvedJobIDs"]),
+                  "Unverified source gap or incomplete consumed-attempt quarantine")
+        else:
+            guard(plan["completedJobIDs"] == prior["completedJobIDs"] + prior["approvedJobIDs"],
+                  "Ordinary successful wave omitted accepted jobs")
     guard(plan["maxConcurrency"] == 1 and
           plan["automaticRetryPermitted"] is False, "Concurrency/retry guard changed")
     guard(plan["bucket"] == "rrgh-nonproduction-protected-packages", "Wrong cloud bucket")
