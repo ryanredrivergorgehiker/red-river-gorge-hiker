@@ -22,6 +22,19 @@ SHA256 = re.compile(r"^[0-9a-f]{64}$")
 EXCLUDED = 45
 SUNLIGHT = 320
 MAX_JOBS = 512
+# Exact immutable exceptions, never a blanket authorization for failed producers.
+PARTIAL_INCIDENTS = {
+    23: dict(run=41225003991, head="a0d966e92654c412e1ae6259e77feb4a005321d9",
+             plan="b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
+             receipt="3b11557e069de5362569e6567afe6351b06cc7bb47d507de2707783f2db229ed",
+             jobs=207, tiles=207, parts=2, failed="usgs-topo-16-17570-25321",
+             error="HTTPError"),
+    34: dict(run=41324364372, head="ae3203b49ac33347a22998aafef5b78ccb3d4448",
+             plan="d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd",
+             receipt="2d72a0556885ef89a54817c68b985161b01a4622c06b066bfe0e05a5375e7802",
+             jobs=488, tiles=4938, parts=20, failed="leaf-on-16-17575-25345",
+             error="URLError"),
+}
 AUTHORIZED_CAMPAIGNS = {
     "gorge-full-quality-25usd-20261030": "25.00",
     "gorge-full-quality-125usd-20261031": "125.00",
@@ -58,11 +71,10 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
     require(match is not None, "Unknown production commit message")
     sequence = int(match.group(1))
     require(sequence >= 20, "Pre-campaign run")
-    # One narrowly identified incident: the original Wave023 producer failed
-    # after 207 immutable job receipts, then independent recovery read them back.
-    # This is NOT a general permission to accept failed producer runs.
-    partial = (run.get("id") == 41225003991 and sequence == 23 and
-               run.get("head_sha") == "a0d966e92654c412e1ae6259e77feb4a005321d9")
+    # Only explicitly pinned, independently recovered partial incidents qualify.
+    incident = PARTIAL_INCIDENTS.get(sequence)
+    partial = (incident is not None and run.get("id") == incident["run"] and
+               run.get("head_sha") == incident["head"])
     require(run.get("conclusion") == ("failure" if partial else "success"),
             "Unrecognized producer run conclusion")
     require(run.get("repository", {}).get("full_name") == REPO, "Wrong repository")
@@ -143,11 +155,13 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
     recovered_ids = []
     failed_job = None
     if partial:
-        require(plan_sha == "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb" and
-                reference["sha256"] == "3b11557e069de5362569e6567afe6351b06cc7bb47d507de2707783f2db229ed",
-                "Wave023 incident receipt identity mismatch")
-        require(jobs_count == 207 and result.get("tiles") == 207 and
-                result.get("packageParts") == 2, "Wave023 recovered subset mismatch")
+        require(plan_sha == incident["plan"] and
+                reference["sha256"] == incident["receipt"],
+                "Pinned partial incident receipt identity mismatch")
+        require(jobs_count == incident["jobs"] and
+                result.get("tiles") == incident["tiles"] and
+                result.get("packageParts") == incident["parts"],
+                "Pinned partial incident recovered subset mismatch")
         require(settlement.get("retainedUsage") == settlement.get("originalAllocation") and
                 settlement.get("demonstrablyUnused") ==
                 {k: 0 for k in settlement.get("originalAllocation", {})},
@@ -167,7 +181,8 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
                 jid = item.get("job")
                 ref_job = item["durableJobReceipt"]
                 require(type(number) is int and number == len(recovered_ids) + 1 and
-                        isinstance(jid, str) and jid.startswith("usgs-topo-16-") and
+                        isinstance(jid, str) and
+                        jid.startswith(("usgs-topo-16-", "leaf-on-16-")) and
                         jid not in recovered_ids and
                         ref_job.get("key") == PREFIX + plan_sha +
                         "/slots/00001/jobs/" + jid + ".json" and
@@ -181,8 +196,8 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
                 "Incomplete or ambiguous producer receipt log")
         diagnostic = failure_reports[0].get("diagnostic") or {}
         failed_job = diagnostic.get("lastJobConsidered")
-        require(failed_job == "usgs-topo-16-17570-25321" and
-                (diagnostic.get("child") or {}).get("errorClass") == "HTTPError" and
+        require(failed_job == incident["failed"] and
+                (diagnostic.get("child") or {}).get("errorClass") == incident["error"] and
                 failed_job not in recovered_ids, "Unexpected incident failure or job overlap")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
