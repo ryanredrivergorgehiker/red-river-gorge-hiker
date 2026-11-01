@@ -1,0 +1,36 @@
+name: RRGH official imagery footprint metadata audit
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths: [.github/workflows/rrgh-official-source-footprints.yml]
+permissions:
+  contents: read
+jobs:
+  official-intake:
+    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Discover official Kentucky DEM and leaf-off COG collection metadata, no raster downloads
+        run: python backend/scripts/discover_kyfromabove_stac.py --output-json /tmp/rrgh-official-initial.json
+      - name: Inventory bounded official metadata pages and approximate region footprints
+        run: python backend/scripts/inventory_kyfromabove_stac_coverage.py --initial-stac /tmp/rrgh-official-initial.json --output-json /tmp/rrgh-official-coverage.json
+      - name: Display exact metadata coverage warning, with no claim of pixel validation
+        run: |
+          python3 - <<'PY'
+          import json
+          data=json.load(open('/tmp/rrgh-official-coverage.json'))
+          for r in data['records']:
+              print('OFFICIAL_METADATA_EVIDENCE',json.dumps({'collection':r['collection'],
+                'kind':r['kind'],'items':r['count'],
+                'pages':r['pages'],'paginationExhausted':r['paginationExhausted'],
+                'approximateSample':r['approximateSpatialSample'],
+                'zeroRasterBytesDownloaded':True},sort_keys=True))
+          PY
