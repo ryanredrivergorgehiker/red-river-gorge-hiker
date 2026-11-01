@@ -1,0 +1,30 @@
+name: RRGH original source inventory schema readback
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths: [.github/workflows/rrgh-source-schema-readback.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3f319adc3c5b25e4d657beb1522a45b252bb90eb
+          persist-credentials: false
+      - name: Read immutable Wave038 source inventory entry schema only, without Cloud or internet
+        run: |
+          python3 - <<'PY'
+          import base64,json,zlib
+          from pathlib import Path
+          f=Path('backend/config/gorge-campaign-wave-038-20261031/REGION-PLAN.json.z.b64')
+          region=json.loads(zlib.decompress(base64.b64decode(f.read_bytes())))
+          inv=region['inventory']
+          print('RRGH_SOURCE_SCHEMA_ROOT',json.dumps({'regionFields':list(region),
+             'inventoryFields':list(inv),'sourceLimits':region.get('sourceLimits')},sort_keys=True))
+          for kind,sources in inv['sources'].items():
+              print('RRGH_SOURCE_SCHEMA_LAYER',json.dumps({'kind':kind,
+               'count':len(sources),'firstTwo':sources[:2]},sort_keys=True))
+          PY
