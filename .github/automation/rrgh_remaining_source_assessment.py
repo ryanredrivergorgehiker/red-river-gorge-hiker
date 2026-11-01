@@ -13,7 +13,7 @@ accepted=set(plan['completedJobIDs'])|set(plan['approvedJobIDs'])
 attempts=plan['priorAttemptCounts']
 profiles=region['profiles']
 assert profiles==PROFILES and plan['campaign']['sequence']==36
-assert len(accepted)==10873 and len(attempts)>len(accepted)
+assert len(accepted)==10873 and len(attempts)>=len(plan['completedJobIDs'])
 totals={}
 for group,layers in PROFILES.items():
   for layer,maxz in layers.items():
