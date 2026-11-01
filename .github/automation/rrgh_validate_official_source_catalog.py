@@ -2,10 +2,10 @@
 """Offline exact original-public-source match, no pixel/license assertion, no Cloud writes."""
 import base64,hashlib,json,math,sys,zlib
 from pathlib import Path
+assert len(sys.argv)==4, 'Exact Wave038 source + official KyTopo and STAC manifests required'
 root=Path(sys.argv[1])
-source=Path(sys.argv[2])
-ky=Path(sys.argv[3])
-full=Path(sys.argv[4])
+ky=Path(sys.argv[2])
+full=Path(sys.argv[3])
 region=json.loads(zlib.decompress(base64.b64decode(
     (root/'backend/config/gorge-campaign-wave-038-20261031/REGION-PLAN.json.z.b64').read_bytes())))
 kyraw=ky.read_bytes();fullraw=full.read_bytes()
