@@ -125,5 +125,88 @@ class IncidentTests(unittest.TestCase):
         with self.assertRaises(Halt):
             self.verify(producer=producer)
 
+
+class Wave034IncidentTests(unittest.TestCase):
+    """Pin the second real partial recovery; never authorize arbitrary failures."""
+
+    def fixtures(self):
+        run = copy.deepcopy(RUN)
+        run.update(id=41324364372,
+                   head_sha="ae3203b49ac33347a22998aafef5b78ccb3d4448",
+                   head_commit={"message":
+                       "Lane20: execute verified new-territory wave034 20261031"})
+        recovery = copy.deepcopy(RECOVERY)
+        plan = "d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd"
+        recovery["receiptRef"].update(
+            key="engineering/map-production/plans/" + plan + "/slots/00002/receipt.json",
+            sha256="2d72a0556885ef89a54817c68b985161b01a4622c06b066bfe0e05a5375e7802",
+            generation="1793550498889185", bytes=1523)
+        result = recovery["result"]
+        result.update(jobs=488, tiles=4938, packageParts=20,
+                      adjacentEdgesMeasured=8964,
+                      nextCarry={"chargedUSD":"10.47988948789728879928588867",
+                                 "storedBytes":22479633762,
+                                 "priorCompletedJobs":10264,
+                                 "priorRasterTiles":106875,
+                                 "priorSunlightAssets":320})
+        result["settlement"].update(
+            sequence=34, planSHA256=plan,
+            chargedUSD="10.47988948789728879928588867",
+            storedBytes=22479633762,
+            storageEstimateUSDPerMonth="0.7536884540989995002746582031",
+            remainingAuthorityUSD="114.5201105121027112007141113")
+        producer = []
+        for i in range(488):
+            jid = (f"usgs-topo-16-{17500+i}-{25300+i}" if i < 256
+                   else f"leaf-on-16-{17500+i}-{25300+i}")
+            producer.append(line({
+                "job": jid, "completedJobs": i + 1,
+                "durableJobReceipt": {
+                    "key":f"engineering/map-production/plans/{plan}/slots/00001/jobs/{jid}.json",
+                    "sha256":"a"*64, "generation":str(1793550000000000+i)
+                }}))
+        producer.append(line({
+            "phase":"production", "status":"failed",
+            "diagnostic":{"lastJobConsidered":"leaf-on-16-17575-25345",
+                          "child":{"errorClass":"URLError"}}}))
+        return run, recovery, producer
+
+    def test_exact_wave034_partial_recovery(self):
+        run, recovery, producer = self.fixtures()
+        report = audit_run(run, JOBS, [line(recovery)], producer)
+        self.assertTrue(report["verified"] and report["partialRecovered"])
+        self.assertEqual(report["acceptedJobs"], 10264)
+        self.assertEqual(report["acceptedRasterTiles"], 106875)
+        self.assertEqual(len(report["partialCompletedJobIDs"]), 488)
+        self.assertFalse(report["dispatchAuthorized"])
+
+    def test_wave034_wrong_failure_class(self):
+        run, recovery, producer = self.fixtures()
+        producer[-1] = line({"phase":"production","status":"failed",
+                            "diagnostic":{"lastJobConsidered":"leaf-on-16-17575-25345",
+                                          "child":{"errorClass":"PermissionError"}}})
+        with self.assertRaises(Halt):
+            audit_run(run, JOBS, [line(recovery)], producer)
+
+    def test_wave034_wrong_receipt_or_head(self):
+        run, recovery, producer = self.fixtures()
+        recovery["receiptRef"]["sha256"] = "f"*64
+        with self.assertRaises(Halt):
+            audit_run(run, JOBS, [line(recovery)], producer)
+        run["head_sha"] = "f"*40
+        with self.assertRaises(Halt):
+            audit_run(run, JOBS, [line(recovery)], producer)
+
+    def test_wave034_missing_completed_receipt(self):
+        run, recovery, producer = self.fixtures()
+        with self.assertRaises(Halt):
+            audit_run(run, JOBS, [line(recovery)], producer[:-2]+producer[-1:])
+
+    def test_wave034_does_not_release_ambiguous_allocation(self):
+        run, recovery, producer = self.fixtures()
+        recovery["result"]["settlement"]["retainedUsage"]["attempts"] = 488
+        with self.assertRaises(Halt):
+            audit_run(run, JOBS, [line(recovery)], producer)
+
 if __name__ == "__main__":
     unittest.main()
