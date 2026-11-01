@@ -87,9 +87,11 @@ jobs:
             echo 'PUBLISHER_STALE_LEASE_REJECTION_PASS: no writes or Cloud requests'
           fi
 
+      - name: Checkout separate untouched Wave036 source for actual layer assessment
+        uses: actions/checkout@v4
+        with:
+          ref: 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
+          path: assessment-checkout
+          persist-credentials: false
       - name: Inspect exact Wave036 remaining source-backed layer opportunities without Cloud access
-        run: |
-          set -euo pipefail
-          git -C source-checkout fetch --depth 1 origin 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
-          git -C source-checkout checkout --detach 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243
-          python .github/automation/rrgh_remaining_source_assessment.py source-checkout
+        run: python .github/automation/rrgh_remaining_source_assessment.py assessment-checkout
