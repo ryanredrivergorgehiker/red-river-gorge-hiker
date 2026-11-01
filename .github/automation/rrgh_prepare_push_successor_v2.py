@@ -192,7 +192,8 @@ def prepare(root, verified):
               prior["outputTiles"] == reference["outputTiles"],
               "Source-pinned prior job changed")
 
-    limits = {"usgs-topo": 256, "leaf-on": 256}
+    # First source-backed mixed-layer pilot uses exactly the original production families.
+    limits = {"hiking": 3, "terrain": 3, "leaf-off": 3}
     picked = []
     for layer, limit in limits.items():
         landmarks = [index[jid] for jid in accepted if jid in index and
@@ -217,7 +218,7 @@ def prepare(root, verified):
         picked.extend(sample)
     jobs = [j["id"] for j in picked]
     check(bool(jobs),
-          "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed usgs-topo or leaf-on "
+          "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed hiking, terrain or leaf-off "
           "jobs remain; do not replay attempted jobs or pad the wave. "
           "Next work requires reviewed source/layer coverage before a new wave.")
     check(len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
@@ -241,14 +242,29 @@ def prepare(root, verified):
     check(len(jobs) <= expected_tiles <= 256 + 256*21,
           "Unexpected geometry-derived tile count: "+str(expected_tiles))
 
+    # Preserve original Wave000 per-layer source/time caps, rather than inferring
+    # authorization only from the most recent topo/leaf-on batch.
+    historic = json.loads((root / "backend/config/gorge-campaign-wave-000-20261030/PLAN.json").read_bytes())
     policy = {}
-    for jid, perjob in old["jobPolicies"].items():
+    for jid, perjob in historic["jobPolicies"].items():
         layer = jid.rsplit("-", 3)[0]
         if layer in policy:
-            check(policy[layer] == perjob, "Old job policy inconsistent")
+            check(policy[layer] == perjob, "Historic policy inconsistent")
         else:
             policy[layer] = perjob
-    check(all(x in policy for x in limits), "Missing policy")
+    check(policy.get("hiking") == {"seconds":600,"sourceBytes":67108864,"sourceRequests":150}
+          and policy.get("terrain") == {"seconds":600,"sourceBytes":134217728,"sourceRequests":200}
+          and policy.get("leaf-off") == {"seconds":600,"sourceBytes":536870912,"sourceRequests":750},
+          "Original source and time bounds changed")
+    for jid, perjob in old["jobPolicies"].items():
+        check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
+    check(all(x in policy for x in limits), "Missing original approved layer policy")
+    check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
+          <= old["limits"]["sourceRequests"], "Source requests cannot exceed prior envelope")
+    check(sum(policy[j["layer"]]["sourceBytes"] for j in picked)
+          <= old["limits"]["sourceBytes"], "Source bytes cannot exceed prior envelope")
+    check(sum(policy[j["layer"]]["seconds"] for j in picked)
+          <= old["limits"]["seconds"], "Production seconds cannot exceed prior envelope")
 
     # Update only the one canonical source CONFIG pin. Old source files remain
     # byte-identical, and the new scope is generated from the same provenance.
