@@ -216,7 +216,11 @@ def prepare(root, verified):
             tuple(job["sourceIDs"]), morton(job["x"], job["y"]), job["id"]))
         picked.extend(sample)
     jobs = [j["id"] for j in picked]
-    check(1 <= len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
+    check(bool(jobs),
+          "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed usgs-topo or leaf-on "
+          "jobs remain; do not replay attempted jobs or pad the wave. "
+          "Next work requires reviewed source/layer coverage before a new wave.")
+    check(len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
           not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
     selected_counts = Counter(j["layer"] for j in picked)
     check(set(selected_counts) <= set(limits) and
