@@ -1,13 +1,13 @@
-RRGH guarded original-push next-wave request: Wave028 from independently verified Wave027.
-Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41256555536
-Original event: push; branch lane20/offline-production-preflight-20261029; workflow .github/workflows/offline-map-producer-access.yml; original source SHA f611716f187afa2e59883c56e8965c60c897fc56.
-Wave027 immutable plan SHA256: f7fd6c19a182a25790c0338b0f964dcd18a44dc198d7a767673bf8b27045b752
-Bounded-stage: SUCCESS; 512 distinct source-backed jobs, 5492 raster tiles, 31 package parts.
-Independent-recovery: SUCCESS; all hashes and decoded pixels independently verified, every new package chunk read back, 9147 adjacent edges measured; 320 Sunlight assets preserved; sourcePixelGapJobs empty.
-Immutable independent receipt: engineering/map-production/plans/f7fd6c19a182a25790c0338b0f964dcd18a44dc198d7a767673bf8b27045b752/slots/00002/receipt.json
-Receipt generation: 1793494012683064; bytes 1549; SHA256 c085551ece3732a497154e73ef4997e1fbb115bc9010f2e1da13e7ec2b63e7ec.
+RRGH guarded original-push next-wave request: Wave029 from independently verified Wave028.
+Original push run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41264307035
+Original event: push; branch lane20/offline-production-preflight-20261029; workflow .github/workflows/offline-map-producer-access.yml; original source SHA 192873383d1bdc76bd7007969e5172d7b0aca9bb.
+Wave028 immutable plan SHA256: 7fc196973132b3125a445ce51044a2fcd9e3c964c06375167d2fbfb75e89b3c3
+Bounded-stage: SUCCESS; 512 distinct source-backed jobs, 5532 raster tiles, 30 package parts.
+Independent-recovery: SUCCESS; all hashes and decoded pixels independently verified, every new package chunk read back, 9273 adjacent edges measured; 320 Sunlight assets preserved; sourcePixelGapJobs empty.
+Immutable independent receipt: engineering/map-production/plans/7fc196973132b3125a445ce51044a2fcd9e3c964c06375167d2fbfb75e89b3c3/slots/00002/receipt.json
+Receipt generation: 1793501398819084; bytes 1551; SHA256 4d53acbf94c194c53de0d2b4b91bf5145ff8d138c93d3526a06baba6478d40e7.
 Recovery status verified; independentRecoveryComplete true; ambiguousAllocationRetained false; no source pixel gaps.
-Cumulative independently verified: 6704 completed jobs, 69090 raster tiles, 320 Sunlight assets.
-Forward-only v2 settlement: USD8.845207459827971458435058596 cumulative charged, 19092028695 stored bytes, USD0.6401101434789597988128662110 monthly storage estimate; USD125 cumulative and USD2/month ceilings.
-Request: perform offline-only latest-run, exact immutable receipt, pixel, historical quarantine, budget admission, source-pixel-gap, GitHub USD350 hard-stop, and lease checks; publish ONE fresh immutable Wave028 source only after all guards pass. Never dispatch Cloud from planner. Keep 45 historical quarantines and additional consumed Wave023 exclusion; no reused checkpoint slots; at most 512 new jobs; maintain original Cloud WIF push-only identity. No downsampling or fabricated source pixels. Preserve native package verification requirements.
-Unique verification request: Wave028-from-41256555536-20261031T2211-0400; receipt c085551ece3732a497154e73ef4997e1fbb115bc9010f2e1da13e7ec2b63e7ec. No overlapping production permitted.
+Cumulative independently verified: 7216 completed jobs, 74622 raster tiles, 320 Sunlight assets.
+Forward-only v2 settlement: USD9.011067278037005662918090822 cumulative charged, 19391719350 stored bytes, USD0.6501580556854605674743652342 monthly storage estimate; USD125 cumulative and USD2/month ceilings.
+Request: perform offline-only latest-run, exact immutable receipt, pixel, historical quarantine, budget admission, source-pixel-gap, GitHub USD350 hard-stop, and lease checks; publish ONE fresh immutable Wave029 source only after all guards pass. Never dispatch Cloud from planner. Keep 45 historical quarantines and additional consumed Wave023 exclusion; no reused checkpoint slots; at most 512 new jobs; maintain original Cloud WIF push-only identity. No downsampling or fabricated source pixels. Preserve native package verification requirements.
+Unique verification request: Wave029-from-41264307035-20261031T2250-0400; receipt 4d53acbf94c194c53de0d2b4b91bf5145ff8d138c93d3526a06baba6478d40e7. No overlapping production permitted.
