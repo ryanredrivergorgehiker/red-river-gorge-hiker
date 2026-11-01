@@ -1,0 +1,46 @@
+name: RRGH full-region COG source pin compatibility audit
+on:
+  push:
+    branches: [lane20/unattended-supervisor-20261031]
+    paths:
+      - .github/workflows/rrgh-full-source-pin-audit.yml
+      - .github/automation/rrgh_validate_official_source_catalog.py
+permissions:
+  contents: read
+  actions: read
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 3f319adc3c5b25e4d657beb1522a45b252bb90eb
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: rrgh-official-source-metadata
+          run-id: '41344607996'
+          github-token: ${{ github.token }}
+          path: official-stac
+      - uses: actions/download-artifact@v4
+        with:
+          name: rrgh-ky-original-map-sources
+          run-id: '41344701807'
+          github-token: ${{ github.token }}
+          path: original-ky
+      - name: Validate unchanged pins and all original official source candidates without pixel claims
+        run: |
+          python .github/automation/rrgh_validate_official_source_catalog.py \
+            source-checkout original-ky/rrgh-ky-nine-quads.json \
+            official-stac/rrgh-official-coverage.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-original-source-expansion-candidates
+          path: /tmp/rrgh-original-source-expansion-candidates.json
+          if-no-files-found: error
+          retention-days: 7
