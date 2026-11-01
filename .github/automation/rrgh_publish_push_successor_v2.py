@@ -103,22 +103,30 @@ def check_local(root, audit):
           "Previously accepted work overlap")
     excluded = {jid for jid, v in plan["priorAttemptCounts"].items()
                 if v > 0 and jid not in plan["completedJobIDs"]}
-    guard(len(excluded) == (45 if prior_seq <= 22 else 46) and
+    guard(len(excluded) == (45 if prior_seq <= 22 else
+                            46 if prior_seq <= 33 else 47) and
           not excluded & set(plan["approvedJobIDs"]), "Quarantine overlap")
-    if prior_seq == 23:
+    if prior_seq in (23, 34):
+        pinned = {
+            23: (41225003991, 207, "usgs-topo-16-17570-25321"),
+            34: (41324364372, 488, "leaf-on-16-17575-25345"),
+        }
+        run_id, count, failed = pinned[prior_seq]
         recovered = audit.get("partialCompletedJobIDs")
         guard(audit.get("partialRecovered") is True and
-              audit.get("run") == 41225003991 and
-              isinstance(recovered, list) and len(recovered) == 207 and
-              recovered == prior["approvedJobIDs"][:207] and
-              audit.get("failedJobID") == prior["approvedJobIDs"][207] and
+              audit.get("run") == run_id and
+              isinstance(recovered, list) and len(recovered) == count and
+              recovered == prior["approvedJobIDs"][:count] and
+              audit.get("failedJobID") == failed ==
+              prior["approvedJobIDs"][count] and
               plan["completedJobIDs"] == prior["completedJobIDs"] + recovered and
-              audit["failedJobID"] in excluded and
-              plan["priorAttemptCounts"].get(audit["failedJobID"]) == 1,
+              failed in excluded and
+              plan["priorAttemptCounts"].get(failed) == 1 and
+              not set(recovered) & excluded,
               "Exact partial-recovery quarantine or accepted-prefix mismatch")
     else:
         guard(audit.get("partialRecovered") is False,
-              "Unexpected partial recovery outside pinned incident")
+              "Unexpected partial recovery outside pinned incidents")
     guard(plan["maxConcurrency"] == 1 and
           plan["automaticRetryPermitted"] is False, "Concurrency/retry guard changed")
     guard(plan["bucket"] == "rrgh-nonproduction-protected-packages", "Wrong cloud bucket")
