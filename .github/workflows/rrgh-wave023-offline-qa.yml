@@ -6,6 +6,8 @@ on:
       - .github/workflows/rrgh-wave023-offline-qa.yml
       - .github/automation/rrgh_prepare_push_successor_v2.py
       - .github/automation/rrgh_publish_push_successor_v2.py
+      - .github/automation/rrgh_map_supervisor_v2.py
+      - .github/automation/test_rrgh_source_pixel_gap.py
       - .github/automation/rrgh_remaining_source_assessment.py
 permissions:
   contents: read
@@ -95,3 +97,47 @@ jobs:
           persist-credentials: false
       - name: Inspect exact Wave036 remaining source-backed layer opportunities without Cloud access
         run: python .github/automation/rrgh_remaining_source_assessment.py assessment-checkout
+      - name: Test exact verified Wave037 source-gap receipt accounting (no Cloud)
+        run: python -m unittest discover -s .github/automation -p test_rrgh_source_pixel_gap.py -v
+      - name: Checkout immutable Wave037 nine-job source plan for successor readback
+        uses: actions/checkout@v4
+        with:
+          ref: 6b6b5ddbad89a7a2086eebcd6178df0146e7200a
+          path: wave37-source
+          persist-credentials: false
+      - name: Verify Wave038 successor from actual-identity Wave037 acceptance fixture OFFLINE
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'.github/automation')
+          from test_rrgh_source_pixel_gap import RUN,JOBS,REPORT,producer_lines,report_lines
+          from rrgh_map_supervisor_v2 import audit_run
+          result=audit_run(RUN,JOBS,report_lines(),producer_lines())
+          Path('/tmp/rrgh-wave037-gap-verified-qa.json').write_text(json.dumps(result))
+          print('SOURCE_GAP_POLICY_FIXTURE_VERIFIED',result['acceptedJobs'],result['acceptedRasterTiles'])
+          PY
+          python .github/automation/rrgh_prepare_push_successor_v2.py wave37-source /tmp/rrgh-wave037-gap-verified-qa.json
+          python wave37-source/backend/scripts/gorge_campaign.py --phase plan
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('wave37-source/backend/config')
+          p37=json.loads((root/'gorge-campaign-wave-037-20261031/PLAN.json').read_bytes())
+          p38=json.loads((root/'gorge-campaign-wave-038-20261031/PLAN.json').read_bytes())
+          old=set(p37['completedJobIDs'])
+          accepted=set(p38['completedJobIDs'])
+          gaps=set(p38['campaign']['sourcePixelGapQuarantines'])
+          assert len(accepted-old)==6 and len(gaps)==3
+          assert gaps.isdisjoint(accepted)
+          assert len(p38['approvedJobIDs'])>0 and not set(p38['approvedJobIDs'])&gaps
+          assert all(p38['priorAttemptCounts'].get(x)==1 for x in p37['approvedJobIDs'])
+          print('WAVE038_NEXT_PLAN_PROVED: 6 accepted, 3 excluded, genuine new jobs, no Cloud writes')
+          PY
+      - name: Dry run source-only publisher against actual production source CAS, no writes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python .github/automation/rrgh_publish_push_successor_v2.py wave37-source /tmp/rrgh-wave037-gap-verified-qa.json
