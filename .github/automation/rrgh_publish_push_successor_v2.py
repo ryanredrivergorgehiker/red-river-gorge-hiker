@@ -96,8 +96,11 @@ def check_local(root, audit):
           "Unknown predecessor recovery reference")
     guard(plan["campaign"]["carry"] == audit["nextCarry"],
           "Incorrect conservative settlement carry")
-    guard(len(plan["approvedJobIDs"]) == 512 and
-          len(set(plan["approvedJobIDs"])) == 512, "Invalid pilot batch")
+    # Finite remaining source territory can yield fewer than 512 genuine jobs.
+    # Reject empty, duplicate, or over-limit allocations; never pad output.
+    guard(1 <= len(plan["approvedJobIDs"]) <= 512 and
+          len(set(plan["approvedJobIDs"])) == len(plan["approvedJobIDs"]),
+          "Invalid finite source-backed batch")
     guard(len(plan["completedJobIDs"]) == audit["acceptedJobs"] and
           not set(plan["completedJobIDs"]) & set(plan["approvedJobIDs"]),
           "Previously accepted work overlap")
