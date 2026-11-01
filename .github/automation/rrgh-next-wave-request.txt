@@ -1,13 +1,7 @@
-RRGH owner-authorized guarded source-only successor request: Wave036 after independently verified FULL Wave035.
-Requested 2026-11-01 following exact original authorized production and independent recovery.
-Wave035 producer and recovery: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41330307272
-Original workflow: .github/workflows/offline-map-producer-access.yml on lane20/offline-production-preflight-20261029; exact push event and immutable checkout source 72d3b18ff3e0297cfa30480da0920f3345061882.
-Wave035 plan SHA256 609e40fa1127b28348ebf1d596eb7317209791789baf68db92ee9e3deb614436.
-Bounded-stage completed successfully: 414 accepted jobs, 5284 new raster tiles; producer receipt engineering/map-production/plans/609e40fa1127b28348ebf1d596eb7317209791789baf68db92ee9e3deb614436/slots/00001/receipt.json generation 1793554053636040 SHA256 b08bafebab290fcea736848cf8abdaa51bb335eea67110187ec3a4244a9c645c.
-Independent recovery SUCCESS, status verified, all new hashes and decoded pixels, all package chunks read back, 21 package parts, 9901 adjacent-edge checks, no source-pixel gaps.
-Immutable independent receipt engineering/map-production/plans/609e40fa1127b28348ebf1d596eb7317209791789baf68db92ee9e3deb614436/slots/00002/receipt.json generation 1793554386507687 SHA256 1e2e36dbd64730b0d0b394e8523fe462a7eae7b4299b5fa227bbab8867d34fe1.
-NextCarry 10678 accepted jobs, 112159 independently verified raster tiles, 320 Sunlight assets. Preserve all historical quarantines and prior consumed attempts, including Wave023 and Wave034, with no replay.
-Wave035 independently settled modeled cumulative production USD 10.64276947783731818199157715 and modeled monthly storage USD 0.7639868348054587841033935548 (not invoices); caps USD125/USD2.
-Owner previously confirmed GitHub Actions stop-at-limit enabled; keep githubBilling.stopAtLimitVerified=true, hardCeilingUSD=350 and all immutable spending gates. Do not invent current account billing usage.
-This marker uniquely requests guarded Wave036 source-only successor planning with exact Wave035 immutable receipt verification, no-overlap, conservative budget admission, source pixel integrity and strict finite eligible source windows. Planner must enforce 1..512 jobs, never pad exhausted topo or leaf-on windows, preserve 320 Sunlight assets and all historical exclusions. Do not dispatch paid Cloud from planner.
-After successful planner verification and publication, original owner-authenticated connector push must separately trigger Wave036 via exact workflow path and exact commit guard. Never use workflow_dispatch.
+RRGH owner-authorized guarded successor request: Wave037 after independently recovered Wave036.
+Requested 2026-11-01 13:56 EST to reduce idle gap after Wave036 completed at 13:45:52 EST.
+Original producer/recovery run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41336785155
+Original event: push, protected branch lane20/offline-production-preflight-20261029, workflow .github/workflows/offline-map-producer-access.yml, immutable Wave036 production source SHA 8e50dc0f42a7cf2089dc5c7f740fdce01dd66243.
+Wave036 exact independent recovery: SUCCESS and all output hashes/pixels/package readback independently verified. Wave036 195 source-backed completed jobs, 3800 verified raster tiles, 16 package parts, no new source-pixel gap. Historical exclusions 45 and all 320 Sunlight assets retained.
+Final cumulative Wave036 carry: 10,873 verified jobs and 115,959 raster tiles. Modeled Cloud cumulative charge $10.7719185718078017; storage $0.7716901295743883/month, not invoices; authorized $125 cumulative and $2/month.
+Source-backed remaining territory only; do NOT pad to 512, fabricate source, reuse historical jobs or rerun consumed slots. The guarded planner MUST independently reverify GitHub original WIF producer/recovery and immutable receipt, then only publish a new CAS-bound source if there are eligible fresh jobs. The separate original owner-connector push is required to trigger paid production. No automatic paid dispatch from the marker.
