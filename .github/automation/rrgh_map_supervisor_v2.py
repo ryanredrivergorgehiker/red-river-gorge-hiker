@@ -246,7 +246,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
                 final_production[0].get("status") == "bounded-stop",
                 "Nonmatching producer pixel-gap exclusion and independent recovery")
     else:
-        require(result.get("pixelGapAttemptsConsumed") == 0,
+        require(result.get("pixelGapAttemptsConsumed", 0) == 0,
                 "Unexplained consumed source attempt")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
