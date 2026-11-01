@@ -1,10 +1,11 @@
-RRGH owner-authorized guarded source-only successor request: Wave033 after independently verified Wave032.
-Requested 2026-11-01 at 10:07 Eastern because prior asynchronous task had not triggered next producer.
-Previous producer GitHub Actions run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41311121714
-Previous Wave032: original restricted push / exact workflow source commit 53023487d9f919333a4a1f0142c58f379fb203d6.
-Verified original workflow stages: bounded-stage SUCCESS and independent-recovery SUCCESS.
-Wave032 new independent recovery: 512 native source-backed jobs, 5412 tiles, 33 packaged chunks; output hashes, decoded pixels, package readback PASS; no source pixel gaps.
-Wave032 final recovery SHA256: 8ca770f8c72089eef8d4b7a5c85b72bd55a9b8730d2cc338ba15e116737e8c7e.
-Wave032 nextCarry: 9264 completed jobs, 96500 raster tiles, 320 Sunlight assets; 45 historical quarantines retained.
-Cloud modeled cumulative charge 9.669176172758466005325317385 USD and modeled storage 0.6897205956727266311645507812 USD/month, both under owner $125/$2 authority, estimates not invoices.
-No direct dispatch authorization: the guarded planner MUST inspect independent GitHub recovery itself, enforce unique source CAS, preserve all historic consumed/ambiguous slots, and publish SOURCE ONLY. Original restricted push producer must be committed separately under exact reviewed source SHA and exact commit guard after successful planner publication.
+RRGH owner-authorized guarded source-only successor request: Wave034 after independently verified Wave033.
+Requested 2026-11-01 following completed original production and independent recovery.
+Previous producer GitHub Actions run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41319492922
+Wave033 original restricted push event, exact production workflow, source commit 659c25b71da06e2f6ed1bff053eff9c304960871.
+Both bounded-stage and independent-recovery completed SUCCESS (run_attempt=1); exact source plan SHA256 ff9fb31e37292591f33b3607bab1bfa7276b457832ac11159b2a8fe274e3b009.
+Wave033 independent recovery: 512 accepted jobs, 5437 raster tiles, 27 native package parts; output hashes, decoded source pixels and all package chunks read back PASS; 9677 adjacent edges checked; no source pixel gap jobs.
+Wave033 independent immutable receipt: engineering/map-production/plans/ff9fb31e37292591f33b3607bab1bfa7276b457832ac11159b2a8fe274e3b009/slots/00002/receipt.json, generation 1793547353160856, SHA256 ae9922369fddaedee73facd5be467117a3b309bb5706b34a9c30101d6d2810e5.
+Wave033 nextCarry: 9776 accepted jobs, 101937 independently verified raster tiles, 320 Sunlight assets. Preserve every historical quarantine, consumed checkpoint, and prior partial charged attempt.
+Modeled settled Cloud charge 9.834289487897288799285888674 USD cumulative and modeled storage 0.6996884540989995002746582031 USD/month; below approved $125/$2 forward-only caps; these are estimates not invoices.
+Previously owner-confirmed GitHub stop-at-budget enabled, plan githubBilling.stopAtLimitVerified=true, hardCeilingUSD=350; never infer current account spend.
+This marker requests guarded source-only Wave034 planning, not direct Cloud dispatch. Planner must independently reverify exact receipt, plan, budgets, historical exclusions, immutable source CAS and publish NEXT source SHA only. Production must be separately triggered by owner-authenticated connector push to exact original workflow after successful planner, with no overlap.
