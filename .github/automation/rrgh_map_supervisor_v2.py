@@ -108,7 +108,13 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
     require(result.get("allOutputHashesAndPixelsVerified") is True, "Unverified pixels/hash")
     require(result.get("allNewPackageChunksReadBack") is True, "Unread package chunks")
     require(result.get("allExistingCachesPreserved") is True, "Cache preservation failed")
-    require(result.get("sourcePixelGapJobs") == [], "Source pixel gap")
+    pixel_gaps = result.get("sourcePixelGapJobs")
+    require(isinstance(pixel_gaps, list) and len(pixel_gaps) <= MAX_JOBS and
+            len(set(pixel_gaps)) == len(pixel_gaps) and
+            all(isinstance(j, str) and re.fullmatch(r"(hiking|terrain|leaf-off|leaf-on|usgs-topo)-16-\\d+-\\d+", j)
+                for j in pixel_gaps), "Malformed source-pixel-gap quarantine")
+    require(result.get("pixelGapAttemptsConsumed") == len(pixel_gaps),
+            "Pixel-gap attempted slot accounting mismatch")
     require(isinstance(result.get("adjacentEdgesMeasured"), int) and
             result["adjacentEdgesMeasured"] > 0, "Missing edge QA")
     jobs_count = result.get("jobs")
@@ -199,6 +205,49 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
         require(failed_job == incident["failed"] and
                 (diagnostic.get("child") or {}).get("errorClass") == incident["error"] and
                 failed_job not in recovered_ids, "Unexpected incident failure or job overlap")
+    source_completed = []
+    if pixel_gaps:
+        require(not partial and producer_lines is not None, "Cannot combine uncertain partial with pixel gaps")
+        source_gap_logs = []
+        final_production = []
+        for line in producer_lines:
+            marker = line.find("{")
+            if marker < 0:
+                continue
+            try:
+                row = json.loads(line[marker:])
+            except (ValueError, TypeError):
+                continue
+            if "completedJobs" in row and "durableJobReceipt" in row:
+                n = row.get("completedJobs")
+                jid = row.get("job")
+                item = row["durableJobReceipt"]
+                require(type(n) is int and n == len(source_completed)+1 and
+                        isinstance(jid, str) and jid not in source_completed and
+                        item.get("key") == PREFIX+plan_sha+"/slots/00001/jobs/"+jid+".json" and
+                        SHA256.fullmatch(str(item.get("sha256", ""))) is not None and
+                        re.fullmatch(r"\\d+", str(item.get("generation", ""))) is not None,
+                        "Missing original durable output job receipt in pixel gap wave")
+                source_completed.append(jid)
+            if row.get("status") == "source-pixel-gap-quarantined":
+                require(row.get("attemptConsumed") is True and
+                        row.get("sourceQualityUnchanged") is True and
+                        isinstance(row.get("job"), str),
+                        "Unverified original-source gap attempt")
+                source_gap_logs.append(row["job"])
+            if row.get("phase") == "production" and "sourcePixelGapJobs" in row:
+                final_production.append(row)
+        require(len(source_completed) == jobs_count and
+                source_gap_logs == pixel_gaps and
+                len(set(source_completed) | set(pixel_gaps)) == jobs_count+len(pixel_gaps) and
+                len(final_production) == 1 and
+                final_production[0].get("sourcePixelGapJobs") == pixel_gaps and
+                final_production[0].get("jobs") == jobs_count and
+                final_production[0].get("status") == "bounded-stop",
+                "Nonmatching producer pixel-gap exclusion and independent recovery")
+    else:
+        require(result.get("pixelGapAttemptsConsumed") == 0,
+                "Unexplained consumed source attempt")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
     return {
@@ -206,6 +255,8 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None):
         "partialRecovered": partial,
         "partialCompletedJobIDs": recovered_ids,
         "failedJobID": failed_job,
+        "sourcePixelGapJobs": pixel_gaps,
+        "sourceCompletedJobIDs": source_completed,
         "wave": sequence,
         "run": run.get("id"),
         "jobsNew": jobs_count,
