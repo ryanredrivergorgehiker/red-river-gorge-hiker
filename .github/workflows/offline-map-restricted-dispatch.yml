@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce]
+        options: [probe, produce, recover]
         required: true
       source_sha:
         type: string
@@ -146,8 +146,8 @@ jobs:
   independent-recovery:
     needs: [admit, bounded-stage]
     if: >-
-      always() && inputs.mode == 'produce' && github.run_attempt == 1 &&
-      needs.admit.result == 'success' && needs.bounded-stage.outputs.worker_receipt == 'true'
+      always() && github.run_attempt == 1 && needs.admit.result == 'success' &&
+      ((inputs.mode == 'produce' && needs.bounded-stage.outputs.worker_receipt == 'true') || inputs.mode == 'recover')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -179,8 +179,8 @@ jobs:
   advance:
     needs: [admit, bounded-stage, independent-recovery]
     if: >-
-      always() && inputs.mode == 'produce' && needs.admit.result == 'success' &&
-      needs.bounded-stage.result == 'success' && needs.independent-recovery.result == 'success'
+      always() && needs.admit.result == 'success' && needs.independent-recovery.result == 'success' &&
+      ((inputs.mode == 'produce' && needs.bounded-stage.result == 'success') || inputs.mode == 'recover')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -222,6 +222,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
