@@ -59,7 +59,7 @@ def decimal(value):
     return n
 
 
-def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=None, allow_failed_controller=False):
+def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=None, allow_failed_controller=False, recovery_execution=None):
     """Pure verification: unit tests require no GitHub or Google Cloud access."""
     require(run.get("run_attempt") == 1, "Rerun prohibited")
     require(run.get("head_branch") == BRANCH, "Producer branch mismatch")
@@ -85,19 +85,24 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     incident = PARTIAL_INCIDENTS.get(sequence)
     partial = (expected_dispatch is None and incident is not None and run.get("id") == incident["run"] and
                run.get("head_sha") == incident["head"])
+    if recovery_execution is not None:
+        from rrgh_recovery_only import validate_split_recovery
+        validate_split_recovery(run,jobs,expected_dispatch,recovery_execution)
     recovered_controller_failure = (allow_failed_controller and expected_dispatch is not None and
         run.get('status') == 'completed' and run.get('conclusion') == 'failure' and
         any(j.get('name') == 'advance' and j.get('conclusion') == 'failure' for j in jobs) and
         all(j.get('name') in ('advance','retain-failure') for j in jobs if j.get('conclusion') == 'failure'))
-    require(recovered_controller_failure or
+    require(recovery_execution is not None or recovered_controller_failure or
             (expected_dispatch is not None and run.get("status") == "in_progress" and run.get("conclusion") is None)
             or run.get("conclusion") == ("failure" if partial else "success"),
             "Unrecognized producer run conclusion")
     require(run.get("repository", {}).get("full_name") == REPO, "Wrong repository")
-    active = [j for j in jobs if j.get("name") in ("bounded-stage", "independent-recovery") and j.get("status") != "completed"]
+    recovery_jobs=recovery_execution['jobs'] if recovery_execution is not None else jobs
+    active = [j for j in jobs if j.get("name") == 'bounded-stage' and j.get("status") != "completed"]
+    active += [j for j in recovery_jobs if j.get('name')=='independent-recovery' and j.get('status')!='completed']
     require(not active, "Unfinished worker jobs")
     producer = [j for j in jobs if j.get("name") == "bounded-stage"]
-    recovery = [j for j in jobs if j.get("name") == "independent-recovery"]
+    recovery = [j for j in recovery_jobs if j.get("name") == "independent-recovery"]
     require(len(producer) == len(recovery) == 1, "Producer/recovery job multiplicity")
     require(producer[0].get("conclusion") == ("failure" if partial else "success") and
             recovery[0].get("conclusion") == "success",
@@ -118,6 +123,9 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     require(len(reports) == 1, "Exactly one independent recovery report required")
     receipt = reports[0]
     result = receipt.get("result") or {}
+    if recovery_execution is not None:
+        require(result.get('workerReceipt')==recovery_execution['state']['recoveryOnlyOf']['producerReceipt'],
+                'Recovery read a different original producer receipt')
     reference = receipt.get("receiptRef") or {}
     require(result.get("status") == ("partial-verified" if partial else "verified"),
             "Independent verification status mismatch")

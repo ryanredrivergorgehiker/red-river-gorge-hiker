@@ -33,7 +33,7 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
-    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py',
+    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py',
     'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
     'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
@@ -136,7 +136,8 @@ def assert_no_other_producers(api,allowed_run=None):
 def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
-    guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else ('ready',)),
+    guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
+          ('recovery-ready',) if mode=='recover' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -215,16 +216,56 @@ def audit_state(api,root,state,allow_failed_controller=False):
     jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
     guard(jobs['total_count']<=100,'Job pagination not complete')
     from rrgh_dispatch_audit import audit_run,gh
-    selected={name:[j for j in jobs['jobs'] if j['name']==name] for name in ('bounded-stage','independent-recovery')}
+    recovery_execution=None;expected=state;producer_jobs=jobs['jobs']
+    if state.get('mode')=='recover':
+        recovery_execution=dict(run=run,jobs=jobs['jobs'],state=state)
+        expected=state['recoveryOnlyOf']
+        run=api.call('GET','actions/runs/'+str(expected['runID']))
+        original=api.call('GET','actions/runs/'+str(expected['runID'])+'/jobs?per_page=100')
+        guard(original['total_count']<=100,'Original job pagination not complete')
+        producer_jobs=original['jobs']
+    selected={name:[j for j in (producer_jobs if name=='bounded-stage' else jobs['jobs']) if j['name']==name]
+              for name in ('bounded-stage','independent-recovery')}
     guard(all(len(v)==1 for v in selected.values()),'Producer/recovery job multiplicity')
     logs={name:gh('actions/jobs/'+str(items[0]['id'])+'/logs',api.token,raw=True).splitlines()
           for name,items in selected.items()}
-    report=audit_run(run,jobs['jobs'],logs['independent-recovery'],logs['bounded-stage'],
-        expected_dispatch=state,allow_failed_controller=allow_failed_controller)
+    report=audit_run(run,producer_jobs,logs['independent-recovery'],logs['bounded-stage'],
+        expected_dispatch=expected,allow_failed_controller=allow_failed_controller,recovery_execution=recovery_execution)
     guard(report['planSHA256']==state['planSHA256'] and report['wave']==state['sequence'],'Recovery identity changed')
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
+    if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
+
+
+def arm_unstarted_recovery(api,root,automatic=False):
+    if not automatic:caller('launch')
+    old,state=api.state();validate_state(state,root)
+    guard(state.get('enabled') is True and state.get('mode')=='produce' and
+          state.get('status')==('running' if automatic else 'halted') and
+          'recoveryOnlyOf' not in state,'Recovery-only resume is not eligible')
+    if automatic:guard(str(state['runID'])==os.environ.get('GITHUB_RUN_ID'),'Another run owns this allocation')
+    run=api.call('GET','actions/runs/'+str(state['runID']))
+    jobs=api.call('GET','actions/runs/'+str(state['runID'])+'/jobs?per_page=100')
+    guard(jobs['total_count']<=100,'Incomplete parent jobs')
+    from rrgh_recovery_only import eligible_parent,one,producer_receipt
+    eligible_parent(run,jobs['jobs'],state,active=automatic)
+    from rrgh_dispatch_audit import gh
+    producer=one(jobs['jobs'],'bounded-stage')
+    receipt=producer_receipt(gh('actions/jobs/'+str(producer['id'])+'/logs',api.token,raw=True).splitlines(),state['planSHA256'])
+    if not automatic:
+        auth=state.get('recoveryStartAuthorization',{})
+        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+              all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')) and
+              auth.get('producerReceipt')==receipt,'Exact recovery-start authorization missing')
+    assert_no_other_producers(api,state['runID'] if automatic else None)
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
+    parent={k:state[k] for k in ('runID','planSHA256','sourceSHA','dispatchID','sequence')}
+    parent.update(mode='produce',producerReceipt=receipt)
+    state.update(status='recovery-ready',recoveryOnlyOf=parent)
+    state.pop('recoveryStartAuthorization',None)
+    old=api.cas(old,state,'verified recovery never started; preserve exact producer')
+    return dispatch(api,root,old,state,'recover',allowed_run=parent['runID'])
 
 
 def audit_recovered(api,root):
@@ -323,6 +364,10 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
         'parentRunID':state.get('parentRunID'),'sourceSHA':state['sourceSHA'],'planSHA256':state['planSHA256'],
         'recoveryReceipt':audit['receiptRef'],'acceptedJobs':audit['acceptedJobs'],
         'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew']}
+    if state.get('mode')=='recover':
+        completed['originalProducerRunID']=state['recoveryOnlyOf']['runID']
+        completed['originalProducerReceipt']=state['recoveryOnlyOf']['producerReceipt']
+        state.pop('recoveryOnlyOf')
     state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
     old=api.cas(old,state,'successor source prepared')
@@ -375,6 +420,10 @@ def retain_failure(api,root,run_id,dispatch_id):
                 'automaticRetryPermitted':False,'stateChanged':False}
     guard(str(state.get('runID'))==str(run_id) and state.get('dispatchID')==dispatch_id,
           'Failed run cannot modify another allocation')
+    if (state.get('mode')=='produce' and state.get('status')=='running' and 'recoveryOnlyOf' not in state and
+            str(state.get('runID'))==os.environ.get('GITHUB_RUN_ID')):
+        try:return arm_unstarted_recovery(api,root,automatic=True)
+        except ValueError:pass  # Not the exact pre-recovery setup incident; retain normally.
     state['status']='auth-required' if state.get('mode')=='probe' else 'halted'
     state['failureRunID']=run_id
     api.cas(old,state,'failure retained; no automatic retry')
@@ -382,10 +431,10 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') else a.command)
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command=='recover-unstarted' else a.command)
     api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
@@ -394,6 +443,7 @@ def main():
         result=claim(api,a.root,inputs,run_id)
     elif a.command=='audit':result=audit_current(api,a.root)
     elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
+    elif a.command=='recover-unstarted':result=arm_unstarted_recovery(api,a.root)
     elif a.command=='publish-recovered':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()),recovered=True)
     elif a.command=='publish':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()))
     elif a.command=='probe':
