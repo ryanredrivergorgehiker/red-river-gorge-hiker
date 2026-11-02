@@ -15,14 +15,59 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Read the owner-authenticated request
+        id: request
+        run: |
+          python - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
+          action=request.get('action','launch')
+          assert action in ('launch','resume-recovered')
+          source=request.get('source_sha','')
+          if action=='resume-recovered':
+              assert re.fullmatch('[0-9a-f]{40}',source)
+              state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
+              assert source==state['sourceSHA'] and state['status']=='halted'
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('action='+action+'\nsource='+source+'\n')
+          PY
       - name: Claim and dispatch the exact restricted authentication probe
+        if: steps.request.outputs.action == 'launch'
         env:
           GH_TOKEN: ${{ github.token }}
-          PYTHONDONTWRITEBYTECODE: '1'
         run: python .github/automation/rrgh_dispatcher.py launch
+      - name: Revalidate the exact completed production and independent recovery
+        if: steps.request.outputs.action == 'resume-recovered'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py audit-recovered --output "$RUNNER_TEMP/recovery.json"
+      - uses: actions/checkout@v4
+        if: steps.request.outputs.action == 'resume-recovered'
+        with:
+          ref: ${{ steps.request.outputs.source }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: steps.request.outputs.action == 'resume-recovered'
+        with:
+          python-version: '3.12'
+      - name: Prepare the fresh successor without GitHub credentials in the source process
+        if: steps.request.outputs.action == 'resume-recovered'
+        run: |
+          python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+          python .github/automation/rrgh_prepare_dispatch_successor.py source-checkout "$RUNNER_TEMP/recovery.json"
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Publish the verified successor and dispatch a new production allocation
+        if: steps.request.outputs.action == 'resume-recovered'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py publish-recovered --source source-checkout --audit "$RUNNER_TEMP/recovery.json"
