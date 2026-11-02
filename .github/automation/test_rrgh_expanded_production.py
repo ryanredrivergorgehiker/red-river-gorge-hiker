@@ -100,6 +100,10 @@ class UpgradeTests(unittest.TestCase):
             before=copy.deepcopy(api.value)
             with self.assertRaises(d.Halt):d.claim(api,ROOT,inputs,123)
             self.assertEqual(api.value,before)
+    def test_later_controller_upgrade_preserves_an_explicit_source_rollback(self):
+        api,inputs=self.prepared();api.value['sourcePolicyMode']='legacy'
+        d.claim(api,ROOT,inputs,123)
+        self.assertEqual(api.value['sourcePolicyMode'],'legacy')
     def test_no_mid_run_upgrade_and_no_wrong_worker_claim(self):
         api,inputs=self.prepared();api.value['status']='running'
         with self.assertRaises(d.Halt):d.validate_state(api.value,ROOT,allow_upgrade=True)
