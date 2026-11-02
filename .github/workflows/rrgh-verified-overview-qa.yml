@@ -1,0 +1,33 @@
+name: RRGH preserved-child native overview QA
+on:
+  push:
+    branches: [lane20/verified-coverage-adapters-20261102]
+    paths:
+      - .github/automation/rrgh_verified_overview.py
+      - .github/automation/test_rrgh_verified_overview.py
+      - .github/workflows/rrgh-verified-overview-qa.yml
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  native-overview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 444fa31cab3e321bc6e93b32b315efaba1ed24cd
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Execute unchanged native overview renderer with pinned verified children and network blocked
+        env:
+          RRGH_TEST_SOURCE: source-checkout
+        run: python -m unittest discover -s .github/automation -p test_rrgh_verified_overview.py -v
