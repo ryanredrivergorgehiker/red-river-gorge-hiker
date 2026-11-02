@@ -1,0 +1,17 @@
+{
+  "format": "rrgh-official-source-intake-preservation-v1",
+  "licenseReviewComplete": false,
+  "productionSourcePinsModified": false,
+  "purpose": "Durably retain metadata-only candidate evidence; NOT production authority",
+  "recoveredFromRuns": [
+    41346860346,
+    41344607996,
+    41344701807
+  ],
+  "sha256": {
+    "official-ky-nine-quads.json": "6ce341912fea7cd292227a7a3b5c0b458fb7dfa011335648155bdd7588d7bc6c",
+    "official-source-candidates.json": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+    "official-stac-coverage.json": "a6822c5e242aae1b096d2f9bd548b8acaab61242340a466e348d28ba2727e66e"
+  },
+  "sourcePixelCoverageVerified": false
+}

@@ -1,0 +1,142 @@
+{
+  "status": "OFFICIAL GORGE-INTERSECTING KYTOPO QUAD METADATA ONLY",
+  "boundsWGS84": [
+    -83.8,
+    37.65,
+    -83.4,
+    37.95
+  ],
+  "count": 9,
+  "withOriginalCOGURL": 9,
+  "allOriginalKeysInS3": true,
+  "quadrangles": [
+    {
+      "id": "N13E29",
+      "quadrangle": "Coburn",
+      "boundsWGS84": [
+        -83.88379287911319,
+        37.85075593650682,
+        -83.67293658698885,
+        37.96406603945088
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N13E29_Coburn_cog.tif",
+      "officialOriginalSourceBytes": 70955362,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N13E30",
+      "quadrangle": "Frenchburg",
+      "boundsWGS84": [
+        -83.67601988832956,
+        37.846910742743056,
+        -83.46487553591926,
+        37.960582511722585
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N13E30_Frenchburg_cog.tif",
+      "officialOriginalSourceBytes": 71512234,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N13E31",
+      "quadrangle": "West Liberty West",
+      "boundsWGS84": [
+        -83.46826745885073,
+        37.84269883764718,
+        -83.25683720411854,
+        37.95673167828918
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N13E31_West%20Liberty%20West_cog.tif",
+      "officialOriginalSourceBytes": 70337218,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N14E29",
+      "quadrangle": "Stanton",
+      "boundsWGS84": [
+        -83.88655924238344,
+        37.74092732097321,
+        -83.67601988832956,
+        37.85423436241875
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E29_Stanton_cog.tif",
+      "officialOriginalSourceBytes": 75933136,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N14E30",
+      "quadrangle": "Pine Ridge",
+      "boundsWGS84": [
+        -83.67909405074235,
+        37.73708776427951,
+        -83.46826745885073,
+        37.85075593650682
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E30_Pine%20Ridge_cog.tif",
+      "officialOriginalSourceBytes": 77463884,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N14E31",
+      "quadrangle": "Daysboro",
+      "boundsWGS84": [
+        -83.4716493291373,
+        37.73288203374989,
+        -83.26053764766147,
+        37.846910742743056
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E31_Daysboro_cog.tif",
+      "officialOriginalSourceBytes": 73173048,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N15E29",
+      "quadrangle": "Patsey",
+      "boundsWGS84": [
+        -83.8893174174976,
+        37.63109706888663,
+        -83.67909405074235,
+        37.74440064742102
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N15E29_Patsey_cog.tif",
+      "officialOriginalSourceBytes": 74901136,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N15E30",
+      "quadrangle": "Campton",
+      "boundsWGS84": [
+        -83.68215911479237,
+        37.6272631466565,
+        -83.4716493291373,
+        37.74092732097321
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N15E30_Campton_cog.tif",
+      "officialOriginalSourceBytes": 74518028,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    },
+    {
+      "id": "N15E31",
+      "quadrangle": "Simpson",
+      "boundsWGS84": [
+        -83.47502119139368,
+        37.6230635878389,
+        -83.26422712543989,
+        37.73708776427951
+      ],
+      "officialOriginalCogURL": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N15E31_Simpson_cog.tif",
+      "officialOriginalSourceBytes": 80513002,
+      "sourceSelection": "exact-current-cog-in-official-s3",
+      "inOfficialS3Listing": true
+    }
+  ],
+  "rasterBytesFetched": 0,
+  "noFinalCoverageOrXYZSizeClaim": true
+}
