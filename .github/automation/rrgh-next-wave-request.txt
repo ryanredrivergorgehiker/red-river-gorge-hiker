@@ -1,7 +1,7 @@
-RRGH source-only guarded successor Wave057 after independently verified Wave056 original-push producer and recovery.
-Wave056 run https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41449955573 SUCCESS bounded-stage and independent-recovery, run_attempt 1.
-Wave056 immutable exact plan SHA256 c4a51fbe4874663e317d44f028a45968e3d9c3408e496eabedf6d73edd0fe232.
-Independent recovery receipt key engineering/map-production/plans/c4a51fbe4874663e317d44f028a45968e3d9c3408e496eabedf6d73edd0fe232/slots/00002/receipt.json, generation 1793625013082559, sha256 ba4e55e7fe65867adde01d1d9c8c566ba749b5b01a9f1b34d8e4c0b3269bb204.
-Wave056 accepted 13 jobs, 65 full-quality tiles, 7 typed original source-pixel gaps excluded.
-Cumulative accepted: 11131 jobs, 118049 raster tiles, 320 Sunlight assets. Modeled cumulative charge USD 11.87055732039660811424255372.
-Request only next immutable source plan with all original source pins, authorization, resource, QA, recovery and deduplication protections unchanged. Separate exact original restricted push required to execute, no overlaps.
+RRGH source-only guarded successor Wave058 after independently verified Wave057 original-push producer and recovery.
+Wave057 run https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41454631490 SUCCESS bounded-stage and independent-recovery, run_attempt 1, exact original producer branch.
+Wave057 immutable exact plan SHA256 419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215.
+Independent recovery receipt key engineering/map-production/plans/419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215/slots/00002/receipt.json, generation 1793626999921506, sha256 ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea.
+Wave057 accepted 13 jobs, 81 full-quality raster tiles, 7 typed original source-pixel gaps excluded (consumed, not accepted).
+Cumulative independently verified accepted: 11144 jobs, 118130 raster tiles, 320 Sunlight assets. Modeled cumulative Cloud charge USD 11.92505885095891952514648438; monthly storage USD 0.7759602834396064281463623048, NOT invoices.
+Request only next immutable source plan with exact recovery CAS, original WIF identity, original licensing/source provenance, historical exclusions including Waves023/034, all source/pixel/edge/package QA, 125 USD cumulative production cap, 2 USD/month storage cap and deduplication protections unchanged. Separate original authenticated restricted push is required to execute, no overlap, no replay of consumed slots.
