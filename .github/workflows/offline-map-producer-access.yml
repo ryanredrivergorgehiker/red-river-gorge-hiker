@@ -16,7 +16,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute verified new-territory wave042 20261031'
+      github.event.head_commit.message == 'Lane20: execute verified new-territory wave043 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -25,7 +25,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: a2a9cddb0688483e12b5b93f1de9ada80fa285f9
+          ref: 750bd4cb56b9a1762312fdc09e92557f7a422c0e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -60,7 +60,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: a2a9cddb0688483e12b5b93f1de9ada80fa285f9
+          ref: 750bd4cb56b9a1762312fdc09e92557f7a422c0e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
