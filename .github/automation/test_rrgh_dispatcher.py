@@ -18,6 +18,7 @@ def state():
     return dict(format='rrgh-controller-state-v1',owner='autonomous-v1',epoch=1,
         enabled=True,status='awaiting-auth',sequence=58,sourceSHA='a'*40,planSHA256='b'*64,
         controlDigest=d.local_digest(ROOT),legacyFenceSHA256=d.digest((ROOT/d.ORIGINAL).read_bytes()),
+        legacyPlannerFenceSHA256=d.digest(b'if: false'),
         githubReservedUSD='286.53')
 
 
@@ -29,7 +30,7 @@ class FakeGitHub:
     def cas(self,old,value,message):
         if old!=self.version:raise d.Halt('CAS conflict')
         self.value=copy.deepcopy(value);self.version=str(int(self.version)+1);return self.version
-    def file(self,path):return {},self.legacy
+    def file(self,path,ref=None):return {},b'if: false' if path==d.LEGACY_PLANNER else self.legacy
     def call(self,method,path,payload=None):
         self.calls.append((method,path,payload))
         if path.startswith('actions/runs?'):return dict(total_count=len(self.active),workflow_runs=self.active)

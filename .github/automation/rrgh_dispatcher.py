@@ -28,6 +28,8 @@ SOURCE='lane20/map-producer-iam-design-20261029'
 WORKFLOW='offline-map-restricted-dispatch.yml'
 STATE='.github/automation/rrgh-controller-state.json'
 ORIGINAL='.github/workflows/offline-map-producer-access.yml'
+LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
+LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py')] + ['.github/workflows/'+x for x in (
@@ -128,6 +130,9 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     guard(digest(legacy)==state.get('legacyFenceSHA256') and
           b'# RRGH_LEGACY_INITIATION_FENCED_EPOCH_1' in legacy and b'if: false' in legacy,
           'Legacy producer fence missing')
+    _,planner=api.file(LEGACY_PLANNER,ref=LEGACY_SUPERVISOR)
+    guard(digest(planner)==state.get('legacyPlannerFenceSHA256') and b'if: false' in planner,
+          'Legacy source writer fence missing')
     head=api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']
     guard(head==state['sourceSHA'],'Source lease moved')
     current=copy.deepcopy(state)
