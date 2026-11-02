@@ -24,7 +24,7 @@ ENGINE = 'backend/scripts/benchmark_gorge_pipeline.py'
 # Actual reviewed legacy renderer; separate from old/new CONFIG pointers.
 OLD_ENGINE_SHA = '0c52b61f5bf97ced76923119b9f2e4aaebbcf07d5f3446223035e746be10c60e'
 MARKER = 'rrgh-expanded-original-sources-v1'
-LIMITS = {'hiking': 3, 'terrain': 3, 'leaf-off': 3}
+LIMITS = {'hiking': 4, 'terrain': 4, 'leaf-off': 4}
 
 
 def sha(raw):
@@ -157,8 +157,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     require(new['jobs']==[index[j] for j in plan['approvedJobIDs']], 'Unreviewed source window publication')
     counts={layer:sum(j['layer']==layer for j in new['jobs']) for layer in LIMITS}
     require(all(n<=LIMITS[layer] for layer,n in counts.items()) and sum(counts.values())==len(new['jobs']),
-            'Expanded pilot allocation exceeds reviewed finite limits')
-    # Nine worst-case 600-second children fit the actual 9000-second producer slot.
+            'Expanded allocation exceeds reviewed finite limits')
+    # Twelve worst-case 600-second children leave 1800 seconds in the unchanged
+    # 9000-second producer slot, even when every window is a consumed pixel gap.
     producer=plan['slots'][1]
     for key in ('seconds','sourceBytes','sourceRequests'):
         require(sum(v[key] for v in plan['jobPolicies'].values())<=producer[key],
