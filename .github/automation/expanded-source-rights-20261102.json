@@ -1,0 +1,18 @@
+{
+  "format": "rrgh-reviewed-source-rights-v1",
+  "id": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+  "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+  "sourceFamilies": ["hiking", "dem", "leaf-off"],
+  "use": "attributed-commercial-offline-derivatives",
+  "ownerAuthorizationDate": "2026-11-02",
+  "reviewedOn": "2026-11-02",
+  "publishedTerms": [
+    {"url":"https://registry.opendata.aws/kyfromabove/","finding":"Public Domain with Attribution; explicitly includes KyTopo COGs, DEMs and ortho imagery."},
+    {"url":"https://kygeonet.ky.gov/kyfromabove/pdfs/KyFromAboveDistributionPolicy.pdf","documentDate":"2025-12-31","finding":"KYAPED acquired data distributed in public domain for public and private sector use."},
+    {"url":"https://kyfromabove.ky.gov/","finding":"Datasets CC0 except where noted; maps and applications CC BY. Retain attribution for every derivative."}
+  ],
+  "requiredAttribution": "Kentucky Division of Geographic Information / KyFromAbove. Accessed 2026-11-02 through https://registry.opendata.aws/kyfromabove/. RRGH reprojected and rendered derivatives; no government endorsement implied.",
+  "preserveOriginalMetadata": true,
+  "pixelValidityEstablishedBy": "Every produced native window and independent recovery, not metadata bounds alone",
+  "geographicScope": "Existing provisional rectangle unchanged; original owner footprint reconciliation remains separate."
+}

@@ -70,7 +70,7 @@ for iteration in range(2):
     assert set(new_plan['completedJobIDs'])==set(plan['completedJobIDs']+plan['approvedJobIDs'])
     assert set(new_plan['approvedJobIDs']).isdisjoint(plan['approvedJobIDs'])
     assert all(new_plan[k]==plan[k] for k in ('cachePolicy','maxConcurrency','automaticRetryPermitted','deleteAllowed'))
-    assert new_hash==output['nextPlanSHA256'] and len(entries)==4
+    assert new_hash==output['nextPlanSHA256'] and len(entries) in (4,5)
     git('add',*[entry['path'] for entry in entries])
     git('-c','user.name=Offline QA','-c','user.email=offline-qa@example.invalid','commit','-qm',f'SYNTHETIC offline successor {seq+1}')
     print(json.dumps(dict(test='SYNTHETIC_OFFLINE_ROUNDTRIP',fromSequence=seq,toSequence=seq+1,

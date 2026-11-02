@@ -126,10 +126,16 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 for j in pixel_gaps), "Malformed source-pixel-gap quarantine")
     require(result.get("pixelGapAttemptsConsumed", 0) == len(pixel_gaps),
             "Pixel-gap attempted slot accounting mismatch")
-    require(isinstance(result.get("adjacentEdgesMeasured"), int) and
-            result["adjacentEdgesMeasured"] > 0, "Missing edge QA")
     jobs_count = result.get("jobs")
-    require(type(jobs_count) is int and 1 <= jobs_count <= MAX_JOBS, "Invalid job count")
+    require(type(jobs_count) is int and 0 <= jobs_count <= MAX_JOBS, "Invalid job count")
+    if jobs_count == 0:
+        require(expected_dispatch is not None and not partial and bool(pixel_gaps) and
+                all(type(result.get(k)) is int and result[k] == 0 for k in
+                    ("tiles","outputBytes","packageParts","packageBytes","adjacentEdgesMeasured")),
+                "Zero-output recovery must contain only independently verified consumed pixel gaps")
+    else:
+        require(type(result.get("adjacentEdgesMeasured")) is int and
+                result["adjacentEdgesMeasured"] > 0, "Missing edge QA")
     carry = result.get("nextCarry") or {}
     settlement = result.get("settlement") or {}
     require(settlement.get("independentRecoveryComplete") is (not partial),

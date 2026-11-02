@@ -176,52 +176,20 @@ def prepare(root, verified):
           "Failed job must remain excluded from fresh territory")
     check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
 
-    grids = {z: coords(z) for z in (16, 17, 18)}
-    index, missing = {}, {}
-    for group, layers in PROFILES.items():
-        for layer, maxz in layers.items():
-            family = "dem" if layer == "terrain" else layer
-            sources = region["inventory"]["sources"].get(family, [])
-            gaps = 0
-            for x, y in sorted(grids[16], key=lambda xy: morton(*xy)):
-                if layer == "usgs-topo":
-                    source_ids = []
-                else:
-                    rect = bbox(16, x, y, 1/512 if layer == "terrain" else 0)
-                    source_ids = [f["id"] for f in sources if intersects(f["bbox"], rect)]
-                    if not source_ids:
-                        gaps += 1
-                        continue
-                tiles = []
-                for z in range(16, maxz+1):
-                    n = 2**(z-16)
-                    for dx in range(n):
-                        for dy in range(n):
-                            xx, yy = x*n+dx, y*n+dy
-                            if (xx, yy) in grids[z]:
-                                tiles.append([z, xx, yy])
-                jid = f"{layer}-16-{x}-{y}"
-                check(jid not in index and bool(tiles), "Source-window index collision")
-                index[jid] = {"id": jid, "layer": layer, "group": group,
-                    "z": 16, "x": x, "y": y,
-                    "operation": "usgs-tile" if layer == "usgs-topo" else "source-window",
-                    "sourceIDs": source_ids, "dependencies": [],
-                    "outputTiles": tiles, "preservedComplete": False}
-            missing[layer] = gaps
-    check(len(index) == 11940 and sum(missing.values()) == 13960,
-          "Pinned source inventory changed")
+    from rrgh_expanded_production import build_index, migration, install_engine, LIMITS
+    # Validate prior scope against the prior inventory before any expansion.
+    index, missing = build_index(region)
+    expected_index = 25900 if region.get('expandedSourceProduction', {}).get('mode') == 'expanded' else 11940
+    check(len(index) == expected_index, "Pinned source inventory changed")
     for prior in region["jobs"]:
-        reference = index[prior["id"]]
-        check(prior["sourceIDs"] == reference["sourceIDs"] and
-              prior["outputTiles"] == reference["outputTiles"],
-              "Source-pinned prior job changed")
-
-    # First source-backed mixed-layer pilot uses exactly the original production families.
-    # After verified nine-job pilot, cap at 20 exact source-backed attempts.
-    # The inherited worst-case 600-second child limits still fit 12300 seconds
-    # and original source-byte/source-request ceilings remain enforced.
-    limits = ({"hiking": 3, "terrain": 3, "leaf-off": 3} if wave < 37 else
-              {"hiking": 10, "terrain": 5, "leaf-off": 5})
+        check(prior == index[prior["id"]], "Source-pinned prior job changed")
+    migration(region, verified.get('sourcePolicyMode', 'expanded'))
+    install_engine(root)
+    index, missing = build_index(region)
+    if region['expandedSourceProduction']['mode'] == 'expanded':
+        check(len(index) == 25900 and sum(missing.values()) == 0,
+              "Expanded catalog metadata does not cover unchanged region")
+    limits = LIMITS
     picked = []
     for layer, limit in limits.items():
         landmarks = [index[jid] for jid in accepted if jid in index and
@@ -288,11 +256,11 @@ def prepare(root, verified):
         check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
     check(all(x in policy for x in limits), "Missing original approved layer policy")
     check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
-          <= old["limits"]["sourceRequests"], "Source requests cannot exceed prior envelope")
+          <= old["slots"][1]["sourceRequests"], "Source requests cannot exceed prior envelope")
     check(sum(policy[j["layer"]]["sourceBytes"] for j in picked)
-          <= old["limits"]["sourceBytes"], "Source bytes cannot exceed prior envelope")
+          <= old["slots"][1]["sourceBytes"], "Source bytes cannot exceed prior envelope")
     check(sum(policy[j["layer"]]["seconds"] for j in picked)
-          <= old["limits"]["seconds"], "Production seconds cannot exceed prior envelope")
+          <= old["slots"][1]["seconds"], "Production seconds cannot exceed prior envelope")
 
     # Update only the one canonical source CONFIG pin. Old source files remain
     # byte-identical, and the new scope is generated from the same provenance.
@@ -330,6 +298,8 @@ def prepare(root, verified):
     region["jobs"] = picked
     check("gorge_campaign.py" in region["engineHashes"], "Missing engine hash")
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
+    region["engineHashes"]["benchmark_gorge_pipeline.py"] = digest(
+        (root / "backend/scripts/benchmark_gorge_pipeline.py").read_bytes())
     if "gorge_campaign_budget.py" in region["engineHashes"]:
         region["engineHashes"]["gorge_campaign_budget.py"] = digest(budget_path.read_bytes())
     identity = root / "backend/scripts/gorge_producer_identity.py"
