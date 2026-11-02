@@ -1,9 +1,8 @@
-RRGH guarded successor request: Wave054 from independently verified Wave053 fresh original-push recovery.
-Producer run: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/41445486201
-Producer and independent recovery: SUCCESS / SUCCESS; run_attempt=1.
-Immutable completed Wave053 planSHA256: 6e9ddbdf422db2ced421b04ea2134dbdfb660b010a990c36967d27e85bf2c44c.
-Recovery receipt SHA256: abcf44c736e9ce047b6f781174b25e6b1da1381f2af0d44c089e3d13dbec64ad; GCS generation 1793622999942764.
-Wave053 accepted 13 new jobs and 129 full-quality raster tiles, quarantined 7 typed original source-pixel gaps.
-Cumulative accepted after Wave053: 11088 jobs / 117754 tiles / 320 sunlight assets.
-Modeled cumulative charge USD 11.70643133112091422080993653; modeled storage USD 0.7752803600169718265533447267/month.
-Hard constraints: immutable verified source-only successor; original restricted push; no duplicate attempts, no automatic retry, current source-pins and financial/QA guard unchanged.
+RRGH guarded Wave055 successor request after independently verified Wave054, producer GitHub run 41446468894.
+Wave054 producer and recovery passed, fresh first-attempt original restricted push.
+Exact Wave054 immutable plan SHA256: 091870400962c3dfc43ea5ed0e27afed6d25e363a2e9e79ca26558ef4b513cae.
+Exact recovery receipt SHA256: 28b7338716d0bdec1fabc9d1ece9d40070b780203765fe76633bd285d9d79b86; generation 1793623571416222.
+Wave054 accepted 18 jobs / 154 raster tiles; 2 original pixel-gap attempts were quarantined, not replayed.
+Accepted cumulative: 11106 jobs / 117908 raster tiles / 320 Sunlight files.
+Prior modeled cumulative charge USD11.76216463710559010505676270; same original campaign hard stops apply.
+Allow only guarded source-only Wave055 planning and separately authorized exact original restricted push. Do not overlap producers or change sources.
