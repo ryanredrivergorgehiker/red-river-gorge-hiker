@@ -1,4 +1,6 @@
-# Autonomous production: deployed, awaiting the exact Cloud provider condition
+# Historical deployment record — administrative block resolved
+
+**Current status:** the owner applied the reviewed Cloud update, the new identity passed authenticated readback, and two consecutive automatic production executions passed independent recovery. See [the live proof](AUTONOMY-PROOF-20261102.md). The earlier administrator action and unverified-execution statements below describe the pre-upgrade snapshot, not a current blocker.
 
 The owner authorized the exact restricted `workflow_dispatch` identity on 2026-11-02. The old no-IAM-change restriction is superseded for this one reviewed provider-condition change. This record supersedes the earlier cutover-not-activated report for controller deployment; it does not claim product or live production completion.
 

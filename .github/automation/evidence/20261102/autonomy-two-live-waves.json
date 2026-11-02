@@ -1,0 +1,727 @@
+{
+  "format": "rrgh-two-live-autonomous-production-proof-v1",
+  "dateEastern": "2026-11-02",
+  "status": "TWO_CONSECUTIVE_AUTOMATIC_PRODUCERS_AND_INDEPENDENT_RECOVERIES_VERIFIED",
+  "ownerAuthorization": "Owner 2026-11-02 narrowly scoped exact dispatch identity and autonomous production",
+  "providerChange": {
+    "performedBy": "owner in authorized Cloud Shell",
+    "reviewedScriptCommit": "c55bfb72790beea4b6f38e18a0a3ea62a0e862ec",
+    "scriptSHA256": "72604c5e22aa17815b5cf530026786092b0673f8759b3807d528c86118a8b443",
+    "ownerReadback": "original policy before, reviewed dual-identity policy after",
+    "independentAuthenticatedProbeRun": 41492358431,
+    "probeSuccess": true
+  },
+  "initialLaunch": {
+    "ownerPushCommit": "0e10600865f4d8d82479e2ba7f0f7849ca1d4351",
+    "launcherRun": 41492283195
+  },
+  "executions": [
+    {
+      "sequence": 58,
+      "run": 41492671161,
+      "event": "workflow_dispatch",
+      "actor": "github-actions[bot]",
+      "workflowConclusion": "success",
+      "producerJob": 125439970560,
+      "recoveryJob": 125442046665,
+      "advanceJob": 125442695956,
+      "sourceSHA": "444fa31cab3e321bc6e93b32b315efaba1ed24cd",
+      "planSHA256": "6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4",
+      "dispatchID": "6b31d226096ba5029addac2f9a6ee1e5ba34ed21f83cbd5d6859e952311f43cc",
+      "parentRun": 41492358431,
+      "recoveryReceipt": {
+        "bytes": 1555,
+        "generation": "1793641313173416",
+        "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00002/receipt.json",
+        "sha256": "f1134638363ca5f8100329915b7f8dd46d149ccbb5b5744f3bfbbf5c53c01c27"
+      },
+      "result": {
+        "adjacentEdgesMeasured": 118,
+        "allExistingCachesPreserved": true,
+        "allNewPackageChunksReadBack": true,
+        "allOutputHashesAndPixelsVerified": true,
+        "bootstrapReceipt": {
+          "bytes": 621,
+          "generation": "1793641100984917",
+          "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00000/receipt.json",
+          "sha256": "b2de395b004d956307d64a4bfa3dd2e16f5e083e5248d24e97d3e3098c7344fe"
+        },
+        "detailRef": {
+          "bytes": 1329,
+          "generation": "1793641239860468",
+          "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00001/indexes/a3caa7fc0ce5afebb1d4b520c41dbe30d373ba34bd8fb18390043c388b34fe6a",
+          "sha256": "a3caa7fc0ce5afebb1d4b520c41dbe30d373ba34bd8fb18390043c388b34fe6a"
+        },
+        "gcsBeforeReceipt": {
+          "classAHTTPRequests": 10,
+          "classBHTTPRequests": 39,
+          "mediaReadBytes": 5541073,
+          "newFinalizedObjectBytes": 2624626,
+          "newFinalizedObjects": 10,
+          "requestBodyBytes": 2624626,
+          "requests": 49,
+          "responseBodyBytes": 5559639,
+          "statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ]
+        },
+        "jobs": 12,
+        "nextCarry": {
+          "chargedUSD": "11.97981778804647326469421387",
+          "priorCompletedJobs": 11156,
+          "priorRasterTiles": 118222,
+          "priorSunlightAssets": 320,
+          "storedBytes": 23149529168
+        },
+        "outputBytes": 2486997,
+        "packageBytes": 2621440,
+        "packageParts": 8,
+        "pixelGapAttemptsConsumed": 8,
+        "producerSeconds": 137.926,
+        "qaRef": {
+          "bytes": 2873,
+          "generation": "1793641312977535",
+          "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00002/indexes/4ab0b9e7541b37904145b4b51193e2484d6f7b6c1912a655a2bebc12a5c33757",
+          "sha256": "4ab0b9e7541b37904145b4b51193e2484d6f7b6c1912a655a2bebc12a5c33757"
+        },
+        "settlement": {
+          "ambiguousAllocationRetained": false,
+          "campaignID": "gorge-full-quality-125usd-20261031",
+          "ceilingUSD": "125.00",
+          "chargedUSD": "11.97981778804647326469421387",
+          "demonstrablyUnused": {
+            "attempts": 0,
+            "classARequests": 2937,
+            "classBRequests": 2906,
+            "egressBytes": 1938563162,
+            "seconds": 7429,
+            "sourceBytes": 31964004352,
+            "sourceRequests": 26675,
+            "storedBytes": 1605000515
+          },
+          "format": "rrgh-campaign-settlement-v1",
+          "historicalReleasedUSDRetained": "0.70",
+          "independentRecoveryComplete": true,
+          "invoiceReading": false,
+          "observedReservedUsage": {
+            "attempts": 20,
+            "classARequests": 63,
+            "classBRequests": 94,
+            "egressBytes": 208920486,
+            "seconds": 4871,
+            "sourceBytes": 2395734016,
+            "sourceRequests": 3325,
+            "storedBytes": 5612221
+          },
+          "originalAllocation": {
+            "attempts": 20,
+            "classARequests": 3000,
+            "classBRequests": 3000,
+            "egressBytes": 2147483648,
+            "seconds": 12300,
+            "sourceBytes": 34359738368,
+            "sourceRequests": 30000,
+            "storedBytes": 1610612736
+          },
+          "planSHA256": "6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4",
+          "remainingAuthorityUSD": "113.0201822119535267353057861",
+          "retainedUsage": {
+            "attempts": 20,
+            "classARequests": 63,
+            "classBRequests": 94,
+            "egressBytes": 208920486,
+            "seconds": 4871,
+            "sourceBytes": 2395734016,
+            "sourceRequests": 3325,
+            "storedBytes": 5612221
+          },
+          "sequence": 58,
+          "storageEstimateUSDPerMonth": "0.7761484478116035461425781250",
+          "storedBytes": 23149529168
+        },
+        "sourceBytesReceived": 181141504,
+        "sourcePixelGapJobs": [
+          "hiking-16-17566-25314",
+          "terrain-16-17540-25332",
+          "terrain-16-17542-25332",
+          "terrain-16-17544-25329",
+          "terrain-16-17541-25332",
+          "leaf-off-16-17538-25316",
+          "leaf-off-16-17547-25316",
+          "leaf-off-16-17550-25329"
+        ],
+        "sourceRequests": 125,
+        "status": "verified",
+        "tiles": 92,
+        "workerReceipt": {
+          "bytes": 715,
+          "generation": "1793641240019160",
+          "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00001/receipt.json",
+          "sha256": "3025b41b9298db4461abdf2c66cae2c1e4cadfda61ada74ad11d09306db51d3d"
+        }
+      }
+    },
+    {
+      "sequence": 59,
+      "run": 41493738368,
+      "event": "workflow_dispatch",
+      "actor": "github-actions[bot]",
+      "workflowConclusion": "success",
+      "producerJob": 125443457272,
+      "recoveryJob": 125445029179,
+      "advanceJob": 125445463646,
+      "sourceSHA": "e7f59f5a406bac0b9840adbe3fa29d56f11e8e48",
+      "planSHA256": "1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7",
+      "dispatchID": "cf4dae22af223c143d0e04909d2ab38344c2ef0cd61a53ec857febd7fb219a4c",
+      "parentRun": 41492671161,
+      "recoveryReceipt": {
+        "bytes": 1561,
+        "generation": "1793641623184497",
+        "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00002/receipt.json",
+        "sha256": "76cdc0026a13d851082cb4d1817a899e6be743bf4c352df58437a95fded2f833"
+      },
+      "result": {
+        "adjacentEdgesMeasured": 51,
+        "allExistingCachesPreserved": true,
+        "allNewPackageChunksReadBack": true,
+        "allOutputHashesAndPixelsVerified": true,
+        "bootstrapReceipt": {
+          "bytes": 621,
+          "generation": "1793641481734326",
+          "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00000/receipt.json",
+          "sha256": "2ce494783943b732f3d39c6bc3832049ea982c06e70801f8b36832d305d0fdf2"
+        },
+        "detailRef": {
+          "bytes": 1158,
+          "generation": "1793641570734198",
+          "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00001/indexes/f03a220e96431c753e7db6a2da975c75b9e1e6cec438242bcb882c5105ca384f",
+          "sha256": "f03a220e96431c753e7db6a2da975c75b9e1e6cec438242bcb882c5105ca384f"
+        },
+        "gcsBeforeReceipt": {
+          "classAHTTPRequests": 4,
+          "classBHTTPRequests": 27,
+          "mediaReadBytes": 2360047,
+          "newFinalizedObjectBytes": 1015475,
+          "newFinalizedObjects": 4,
+          "requestBodyBytes": 1015475,
+          "requests": 31,
+          "responseBodyBytes": 2368956,
+          "statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ]
+        },
+        "jobs": 9,
+        "nextCarry": {
+          "chargedUSD": "12.03343517101969122886657715",
+          "priorCompletedJobs": 11165,
+          "priorRasterTiles": 118267,
+          "priorSunlightAssets": 320,
+          "storedBytes": 23151958885
+        },
+        "outputBytes": 946847,
+        "packageBytes": 1013760,
+        "packageParts": 2,
+        "pixelGapAttemptsConsumed": 11,
+        "producerSeconds": 88.035,
+        "qaRef": {
+          "bytes": 1402,
+          "generation": "1793641623002824",
+          "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00002/indexes/dbddcd42b5c92639c0b598615ddb960452f9b0dee7f7f658a1328a63dc2e6a28",
+          "sha256": "dbddcd42b5c92639c0b598615ddb960452f9b0dee7f7f658a1328a63dc2e6a28"
+        },
+        "settlement": {
+          "ambiguousAllocationRetained": false,
+          "campaignID": "gorge-full-quality-125usd-20261031",
+          "ceilingUSD": "125.00",
+          "chargedUSD": "12.03343517101969122886657715",
+          "demonstrablyUnused": {
+            "attempts": 0,
+            "classARequests": 2949,
+            "classBRequests": 2918,
+            "egressBytes": 1941972885,
+            "seconds": 5682,
+            "sourceBytes": 30935482368,
+            "sourceRequests": 25086,
+            "storedBytes": 1608183019
+          },
+          "format": "rrgh-campaign-settlement-v1",
+          "historicalReleasedUSDRetained": "0.70",
+          "independentRecoveryComplete": true,
+          "invoiceReading": false,
+          "observedReservedUsage": {
+            "attempts": 20,
+            "classARequests": 51,
+            "classBRequests": 82,
+            "egressBytes": 205510763,
+            "seconds": 6618,
+            "sourceBytes": 3424256000,
+            "sourceRequests": 4914,
+            "storedBytes": 2429717
+          },
+          "originalAllocation": {
+            "attempts": 20,
+            "classARequests": 3000,
+            "classBRequests": 3000,
+            "egressBytes": 2147483648,
+            "seconds": 12300,
+            "sourceBytes": 34359738368,
+            "sourceRequests": 30000,
+            "storedBytes": 1610612736
+          },
+          "planSHA256": "1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7",
+          "remainingAuthorityUSD": "112.9665648289803087711334228",
+          "retainedUsage": {
+            "attempts": 20,
+            "classARequests": 51,
+            "classBRequests": 82,
+            "egressBytes": 205510763,
+            "seconds": 6618,
+            "sourceBytes": 3424256000,
+            "sourceRequests": 4914,
+            "storedBytes": 2429717
+          },
+          "sequence": 59,
+          "storageEstimateUSDPerMonth": "0.7762299104221165180206298829",
+          "storedBytes": 23151958885
+        },
+        "sourceBytesReceived": 1703936,
+        "sourcePixelGapJobs": [
+          "hiking-16-17567-25314",
+          "terrain-16-17545-25329",
+          "terrain-16-17546-25329",
+          "terrain-16-17547-25329",
+          "terrain-16-17543-25332",
+          "terrain-16-17544-25330",
+          "leaf-off-16-17554-25317",
+          "leaf-off-16-17554-25320",
+          "leaf-off-16-17551-25329",
+          "leaf-off-16-17553-25328",
+          "leaf-off-16-17552-25329"
+        ],
+        "sourceRequests": 14,
+        "status": "verified",
+        "tiles": 45,
+        "workerReceipt": {
+          "bytes": 713,
+          "generation": "1793641571145053",
+          "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00001/receipt.json",
+          "sha256": "1e7cf75f99ad3a33452b5daebf2392c8c64c1b5190a73e61700d5e2650f5482b"
+        }
+      }
+    }
+  ],
+  "successorPlan59": {
+    "sequence": 59,
+    "previousRecovery": {
+      "bytes": 1555,
+      "generation": "1793641313173416",
+      "key": "engineering/map-production/plans/6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4/slots/00002/receipt.json",
+      "sha256": "f1134638363ca5f8100329915b7f8dd46d149ccbb5b5744f3bfbbf5c53c01c27"
+    },
+    "carry": {
+      "chargedUSD": "11.97981778804647326469421387",
+      "priorCompletedJobs": 11156,
+      "priorRasterTiles": 118222,
+      "priorSunlightAssets": 320,
+      "storedBytes": 23149529168
+    },
+    "controllerEpoch": 1
+  },
+  "proof": {
+    "automaticParentChainVerified": true,
+    "exactPredecessorReceiptInSuccessorPlanVerified": true,
+    "independentRootAuditOfBothLogsPassed": true,
+    "acceptedNewJobs": 21,
+    "acceptedNewRasterTiles": 137,
+    "quarantinedConsumedAttempts": 19,
+    "latestAcceptedJobs": 11165,
+    "latestAcceptedRasterTiles": 118267,
+    "sunlightAssetsPreserved": 320
+  },
+  "continuation": {
+    "nextAutomaticRun": 41494557108,
+    "sequence": 60,
+    "parentRun": 41493738368,
+    "observedState": {
+      "authenticationProbeRun": 41492358431,
+      "authorization": "Owner 2026-11-02: exact restricted workflow_dispatch identity; autonomous production; existing resource controls unchanged",
+      "checkpoint": {
+        "bytes": 1561,
+        "generation": "1793641623184497",
+        "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00002/receipt.json",
+        "sha256": "76cdc0026a13d851082cb4d1817a899e6be743bf4c352df58437a95fded2f833"
+      },
+      "controlDigest": "6f1d71446e46ddbbf6dc76030b9d77dac9f7bcacc8a26095a7aab5dac38d5ab6",
+      "dispatchID": "0bb1a659c8e89883ebe6e82fe00bad98e2418e6ead1a7227bdff8160ea64d4f0",
+      "enabled": true,
+      "epoch": 1,
+      "failureRunID": 41489346851,
+      "format": "rrgh-controller-state-v1",
+      "githubReservationBasis": {
+        "engineeringReserveUSD": "5.00",
+        "hardStopUSD": "350",
+        "observedDateEastern": "2026-10-30",
+        "observedSpendUSD": "281.53",
+        "resetOrRefundPermitted": false
+      },
+      "githubReservedUSD": "301.73",
+      "lastRecovered": {
+        "acceptedJobs": 11165,
+        "acceptedRasterTiles": 118267,
+        "dispatchID": "cf4dae22af223c143d0e04909d2ab38344c2ef0cd61a53ec857febd7fb219a4c",
+        "jobsNew": 9,
+        "parentRunID": 41492671161,
+        "planSHA256": "1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7",
+        "recoveryReceipt": {
+          "bytes": 1561,
+          "generation": "1793641623184497",
+          "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00002/receipt.json",
+          "sha256": "76cdc0026a13d851082cb4d1817a899e6be743bf4c352df58437a95fded2f833"
+        },
+        "runID": 41493738368,
+        "sequence": 59,
+        "sourceSHA": "e7f59f5a406bac0b9840adbe3fa29d56f11e8e48"
+      },
+      "launchCounter": 5,
+      "legacyFenceSHA256": "95e5ebb58afd9790ad918883dddc228670c2a3053c39546c138ec80cb5fc6a33",
+      "legacyPlannerFenceSHA256": "85da3ea5fac617e2a4f11c5a88d49a3471628af2c0db068d2a9ffd5268ccc9c4",
+      "mode": "produce",
+      "owner": "autonomous-v1",
+      "parentRunID": 41493738368,
+      "planSHA256": "2799555648404b11657e9728214203708f3cfeaf9efdf1f9e6637e4f7d158c7e",
+      "recoveredReceipt": {
+        "bytes": 1561,
+        "generation": "1793641623184497",
+        "key": "engineering/map-production/plans/1500d0c8bf44ed45651e625e55c3e654b68c097138a80f357b5c35e5090a0fe7/slots/00002/receipt.json",
+        "sha256": "76cdc0026a13d851082cb4d1817a899e6be743bf4c352df58437a95fded2f833"
+      },
+      "replacedPreparedPlanSHA256": "982bf03c6053808daeb55929cd33d6ed1f1bf00c11d0de1ba247fbb742b73833",
+      "runID": 41494557108,
+      "sequence": 60,
+      "sourceSHA": "830cda5bbad368f5d80a51724a9bbcbf5b10f3b3",
+      "status": "running"
+    }
+  },
+  "remainingProductGates": {
+    "fullGeographyAndSourceCoverageComplete": false,
+    "allRequiredOverviewsComplete": false,
+    "finalNativePackageDeliveryVerified": false,
+    "physicalIPhoneAcceptanceVerified": false
+  },
+  "parallelEngineering": {
+    "pr": 76,
+    "catalogTests": 15,
+    "nativeOverviewTests": 5,
+    "expandedFullWindowValidationRun": 41493577029,
+    "nativeOverviewValidationRun": 41494573866,
+    "expandedWindowReports": [
+      {
+        "acceptedSourceOrCacheModified": false,
+        "cache": {
+          "byteCeiling": 67108864,
+          "cacheHitBytesThisProcess": 196608,
+          "cacheHitsThisProcess": 3,
+          "failedRequests": 0,
+          "networkSeconds": 1.0415664380000038,
+          "receivedBytes": 327680,
+          "requests": 3,
+          "reservedBytes": 327680
+        },
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": "rrgh-expanded-full-window-validation-v1",
+        "fullRegionalCoverageProved": false,
+        "fullWindowMaskPassed": true,
+        "layer": "hiking",
+        "nativeSources": [
+          {
+            "bands": 3,
+            "crs": "EPSG:3089",
+            "nativePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "nativeSize": [
+              21600,
+              14400
+            ],
+            "sourceID": "N13E29",
+            "sourceIdentity": {
+              "etag": "\"eee90d6bc0c56e159c8b4fd308068559\"",
+              "identity": "227f202c112d242c2ade42cb68a6d0de95cefbbd68c7624411dedb84f98f39a7",
+              "lastModified": "Wed, 10 Jun 2026 03:13:41 GMT",
+              "length": 70955362,
+              "pinnedAtUTC": "2026-11-02T17:42:26Z",
+              "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N13E29_Coburn_cog.tif"
+            },
+            "verticalUnit": null
+          }
+        ],
+        "productionPromotionApproved": false,
+        "rightsReviewComplete": false,
+        "sourceIDs": [
+          "N13E29"
+        ],
+        "sourceRequests": 4,
+        "terrainHaloIncluded": false,
+        "validPixelCounts": [
+          262144
+        ],
+        "verticalConversion": null,
+        "workingRasterSHA256": "3bed98664857a96806befe52f14c40374015c3490e53dd24cecff122c733054e",
+        "x": 17512,
+        "y": 25290,
+        "z": 16
+      },
+      {
+        "acceptedSourceOrCacheModified": false,
+        "cache": {
+          "byteCeiling": 134217728,
+          "cacheHitBytesThisProcess": 5046272,
+          "cacheHitsThisProcess": 77,
+          "failedRequests": 0,
+          "networkSeconds": 2.494555326000004,
+          "receivedBytes": 5242880,
+          "requests": 5,
+          "reservedBytes": 5242880
+        },
+        "dimensions": [
+          514,
+          514
+        ],
+        "format": "rrgh-expanded-full-window-validation-v1",
+        "fullRegionalCoverageProved": false,
+        "fullWindowMaskPassed": true,
+        "layer": "terrain",
+        "nativeSources": [
+          {
+            "bands": 1,
+            "crs": "EPSG:3089",
+            "nativePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "nativeSize": [
+              2500,
+              2500
+            ],
+            "sourceID": "N097E341_2024_DEM_Phase2_cog.tif",
+            "sourceIdentity": {
+              "etag": "\"09ce982bad63ae51895e07daa4237168\"",
+              "identity": "72183a5dc706296819aec0d158ff483ae996eed0972c8498b9efd94115bce134",
+              "lastModified": "Mon, 16 Dec 2024 22:45:44 GMT",
+              "length": 28910919,
+              "pinnedAtUTC": "2026-11-02T17:42:28Z",
+              "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N097E341_2024_DEM_Phase2_cog.tif"
+            },
+            "verticalUnit": "US survey foot"
+          },
+          {
+            "bands": 1,
+            "crs": "EPSG:3089",
+            "nativePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "nativeSize": [
+              2500,
+              2500
+            ],
+            "sourceID": "N098E341_2024_DEM_Phase2_cog.tif",
+            "sourceIdentity": {
+              "etag": "\"9344b43ef2f85ccc4e6600ac085b1848\"",
+              "identity": "1061d83675f0e9046d2a958286a3fc5c7d99d6202beb32215ce3229aaf414f2a",
+              "lastModified": "Mon, 16 Dec 2024 22:46:07 GMT",
+              "length": 30044395,
+              "pinnedAtUTC": "2026-11-02T17:42:28Z",
+              "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N098E341_2024_DEM_Phase2_cog.tif"
+            },
+            "verticalUnit": "US survey foot"
+          }
+        ],
+        "productionPromotionApproved": false,
+        "rightsReviewComplete": false,
+        "sourceIDs": [
+          "N097E341_2024_DEM_Phase2_cog.tif",
+          "N098E341_2024_DEM_Phase2_cog.tif"
+        ],
+        "sourceRequests": 7,
+        "terrainHaloIncluded": true,
+        "validPixelCounts": [
+          233413,
+          30785
+        ],
+        "verticalConversion": "metres from exact per-source units",
+        "workingRasterSHA256": "fadf2eef2ce4a42b567eab0c3666a7f2bb7b6df33819cb8d3b573bf7987a4006",
+        "x": 17512,
+        "y": 25290,
+        "z": 16
+      },
+      {
+        "acceptedSourceOrCacheModified": false,
+        "cache": {
+          "byteCeiling": 536870912,
+          "cacheHitBytesThisProcess": 148439040,
+          "cacheHitsThisProcess": 2265,
+          "failedRequests": 0,
+          "networkSeconds": 32.99984438900005,
+          "receivedBytes": 89260032,
+          "requests": 57,
+          "reservedBytes": 89260032
+        },
+        "dimensions": [
+          1024,
+          1024
+        ],
+        "format": "rrgh-expanded-full-window-validation-v1",
+        "fullRegionalCoverageProved": false,
+        "fullWindowMaskPassed": true,
+        "layer": "leaf-off",
+        "nativeSources": [
+          {
+            "bands": 4,
+            "crs": "EPSG:3089",
+            "nativePixelSizeMeters": [
+              0.07620015240030481,
+              0.07620015240030481
+            ],
+            "nativeSize": [
+              20000,
+              20000
+            ],
+            "sourceID": "N097E341_2024_Season1_3IN_cog.tif",
+            "sourceIdentity": {
+              "etag": "\"53c3a6ab46e8d879c52ce6a7e98ac50e-10\"",
+              "identity": "d3f473addef18995aa83e2c87d73d58396b84f9b45daa33b65868742c68d90af",
+              "lastModified": "Wed, 26 Mar 2025 07:37:42 GMT",
+              "length": 1036831015,
+              "pinnedAtUTC": "2026-11-02T17:42:32Z",
+              "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2024_Season1_3IN/N097E341_2024_Season1_3IN_cog.tif"
+            },
+            "verticalUnit": null
+          },
+          {
+            "bands": 4,
+            "crs": "EPSG:3089",
+            "nativePixelSizeMeters": [
+              0.07620015240030481,
+              0.07620015240030481
+            ],
+            "nativeSize": [
+              20000,
+              20000
+            ],
+            "sourceID": "N098E341_2024_Season1_3IN_cog.tif",
+            "sourceIdentity": {
+              "etag": "\"9e9a8fcb003eb992524e7250b6eb51a3-11\"",
+              "identity": "a7da574369570dc28a2d964187b93f046b1dfc2e56cacf03a5319be2cfe0227f",
+              "lastModified": "Wed, 26 Mar 2025 08:29:35 GMT",
+              "length": 1069589719,
+              "pinnedAtUTC": "2026-11-02T17:42:32Z",
+              "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2024_Season1_3IN/N098E341_2024_Season1_3IN_cog.tif"
+            },
+            "verticalUnit": null
+          }
+        ],
+        "productionPromotionApproved": false,
+        "rightsReviewComplete": false,
+        "sourceIDs": [
+          "N097E341_2024_Season1_3IN_cog.tif",
+          "N098E341_2024_Season1_3IN_cog.tif"
+        ],
+        "sourceRequests": 59,
+        "terrainHaloIncluded": false,
+        "validPixelCounts": [
+          927991,
+          120587
+        ],
+        "verticalConversion": null,
+        "workingRasterSHA256": "2a9be6666ea501d9ee02d63c6a6f39f324e897f0db649aeb67b3715cc736f6f3",
+        "x": 17512,
+        "y": 25290,
+        "z": 16
+      }
+    ],
+    "productionSourcePromotionApplied": false
+  }
+}
