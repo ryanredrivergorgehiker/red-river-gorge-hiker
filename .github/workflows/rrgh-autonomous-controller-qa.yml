@@ -1,7 +1,7 @@
 name: RRGH autonomous controller offline QA
 on:
   push:
-    branches: [lane20/autonomous-dispatch-20261102]
+    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102]
 permissions:
   contents: read
 env:
@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
-      - name: Source identity, single-owner dispatch, response-loss and budget regression tests
+      - name: Source identity, single-owner dispatch, response-loss and authorized resume regression tests
         env:
           RRGH_TEST_SOURCE: source-checkout
         run: python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v

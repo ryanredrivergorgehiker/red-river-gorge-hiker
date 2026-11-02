@@ -19,7 +19,9 @@ def state():
         enabled=True,status='awaiting-auth',sequence=58,sourceSHA='a'*40,planSHA256='b'*64,
         controlDigest=d.local_digest(ROOT),legacyFenceSHA256=d.digest((ROOT/d.ORIGINAL).read_bytes()),
         legacyPlannerFenceSHA256=d.digest(b'if: false'),
-        githubReservedUSD='286.53')
+        githubReservationHistory={'retiredEstimateUSD':'346.73','retiredOn':'2026-11-02'},
+        githubBudgetPolicy=dict(enforcement='github-platform',authorizedBy='ryanredrivergorgehiker',
+            authorizedOn='2026-11-02',stopProtectionConfirmedByOwner=True))
 
 
 class FakeGitHub:
@@ -53,10 +55,10 @@ class DispatcherTests(unittest.TestCase):
         sha,s=api.state()
         with self.assertRaises(d.Halt):d.dispatch(api,ROOT,sha,s,'probe')
         self.assertEqual(sum(c[0]=='POST' for c in api.calls),1)
-    def test_ambiguous_post_retains_allocation_and_reservation(self):
+    def test_ambiguous_post_retains_allocation_without_retry(self):
         api=FakeGitHub();api.ambiguous=True
         with self.assertRaises(TimeoutError):self.launch(api)
-        self.assertEqual(api.value['status'],'dispatching');self.assertEqual(api.value['githubReservedUSD'],'286.63')
+        self.assertEqual(api.value['status'],'dispatching');self.assertEqual(api.value['launchCounter'],1)
         with self.assertRaises(d.Halt):self.launch(api)
         self.assertEqual(sum(c[0]=='POST' for c in api.calls),1)
     def test_concurrent_stale_writer_cannot_dispatch(self):
@@ -87,12 +89,63 @@ class DispatcherTests(unittest.TestCase):
     def test_completed_parent_is_only_allowed_active_producer(self):
         api=FakeGitHub();api.active=[dict(id=123,path='.github/workflows/'+d.WORKFLOW)]
         api.value['status']='ready';old,s=api.state();d.dispatch(api,ROOT,old,s,'produce',allowed_run=123)
-        self.assertEqual(api.value['parentRunID'],123);self.assertEqual(api.value['githubReservedUSD'],'291.53')
-    def test_budget_stop_happens_before_mutation(self):
-        for value in ('349.95','350','-1','NaN'):
-            api=FakeGitHub();api.value['githubReservedUSD']=value
+        self.assertEqual(api.value['parentRunID'],123);self.assertEqual(api.value['launchCounter'],1)
+    def test_retired_estimate_cannot_block_owner_authorized_platform_budget(self):
+        for value in ('346.73','351.73','999.00'):
+            api=FakeGitHub();api.value['githubReservationHistory']['retiredEstimateUSD']=value
+            self.launch(api)
+            self.assertEqual(api.value['status'],'dispatching')
+            self.assertEqual(api.value['githubReservationHistory']['retiredEstimateUSD'],value)
+            self.assertNotIn('githubReservedUSD',api.value)
+    def test_budget_policy_must_have_explicit_owner_authorization(self):
+        for key in state()['githubBudgetPolicy']:
+            api=FakeGitHub();api.value['githubBudgetPolicy'].pop(key)
             with self.assertRaises(d.Halt):self.launch(api)
             self.assertEqual(api.version,'1')
+    def prepared(self):
+        api=FakeGitHub()
+        receipt={'sha256':'e'*64,'key':'exact-recovery','generation':'123','bytes':123}
+        api.value.update(status='ready',sequence=70,runID=None,dispatchID=None,checkpoint=receipt,
+            lastRecovered=dict(sequence=69,runID=123,dispatchID='f'*64,recoveryReceipt=receipt))
+        return api
+    def test_prepared_successor_resume_probes_same_plan_without_replay(self):
+        api=self.prepared();before=copy.deepcopy(api.value);self.launch(api)
+        self.assertEqual(api.value['mode'],'probe')
+        for key in ('sequence','sourceSHA','planSHA256','checkpoint','lastRecovered'):
+            self.assertEqual(api.value[key],before[key])
+        self.assertEqual(api.value['launchCounter'],1)
+        with self.assertRaises(d.Halt):self.launch(api)
+    def test_resume_rejects_claimed_or_ambiguous_allocations(self):
+        for key,value in [('status','running'),('status','publishing'),('status','halted'),
+                          ('status','dispatching'),('runID',123),('dispatchID','f'*64),('checkpoint',None)]:
+            api=self.prepared();api.value[key]=value
+            with self.assertRaises(d.Halt):self.launch(api)
+            self.assertEqual(api.version,'1')
+    def test_resume_requires_exact_prior_sequence_and_receipt(self):
+        for key,value in [('sequence',68),('runID',None),('recoveryReceipt',{'sha256':'0'*64})]:
+            api=self.prepared();api.value['lastRecovered'][key]=value
+            with self.assertRaises(d.Halt):self.launch(api)
+            self.assertEqual(api.version,'1')
+    def test_parent_failure_preserves_prepared_and_claimed_successors(self):
+        for status in ('ready','dispatching','probing','running'):
+            api=self.prepared();api.value['status']=status
+            if status!='ready':api.value.update(runID=124,dispatchID='1'*64)
+            before=copy.deepcopy(api.value)
+            result=d.retain_failure(api,ROOT,123,'f'*64)
+            self.assertEqual(result['status'],'RECOVERED_SUCCESSOR_PRESERVED')
+            self.assertEqual(api.value,before);self.assertEqual(api.version,'1')
+    def test_unrelated_failure_cannot_touch_successor(self):
+        api=self.prepared()
+        for rid,did in [(999,'f'*64),(123,'0'*64)]:
+            with self.assertRaises(d.Halt):d.retain_failure(api,ROOT,rid,did)
+            self.assertEqual(api.version,'1')
+    def test_current_failure_still_halts_without_replay(self):
+        for mode,status in [('probe','auth-required'),('produce','halted')]:
+            api=self.prepared();api.value.update(mode=mode,runID=124,dispatchID='1'*64)
+            result=d.retain_failure(api,ROOT,124,'1'*64)
+            self.assertEqual(result['status'],status)
+            self.assertEqual(api.value['failureRunID'],124)
+            self.assertFalse(result['automaticRetryPermitted'])
     def test_legacy_fence_cannot_be_partially_removed(self):
         api=FakeGitHub();api.legacy=api.legacy.replace(b'if: false',b'if: true',1)
         with self.assertRaises(d.Halt):self.launch(api)
