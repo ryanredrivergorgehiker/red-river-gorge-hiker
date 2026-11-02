@@ -1,7 +1,7 @@
 name: RRGH autonomous controller offline QA
 on:
   push:
-    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102]
+    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102, lane20/verified-overview-pilot-20261102]
 permissions:
   contents: read
 env:
@@ -43,6 +43,10 @@ jobs:
         env:
           RRGH_TEST_SOURCE: source-checkout
         run: python -m unittest discover -s .github/automation -p 'test_rrgh_*salvage*.py' -v
+      - name: Exact overview integration, source-free allocation and parent recomputation guards
+        env:
+          RRGH_TEST_SOURCE: source-checkout
+        run: python -m unittest discover -s .github/automation -p 'test_rrgh_*overview*.py' -v
       - name: Existing immutable checkpoint and selective cache recovery regression tests
         working-directory: source-checkout/backend/scripts
         run: python -m unittest test_gorge_checkpoint test_gorge_compact_forecast -v
@@ -53,6 +57,8 @@ jobs:
       - name: Real engine full-quality configuration and resource admission
         run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
       - name: Two synthetic offline recover-plan-publish roundtrips; no Cloud credentials or writes
+        env:
+          RRGH_TEST_OVERVIEW_PILOT: '1'
         run: python .github/automation/verify_rrgh_dispatch_roundtrip.py source-checkout
       - uses: actions/checkout@v4
         with:

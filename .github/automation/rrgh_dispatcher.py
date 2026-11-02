@@ -35,6 +35,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json',
     'source-templates/run_gorge_checkpoint_slot.py',
     'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
@@ -195,6 +196,7 @@ def claim(api,root,inputs,run_id):
             'sequence':state['sequence']})
         state['controlDigest']=upgrade['toDigest']
         state.setdefault('sourcePolicyMode','expanded')
+        if upgrade.get('enableOverviewPilot') is True:state['overviewPilotEnabled']=True
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
@@ -239,6 +241,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
     guard(report['planSHA256']==state['planSHA256'] and report['wave']==state['sequence'],'Recovery identity changed')
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
+    report['overviewPilotEnabled']=state.get('overviewPilotEnabled') is True
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
 
@@ -359,7 +362,9 @@ def candidate_entries(source_root,audit,state):
           all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs),'Replayed or malformed successor jobs')
     guard(len(plan['completedJobIDs'])==len(set(plan['completedJobIDs']))==audit['acceptedJobs'],'Accepted inventory mismatch')
     from rrgh_recovery_catalog_integration import augment_campaign, TARGET as CATALOG_TARGET
-    guard(new_code==augment_campaign(old_code).replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
+    from rrgh_overview_integration import augment as augment_overview, MODULES as OVERVIEW_MODULES,validate_recovery
+    validate_recovery(prior,audit)
+    guard(new_code==augment_overview(augment_campaign(old_code)).replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
     from rrgh_expanded_production import validate_publication, ENGINE
     validate_publication(root,old_dir,new_dir,plan,audit)
     guard(plan['limits']=={**prior['limits'],'attempts':len(jobs)} and plan['maxConcurrency']==1 and
@@ -379,6 +384,11 @@ def candidate_entries(source_root,audit,state):
     tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+cred_module],
         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
     if not tracked:allowed.add(cred_module)
+    for module in OVERVIEW_MODULES:
+        target='backend/scripts/'+module
+        tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],
+            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+        if not tracked:allowed.add(target)
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()

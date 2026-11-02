@@ -154,9 +154,18 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     require(new['boundsWGS84']==old['boundsWGS84'] and new['profiles']==old['profiles'],
             'Geographic scope or quality profiles changed')
     index,_=build_index(new)
-    require(new['jobs']==[index[j] for j in plan['approvedJobIDs']], 'Unreviewed source window publication')
-    counts={layer:sum(j['layer']==layer for j in new['jobs']) for layer in LIMITS}
-    require(all(n<=LIMITS[layer] for layer,n in counts.items()) and sum(counts.values())==len(new['jobs']),
+    from rrgh_overview_integration import pilot_job,manifest as pilot_manifest,validate_modules,validate_previous
+    validate_modules(root)
+    validate_previous(plan,new)
+    native=[j for j in new['jobs'] if j['operation']!='overview']
+    overviews=[j for j in new['jobs'] if j['operation']=='overview']
+    require(native==[index[j['id']] for j in native], 'Unreviewed source window publication')
+    require([j['id'] for j in new['jobs']]==plan['approvedJobIDs'], 'Job ordering differs from plan')
+    require(not overviews or (audit.get('overviewPilotEnabled') is True and overviews==[pilot_job()] and
+        plan.get('overviewPilot')==pilot_manifest() and len(new['jobs'])<=12), 'Unreviewed overview allocation')
+    require(bool(overviews)==bool(plan.get('overviewPilot')), 'Unused overview authority')
+    counts={layer:sum(j['layer']==layer for j in native) for layer in LIMITS}
+    require(all(n<=LIMITS[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
             'Expanded allocation exceeds reviewed finite limits')
     # Twelve worst-case 600-second children leave 1800 seconds in the unchanged
     # 9000-second producer slot, even when every window is a consumed pixel gap.
@@ -169,7 +178,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
     validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py'):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 

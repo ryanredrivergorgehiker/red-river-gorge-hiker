@@ -1,0 +1,33 @@
+{
+  "format": "rrgh-verified-child-overview-pilot-v1",
+  "job": "leaf-on-15-8756-12672",
+  "layer": "leaf-on",
+  "z": 15,
+  "x": 8756,
+  "y": 12672,
+  "sourcePlanSHA256": "ff14047e73b99604fa47fda9acc057fd0f02818eccb695445369a6e508aafe1b",
+  "sourceSequence": 32,
+  "recovery": {
+    "bytes": 1557,
+    "generation": "1793541240727174",
+    "key": "engineering/map-production/plans/ff14047e73b99604fa47fda9acc057fd0f02818eccb695445369a6e508aafe1b/slots/00002/receipt.json",
+    "sha256": "8ca770f8c72089eef8d4b7a5c85b72bd55a9b8730d2cc338ba15e116737e8c7e"
+  },
+  "children": [
+    "leaf-on-16-17512-25344",
+    "leaf-on-16-17512-25345",
+    "leaf-on-16-17513-25344",
+    "leaf-on-16-17513-25345"
+  ],
+  "sourceRequests": 0,
+  "productionAccepted": false,
+  "sourceRegionSHA256": "f99d8d1041c692e6dc7c42a3ae5a55b3349a0ea5d97339a3d4daf857b549135a",
+  "sourceRecipeSHA256": "c8f4fc2b8d22b0d40a15e16e311ad234f90d7073a7bbf81da7027c7f5a94007b",
+  "boundsWGS84": [
+    -83.8,
+    37.65,
+    -83.4,
+    37.95
+  ],
+  "sourceJobCount": 512
+}

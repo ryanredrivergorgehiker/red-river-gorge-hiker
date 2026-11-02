@@ -29,6 +29,8 @@ HOOK='''        # Additive evidence for later overviews/packages; never replace 
 '''
 
 def augment_campaign(code):
+    from rrgh_overview_integration import strip
+    code=strip(code)
     original=code.replace(HOOK,'')
     normalized,count=re.subn(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-\d{3,9}-\d{8}'",
         "CONFIG=SOURCE.parent/'config/REVIEWED-CAMPAIGN'",original)
@@ -52,4 +54,5 @@ def validate(source_root,controller_root=ROOT):
     if (root/TARGET).read_bytes()!=(Path(controller_root)/TEMPLATE).read_bytes():
         raise ValueError('Catalog module differs from reviewed template')
     code=(root/'backend/scripts/gorge_campaign.py').read_text()
-    if code!=augment_campaign(code):raise ValueError('Catalog hook missing')
+    from rrgh_overview_integration import strip
+    if strip(code)!=augment_campaign(code):raise ValueError('Catalog hook missing')

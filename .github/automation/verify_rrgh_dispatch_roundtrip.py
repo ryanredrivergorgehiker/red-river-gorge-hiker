@@ -44,6 +44,9 @@ for iteration in range(2):
         ambiguousAllocationRetained=False,campaignID=plan['campaign']['id'],sequence=seq,ceilingUSD='125.00',
         planSHA256=plan_hash,chargedUSD=carry['chargedUSD'],storedBytes=carry['storedBytes'],
         storageEstimateUSDPerMonth='0.90',remainingAuthorityUSD='100.00'))
+    if plan.get('overviewPilot'):
+        from test_rrgh_overview_production import synthetic_proof
+        result['overviewPilotVerification']=synthetic_proof()
     state=dict(sequence=seq,runID=rid,dispatchID='e'*64,planSHA256=plan_hash,sourceSHA=git('rev-parse','HEAD'),epoch=1)
     run=dict(id=rid,run_attempt=1,head_branch=d.WORKER,event='workflow_dispatch',status='in_progress',
         conclusion=None,path='.github/workflows/'+d.WORKFLOW,actor=dict(login='github-actions[bot]'),
@@ -53,6 +56,7 @@ for iteration in range(2):
     jobs.append(dict(name='advance',status='in_progress',conclusion=None))
     lines=[json.dumps(dict(phase='independent-recovery',receiptRef=receipt,result=result),sort_keys=True)]
     audit=audit_run(run,jobs,lines,[],expected_dispatch=state)
+    audit['overviewPilotEnabled']=os.environ.get('RRGH_TEST_OVERVIEW_PILOT')=='1'
     for field,value in [('event','push'),('run_attempt',2),('display_title','forged')]:
         try:audit_run({**run,field:value},jobs,lines,[],expected_dispatch=state)
         except Halt:pass
@@ -83,7 +87,7 @@ print(json.dumps(d.candidate_entries(Path(sys.argv[2]),p['audit'],p['state'])))
     assert set(new_plan['completedJobIDs'])==set(plan['completedJobIDs']+plan['approvedJobIDs'])
     assert set(new_plan['approvedJobIDs']).isdisjoint(plan['approvedJobIDs'])
     assert all(new_plan[k]==plan[k] for k in ('cachePolicy','maxConcurrency','automaticRetryPermitted','deleteAllowed'))
-    assert new_hash==output['nextPlanSHA256'] and len(entries) in (4,5,6,7,8)
+    assert new_hash==output['nextPlanSHA256'] and 4 <= len(entries) <= 10
     from rrgh_recovery_catalog_integration import validate as validate_catalog
     validate_catalog(root)
     git('add',*[entry['path'] for entry in entries])

@@ -195,7 +195,12 @@ def prepare(root, verified):
     index, missing = build_index(region)
     expected_index = 25900 if region.get('expandedSourceProduction', {}).get('mode') == 'expanded' else 11940
     check(len(index) == expected_index, "Pinned source inventory changed")
+    from rrgh_overview_integration import validate_previous,install as install_overview,select as select_overview,MODULES as OVERVIEW_MODULES
+    validate_previous(old,region)
+    from rrgh_overview_integration import validate_recovery
+    validate_recovery(old,verified)
     for prior in region["jobs"]:
+        if prior['operation']=='overview':continue
         check(prior == index[prior["id"]], "Source-pinned prior job changed")
     migration(region, verified.get('sourcePolicyMode', 'expanded'))
     install_engine(root)
@@ -203,6 +208,7 @@ def prepare(root, verified):
     install_catalog(root)
     from rrgh_credential_integration import install as install_credentials, MODULE as CRED_MODULE
     install_credentials(root)
+    install_overview(root)
     original_code=code_path.read_text()
     index, missing = build_index(region)
     if region['expandedSourceProduction']['mode'] == 'expanded':
@@ -231,6 +237,7 @@ def prepare(root, verified):
         sample.sort(key=lambda job: (
             tuple(job["sourceIDs"]), morton(job["x"], job["y"]), job["id"]))
         picked.extend(sample)
+    picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True)
     jobs = [j["id"] for j in picked]
     check(bool(jobs),
           "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed hiking, terrain or leaf-off "
@@ -238,7 +245,7 @@ def prepare(root, verified):
           "Next work requires reviewed source/layer coverage before a new wave.")
     check(len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
           not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
-    selected_counts = Counter(j["layer"] for j in picked)
+    selected_counts = Counter(j["layer"] for j in picked if j["operation"]!="overview")
     check(set(selected_counts) <= set(limits) and
           all(0 < count <= limits[layer] for layer, count in selected_counts.items()),
           "Unexpected layer mix or finite family cap")
@@ -272,7 +279,9 @@ def prepare(root, verified):
           and policy.get("leaf-off") == {"seconds":600,"sourceBytes":536870912,"sourceRequests":750},
           "Original source and time bounds changed")
     for jid, perjob in old["jobPolicies"].items():
-        check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
+        if (old.get('overviewPilot') or {}).get('job')==jid:
+            check(perjob==dict(seconds=600,sourceBytes=0,sourceRequests=0),'Overview source caps changed')
+        else:check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
     check(all(x in policy for x in limits), "Missing original approved layer policy")
     check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
           <= old["slots"][1]["sourceRequests"], "Source requests cannot exceed prior envelope")
@@ -310,7 +319,9 @@ def prepare(root, verified):
     from datetime import datetime, timezone, timedelta
     plan["expiresAt"] = (datetime.now(timezone.utc) +
                          timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    plan["jobPolicies"] = {j["id"]: policy[j["layer"]] for j in picked}
+    plan['overviewPilot']=overview_pilot
+    plan["jobPolicies"] = {j["id"]: (dict(seconds=600,sourceBytes=0,sourceRequests=0)
+        if j['operation']=='overview' else policy[j["layer"]]) for j in picked}
     plan["slots"][1]["attempts"] = len(jobs)
     plan["limits"]["attempts"] = len(jobs)
     check(plan["slots"][1]["classARequests"] == 2000 and
@@ -320,6 +331,8 @@ def prepare(root, verified):
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
     region["engineHashes"]["benchmark_gorge_pipeline.py"] = digest(
         (root / "backend/scripts/benchmark_gorge_pipeline.py").read_bytes())
+    for overview_module in OVERVIEW_MODULES:
+        region['engineHashes'][overview_module]=digest((root/'backend/scripts'/overview_module).read_bytes())
     for credential_file in ('run_gorge_checkpoint_slot.py',CRED_MODULE):
         region['engineHashes'][credential_file]=digest((root/'backend/scripts'/credential_file).read_bytes())
     region['engineHashes'][CATALOG_MODULE]=digest((root/'backend/scripts'/CATALOG_MODULE).read_bytes())
