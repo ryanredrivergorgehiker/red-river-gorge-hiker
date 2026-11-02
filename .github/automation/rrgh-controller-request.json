@@ -1,11 +1,11 @@
 {
   "epoch": 1,
   "productionRequiresAuthenticatedReadback": true,
-  "request": "fresh-authentication-probe-after-owner-confirmed-scoped-WIF-upgrade",
-  "sourceSHA": "444fa31cab3e321bc6e93b32b315efaba1ed24cd",
-  "requestedAtUTC": "2026-11-02T17:33:24.047Z",
-  "priorProbeRun": 41489346851,
-  "expectedPriorLaunchCounter": 1,
-  "planSHA256": "6429b4b90671b522993a84b255f75fee33a37d39206d09a2119f6bee1177f8c4",
-  "cloudPolicyChangeEvidence": "Owner Cloud Shell verified original condition, applied exact reviewed update, and verified dual-identity condition; screenshot 2026-11-02"
+  "request": "resume-prepared-wave070-under-owner-confirmed-GitHub-platform-budget-protection",
+  "sourceSHA": "9e0f8e47e6aeff1e33e4a1415a6045af87212bed",
+  "planSHA256": "72bab505f9a7212d324234f7a12f8c7c8a7751322fe0782f1a0c6402d3f32a28",
+  "expectedPriorLaunchCounter": 14,
+  "requestedAtUTC": "2026-11-02T18:58:55.284Z",
+  "priorRecoveredRun": 41501582627,
+  "ownerAuthorization": "Owner 2026-11-02 confirmed November reset and GitHub stop protection; explicitly authorized automatic production and retired duplicate local GitHub budget gate."
 }
