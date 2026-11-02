@@ -161,8 +161,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     overviews=[j for j in new['jobs'] if j['operation']=='overview']
     require(native==[index[j['id']] for j in native], 'Unreviewed source window publication')
     require([j['id'] for j in new['jobs']]==plan['approvedJobIDs'], 'Job ordering differs from plan')
-    require(not overviews or (audit.get('overviewPilotEnabled') is True and overviews==[pilot_job()] and
-        plan.get('overviewPilot')==pilot_manifest() and len(new['jobs'])<=12), 'Unreviewed overview allocation')
+    require(not overviews or (audit.get('overviewPilotEnabled') is True and len(overviews)==1 and
+        overviews==[pilot_job(overviews[0]['id'])] and
+        plan.get('overviewPilot')==pilot_manifest(overviews[0]['id']) and len(new['jobs'])<=12), 'Unreviewed overview allocation')
     require(bool(overviews)==bool(plan.get('overviewPilot')), 'Unused overview authority')
     counts={layer:sum(j['layer']==layer for j in native) for layer in LIMITS}
     require(all(n<=LIMITS[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),

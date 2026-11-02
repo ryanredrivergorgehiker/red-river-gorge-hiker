@@ -46,7 +46,7 @@ for iteration in range(2):
         storageEstimateUSDPerMonth='0.90',remainingAuthorityUSD='100.00'))
     if plan.get('overviewPilot'):
         from test_rrgh_overview_production import synthetic_proof
-        result['overviewPilotVerification']=synthetic_proof()
+        result['overviewPilotVerification']=synthetic_proof(plan['overviewPilot']['job'])
     state=dict(sequence=seq,runID=rid,dispatchID='e'*64,planSHA256=plan_hash,sourceSHA=git('rev-parse','HEAD'),epoch=1)
     run=dict(id=rid,run_attempt=1,head_branch=d.WORKER,event='workflow_dispatch',status='in_progress',
         conclusion=None,path='.github/workflows/'+d.WORKFLOW,actor=dict(login='github-actions[bot]'),
