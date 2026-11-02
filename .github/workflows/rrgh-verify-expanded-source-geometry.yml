@@ -1,0 +1,45 @@
+name: RRGH expanded official source metadata regional coverage audit
+on:
+  push:
+    branches: [lane20/coverage-expansion-20261102]
+    paths: [.github/workflows/rrgh-verify-expanded-source-geometry.yml]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-official-source-grid-20261102
+  cancel-in-progress: false
+jobs:
+  offline-geometry:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated metadata audit code and preserved official candidates
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact independently verified Wave053 source baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 114355bd0901fd7a6eeb90fa6724ab448b788f9b
+          path: accepted-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify expanded metadata and exact preservation of prior source identities
+        run: |
+          python backend/scripts/rrgh_audit_expanded_official_sources.py \
+            --catalog backend/config/official-source-intake-20261102/official-source-candidates.json \
+            --region accepted-source/backend/config/gorge-campaign-wave-053-20261031/REGION-PLAN.json.z.b64 \
+            --output /tmp/rrgh-full-region-official-metadata-audit.json
+      - name: Retain independent no-pixel-claim coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-full-region-official-metadata-geometry-audit
+          path: /tmp/rrgh-full-region-official-metadata-audit.json
+          if-no-files-found: error
+          retention-days: 90
