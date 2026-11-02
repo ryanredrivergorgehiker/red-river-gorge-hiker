@@ -33,7 +33,7 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
-    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py',
+    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py',
     'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
     'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
@@ -137,7 +137,7 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
     guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
-          ('recovery-ready',) if mode=='recover' else ('ready',)),
+          ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -192,7 +192,7 @@ def claim(api,root,inputs,run_id):
         state.setdefault('controllerUpgradeHistory',[]).append({**upgrade,'claimedRunID':run_id,
             'sequence':state['sequence']})
         state['controlDigest']=upgrade['toDigest']
-        state['sourcePolicyMode']='expanded'
+        state.setdefault('sourcePolicyMode','expanded')
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
@@ -266,6 +266,30 @@ def arm_unstarted_recovery(api,root,automatic=False):
     state.pop('recoveryStartAuthorization',None)
     old=api.cas(old,state,'verified recovery never started; preserve exact producer')
     return dispatch(api,root,old,state,'recover',allowed_run=parent['runID'])
+
+
+def inspect_halted(api,root):
+    caller('launch');old,state=api.state();validate_state(state,root)
+    guard(state.get('status')=='halted' and state.get('mode')=='produce','Only halted production may be inspected')
+    auth=state.get('inspectionAuthorization',{})
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+          all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
+          'Exact read-only inspection authorization missing')
+    assert_no_other_producers(api)
+    state['inspectionOf']={k:state.get(k) for k in ('runID','dispatchID','parentRunID','mode')}
+    state['status']='inspection-ready';state.pop('inspectionAuthorization')
+    old=api.cas(old,state,'owner-authorized bounded read-only checkpoint inspection')
+    return dispatch(api,root,old,state,'inspect')
+
+
+def finish_inspection(api,root):
+    old,state=current_run(api,root,'running')
+    guard(state.get('mode')=='inspect' and state.get('inspectionOf'),'No inspection owns this allocation')
+    previous=state.pop('inspectionOf')
+    state.setdefault('inspectionHistory',[]).append(dict(runID=state['runID'],sourceRunID=previous['runID'],cloudWrites=0))
+    state.update(previous);state['status']='halted'
+    api.cas(old,state,'inspection finished; original failed allocation preserved')
+    return dict(status='HALTED_ALLOCATION_PRESERVED',cloudWrites=0)
 
 
 def audit_recovered(api,root):
@@ -431,10 +455,10 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command=='recover-unstarted' else a.command)
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted') else a.command)
     api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
@@ -444,6 +468,8 @@ def main():
     elif a.command=='audit':result=audit_current(api,a.root)
     elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
     elif a.command=='recover-unstarted':result=arm_unstarted_recovery(api,a.root)
+    elif a.command=='inspect-halted':result=inspect_halted(api,a.root)
+    elif a.command=='finish-inspection':result=finish_inspection(api,a.root)
     elif a.command=='publish-recovered':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()),recovered=True)
     elif a.command=='publish':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()))
     elif a.command=='probe':

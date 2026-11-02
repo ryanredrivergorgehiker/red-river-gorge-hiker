@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce, recover]
+        options: [probe, produce, recover, inspect]
         required: true
       source_sha:
         type: string
@@ -91,6 +91,56 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py probe --source source-checkout
+  checkpoint-inspection:
+    needs: admit
+    if: inputs.mode == 'inspect'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Inspect only exact known checkpoint objects without Cloud writes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_checkpoint_diagnostics.py source-checkout
+  finish-inspection:
+    needs: [admit, checkpoint-inspection]
+    if: always() && inputs.mode == 'inspect' && needs.admit.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py finish-inspection
   activate:
     needs: [admit, authentication-probe]
     if: inputs.mode == 'probe' && needs.authentication-probe.result == 'success'
