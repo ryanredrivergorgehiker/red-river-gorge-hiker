@@ -46,8 +46,9 @@ class OverviewProductionTests(unittest.TestCase):
             accepted.add(expected['job']);planned.append(expected['job'])
         self.assertEqual(len(set(planned)),22);self.assertTrue(before<=accepted)
         self.assertEqual(i.select(picked,accepted,{},True),(picked,None))
-        skipped,authority=i.select(picked,before,{manifests[0]['job']:1},True)
-        self.assertEqual(authority,manifests[1]);self.assertEqual(len(skipped),12)
+        self.assertEqual(i.select(picked,before,{manifests[0]['job']:1},True),(picked,None))
+        skipped,authority=i.select(picked,before|{manifests[0]['job']},{manifests[1]['job']:1},True)
+        self.assertEqual(authority,manifests[2]);self.assertEqual(len(skipped),12)
         with self.assertRaises(ValueError):i.manifest('leaf-on-15-1-1')
     def test_installed_helper_migration_rejects_unknown_prior_code(self):
         current=(ROOT/'.github/automation/rrgh_overview_pilot.py').read_bytes()

@@ -102,7 +102,12 @@ def validate_previous(plan,region):
 
 def select(picked,accepted,attempts,enabled):
     if not enabled:return picked,None
-    eligible=[m for m in candidates() if m['job'] not in accepted and attempts.get(m['job'],0)==0
+    queue=candidates()
+    # Later parents are eligible only after the original pilot is present in
+    # the independently recovered, publisher-validated accepted ledger.
+    # An attempted or failed pilot cannot silently activate the broader queue.
+    if queue[0]['job'] not in accepted:queue=queue[:1]
+    eligible=[m for m in queue if m['job'] not in accepted and attempts.get(m['job'],0)==0
               and set(m['children'])<=set(accepted)]
     if not eligible:return picked,None
     m=eligible[0];candidate=pilot_job(m['job'])
