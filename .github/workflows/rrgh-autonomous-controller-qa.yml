@@ -1,7 +1,7 @@
 name: RRGH autonomous controller offline QA
 on:
   push:
-    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102]
+    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102]
 permissions:
   contents: read
 env:

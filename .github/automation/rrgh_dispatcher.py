@@ -192,7 +192,7 @@ def claim(api,root,inputs,run_id):
         state.setdefault('controllerUpgradeHistory',[]).append({**upgrade,'claimedRunID':run_id,
             'sequence':state['sequence']})
         state['controlDigest']=upgrade['toDigest']
-        state['sourcePolicyMode']='expanded'
+        state.setdefault('sourcePolicyMode','expanded')
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
