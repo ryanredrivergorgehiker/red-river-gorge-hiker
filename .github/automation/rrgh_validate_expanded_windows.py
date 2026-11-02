@@ -33,6 +33,7 @@ def select(spec,catalog,region):
         if any(clip(window['boundsWGS84'],s['bbox']) for s in region['inventory']['sources'][family]):continue
         sources=[s for s in catalog[family] if s['id'] in window['sourceCandidates']]
         if not sources or len(sources)>8:continue
+        for s in sources:s['expandedNativePolicy']=family
         chosen[layer]={'window':window,'sources':sources}
     require(set(chosen)==set(CAPS),'Three fresh full-window candidates required')
     return [chosen[layer] for layer in CAPS]

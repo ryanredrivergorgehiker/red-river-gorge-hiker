@@ -32,7 +32,10 @@ LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
-    'rrgh_campaign_budget_v2.py')] + ['.github/workflows/'+x for x in (
+    'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
+    'rrgh_required_inventory.py','expanded-source-rights-20261102.json',
+    'source-templates/benchmark_gorge_pipeline.py')] + [
+    'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
     WORKFLOW,'rrgh-controller-launch.yml')]
 
 
@@ -84,10 +87,19 @@ def local_digest(root):
     return digest(canonical({p:digest((Path(root)/p).read_bytes()) for p in CODE_FILES}))
 
 
-def validate_state(state,root):
+def validate_state(state,root,allow_upgrade=False):
     guard(state.get('format')=='rrgh-controller-state-v1' and state.get('owner')=='autonomous-v1'
           and state.get('epoch')==1,'Exclusive controller owner missing')
-    guard(state.get('controlDigest')==local_digest(root),'Reviewed controller code changed')
+    current=local_digest(root)
+    if state.get('controlDigest')!=current:
+        upgrade=state.get('pendingControllerUpgrade',{})
+        guard(allow_upgrade and state.get('status')=='dispatching' and
+              upgrade.get('fromDigest')==state.get('controlDigest') and
+              upgrade.get('toDigest')==current and
+              upgrade.get('authorizedBy')=='ryanredrivergorgehiker' and
+              upgrade.get('authorizedOn')=='2026-11-02' and
+              upgrade.get('preserveAcceptedHistory') is True,
+              'Reviewed controller code changed')
     guard(type(state.get('sequence')) is int and state['sequence']>=58,'Bad sequence')
     guard(re.fullmatch(r'[0-9a-f]{40}',state.get('sourceSHA','')) is not None and
           re.fullmatch(r'[0-9a-f]{64}',state.get('planSHA256','')) is not None,'Bad source/plan binding')
@@ -166,13 +178,19 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
 
 
 def claim(api,root,inputs,run_id):
-    old,state=api.state();validate_state(state,root)
+    old,state=api.state();validate_state(state,root,allow_upgrade=True)
     guard(state.get('enabled') is True and state['status']=='dispatching' and state.get('runID') is None,
           'Duplicate or disabled dispatch')
     for field,key in [('source_sha','sourceSHA'),('plan_sha256','planSHA256'),('dispatch_id','dispatchID'),('mode','mode')]:
         guard(inputs[field]==state[key],'Dispatch input differs from durable claim: '+field)
     guard(inputs['sequence']==str(state['sequence']),'Dispatch sequence mismatch')
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
+    if state['controlDigest']!=local_digest(root):
+        upgrade=state.pop('pendingControllerUpgrade')
+        state.setdefault('controllerUpgradeHistory',[]).append({**upgrade,'claimedRunID':run_id,
+            'sequence':state['sequence']})
+        state['controlDigest']=upgrade['toDigest']
+        state['sourcePolicyMode']='expanded'
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
@@ -198,6 +216,7 @@ def audit_current(api,root):
     report=audit_run(run,jobs['jobs'],logs['independent-recovery'],logs['bounded-stage'],expected_dispatch=state)
     guard(report['planSHA256']==state['planSHA256'] and report['wave']==state['sequence'],'Recovery identity changed')
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
+    report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
     return report
 
 
@@ -228,12 +247,16 @@ def candidate_entries(source_root,audit,state):
           all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs),'Replayed or malformed successor jobs')
     guard(len(plan['completedJobIDs'])==len(set(plan['completedJobIDs']))==audit['acceptedJobs'],'Accepted inventory mismatch')
     guard(new_code==old_code.replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
+    from rrgh_expanded_production import validate_publication, ENGINE
+    validate_publication(root,old_dir,new_dir,plan,audit)
     guard(plan['limits']=={**prior['limits'],'attempts':len(jobs)} and plan['maxConcurrency']==1 and
           plan['automaticRetryPermitted'] is False and plan['deleteAllowed'] is False,'Resource/protection drift')
     snapshot={p.name:digest(p.read_bytes()) for p in sorted((root/'backend/scripts').glob('*.py')) if not p.name.startswith('test_')}
     guard(digest(canonical(snapshot))==plan['sourceSnapshotSHA256'],'Executable source snapshot mismatch')
     allowed={str(new_dir.relative_to(root)/name) for name in ('PLAN.json','ALLOWANCE.json','REGION-PLAN.json.z.b64')}
     allowed.add('backend/scripts/gorge_campaign.py')
+    before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
+    if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
     guard(set(changed)==allowed,'Unexpected files in source publication')
     allowance=json.loads((new_dir/'ALLOWANCE.json').read_bytes())['cloudStorageAllowance']
