@@ -1,3 +1,4 @@
+# RRGH_LEGACY_SOURCE_WRITER_FENCED_EPOCH_1
 name: RRGH guarded original-push next-wave planner
 on:
   push:
@@ -12,11 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   prepare-source:
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.actor == 'ryanredrivergorgehiker' &&
-      github.event_name == 'push' &&
-      github.run_attempt == 1
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -57,3 +54,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RRGH_ENABLE_VERIFIED_NEXT_WAVE_SOURCE: BOUNDED_SOURCE_ONLY
         run: python .github/automation/rrgh_publish_push_successor_v2.py source-checkout "${{ runner.temp }}/rrgh-next-recovery.json" --publish
+
