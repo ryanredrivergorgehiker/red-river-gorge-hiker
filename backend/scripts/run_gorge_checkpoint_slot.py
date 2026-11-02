@@ -42,32 +42,7 @@ def preflight(plan, region, source_dir):
 
 
 # Process-local only: never persist or log the bearer credential. The existing
-# Direct WIF access-token lifetime may be shorter than the nominal service
-# token lifetime. Refresh proactively every 120 seconds, without relying on a
-# particular provider TTL or replaying any failed GCS write.
-_TOKEN_LOCK=threading.Lock()
-_TOKEN_VALUE=None
-_TOKEN_UNTIL=0.0
-_TOKEN_CACHE_SECONDS=120
-
-def token():
-    global _TOKEN_VALUE,_TOKEN_UNTIL
-    with _TOKEN_LOCK:
-        now=time.monotonic()
-        if _TOKEN_VALUE is not None and now<_TOKEN_UNTIL:
-            return _TOKEN_VALUE
-        # No retry, fallback or extension of stale credentials. Unexpected
-        # auth failure still stops all cloud work and preserves prior receipts.
-        result=subprocess.run(['gcloud','auth','print-access-token','--quiet'],
-            stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=False,timeout=30,text=True)
-        value=result.stdout.strip()
-        if result.returncode or not value or any(c.isspace() for c in value):
-            _TOKEN_VALUE=None
-            _TOKEN_UNTIL=0.0
-            raise RuntimeError('Short-lived WIF credential unavailable')
-        _TOKEN_VALUE=value
-        _TOKEN_UNTIL=time.monotonic()+_TOKEN_CACHE_SECONDS
-        return value
+from rrgh_wif_credentials import token
 
 
 def execute(args,plan,region,evidence):
