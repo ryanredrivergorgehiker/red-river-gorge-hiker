@@ -104,7 +104,21 @@ def prepare(root, verified):
           len(set(prior_pixel_gaps)) == len(prior_pixel_gaps) and
           not set(prior_pixel_gaps) & set(old["completedJobIDs"]),
           "Inherited original-source pixel-gap quarantine corrupted")
-    if partial:
+    from rrgh_salvage_audit import manifest as salvage_manifest,manifest_sha
+    salvage=verified.get('salvagedCheckpointRecovery') is True
+    prior_salvage=old['campaign'].get('checkpointSalvageQuarantines',[])
+    m=salvage_manifest()
+    check(prior_salvage==([] if wave<=105 else m['uncertainJobIDs']), 'Salvage quarantine lineage changed')
+    if salvage:
+        check(wave==105 and verified.get('run')==m['originalRunID'] and prior_plan_sha==m['planSHA256'] and
+              verified.get('salvageManifestSHA256')==manifest_sha() and
+              verified.get('partialCompletedJobIDs')==m['completedJobIDs'] and
+              verified.get('uncertainJobIDs')==m['uncertainJobIDs'] and
+              old['approvedJobIDs']==m['completedJobIDs']+m['uncertainJobIDs'] and
+              verified.get('failedJobID') is None and not pixel_gaps,'Exact salvage evidence mismatch')
+        accepted=old['completedJobIDs']+m['completedJobIDs']
+        attempted=old['approvedJobIDs']
+    elif partial:
         # Exact, independently verified partial incidents only. Every consumed
         # prefix and the failing attempt are retained; never replay a checkpoint.
         incidents = {
@@ -157,7 +171,7 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps)
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps) + len(prior_salvage)
     check(len(historical_excluded) == inherited_exclusion_count and
           set(prior_pixel_gaps) <= historical_excluded and
           verified["historicalExclusions"] == 45,
@@ -170,9 +184,9 @@ def prepare(root, verified):
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
     excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == inherited_exclusion_count + (1 if partial else 0) + len(pixel_gaps) and
+    check(len(excluded) == inherited_exclusion_count + (len(m["uncertainJobIDs"]) if salvage else 1 if partial else 0) + len(pixel_gaps) and
           set(pixel_gaps) <= excluded and
-          (not partial or verified["failedJobID"] in excluded),
+          (not partial or salvage or verified["failedJobID"] in excluded),
           "Failed job must remain excluded from fresh territory")
     check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
 
@@ -187,6 +201,8 @@ def prepare(root, verified):
     install_engine(root)
     from rrgh_recovery_catalog_integration import install as install_catalog, MODULE as CATALOG_MODULE
     install_catalog(root)
+    from rrgh_credential_integration import install as install_credentials, MODULE as CRED_MODULE
+    install_credentials(root)
     original_code=code_path.read_text()
     index, missing = build_index(region)
     if region['expandedSourceProduction']['mode'] == 'expanded':
@@ -275,6 +291,7 @@ def prepare(root, verified):
     plan = copy.deepcopy(old)
     plan["campaign"]["sequence"] = wave + 1
     plan["campaign"]["sourcePixelGapQuarantines"] = prior_pixel_gaps + pixel_gaps
+    plan["campaign"]["checkpointSalvageQuarantines"] = prior_salvage + (m["uncertainJobIDs"] if salvage else [])
     if legacy:
         plan["campaign"]["id"] = "gorge-full-quality-125usd-20261031"
         plan["campaign"]["ownerApproval"] = budget.APPROVAL
@@ -303,6 +320,8 @@ def prepare(root, verified):
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
     region["engineHashes"]["benchmark_gorge_pipeline.py"] = digest(
         (root / "backend/scripts/benchmark_gorge_pipeline.py").read_bytes())
+    for credential_file in ('run_gorge_checkpoint_slot.py',CRED_MODULE):
+        region['engineHashes'][credential_file]=digest((root/'backend/scripts'/credential_file).read_bytes())
     region['engineHashes'][CATALOG_MODULE]=digest((root/'backend/scripts'/CATALOG_MODULE).read_bytes())
     if "gorge_campaign_budget.py" in region["engineHashes"]:
         region["engineHashes"]["gorge_campaign_budget.py"] = digest(budget_path.read_bytes())

@@ -1,0 +1,161 @@
+"""One independent, source-free recovery of the inspected wave105 checkpoints.
+
+Uses only original unused recovery slot 2. Producer slots are never replayed,
+and the full failed allocation remains charged. Original records are immutable.
+"""
+from dataclasses import asdict
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import sys
+
+MANIFEST=Path(__file__).with_name('wave105-salvage.json')
+PIN_FIELDS=('url','length','etag','identity','lastModified','pinnedAtUTC')
+
+
+def require(ok,message):
+    if not ok:raise ValueError(message)
+
+
+def merge_pins(database,records,region):
+    """Preserve every prior pin; derive new pins only from immutable job evidence."""
+    jobs={j['id']:j for j in region['jobs']}
+    added=0;seen={}
+    with sqlite3.connect(database) as db:
+        before=dict(db.execute('SELECT url,identity FROM sources'))
+        for row in records:
+            job=jobs[row['job']];family='dem' if job['layer']=='terrain' else job['layer']
+            allowed={s['id']:s['url'] for s in region['inventory']['sources'][family] if s['id'] in job['sourceIDs']}
+            evidence=row['result']['originalReceipt']['sourceEvidence']
+            require(len({s['id'] for s in evidence})==len(evidence) and
+                    {s['id'] for s in evidence}==set(allowed),'Incomplete source evidence')
+            for source in evidence:
+                require(source['url']==allowed[source['id']],'Unapproved recovered source')
+                pin={k:source[k] for k in PIN_FIELDS}
+                expected=hashlib.sha256(json.dumps([pin['url'],pin['etag'],pin['length']]).encode()).hexdigest()
+                require(pin['identity']==expected and type(pin['length']) is int and
+                        100000<=pin['length']<=10000000000 and pin['etag'].startswith('"') and
+                        pin['etag'].endswith('"'),'Recovered source identity mismatch')
+                old=db.execute('SELECT identity,metadata FROM sources WHERE url=?',(pin['url'],)).fetchone()
+                if old:
+                    require(old[0]==pin['identity'],'Prior source identity conflict')
+                    prior=json.loads(old[1])
+                    require(all(prior[k]==pin[k] for k in ('url','length','etag','identity')),
+                            'Prior source metadata conflict')
+                else:
+                    db.execute('INSERT INTO sources VALUES (?,?,?)',(pin['url'],pin['identity'],json.dumps(pin)))
+                    added+=1
+                require(pin['url'] not in seen or seen[pin['url']]==pin['identity'],'Conflicting job source pins')
+                seen[pin['url']]=pin['identity']
+        after=dict(db.execute('SELECT url,identity FROM sources'))
+        require(all(after.get(k)==v for k,v in before.items()),'Prior source pin lost')
+        require(db.execute('PRAGMA integrity_check(10)').fetchall()==[('ok',)],'Recovered SQLite integrity')
+    return dict(priorPins=len(before),newPins=added,completedSourcePins=len(seen),
+                allPriorPinsPreserved=True,derivation='prior-independent-ledger-plus-exact-job-source-evidence')
+
+
+def run(source_root):
+    source=Path(source_root).resolve();sys.path.insert(0,str(source/'backend/scripts'))
+    from gorge_campaign import configuration,load_large,save_large,check_states,state_snapshot,assemble,emit
+    from gorge_checkpoint import GCS,Slot,Ref,canonical,digest,decode_record,MAX_METADATA
+    from gorge_campaign_budget import settle,add_usage
+    from gorge_stage_coordinator import private_root,CountedOpener,verify_outputs
+    from gorge_second_stage import record,recover_catalogs
+    from gorge_producer_identity import require_owner
+    from rrgh_wif_credentials import token
+    m=json.loads(MANIFEST.read_bytes());plan,evidence,region=configuration()
+    require(digest(canonical(plan))==m['planSHA256']==os.environ['RRGH_PLAN_SHA256'] and
+            os.environ['RRGH_SOURCE_SHA']==m['sourceSHA'] and
+            plan['campaign']['sequence']==m['sequence'] and plan['campaign']['carry']==m['priorCarry'],
+            'Exact reviewed salvage source changed')
+    require(plan['approvedJobIDs']==m['completedJobIDs']+m['uncertainJobIDs'] and
+            len(m['completedJobIDs'])==7 and len(m['uncertainJobIDs'])==2,'Salvage subset changed')
+    require_owner(plan,'recovery')
+    root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener)
+    slot=Slot(store,plan,2,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
+    try:
+        # Read-after-inspection: late receipts are not silently overlooked.
+        missing=[slot.prefix+'slots/00001/receipt.json']+[
+            slot.prefix+'slots/00001/jobs/'+j+'.json' for j in m['uncertainJobIDs']]
+        for key in missing:
+            slot.meter.reserve(classBRequests=1,egressBytes=MAX_METADATA+1)
+            try:store._request('GET',key,{'fields':'name,generation,size'},MAX_METADATA)
+            except RuntimeError as error:
+                if str(error)!='GCS HTTP 404':raise
+            else:raise ValueError('Inspection absence changed; salvage refused')
+        claim=json.loads(slot.get(Ref(**m['producerClaim'])))
+        require(claim['owner']==str(m['originalRunID']) and claim['planSHA256']==m['planSHA256'] and
+                claim['slot']==1 and claim['allocation']==plan['slots'][1],'Original producer claim changed')
+        bootref,boot=slot.recover_receipt(0)
+        require(asdict(bootref)==m['bootstrapReceipt'] and boot['result']['status']=='ready' and
+                boot['result']['inputProofValidated'] is True,'Bootstrap proof changed')
+        initial=load_large(slot,boot['result']['bootstrapDataRef'])
+        records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in m['completedJobRefs']]
+        require([r['job'] for r in records]==m['completedJobIDs'] and all(
+            r['planSHA256']==m['planSHA256'] and r['slot']==1 for r in records),'Checkpoint lineage changed')
+        catalogs=[c for r in records for c in r['result']['outputPacks']]
+        paths=[e['path'] for c in catalogs for e in c['members']]
+        require(len(paths)==len(set(paths))==m['tiles'],'Exact checkpoint output inventory changed')
+        recover_catalogs(slot,catalogs,paths,root/'outputs')
+        neighbors=initial['neighbors'];oldpaths=[e['path'] for c in neighbors for e in c['members']]
+        if oldpaths:recover_catalogs(slot,neighbors,oldpaths,root/'old')
+        qa=verify_outputs(plan,region,records,root/'outputs',root/'old')
+        require(qa['jobs']==m['jobs'] and qa['files']==m['tiles'] and qa['adjacentEdgesMeasured']>0,
+                'Independent full-quality subset verification failed')
+        previous=record(slot,plan['campaign']['previousRecovery'])['result']
+        require(previous['status']=='verified' and previous['nextCarry']==plan['campaign']['carry'] and
+                previous['settlement']['sequence']==104,'Accepted predecessor changed')
+        prior_detail=load_large(slot,previous['detailRef'])
+        prior_states=load_large(slot,prior_detail['stateRef'])
+        prior_root=root/'prior-state';prior_root.mkdir();check_states(prior_states,prior_root)
+        for kind,file in [('cog','cache.sqlite'),('service','requests.sqlite')]:
+            destination=root/('working-'+kind);destination.mkdir()
+            shutil.copyfile(prior_root/(kind+'.sqlite'),destination/file)
+        pins=merge_pins(root/'working-cog/cache.sqlite',records,region)
+        states=state_snapshot(root);state_ref=save_large(slot,states)
+        require(load_large(slot,state_ref)==states,'Recovered state readback mismatch')
+        verify_state=root/'verified-state';verify_state.mkdir();check_states(states,verify_state)
+        parts=assemble(slot,records,root)
+        from rrgh_verified_tile_catalog import catalog
+        qa.update(sourceLedgerVerification=pins,parts=parts,regionComplete=False)
+        qa['verifiedTileCatalog']=catalog(plan,region,records,m['completedJobRefs'],qa,parts,root)
+        qa['verifiedTileCatalogStatus']='verified'
+        qaref=save_large(slot,qa)
+        usage=[r['result']['originalReceipt']['execution']['sourceUsage']['actual'] for r in records]
+        detail=dict(completedJobReceipts=m['completedJobRefs'],stateRef=state_ref,
+            sourceBytesReceived=sum(u['receivedBodyBytes'] for u in usage),sourceRequests=sum(u['operations'] for u in usage),
+            outputBytes=qa['bytes'],seconds=None,sourcePixelGapJobs=[],pixelGapAttemptsConsumed=0,
+            rawCachePolicy=plan['cachePolicy'],incompleteProducerLedger=True,uncertainJobIDs=m['uncertainJobIDs'],
+            allUnknownAttemptsRetained=True,sourcePinsReconstructed=pins,priorStateRef=prior_detail['stateRef'])
+        detailref=save_large(slot,detail)
+        # Producer usage is unknown: retain its entire reservation, and the
+        # settlement retains every dimension of the entire failed wave.
+        used=add_usage(boot['used'],plan['slots'][1],slot.meter.used)
+        ledger=settle(plan,used,False)
+        carry=dict(chargedUSD=ledger['chargedUSD'],storedBytes=ledger['storedBytes'],
+            priorCompletedJobs=plan['campaign']['carry']['priorCompletedJobs']+qa['jobs'],
+            priorRasterTiles=plan['campaign']['carry']['priorRasterTiles']+qa['files'],priorSunlightAssets=320)
+        result=dict(status='partial-verified',salvage='wave105-missing-producer-closure-v1',
+            originalProducerRunID=m['originalRunID'],producerClaim=m['producerClaim'],workerReceipt=None,
+            completedJobRefs=m['completedJobRefs'],completedJobIDs=m['completedJobIDs'],uncertainJobIDs=m['uncertainJobIDs'],
+            jobs=qa['jobs'],tiles=qa['files'],outputBytes=qa['bytes'],qaRef=qaref,detailRef=detailref,
+            packageParts=len(parts),packageBytes=sum(p['byteCount'] for p in parts),adjacentEdgesMeasured=len(qa['seams']),
+            bootstrapReceipt=asdict(bootref),settlement=ledger,nextCarry=carry,
+            sourcePixelGapJobs=[],pixelGapAttemptsConsumed=0,allOutputHashesAndPixelsVerified=True,
+            allNewPackageChunksReadBack=True,allExistingCachesPreserved=True,sourcePinsReconstructed=pins,
+            sourceJobsExecuted=0,verifiedTileCatalogTiles=qa['verifiedTileCatalog']['tileCount'],
+            producerUsageMeasured=False,unacceptedAttemptsQuarantined=True)
+        require_owner(plan,'recovery')
+        ref=slot.finish(result)
+        emit(phase='independent-checkpoint-salvage',receiptRef=asdict(ref),result=result,gcsIncludingReceipt=opener.summary())
+    except Exception as error:
+        if not slot.closed:
+            try:slot.finish(dict(status='failed',allWaveAllocationsRetained=True,errorClass=type(error).__name__))
+            except Exception:pass
+        raise
+
+
+if __name__=='__main__':run(sys.argv[1])

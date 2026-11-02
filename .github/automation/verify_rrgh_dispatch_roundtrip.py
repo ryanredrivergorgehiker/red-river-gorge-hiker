@@ -83,7 +83,7 @@ print(json.dumps(d.candidate_entries(Path(sys.argv[2]),p['audit'],p['state'])))
     assert set(new_plan['completedJobIDs'])==set(plan['completedJobIDs']+plan['approvedJobIDs'])
     assert set(new_plan['approvedJobIDs']).isdisjoint(plan['approvedJobIDs'])
     assert all(new_plan[k]==plan[k] for k in ('cachePolicy','maxConcurrency','automaticRetryPermitted','deleteAllowed'))
-    assert new_hash==output['nextPlanSHA256'] and len(entries) in (4,5,6)
+    assert new_hash==output['nextPlanSHA256'] and len(entries) in (4,5,6,7,8)
     from rrgh_recovery_catalog_integration import validate as validate_catalog
     validate_catalog(root)
     git('add',*[entry['path'] for entry in entries])

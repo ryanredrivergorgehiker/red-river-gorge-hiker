@@ -1,0 +1,98 @@
+{
+  "format": "rrgh-wave105-salvage-authorization-v1",
+  "sequence": 105,
+  "sourceSHA": "4d21eecdfa6efac46f870d6f4726d36ed772afb4",
+  "planSHA256": "4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce",
+  "originalRunID": 41534076760,
+  "originalHeadSHA": "a4b7ee1243351f321284afff8d461238183b8157",
+  "originalDispatchID": "ac2c5765365a85b5d36e745024f6da9621ea90d7fc52feede4a99700ca6e8ca1",
+  "inspectionRunID": 41537032492,
+  "bootstrapReceipt": {
+    "bytes": 622,
+    "generation": "1793657190253484",
+    "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00000/receipt.json",
+    "sha256": "5881085dd22bee9d80484c827ae0c32bfc7bfdd8c5db8659394d86a1f12910fa"
+  },
+  "producerClaim": {
+    "bytes": 323,
+    "generation": "1793657190696339",
+    "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/claim.json",
+    "sha256": "3185546739261133597340d6c0d55fffe5a5582db94bfbb37003527bac60425e"
+  },
+  "completedJobRefs": [
+    {
+      "bytes": 2039,
+      "generation": "1793657194107175",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/hiking-16-17573-25324.json",
+      "sha256": "41643fce1c5f1e1c23377c223e24484773406d5dd6d73cff7b1792b7efc1bdbd"
+    },
+    {
+      "bytes": 2042,
+      "generation": "1793657197330099",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/hiking-16-17573-25326.json",
+      "sha256": "6c3f3bb6adb50ffd33481165746fab935fbd1c2f9a6eb430a55954e05f574f2d"
+    },
+    {
+      "bytes": 1853,
+      "generation": "1793657200319000",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/hiking-16-17574-25325.json",
+      "sha256": "1d24265f71080cfabfd1c88eb4478797b052cd18feff1efd55f178d8bb1b18cf"
+    },
+    {
+      "bytes": 1989,
+      "generation": "1793657205923931",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/terrain-16-17539-25313.json",
+      "sha256": "42ae5a1145cfca1df7d4fdac0bb6d1c715fc5fab8439c59b052196dac3d61cb3"
+    },
+    {
+      "bytes": 1832,
+      "generation": "1793657210450637",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/terrain-16-17537-25315.json",
+      "sha256": "fc649c8b763a75d84f9451b900a83390b6fee70737e26cf7d2805af94f0996ae"
+    },
+    {
+      "bytes": 1988,
+      "generation": "1793657215310566",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/terrain-16-17538-25314.json",
+      "sha256": "fbdd67e6694468cc156f97bde389f43c866a4e67292ea792f3a7d8e488484b66"
+    },
+    {
+      "bytes": 2947,
+      "generation": "1793657247622460",
+      "key": "engineering/map-production/plans/4f5039013d915d46fbb3d9981f4640e828f735d53117fe2bfadb60fae73914ce/slots/00001/jobs/leaf-off-16-17539-25313.json",
+      "sha256": "ef43b6de6b2ae841e2f76b83812771593cd2829b13dda732624a3879401c009e"
+    }
+  ],
+  "completedJobIDs": [
+    "hiking-16-17573-25324",
+    "hiking-16-17573-25326",
+    "hiking-16-17574-25325",
+    "terrain-16-17539-25313",
+    "terrain-16-17537-25315",
+    "terrain-16-17538-25314",
+    "leaf-off-16-17539-25313"
+  ],
+  "uncertainJobIDs": [
+    "leaf-off-16-17537-25315",
+    "leaf-off-16-17538-25314"
+  ],
+  "jobs": 7,
+  "tiles": 51,
+  "priorCarry": {
+    "chargedUSD": "14.43841343521516323089599610",
+    "priorCompletedJobs": 11569,
+    "priorRasterTiles": 120383,
+    "priorSunlightAssets": 320,
+    "storedBytes": 23265719745
+  },
+  "originalAllocation": {
+    "attempts": 9,
+    "classARequests": 3000,
+    "classBRequests": 3000,
+    "egressBytes": 2147483648,
+    "seconds": 12300,
+    "sourceBytes": 34359738368,
+    "sourceRequests": 30000,
+    "storedBytes": 1610612736
+  }
+}

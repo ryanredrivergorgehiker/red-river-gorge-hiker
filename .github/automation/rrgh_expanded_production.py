@@ -169,7 +169,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
     validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 
