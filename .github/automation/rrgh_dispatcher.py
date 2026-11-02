@@ -33,7 +33,9 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
-    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py',
+    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
+    'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'source-templates/run_gorge_checkpoint_slot.py',
     'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
     'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
@@ -137,7 +139,7 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
     guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
-          ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
+          ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -211,6 +213,9 @@ def audit_current(api,root):
 
 
 def audit_state(api,root,state,allow_failed_controller=False):
+    if state.get('mode')=='salvage':
+        from rrgh_salvage_audit import audit
+        return audit(api,state)
     rid=state['runID']
     run=api.call('GET','actions/runs/'+str(rid))
     jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
@@ -266,6 +271,25 @@ def arm_unstarted_recovery(api,root,automatic=False):
     state.pop('recoveryStartAuthorization',None)
     old=api.cas(old,state,'verified recovery never started; preserve exact producer')
     return dispatch(api,root,old,state,'recover',allowed_run=parent['runID'])
+
+
+def salvage_halted(api,root):
+    caller('launch');old,state=api.state();validate_state(state,root)
+    from rrgh_salvage_audit import original,manifest_sha
+    m=original(api)
+    guard(state.get('status')=='halted' and state.get('mode')=='produce' and
+          state.get('runID')==m['originalRunID'] and state.get('dispatchID')==m['originalDispatchID'] and
+          state.get('sourceSHA')==m['sourceSHA'] and state.get('planSHA256')==m['planSHA256'] and
+          state.get('sequence')==105,'Only the exact inspected failed allocation is eligible')
+    auth=state.get('salvageAuthorization',{})
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+          auth.get('manifestSHA256')==manifest_sha(),'Reviewed owner salvage authorization missing')
+    assert_no_other_producers(api)
+    state['salvageOf']={k:state[k] for k in ('runID','dispatchID','sourceSHA','planSHA256','sequence')}
+    state['salvageOf']['manifestSHA256']=manifest_sha()
+    state['status']='salvage-ready';state.pop('salvageAuthorization')
+    old=api.cas(old,state,'salvage exact durable checkpoints; producer will not run')
+    return dispatch(api,root,old,state,'salvage')
 
 
 def inspect_halted(api,root):
@@ -347,6 +371,14 @@ def candidate_entries(source_root,audit,state):
     catalog_tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+CATALOG_TARGET],
         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
     if not catalog_tracked:allowed.add(CATALOG_TARGET)
+    from rrgh_credential_integration import validate as validate_credentials, TARGET as CRED_TARGET, MODULE as CRED_MODULE
+    old_credentials=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+CRED_TARGET],text=True)
+    validate_credentials(root,old_credentials)
+    if (root/CRED_TARGET).read_text()!=old_credentials:allowed.add(CRED_TARGET)
+    cred_module='backend/scripts/'+CRED_MODULE
+    tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+cred_module],
+        stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+    if not tracked:allowed.add(cred_module)
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
@@ -388,6 +420,8 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
         'parentRunID':state.get('parentRunID'),'sourceSHA':state['sourceSHA'],'planSHA256':state['planSHA256'],
         'recoveryReceipt':audit['receiptRef'],'acceptedJobs':audit['acceptedJobs'],
         'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew']}
+    if state.get('mode')=='salvage':
+        completed['checkpointSalvageOf']=state.pop('salvageOf')
     if state.get('mode')=='recover':
         completed['originalProducerRunID']=state['recoveryOnlyOf']['runID']
         completed['originalProducerReceipt']=state['recoveryOnlyOf']['producerReceipt']
@@ -455,10 +489,10 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection','salvage-halted'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted') else a.command)
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted','salvage-halted') else a.command)
     api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
@@ -468,6 +502,7 @@ def main():
     elif a.command=='audit':result=audit_current(api,a.root)
     elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
     elif a.command=='recover-unstarted':result=arm_unstarted_recovery(api,a.root)
+    elif a.command=='salvage-halted':result=salvage_halted(api,a.root)
     elif a.command=='inspect-halted':result=inspect_halted(api,a.root)
     elif a.command=='finish-inspection':result=finish_inspection(api,a.root)
     elif a.command=='publish-recovered':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()),recovered=True)

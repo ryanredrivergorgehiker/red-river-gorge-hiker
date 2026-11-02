@@ -1,0 +1,594 @@
+[
+  {
+    "job": "hiking-16-17573-25324",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "bbox": [
+              -83.67909405074235,
+              37.73708776427951,
+              -83.46826745885073,
+              37.85075593650682
+            ],
+            "etag": "\"a8423c03fbfa7cf2d545198d76c26943\"",
+            "id": "N14E30",
+            "identity": "2fea2eb6c4f5da22f7db8959df56b6e4d8180c5e1900d0fc6ec626ad04342b0b",
+            "lastModified": "Wed, 10 Jun 2026 03:12:48 GMT",
+            "length": 77463884,
+            "pinnedAtUTC": "2026-10-28T19:54:07Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "LEG-REF-0021 / LEG-DEC-0033",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourcePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "sourceSize": [
+              21600,
+              14400
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area",
+              "TIFFTAG_RESOLUTIONUNIT": "2 (pixels/inch)",
+              "TIFFTAG_XRESOLUTION": "720",
+              "TIFFTAG_YRESOLUTION": "720"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E30_Pine%20Ridge_cog.tif",
+            "validPixelsInWindow": 0
+          },
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.4716493291373,
+              37.73288203374989,
+              -83.26053764766147,
+              37.846910742743056
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"12e8ca8cf9dad95291210870d89b2d32\"",
+            "expandedNativePolicy": "hiking",
+            "id": "N14E31",
+            "identity": "e4be662fb9f5b3dced10e1672b99e9778d5cf6454362e4f36ff074a76d84ae26",
+            "lastModified": "Wed, 10 Jun 2026 03:12:42 GMT",
+            "length": 73173048,
+            "pinnedAtUTC": "2026-11-02T21:42:57Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "sourceSize": [
+              21600,
+              14400
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area",
+              "TIFFTAG_RESOLUTIONUNIT": "2 (pixels/inch)",
+              "TIFFTAG_XRESOLUTION": "720",
+              "TIFFTAG_YRESOLUTION": "720"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E31_Daysboro_cog.tif",
+            "validPixelsInWindow": 262144
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "hiking-16-17573-25326",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "bbox": [
+              -83.67909405074235,
+              37.73708776427951,
+              -83.46826745885073,
+              37.85075593650682
+            ],
+            "etag": "\"a8423c03fbfa7cf2d545198d76c26943\"",
+            "id": "N14E30",
+            "identity": "2fea2eb6c4f5da22f7db8959df56b6e4d8180c5e1900d0fc6ec626ad04342b0b",
+            "lastModified": "Wed, 10 Jun 2026 03:12:48 GMT",
+            "length": 77463884,
+            "pinnedAtUTC": "2026-10-28T19:54:07Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "LEG-REF-0021 / LEG-DEC-0033",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourcePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "sourceSize": [
+              21600,
+              14400
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area",
+              "TIFFTAG_RESOLUTIONUNIT": "2 (pixels/inch)",
+              "TIFFTAG_XRESOLUTION": "720",
+              "TIFFTAG_YRESOLUTION": "720"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E30_Pine%20Ridge_cog.tif",
+            "validPixelsInWindow": 0
+          },
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.4716493291373,
+              37.73288203374989,
+              -83.26053764766147,
+              37.846910742743056
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"12e8ca8cf9dad95291210870d89b2d32\"",
+            "expandedNativePolicy": "hiking",
+            "id": "N14E31",
+            "identity": "e4be662fb9f5b3dced10e1672b99e9778d5cf6454362e4f36ff074a76d84ae26",
+            "lastModified": "Wed, 10 Jun 2026 03:12:42 GMT",
+            "length": 73173048,
+            "pinnedAtUTC": "2026-11-02T21:42:57Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "sourceSize": [
+              21600,
+              14400
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area",
+              "TIFFTAG_RESOLUTIONUNIT": "2 (pixels/inch)",
+              "TIFFTAG_XRESOLUTION": "720",
+              "TIFFTAG_YRESOLUTION": "720"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E31_Daysboro_cog.tif",
+            "validPixelsInWindow": 262144
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "hiking-16-17574-25325",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.4716493291373,
+              37.73288203374989,
+              -83.26053764766147,
+              37.846910742743056
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"12e8ca8cf9dad95291210870d89b2d32\"",
+            "expandedNativePolicy": "hiking",
+            "id": "N14E31",
+            "identity": "e4be662fb9f5b3dced10e1672b99e9778d5cf6454362e4f36ff074a76d84ae26",
+            "lastModified": "Wed, 10 Jun 2026 03:12:42 GMT",
+            "length": 73173048,
+            "pinnedAtUTC": "2026-11-02T21:42:57Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.8466683600033373,
+              0.8466683600034113
+            ],
+            "sourceSize": [
+              21600,
+              14400
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area",
+              "TIFFTAG_RESOLUTIONUNIT": "2 (pixels/inch)",
+              "TIFFTAG_XRESOLUTION": "720",
+              "TIFFTAG_YRESOLUTION": "720"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N14E31_Daysboro_cog.tif",
+            "validPixelsInWindow": 262144
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "terrain-16-17539-25313",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.65870213212034,
+              37.850133231599685,
+              -83.64099743010426,
+              37.86417058718732
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"55454fd940f4dccd9c99436550428980\"",
+            "expandedNativePolicy": "dem",
+            "id": "N104E350_2024_DEM_Phase2_cog.tif",
+            "identity": "1bcb7625ca53f49fa5b141ca17aa53ec5956663e2eeade0eceabebbd91f244d1",
+            "lastModified": "Mon, 16 Dec 2024 22:48:41 GMT",
+            "length": 32385965,
+            "pinnedAtUTC": "2026-11-02T22:06:41Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "float32"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "sourceSize": [
+              2500,
+              2500
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Point",
+              "TIFFTAG_XRESOLUTION": "72",
+              "TIFFTAG_YRESOLUTION": "72"
+            },
+            "sourceUnits": [
+              "US survey foot"
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N104E350_2024_DEM_Phase2_cog.tif",
+            "validPixelsInWindow": 172552
+          },
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.65909011210945,
+              37.836404873490046,
+              -83.64138876508832,
+              37.850442204327734
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"3acecadea59dbf75199fa3f2e2ec5d69-7\"",
+            "expandedNativePolicy": "dem",
+            "id": "N105E350_2024_DEM_Phase2_cog.tif",
+            "identity": "66af99bb665f83bf2185475d7f72a16fdca3451ec7369631fcf18b15a85cde52",
+            "lastModified": "Mon, 16 Dec 2024 22:48:54 GMT",
+            "length": 33611055,
+            "pinnedAtUTC": "2026-11-02T21:43:00Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "float32"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "sourceSize": [
+              2500,
+              2500
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Point",
+              "TIFFTAG_XRESOLUTION": "72",
+              "TIFFTAG_YRESOLUTION": "72"
+            },
+            "sourceUnits": [
+              "US survey foot"
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N105E350_2024_DEM_Phase2_cog.tif",
+            "validPixelsInWindow": 91645
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "terrain-16-17537-25315",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.67640041322905,
+              37.83671378958648,
+              -83.65870213212034,
+              37.85074863008597
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"946f5bd524b886e80677eb16dacc9e73-7\"",
+            "expandedNativePolicy": "dem",
+            "id": "N105E349_2024_DEM_Phase2_cog.tif",
+            "identity": "6b551b22ad1268e7f52822d3e4af0de446792330a556b3734039d307e6e18980",
+            "lastModified": "Mon, 16 Dec 2024 22:48:47 GMT",
+            "length": 33988692,
+            "pinnedAtUTC": "2026-11-02T21:49:40Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "float32"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "sourceSize": [
+              2500,
+              2500
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Point",
+              "TIFFTAG_XRESOLUTION": "72",
+              "TIFFTAG_YRESOLUTION": "72"
+            },
+            "sourceUnits": [
+              "US survey foot"
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N105E349_2024_DEM_Phase2_cog.tif",
+            "validPixelsInWindow": 264196
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "terrain-16-17538-25314",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.67640041322905,
+              37.83671378958648,
+              -83.65870213212034,
+              37.85074863008597
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"946f5bd524b886e80677eb16dacc9e73-7\"",
+            "expandedNativePolicy": "dem",
+            "id": "N105E349_2024_DEM_Phase2_cog.tif",
+            "identity": "6b551b22ad1268e7f52822d3e4af0de446792330a556b3734039d307e6e18980",
+            "lastModified": "Mon, 16 Dec 2024 22:48:47 GMT",
+            "length": 33988692,
+            "pinnedAtUTC": "2026-11-02T21:49:40Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "float32"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "sourceSize": [
+              2500,
+              2500
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Point",
+              "TIFFTAG_XRESOLUTION": "72",
+              "TIFFTAG_YRESOLUTION": "72"
+            },
+            "sourceUnits": [
+              "US survey foot"
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N105E349_2024_DEM_Phase2_cog.tif",
+            "validPixelsInWindow": 100147
+          },
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.65909011210945,
+              37.836404873490046,
+              -83.64138876508832,
+              37.850442204327734
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"3acecadea59dbf75199fa3f2e2ec5d69-7\"",
+            "expandedNativePolicy": "dem",
+            "id": "N105E350_2024_DEM_Phase2_cog.tif",
+            "identity": "66af99bb665f83bf2185475d7f72a16fdca3451ec7369631fcf18b15a85cde52",
+            "lastModified": "Mon, 16 Dec 2024 22:48:54 GMT",
+            "length": 33611055,
+            "pinnedAtUTC": "2026-11-02T21:43:00Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "float32"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.6096012192024385,
+              0.6096012192024385
+            ],
+            "sourceSize": [
+              2500,
+              2500
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Point",
+              "TIFFTAG_XRESOLUTION": "72",
+              "TIFFTAG_YRESOLUTION": "72"
+            },
+            "sourceUnits": [
+              "US survey foot"
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N105E350_2024_DEM_Phase2_cog.tif",
+            "validPixelsInWindow": 164049
+          }
+        ]
+      }
+    }
+  },
+  {
+    "job": "leaf-off-16-17539-25313",
+    "result": {
+      "originalReceipt": {
+        "sourceEvidence": [
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.65870213212034,
+              37.850133231599685,
+              -83.64099743010426,
+              37.86417058718732
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"739791325256952179db58a36fcc4cba-10\"",
+            "expandedNativePolicy": "leaf-off",
+            "id": "N104E350_2023_Season2_3IN_cog.tif",
+            "identity": "5f398d85a4dd5bc1d59b593d553c07b9b284bb1df45ff0e3f4ad57c3c0b1763e",
+            "lastModified": "Fri, 28 Mar 2025 20:31:27 GMT",
+            "length": 1031113837,
+            "pinnedAtUTC": "2026-11-02T22:06:56Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.07620015240030481,
+              0.07620015240030481
+            ],
+            "sourceSize": [
+              20000,
+              20000
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N104E350_2023_Season2_3IN_cog.tif",
+            "validPixelsInWindow": 685488
+          },
+          {
+            "attribution": "Kentucky Division of Geographic Information / KyFromAbove; RRGH reprojected derivative.",
+            "bbox": [
+              -83.65909011210945,
+              37.836404873490046,
+              -83.64138876508832,
+              37.850442204327734
+            ],
+            "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+            "etag": "\"d9e3a14dfe5fd593a754fd119342fdc7-10\"",
+            "expandedNativePolicy": "leaf-off",
+            "id": "N105E350_2023_Season2_3IN_cog.tif",
+            "identity": "290c418dba4b55d0ae60ec9a379fa433b67c30b692b8bc100ca59b792dea363f",
+            "lastModified": "Fri, 28 Mar 2025 20:39:09 GMT",
+            "length": 1017853263,
+            "pinnedAtUTC": "2026-11-02T21:43:12Z",
+            "provider": "KyFromAbove",
+            "rightsReference": "RRGH-EXPANDED-SOURCE-RIGHTS-20261102",
+            "sourceCRS": "EPSG:3089",
+            "sourceDtypes": [
+              "uint8",
+              "uint8",
+              "uint8",
+              "uint8"
+            ],
+            "sourceLicense": "Public Domain with Attribution; CC BY for maps",
+            "sourcePixelSizeMeters": [
+              0.07620015240030481,
+              0.07620015240030481
+            ],
+            "sourceSize": [
+              20000,
+              20000
+            ],
+            "sourceTags": {
+              "AREA_OR_POINT": "Area"
+            },
+            "sourceUnits": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N105E350_2023_Season2_3IN_cog.tif",
+            "validPixelsInWindow": 363088
+          }
+        ]
+      }
+    }
+  }
+]
