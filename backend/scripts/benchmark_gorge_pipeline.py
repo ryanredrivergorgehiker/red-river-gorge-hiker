@@ -64,6 +64,29 @@ def receipt_valid(root, receipt, recipe):
     return True
 
 
+def expanded_native_unit(candidate, ds, dem=False):
+    """Verify each new object's native metadata before reading its pixels."""
+    policy = candidate.get("expandedNativePolicy")
+    if policy is None:
+        return candidate.get("verticalUnit")
+    expected = {"hiking": (0.85, False), "dem": (0.61, True), "leaf-off": (0.077, False)}
+    if policy not in expected or expected[policy][1] != dem:
+        raise ValueError("Unreviewed expanded source family")
+    crs = CRS(ds.crs)
+    if crs.to_epsg() != 3089 or not crs.is_projected:
+        raise ValueError("Expanded original native CRS differs")
+    scale = crs.axis_info[0].unit_conversion_factor
+    resolution = [abs(ds.transform.a)*scale, abs(ds.transform.e)*scale]
+    if any(not math.isfinite(v) or not 0 < v <= expected[policy][0] for v in resolution):
+        raise ValueError("Expanded native source resolution changed")
+    if ds.transform.b != 0 or ds.transform.d != 0:
+        raise ValueError("Unreviewed rotated native source")
+    unit = ds.units[0] if ds.units else None
+    if dem and unit not in ("US survey foot", "metre"):
+        raise ValueError("Expanded native DEM vertical unit missing")
+    return unit
+
+
 def mosaic(cache, candidates, bounds, width, height, dem=False):
     """Warp exact source pixels with masks; no invented/fallback pixels."""
     ll = transform_bounds("EPSG:3857", "EPSG:4326", *bounds, densify_pts=21)
@@ -86,12 +109,13 @@ def mosaic(cache, candidates, bounds, width, height, dem=False):
                     unit_scale = native_crs.axis_info[0].unit_conversion_factor
                     if not native_crs.is_projected:
                         raise ValueError("Benchmark native resolution requires projected CRS")
+                    vertical_unit = expanded_native_unit(candidate, ds, dem)
                     with WarpedVRT(ds, crs="EPSG:3857", transform=transform,
                                    width=width, height=height, resampling=Resampling.bilinear,
                                    add_alpha=True, warp_mem_limit=64) as vrt:
                         values = vrt.read([1] if dem else [1, 2, 3])
                         if dem:
-                            unit = candidate.get("verticalUnit")
+                            unit = vertical_unit
                             if unit not in ("US survey foot", "metre"):
                                 raise ValueError("Exact DEM asset vertical unit not established")
                             if unit == "US survey foot":
