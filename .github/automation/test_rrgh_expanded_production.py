@@ -62,9 +62,10 @@ class ExpansionTests(unittest.TestCase):
                     self.assertEqual(row['expandedNativePolicy'],family)
                     self.assertEqual(row['catalogSHA256'],e.CATALOG_SHA)
                     self.assertIn('attribution',row)
-    def test_worst_case_pilot_fits_actual_producer_seconds(self):
-        self.assertEqual(sum(e.LIMITS.values()),9)
-        self.assertLessEqual(sum(e.LIMITS.values())*600,9000)
+    def test_all_failed_children_leave_actual_producer_headroom(self):
+        plan=json.loads((SOURCE/'backend/config/gorge-campaign-wave-058-20261102/PLAN.json').read_bytes())
+        self.assertEqual(sum(e.LIMITS.values()),12)
+        self.assertGreaterEqual(plan['slots'][1]['seconds']-sum(e.LIMITS.values())*600,1800)
     def test_trusted_index_never_imports_source_checkout_code(self):
         import builtins
         original=builtins.__import__
