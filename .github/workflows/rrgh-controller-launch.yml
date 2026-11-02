@@ -1,0 +1,28 @@
+name: RRGH authorized controller launch
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/automation/rrgh-controller-request.json]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: rrgh-controller-initial-launch
+  cancel-in-progress: false
+jobs:
+  launch:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Claim and dispatch the exact restricted authentication probe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python .github/automation/rrgh_dispatcher.py launch

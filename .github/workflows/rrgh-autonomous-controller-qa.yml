@@ -1,0 +1,36 @@
+name: RRGH autonomous controller offline QA
+on:
+  push:
+    branches: [lane20/autonomous-dispatch-20261102]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  isolated-offline-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 444fa31cab3e321bc6e93b32b315efaba1ed24cd
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Source identity, single-owner dispatch, response-loss and budget regression tests
+        env:
+          RRGH_TEST_SOURCE: source-checkout
+        run: python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
+      - name: Existing immutable checkpoint and selective cache recovery regression tests
+        working-directory: source-checkout/backend/scripts
+        run: python -m unittest test_gorge_checkpoint test_gorge_compact_forecast -v
+      - name: Real engine full-quality configuration and resource admission
+        run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Two synthetic offline recover-plan-publish roundtrips; no Cloud credentials or writes
+        run: python .github/automation/verify_rrgh_dispatch_roundtrip.py source-checkout

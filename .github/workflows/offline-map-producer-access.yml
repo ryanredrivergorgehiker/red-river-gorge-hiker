@@ -1,3 +1,4 @@
+# RRGH_LEGACY_INITIATION_FENCED_EPOCH_1
 name: RRGH bounded source-local map campaign and independent recovery
 # Wave055 exact independently verified successor after Wave054 original push recovery.
 # Source SHA, WIF identity, job reservation and recovery controls remain pinned.
@@ -13,12 +14,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   bounded-stage:
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
-      github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute verified new-territory wave057 20261031'
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -53,9 +49,7 @@ jobs:
         run: python backend/scripts/gorge_campaign.py --phase produce
   independent-recovery:
     needs: bounded-stage
-    if: >-
-      always() && github.run_attempt == 1 &&
-      needs.bounded-stage.outputs.worker_receipt == 'true'
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -86,11 +80,7 @@ jobs:
       - name: Independently recover and verify every new output and checkpoint
         run: python backend/scripts/gorge_campaign.py --phase recovery
   wave011-readonly-checkpoint-audit:
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
-      github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: verify Wave011 neighbor edges and local package read-only 20261030'
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -242,11 +232,7 @@ jobs:
 # Separate zero-source-job Wave011 salvage; original producer/recovery gates remain unchanged.
 
   wave011-salvage-stage:
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
-      github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: recover verified Wave011 checkpoints without rerendering 20261030'
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -277,12 +263,7 @@ jobs:
 
   wave011-salvage-independent:
     needs: wave011-salvage-stage
-    if: >-
-      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
-      github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: recover verified Wave011 checkpoints without rerendering 20261030' &&
-      needs.wave011-salvage-stage.result == 'success'
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -310,4 +291,5 @@ jobs:
           project_id: rrgh-nonproduction
       - name: Independently recover source records and read back every new part
         run: python backend/scripts/gorge_wave011_salvage.py --phase independent
+
 

@@ -1,0 +1,400 @@
+#!/usr/bin/env python3
+"""Plan the next full-quality wave under the exact dispatcher identity, offline only.
+
+Run from a temporary checkout of the exact engineering source ref, with the
+latest independent recovery receipt supplied from a separate trusted audit.
+This module is outside backend/scripts so it does not change engine snapshots.
+"""
+import base64
+import copy
+import json
+import os
+import re
+import sys
+import zlib
+from collections import Counter
+from pathlib import Path
+
+
+class Stop(Exception):
+    pass
+
+
+def check(pred, message):
+    if not pred:
+        raise Stop(message)
+
+
+def prepare(root, verified):
+    root = Path(root).resolve()
+    os.chdir(root)
+    sys.path.insert(0, str(root / "backend/scripts"))
+    from gorge_checkpoint import canonical, digest
+    from run_gorge_checkpoint_slot import code_snapshot
+    from forecast_gorge_checkpoint_campaign import bbox, coords, intersects, morton, PROFILES
+
+    code_path = root / "backend/scripts/gorge_campaign.py"
+    original_code = code_path.read_text()
+    match = re.search(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-(\d{3,9})(-push)?-(\d{8})'", original_code)
+    check(match is not None, "Missing canonical source configuration pointer")
+    wave = int(match.group(1))
+    suffix = match.group(2) or ""
+    date = match.group(3)
+    check(wave >= 21, "Unrecognized old wave")
+    check(verified.get("wave") == wave, "Recovery sequence mismatch")
+    prefix = "gorge-campaign-wave-"
+    old_path = root / "backend/config" / f"{prefix}{wave:03d}{suffix}-{date}"
+    next_path = root / "backend/config" / f"{prefix}{wave+1:03d}-{date}"
+    check(old_path.is_dir() and not next_path.exists(), "Old/new configuration missing or reused")
+    old = json.loads((old_path / "PLAN.json").read_bytes())
+    env = json.loads((old_path / "ALLOWANCE.json").read_bytes())
+    region = json.loads(zlib.decompress(base64.b64decode(
+        (old_path / "REGION-PLAN.json.z.b64").read_bytes())))
+    check(old["campaign"]["sequence"] == wave, "Prior campaign sequence mismatch")
+    check(old["approvedJobIDs"] == [x["id"] for x in region["jobs"]], "Prior region mismatch")
+    legacy = wave == 22
+    if legacy:
+        check(old["campaign"]["id"] == "gorge-full-quality-25usd-20261030" and
+              old["campaign"]["ceilingUSD"] == "25.00" and
+              old["campaign"]["storageTargetUSDPerMonth"] == "1.00",
+              "Wave022 legacy authority lineage changed")
+    else:
+        check(old["campaign"]["id"] == "gorge-full-quality-125usd-20261031" and
+              old["campaign"]["ceilingUSD"] == "125.00" and
+              old["campaign"]["storageTargetUSDPerMonth"] == "2.00",
+              "Forward-only budget lineage unexpectedly changed")
+    budget_path = root / "backend/scripts/gorge_campaign_budget.py"
+    template = Path(__file__).with_name("rrgh_campaign_budget_v2.py").read_bytes()
+    check(b"CAMPAIGN='gorge-full-quality-125usd-20261031'" in template,
+          "Missing exact authorized successor budget policy")
+    if legacy:
+        check(b"CAMPAIGN='gorge-full-quality-25usd-20261030'" in budget_path.read_bytes(),
+              "Original Wave022 budget source changed")
+        budget_path.write_bytes(template)
+        # The first v2 engine must carry the new ceiling in its immutable
+        # server-side campaign fence too, not only in the plan and settlement.
+        rebind_code = code_path.read_text()
+        old_fence = "'ceilingUSD':'25.00'"
+        check(rebind_code.count(old_fence) == 1,
+              "Legacy engine fence unexpectedly changed")
+        code_path.write_text(rebind_code.replace(old_fence,
+                                               "'ceilingUSD':c['ceilingUSD']"))
+    else:
+        check(budget_path.read_bytes() == template, "Existing budget successor template mismatch")
+    import importlib
+    budget = importlib.import_module("gorge_campaign_budget")
+    budget = importlib.reload(budget)
+    admit, cost = budget.admit, budget.cost
+    # Read the migrated engine again before rewriting its CONFIG pointer.
+    # Otherwise the legacy source variable would silently undo the v2 fence.
+    original_code = code_path.read_text()
+    prior_plan_sha = digest(canonical(old))
+    check(verified["planSHA256"] == prior_plan_sha, "Previous plan digest mismatch")
+    ref = verified["receiptRef"]
+    check(ref["key"] == "engineering/map-production/plans/" + prior_plan_sha +
+          "/slots/00002/receipt.json", "Previous receipt key mismatch")
+    check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
+
+    partial = verified.get("partialRecovered") is True
+    pixel_gaps = verified.get("sourcePixelGapJobs", [])
+    check(isinstance(pixel_gaps, list) and len(set(pixel_gaps)) == len(pixel_gaps),
+          "Malformed verified pixel-gap exclusions")
+    prior_pixel_gaps = old["campaign"].get("sourcePixelGapQuarantines", [])
+    check(isinstance(prior_pixel_gaps, list) and
+          len(set(prior_pixel_gaps)) == len(prior_pixel_gaps) and
+          not set(prior_pixel_gaps) & set(old["completedJobIDs"]),
+          "Inherited original-source pixel-gap quarantine corrupted")
+    if partial:
+        # Exact, independently verified partial incidents only. Every consumed
+        # prefix and the failing attempt are retained; never replay a checkpoint.
+        incidents = {
+            23: (41225003991,
+                 "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
+                 207, "usgs-topo-16-17570-25321"),
+            34: (41324364372,
+                 "d8fc62a5caf21e86283821666157591d3b23d4a257725306de5cb14a60c026fd",
+                 488, "leaf-on-16-17575-25345"),
+        }
+        check(wave in incidents, "Unreviewed partial incident")
+        run_id, pinned_plan, count, failed = incidents[wave]
+        check(verified.get("run") == run_id and
+              verified.get("planSHA256") == pinned_plan and
+              verified.get("failedJobID") == failed,
+              "Pinned partial incident identity mismatch")
+        recovered = verified.get("partialCompletedJobIDs")
+        check(isinstance(recovered, list) and len(recovered) == count and
+              recovered == old["approvedJobIDs"][:count] and
+              failed == old["approvedJobIDs"][count] and
+              failed not in recovered,
+              "Exact recovered prefix and failed attempt mismatch")
+        accepted = old["completedJobIDs"] + recovered
+        attempted = old["approvedJobIDs"][:count + 1]
+    elif pixel_gaps:
+        check(verified.get("partialCompletedJobIDs") == [] and
+              verified.get("failedJobID") is None,
+              "Source pixel gaps cannot be conflated with ambiguous failed allocations")
+        source_success = verified.get("sourceCompletedJobIDs")
+        check(isinstance(source_success, list) and
+              len(source_success) == verified.get("jobsNew") and
+              len(source_success) + len(pixel_gaps) == len(old["approvedJobIDs"]) and
+              set(source_success).isdisjoint(pixel_gaps) and
+              set(source_success) | set(pixel_gaps) == set(old["approvedJobIDs"]) and
+              len(set(source_success)) == len(source_success),
+              "Independent source gap evidence disagrees with exact prior allocation")
+        accepted = old["completedJobIDs"] + source_success
+        attempted = old["approvedJobIDs"]
+    else:
+        check(verified.get("partialCompletedJobIDs") == [] and
+              verified.get("failedJobID") is None and
+              verified.get("sourceCompletedJobIDs", []) == [],
+              "Unexpected incident metadata on complete ordinary wave")
+        accepted = old["completedJobIDs"] + old["approvedJobIDs"]
+        attempted = old["approvedJobIDs"]
+    check(len(accepted) == len(set(accepted)) == verified["acceptedJobs"],
+          "Prior accepted jobs disagree with independent settlement")
+    check(verified["acceptedRasterTiles"] >= len(accepted), "Raster count regression")
+    check(verified["sunlightAssets"] == 320, "Sunlight regression")
+    before_attempts = old["priorAttemptCounts"].copy()
+    historical_excluded = {jid for jid, n in before_attempts.items()
+                           if n > 0 and jid not in accepted}
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps)
+    check(len(historical_excluded) == inherited_exclusion_count and
+          set(prior_pixel_gaps) <= historical_excluded and
+          verified["historicalExclusions"] == 45,
+          "Historical exclusions or incident quarantine changed")
+    check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
+    check(old["campaign"]["ambiguousExcludedJobs"] ==
+          ["leaf-on-16-17535-25316", "leaf-on-16-17556-25323"],
+          "Historic two transport ambiguities changed")
+    for jid in attempted:
+        check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
+        before_attempts[jid] = 1
+    excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
+    check(len(excluded) == inherited_exclusion_count + (1 if partial else 0) + len(pixel_gaps) and
+          set(pixel_gaps) <= excluded and
+          (not partial or verified["failedJobID"] in excluded),
+          "Failed job must remain excluded from fresh territory")
+    check(all(n <= 2 for n in before_attempts.values()), "Attempt overflow")
+
+    grids = {z: coords(z) for z in (16, 17, 18)}
+    index, missing = {}, {}
+    for group, layers in PROFILES.items():
+        for layer, maxz in layers.items():
+            family = "dem" if layer == "terrain" else layer
+            sources = region["inventory"]["sources"].get(family, [])
+            gaps = 0
+            for x, y in sorted(grids[16], key=lambda xy: morton(*xy)):
+                if layer == "usgs-topo":
+                    source_ids = []
+                else:
+                    rect = bbox(16, x, y, 1/512 if layer == "terrain" else 0)
+                    source_ids = [f["id"] for f in sources if intersects(f["bbox"], rect)]
+                    if not source_ids:
+                        gaps += 1
+                        continue
+                tiles = []
+                for z in range(16, maxz+1):
+                    n = 2**(z-16)
+                    for dx in range(n):
+                        for dy in range(n):
+                            xx, yy = x*n+dx, y*n+dy
+                            if (xx, yy) in grids[z]:
+                                tiles.append([z, xx, yy])
+                jid = f"{layer}-16-{x}-{y}"
+                check(jid not in index and bool(tiles), "Source-window index collision")
+                index[jid] = {"id": jid, "layer": layer, "group": group,
+                    "z": 16, "x": x, "y": y,
+                    "operation": "usgs-tile" if layer == "usgs-topo" else "source-window",
+                    "sourceIDs": source_ids, "dependencies": [],
+                    "outputTiles": tiles, "preservedComplete": False}
+            missing[layer] = gaps
+    check(len(index) == 11940 and sum(missing.values()) == 13960,
+          "Pinned source inventory changed")
+    for prior in region["jobs"]:
+        reference = index[prior["id"]]
+        check(prior["sourceIDs"] == reference["sourceIDs"] and
+              prior["outputTiles"] == reference["outputTiles"],
+              "Source-pinned prior job changed")
+
+    # First source-backed mixed-layer pilot uses exactly the original production families.
+    # After verified nine-job pilot, cap at 20 exact source-backed attempts.
+    # The inherited worst-case 600-second child limits still fit 12300 seconds
+    # and original source-byte/source-request ceilings remain enforced.
+    limits = ({"hiking": 3, "terrain": 3, "leaf-off": 3} if wave < 37 else
+              {"hiking": 10, "terrain": 5, "leaf-off": 5})
+    picked = []
+    for layer, limit in limits.items():
+        landmarks = [index[jid] for jid in accepted if jid in index and
+                     index[jid]["layer"] == layer]
+        check(bool(landmarks), "No verified family anchors")
+        coords_done = [(j["x"], j["y"]) for j in landmarks]
+        eligible = [job for job in index.values()
+            if job["layer"] == layer and job["id"] not in accepted and
+            job["id"] not in excluded and before_attempts.get(job["id"], 0) == 0 and
+            (job["sourceIDs"] or layer == "usgs-topo")]
+        eligible.sort(key=lambda job: (
+            min(abs(job["x"] - x) + abs(job["y"] - y) for x,y in coords_done),
+            morton(job["x"], job["y"]), job["id"]))
+        # The finite regional grid is being exhausted: do not invent windows
+        # or require artificial 256-job family quotas. Keep every selected
+        # window source-backed, full-resolution, fresh and non-overlapping.
+        sample = eligible[:limit]
+        if not sample:
+            continue
+        sample.sort(key=lambda job: (
+            tuple(job["sourceIDs"]), morton(job["x"], job["y"]), job["id"]))
+        picked.extend(sample)
+    jobs = [j["id"] for j in picked]
+    check(bool(jobs),
+          "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed hiking, terrain or leaf-off "
+          "jobs remain; do not replay attempted jobs or pad the wave. "
+          "Next work requires reviewed source/layer coverage before a new wave.")
+    check(len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
+          not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
+    selected_counts = Counter(j["layer"] for j in picked)
+    check(set(selected_counts) <= set(limits) and
+          all(0 < count <= limits[layer] for layer, count in selected_counts.items()),
+          "Unexpected layer mix or finite family cap")
+    expected_tiles = sum(len(j["outputTiles"]) for j in picked)
+    # The count is determined by exact regional geometry, not a historical
+    # constant: border windows naturally contain fewer children over time.
+    # Check every chosen window against its full-resolution source profile,
+    # reject duplicate outputs, and never pad or downsample to meet a quota.
+    check(all(len(j["outputTiles"]) >= 1 and
+              len(j["outputTiles"]) <= (1 if j["layer"] == "usgs-topo" else 21)
+              for j in picked), "Selected window has invalid tile geometry")
+    unique_outputs = {(j["layer"], *tile) for j in picked
+                      for tile in j["outputTiles"]}
+    check(len(unique_outputs) == expected_tiles,
+          "Duplicate output tile in fresh allocation")
+    check(len(jobs) <= expected_tiles <= 256 + 256*21,
+          "Unexpected geometry-derived tile count: "+str(expected_tiles))
+
+    # Preserve original Wave000 per-layer source/time caps, rather than inferring
+    # authorization only from the most recent topo/leaf-on batch.
+    historic = json.loads((root / "backend/config/gorge-campaign-wave-000-20261030/PLAN.json").read_bytes())
+    policy = {}
+    for jid, perjob in historic["jobPolicies"].items():
+        layer = jid.rsplit("-", 3)[0]
+        if layer in policy:
+            check(policy[layer] == perjob, "Historic policy inconsistent")
+        else:
+            policy[layer] = perjob
+    check(policy.get("hiking") == {"seconds":600,"sourceBytes":67108864,"sourceRequests":150}
+          and policy.get("terrain") == {"seconds":600,"sourceBytes":134217728,"sourceRequests":200}
+          and policy.get("leaf-off") == {"seconds":600,"sourceBytes":536870912,"sourceRequests":750},
+          "Original source and time bounds changed")
+    for jid, perjob in old["jobPolicies"].items():
+        check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
+    check(all(x in policy for x in limits), "Missing original approved layer policy")
+    check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
+          <= old["limits"]["sourceRequests"], "Source requests cannot exceed prior envelope")
+    check(sum(policy[j["layer"]]["sourceBytes"] for j in picked)
+          <= old["limits"]["sourceBytes"], "Source bytes cannot exceed prior envelope")
+    check(sum(policy[j["layer"]]["seconds"] for j in picked)
+          <= old["limits"]["seconds"], "Production seconds cannot exceed prior envelope")
+
+    # Update only the one canonical source CONFIG pin. Old source files remain
+    # byte-identical, and the new scope is generated from the same provenance.
+    before = f"CONFIG=SOURCE.parent/'config/{prefix}{wave:03d}{suffix}-{date}'"
+    after = f"CONFIG=SOURCE.parent/'config/{prefix}{wave+1:03d}-{date}'"
+    check(original_code.count(before) == 1, "Canonical source pin not unique")
+    code_path.write_text(original_code.replace(before, after))
+
+    plan = copy.deepcopy(old)
+    plan["campaign"]["sequence"] = wave + 1
+    plan["campaign"]["sourcePixelGapQuarantines"] = prior_pixel_gaps + pixel_gaps
+    if legacy:
+        plan["campaign"]["id"] = "gorge-full-quality-125usd-20261031"
+        plan["campaign"]["ownerApproval"] = budget.APPROVAL
+        plan["campaign"]["ceilingUSD"] = "125.00"
+        plan["campaign"]["storageTargetUSDPerMonth"] = "2.00"
+    plan["campaign"]["previousRecovery"] = ref
+    carry = verified["nextCarry"]
+    check(carry["priorCompletedJobs"] == len(accepted) and
+          carry["priorRasterTiles"] == verified["acceptedRasterTiles"] and
+          carry["priorSunlightAssets"] == 320, "Carry inventory mismatch")
+    plan["campaign"]["carry"] = carry
+    plan["completedJobIDs"] = accepted
+    plan["approvedJobIDs"] = jobs
+    plan["slotJobs"] = {"1": jobs}
+    plan["priorAttemptCounts"] = before_attempts
+    from datetime import datetime, timezone, timedelta
+    plan["expiresAt"] = (datetime.now(timezone.utc) +
+                         timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    plan["jobPolicies"] = {j["id"]: policy[j["layer"]] for j in picked}
+    plan["slots"][1]["attempts"] = len(jobs)
+    plan["limits"]["attempts"] = len(jobs)
+    check(plan["slots"][1]["classARequests"] == 2000 and
+          3*len(jobs)+32 < 2000, "No producer Class-A headroom")
+    region["jobs"] = picked
+    check("gorge_campaign.py" in region["engineHashes"], "Missing engine hash")
+    region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
+    if "gorge_campaign_budget.py" in region["engineHashes"]:
+        region["engineHashes"]["gorge_campaign_budget.py"] = digest(budget_path.read_bytes())
+    identity = root / "backend/scripts/gorge_producer_identity.py"
+    check(identity.is_file() and 'offline-map-restricted-dispatch.yml' in identity.read_text(),
+          "Reviewed exact dispatcher identity guard missing")
+    check(plan["campaign"].get("controllerEpoch") == 1, "Exclusive controller epoch changed")
+    plan["regionPlanSHA256"] = digest(canonical(region))
+    plan["sourceSnapshotSHA256"] = code_snapshot(root / "backend/scripts")
+    env["cloudStorageAllowance"]["approvalReference"] = budget.APPROVAL
+    env["cloudStorageAllowance"]["approvedRecurringStorageUSDPerMonth"] = "2.00"
+    env["cloudStorageAllowance"]["approvedUSD"] = "0.6456"
+    env["cloudStorageAllowance"]["reservedWorstCaseUSD"] = str(cost(plan["limits"]))
+    env["cloudStorageAllowance"]["planSHA256"] = digest(canonical(plan))
+    ad = admit(plan, env)
+    check(str(ad["reserveUSD"]) == env["cloudStorageAllowance"]["reservedWorstCaseUSD"],
+          "Budget admission/reservation mismatch")
+    from decimal import Decimal
+    check(Decimal(ad["cumulativeAdmissionUSD"]) < Decimal("123") and
+          Decimal(ad["monthlyAdmissionUSD"]) < Decimal("2"),
+          "Authorized successor budget admission failed")
+
+    # Source-only CAS publication must include the new v2 budget module.
+    # The historical Wave022 plan and receipt are never overwritten.
+    next_path.mkdir(parents=True, exist_ok=False)
+    (next_path/"PLAN.json").write_bytes(canonical(plan))
+    (next_path/"ALLOWANCE.json").write_bytes(canonical(env))
+    (next_path/"REGION-PLAN.json.z.b64").write_bytes(
+        base64.b64encode(zlib.compress(canonical(region), 9)))
+
+    # Dynamic local readback uses the new modified source pin, never cloud data.
+    from gorge_campaign import configuration
+    p,e,r = configuration(next_path)
+    check(p["approvedJobIDs"] == jobs and p["completedJobIDs"] == accepted,
+          "Local canonical scope mismatch")
+    check(p["campaign"]["previousRecovery"] == ref and
+          p["campaign"]["carry"] == carry, "Immutable predecessor/carry mismatch")
+    return {
+        "nextSequence": wave+1,
+        "budgetMigrated": legacy,
+        "successorBudgetSource": "backend/scripts/gorge_campaign_budget.py",
+        "jobs": len(jobs), "tiles": expected_tiles,
+        "sourcePlanParent": prior_plan_sha,
+        "nextPlanSHA256": digest(canonical(plan)),
+        "sourcePinBefore": before, "sourcePinAfter": after,
+        "newScope": str(next_path.relative_to(root)),
+        "newSource": str(code_path.relative_to(root)),
+        "expectedPreviousReceipt": ref,
+        "cumulativeAdmissionUSD": str(ad["cumulativeAdmissionUSD"]),
+        "monthlyAdmissionUSD": str(ad["monthlyAdmissionUSD"])
+    }
+
+
+def main():
+    check(len(sys.argv) == 3, "Use <source-checkout> <verified-recovery.json>")
+    root = Path(sys.argv[1])
+    report = json.loads(Path(sys.argv[2]).read_text())
+    check(report.get("verified") is True and report.get("dispatchAuthorized") is False,
+          "Missing gated independent supervisor readback")
+    summary = prepare(root, report)
+    print(json.dumps(summary, sort_keys=True))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Stop as exc:
+        print("AUTO_PLANNER_STOP: " + str(exc), file=sys.stderr)
+        sys.exit(1)
