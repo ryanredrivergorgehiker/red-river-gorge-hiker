@@ -165,8 +165,10 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
                 'Expanded child reservations exceed producer slot: '+key)
     require((root/ENGINE).read_bytes()==(Path(controller_root)/TEMPLATE).read_bytes(),
             'Renderer differs from reviewed template')
+    from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
+    validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py'):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 

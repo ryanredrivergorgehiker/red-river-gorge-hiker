@@ -33,7 +33,8 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
-    'rrgh_required_inventory.py','expanded-source-rights-20261102.json',
+    'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py',
+    'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
     'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
     WORKFLOW,'rrgh-controller-launch.yml')]
@@ -268,7 +269,8 @@ def candidate_entries(source_root,audit,state):
           not set(jobs)&set(plan['completedJobIDs']) and
           all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs),'Replayed or malformed successor jobs')
     guard(len(plan['completedJobIDs'])==len(set(plan['completedJobIDs']))==audit['acceptedJobs'],'Accepted inventory mismatch')
-    guard(new_code==old_code.replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
+    from rrgh_recovery_catalog_integration import augment_campaign, TARGET as CATALOG_TARGET
+    guard(new_code==augment_campaign(old_code).replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
     from rrgh_expanded_production import validate_publication, ENGINE
     validate_publication(root,old_dir,new_dir,plan,audit)
     guard(plan['limits']=={**prior['limits'],'attempts':len(jobs)} and plan['maxConcurrency']==1 and
@@ -277,6 +279,9 @@ def candidate_entries(source_root,audit,state):
     guard(digest(canonical(snapshot))==plan['sourceSnapshotSHA256'],'Executable source snapshot mismatch')
     allowed={str(new_dir.relative_to(root)/name) for name in ('PLAN.json','ALLOWANCE.json','REGION-PLAN.json.z.b64')}
     allowed.add('backend/scripts/gorge_campaign.py')
+    catalog_tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+CATALOG_TARGET],
+        stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+    if not catalog_tracked:allowed.add(CATALOG_TARGET)
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
