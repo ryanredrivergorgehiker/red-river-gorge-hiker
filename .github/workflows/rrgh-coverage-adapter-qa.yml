@@ -1,0 +1,49 @@
+name: RRGH verified tile catalog and expanded-window validation
+on:
+  push:
+    branches: [lane20/verified-coverage-adapters-20261102]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  tile-catalog-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check Pillow==12.3.0
+      - run: python -m unittest discover -s .github/automation -p test_rrgh_verified_tile_catalog.py -v
+  bounded-public-full-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 444fa31cab3e321bc6e93b32b315efaba1ed24cd
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: db5abf719445b2fcc52c385f2218653a60b76198
+          path: intake-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Validate three complete expanded-source windows with original renderer, units and source limits
+        run: >-
+          python .github/automation/rrgh_validate_expanded_windows.py
+          --source source-checkout
+          --catalog intake-checkout/backend/config/official-source-intake-20261102/official-source-candidates.json
+          --spec .github/automation/rrgh-geographic-requirement-v1.json
+          --output "${{ runner.temp }}/full-window-evidence.json"
