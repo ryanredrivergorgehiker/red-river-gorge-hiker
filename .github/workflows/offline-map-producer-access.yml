@@ -1,6 +1,6 @@
 name: RRGH bounded source-local map campaign and independent recovery
-# Wave053 original-push, new run after GH41422998340 failed at setup-gcloud.
-# Previous job never entered producer phase; exact source, WIF trust and caps unchanged.
+# Wave054 exact verified successor after Wave053 fresh original-push recovery.
+# Source SHA and WIF identity remain pinned; no retesting old consumed allocations.
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
@@ -18,7 +18,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.run_attempt == 1 &&
-      github.event.head_commit.message == 'Lane20: execute verified new-territory wave053 20261031'
+      github.event.head_commit.message == 'Lane20: execute verified new-territory wave054 20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 175
     outputs:
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout exact reviewed source without persisted credentials
         uses: actions/checkout@v4
         with:
-          ref: 114355bd0901fd7a6eeb90fa6724ab448b788f9b
+          ref: df9baacd13a09ffbde6e4b33b0a67549ef023e7e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -62,7 +62,7 @@ jobs:
       - name: Fresh checkout of exact reviewed source
         uses: actions/checkout@v4
         with:
-          ref: 114355bd0901fd7a6eeb90fa6724ab448b788f9b
+          ref: df9baacd13a09ffbde6e4b33b0a67549ef023e7e
           persist-credentials: false
       - name: Set up Python
         uses: actions/setup-python@v6
