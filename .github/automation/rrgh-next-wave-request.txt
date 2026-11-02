@@ -1,8 +1,10 @@
-RRGH guarded Wave055 successor request after independently verified Wave054, producer GitHub run 41446468894.
-Wave054 producer and recovery passed, fresh first-attempt original restricted push.
-Exact Wave054 immutable plan SHA256: 091870400962c3dfc43ea5ed0e27afed6d25e363a2e9e79ca26558ef4b513cae.
-Exact recovery receipt SHA256: 28b7338716d0bdec1fabc9d1ece9d40070b780203765fe76633bd285d9d79b86; generation 1793623571416222.
-Wave054 accepted 18 jobs / 154 raster tiles; 2 original pixel-gap attempts were quarantined, not replayed.
-Accepted cumulative: 11106 jobs / 117908 raster tiles / 320 Sunlight files.
-Prior modeled cumulative charge USD11.76216463710559010505676270; same original campaign hard stops apply.
-Allow only guarded source-only Wave055 planning and separately authorized exact original restricted push. Do not overlap producers or change sources.
+RRGH guarded Wave056 successor request after independently verified Wave055, original producer GitHub run 41447661724.
+Wave055 original authorized push bounded-stage and independent-recovery both passed on run_attempt=1; no active overlapping producer at verification.
+Exact Wave055 immutable plan SHA256: 05cd0327b16a898a22f536a26c24679a6e4c9759affd1615d520ce49ad010579.
+Exact independent recovery receipt SHA256: bad362d306e4f85a35e6cd0fe03cbe7bc464afcce52c5d7f58204a4163645aac; generation 1793624001274285.
+Wave055 accepted 12 jobs / 76 full-quality raster tiles; 8 sourcePixelGapJobs attempted and quarantined, never accepted or replayed.
+Accepted cumulative after Wave055: 11118 jobs / 117984 raster tiles / 320 Sunlight assets.
+Recovery verified decoded pixels, output hashes, all 7 new package parts readback, 84 adjacent edges and existing caches preserved.
+Modeled cumulative production USD11.81650608072678446769714356; modeled storage USD0.7756941045373678207397460938/month, not invoices.
+Allow only immutable CAS-guarded original-push source-only Wave056 planning with all tests, historical exclusions, source/rights/pixel guards, original WIF identity and USD125/USD2 owner caps.
+Do not overlap original producers, replay consumed slots, alter security, or use source-only GITHUB_TOKEN to trigger paid production.
