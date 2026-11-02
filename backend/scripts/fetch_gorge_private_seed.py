@@ -132,8 +132,8 @@ def main():
     p.add_argument('--destination',required=True,type=Path)
     args=p.parse_args()
     try:
-        if any(os.environ.get(k)!=v for k,v in CONTEXT.items()):
-            raise SeedTransferError('Exact existing producer workflow context required')
+        from gorge_producer_identity import validate_context
+        validate_context(os.environ)
         raw=os.environ.pop('RRGH_STAGE_SEED_TRANSFER','')
         if not 0 < len(raw.encode()) <= 16384: raise SeedTransferError('Private input secret absent or oversized')
         descriptor=json.loads(raw); del raw

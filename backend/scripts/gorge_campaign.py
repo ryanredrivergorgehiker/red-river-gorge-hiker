@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-058-20261031'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-058-20261102'
 WAVE011_SALVAGE={'key':'engineering/map-production/plans/ad02daf172b88db0e6de4c0e1099b33f238ad88b2fe5df89aa597b633ae7c335/slots/00001/receipt.json','generation':'1793405625604649','bytes':1048,'sha256':'1509488d4bc7d448fcbf5af20aa267ce61c2dfb0baf6c7c16c3d7c1e84195b1b'}
 WAVE011_PRODUCER={'key':'engineering/map-production/plans/03edea40b63ad8d937064e10f7b221445a55da1fa87f7689657a70efab3d96eb/slots/00001/receipt.json','generation':'1793401709392186','bytes':728,'sha256':'eaf01977e64789af249b51e12046a6007613ace8523271716fc8921455d0920c'}
 WAVE011_AMBIGUOUS='leaf-on-16-17535-25316'
@@ -335,6 +335,8 @@ def produce(plan,evidence,region,root,store,opener,owner):
     sourcegaps=[]
     try:
         for job in plan['approvedJobIDs']:
+            from gorge_producer_identity import require_owner
+            require_owner(plan,'produce')
             expected=next(j for j in region['jobs'] if j['id']==job)
             if outputs+len(expected['outputTiles'])*TILE_CAP>OUTPUT_CAP:
                 stopped='output envelope reached before next attempt';break
@@ -480,7 +482,8 @@ def main():
     try:
         plan,evidence,region=configuration()
         if a.phase=='plan':emit(planSHA256=digest(canonical(plan)),jobs=len(region['jobs']),tiles=sum(len(j['outputTiles']) for j in region['jobs']),**admit(plan,evidence));return
-        if os.environ.get('GITHUB_RUN_ATTEMPT')!='1':raise ValueError('Rerun prohibited')
+        from gorge_producer_identity import require_owner
+        require_owner(plan,a.phase)
         root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener);owner=os.environ['GITHUB_RUN_ID']
         if a.phase=='produce':produce(plan,evidence,region,root,store,opener,owner)
         else:recover(plan,region,root,store,opener,owner)

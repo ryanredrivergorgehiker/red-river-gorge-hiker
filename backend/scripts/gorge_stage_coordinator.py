@@ -29,7 +29,7 @@ from run_gorge_checkpoint_slot import preflight, code_snapshot, token
 from gorge_guarded_worker import run_job, checkpoint_job
 from gorge_stage_inputs import bootstrap, unpack_seed, private_write, SHARED_NEW_CAP, PROOF_CAP
 from inspect_gorge_stage_handoff import inspect_handoff
-from fetch_gorge_private_seed import CONTEXT
+from gorge_producer_identity import validate_context
 
 SOURCE=Path(__file__).resolve().parent
 CONFIG=SOURCE.parent/'config/gorge-indexed-stage-20261029'
@@ -111,7 +111,7 @@ def signal(name):
 
 
 def private_root():
-    if any(os.environ.get(k)!=v for k,v in CONTEXT.items()):raise ValueError('Exact producer context required')
+    validate_context(os.environ)
     root=Path(os.environ['RUNNER_TEMP']).resolve()/'rrgh-private'
     checkout=Path(os.environ['GITHUB_WORKSPACE']).resolve()
     if root==checkout or checkout in root.parents or root.is_symlink():raise ValueError('Private runner root required')

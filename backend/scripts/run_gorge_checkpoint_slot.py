@@ -73,13 +73,8 @@ def token():
 def execute(args,plan,region,evidence):
     from gorge_stage_preflight import require_stage_release, require_input_proof, install_prior_tiles
     require_stage_release(plan,evidence)
-    expected={'GITHUB_REPOSITORY_ID':'1325611891','GITHUB_REPOSITORY_OWNER_ID':'313924954',
-      'GITHUB_REF':'refs/heads/lane20/offline-production-preflight-20261029',
-      'GITHUB_EVENT_NAME':'push',
-      'GITHUB_WORKFLOW_REF':'ryanredrivergorgehiker/red-river-gorge-hiker/.github/workflows/offline-map-producer-access.yml@refs/heads/lane20/offline-production-preflight-20261029'}
-    if any(os.environ.get(k)!=v for k,v in expected.items()):
-        raise ValueError('Requires the existing exact dedicated engineering workflow context')
-    if os.environ.get('GITHUB_RUN_ATTEMPT')!='1':raise ValueError('Automatic reruns cannot reuse a spending slot')
+    from gorge_producer_identity import require_owner
+    require_owner(plan,'produce')
     root=Path(args.output).resolve();source=Path(__file__).resolve().parents[2]
     if source==root or source in root.parents or 'public' in root.parts:
         raise ValueError('Private output outside checkout required')
