@@ -185,6 +185,9 @@ def prepare(root, verified):
         check(prior == index[prior["id"]], "Source-pinned prior job changed")
     migration(region, verified.get('sourcePolicyMode', 'expanded'))
     install_engine(root)
+    from rrgh_recovery_catalog_integration import install as install_catalog, MODULE as CATALOG_MODULE
+    install_catalog(root)
+    original_code=code_path.read_text()
     index, missing = build_index(region)
     if region['expandedSourceProduction']['mode'] == 'expanded':
         check(len(index) == 25900 and sum(missing.values()) == 0,
@@ -300,6 +303,7 @@ def prepare(root, verified):
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
     region["engineHashes"]["benchmark_gorge_pipeline.py"] = digest(
         (root / "backend/scripts/benchmark_gorge_pipeline.py").read_bytes())
+    region['engineHashes'][CATALOG_MODULE]=digest((root/'backend/scripts'/CATALOG_MODULE).read_bytes())
     if "gorge_campaign_budget.py" in region["engineHashes"]:
         region["engineHashes"]["gorge_campaign_budget.py"] = digest(budget_path.read_bytes())
     identity = root / "backend/scripts/gorge_producer_identity.py"
