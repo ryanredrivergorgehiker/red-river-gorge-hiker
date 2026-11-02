@@ -1,1 +1,1 @@
-{"action":"inspect-halted","source_sha":"4d21eecdfa6efac46f870d6f4726d36ed772afb4","request":"Owner-authorized read-only inspection of stranded wave105","date":"2026-11-02","original_run":41534076760}
+{"action":"salvage-halted","source_sha":"4d21eecdfa6efac46f870d6f4726d36ed772afb4","original_run":41534076760,"inspection_run":41537032492,"reason":"Owner-authorized recovery of exact seven durable checkpoints; never rerun source jobs","date":"2026-11-02"}
