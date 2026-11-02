@@ -8,6 +8,7 @@ import base64
 import copy
 import hashlib
 import json
+import math
 from pathlib import Path
 from urllib.parse import unquote
 import zlib
@@ -93,7 +94,26 @@ def install_engine(source_root, controller_root=ROOT):
 
 
 def build_index(region):
-    from forecast_gorge_checkpoint_campaign import bbox, coords, intersects, PROFILES
+    # The credential-bearing publisher must never import production-checkout code.
+    # Reconstruct the fixed reviewed geometry entirely in trusted controller code.
+    bounds=[-83.8,37.65,-83.4,37.95]
+    PROFILES={'core':{'hiking':17,'terrain':17,'usgs-topo':16},
+              'leaf-on':{'leaf-on':18},'leaf-off':{'leaf-off':18}}
+    require(region['boundsWGS84']==bounds and region['profiles']==PROFILES,
+            'Unreviewed geographic bounds or profiles')
+    def xy(lon,lat,z):
+        n=2**z
+        return math.floor((lon+180)/360*n),math.floor((1-math.asinh(math.tan(math.radians(lat)))/math.pi)/2*n)
+    def coords(z):
+        left,bottom=xy(bounds[0],bounds[1],z);right,top=xy(bounds[2],bounds[3],z)
+        return {(x,y) for x in range(left,right+1) for y in range(top,bottom+1)}
+    def bbox(z,x,y,halo=0):
+        n=2**z
+        lon=lambda a:a/n*360-180
+        lat=lambda a:math.degrees(math.atan(math.sinh(math.pi*(1-2*a/n))))
+        return [lon(x-halo),lat(y+1+halo),lon(x+1+halo),lat(y-halo)]
+    def intersects(a,b):
+        return a[0]<b[2] and a[2]>b[0] and a[1]<b[3] and a[3]>b[1]
     grids = {z:coords(z) for z in (16,17,18)}
     index, missing = {}, {}
     for group, layers in PROFILES.items():

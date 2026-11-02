@@ -204,7 +204,12 @@ def current_run(api,root,status):
 
 
 def audit_current(api,root):
-    _,state=current_run(api,root,'running');rid=state['runID']
+    _,state=current_run(api,root,'running')
+    return audit_state(api,root,state)
+
+
+def audit_state(api,root,state,allow_failed_controller=False):
+    rid=state['runID']
     run=api.call('GET','actions/runs/'+str(rid))
     jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
     guard(jobs['total_count']<=100,'Job pagination not complete')
@@ -213,10 +218,27 @@ def audit_current(api,root):
     guard(all(len(v)==1 for v in selected.values()),'Producer/recovery job multiplicity')
     logs={name:gh('actions/jobs/'+str(items[0]['id'])+'/logs',api.token,raw=True).splitlines()
           for name,items in selected.items()}
-    report=audit_run(run,jobs['jobs'],logs['independent-recovery'],logs['bounded-stage'],expected_dispatch=state)
+    report=audit_run(run,jobs['jobs'],logs['independent-recovery'],logs['bounded-stage'],
+        expected_dispatch=state,allow_failed_controller=allow_failed_controller)
     guard(report['planSHA256']==state['planSHA256'] and report['wave']==state['sequence'],'Recovery identity changed')
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
+    return report
+
+
+def audit_recovered(api,root):
+    caller('launch')
+    _,state=api.state();validate_state(state,root)
+    guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce',
+          'Only a halted independently recovered production allocation can advance')
+    auth=state.get('recoveredResumeAuthorization',{})
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+          all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
+          'Exact owner-authorized recovered continuation missing')
+    assert_no_other_producers(api)
+    report=audit_state(api,root,state,allow_failed_controller=True)
+    guard(report['receiptRef']==auth.get('recoveryReceipt'), 'Reviewed independent recovery changed')
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
     return report
 
 
@@ -271,15 +293,20 @@ def candidate_entries(source_root,audit,state):
     return parent,plan_hash,plan,entries
 
 
-def publish_and_advance(api,root,source_root,audit):
-    old,state=current_run(api,root,'running')
+def publish_and_advance(api,root,source_root,audit,recovered=False):
+    if recovered:
+        caller('launch');old,state=api.state();validate_state(state,root)
+    else:
+        old,state=current_run(api,root,'running')
     guard(state.get('enabled') is True,'Controller paused after recovery')
     # Re-read live successful producer/recovery evidence; do not trust a caller's flag.
-    guard(audit_current(api,root)==audit,'Audit does not match live independent recovery')
+    guard((audit_recovered(api,root) if recovered else audit_current(api,root))==audit,
+          'Audit does not match live independent recovery')
     parent,plan_hash,plan,entries=candidate_entries(source_root,audit,state)
     assert_no_other_producers(api,state['runID'])
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Source publication lease moved')
     state['status']='publishing';state['recoveredReceipt']=audit['receiptRef']
+    state.pop('recoveredResumeAuthorization',None)
     old=api.cas(old,state,'recovered '+state['dispatchID'])
     base=api.call('GET','git/commits/'+parent)
     tree=api.call('POST','git/trees',{'base_tree':base['tree']['sha'],'tree':entries})
@@ -350,16 +377,19 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller(a.command);api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') else a.command)
+    api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
     elif a.command=='claim':
         inputs={k:os.environ['INPUT_'+k.upper()] for k in ('mode','source_sha','plan_sha256','sequence','dispatch_id')}
         result=claim(api,a.root,inputs,run_id)
     elif a.command=='audit':result=audit_current(api,a.root)
+    elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
+    elif a.command=='publish-recovered':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()),recovered=True)
     elif a.command=='publish':result=publish_and_advance(api,a.root,a.source,json.loads(a.audit.read_bytes()))
     elif a.command=='probe':
         _,state=current_run(api,a.root,'probing');result=probe_source(a.source,state)

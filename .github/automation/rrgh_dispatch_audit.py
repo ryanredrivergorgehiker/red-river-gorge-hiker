@@ -59,7 +59,7 @@ def decimal(value):
     return n
 
 
-def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=None):
+def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=None, allow_failed_controller=False):
     """Pure verification: unit tests require no GitHub or Google Cloud access."""
     require(run.get("run_attempt") == 1, "Rerun prohibited")
     require(run.get("head_branch") == BRANCH, "Producer branch mismatch")
@@ -85,7 +85,12 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     incident = PARTIAL_INCIDENTS.get(sequence)
     partial = (expected_dispatch is None and incident is not None and run.get("id") == incident["run"] and
                run.get("head_sha") == incident["head"])
-    require((expected_dispatch is not None and run.get("status") == "in_progress" and run.get("conclusion") is None)
+    recovered_controller_failure = (allow_failed_controller and expected_dispatch is not None and
+        run.get('status') == 'completed' and run.get('conclusion') == 'failure' and
+        any(j.get('name') == 'advance' and j.get('conclusion') == 'failure' for j in jobs) and
+        all(j.get('name') in ('advance','retain-failure') for j in jobs if j.get('conclusion') == 'failure'))
+    require(recovered_controller_failure or
+            (expected_dispatch is not None and run.get("status") == "in_progress" and run.get("conclusion") is None)
             or run.get("conclusion") == ("failure" if partial else "success"),
             "Unrecognized producer run conclusion")
     require(run.get("repository", {}).get("full_name") == REPO, "Wrong repository")

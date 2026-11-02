@@ -63,7 +63,20 @@ for iteration in range(2):
     else:raise AssertionError('Failed independent recovery accepted')
     frozen=(folder/'PLAN.json').read_bytes()
     output=prepare(root,audit)
-    parent,new_hash,new_plan,entries=d.candidate_entries(root,audit,state)
+    # Reproduce the publisher's separate process: no source checkout imports or
+    # native dependencies are available to its credential-bearing validation.
+    import tempfile
+    with tempfile.TemporaryDirectory() as temp:
+        payload=Path(temp)/'input.json';payload.write_text(json.dumps(dict(audit=audit,state=state)))
+        code='''import json,sys
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+import rrgh_dispatcher as d
+p=json.loads(Path(sys.argv[3]).read_bytes())
+print(json.dumps(d.candidate_entries(Path(sys.argv[2]),p['audit'],p['state'])))
+'''
+        parent,new_hash,new_plan,entries=json.loads(subprocess.check_output(
+            [sys.executable,'-I','-c',code,str(Path(__file__).resolve().parent),str(root),str(payload)],text=True))
     assert (folder/'PLAN.json').read_bytes()==frozen
     assert new_plan['campaign']['previousRecovery']==receipt
     assert new_plan['campaign']['carry']==carry

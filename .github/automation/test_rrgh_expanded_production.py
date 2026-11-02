@@ -65,6 +65,15 @@ class ExpansionTests(unittest.TestCase):
     def test_worst_case_pilot_fits_actual_producer_seconds(self):
         self.assertEqual(sum(e.LIMITS.values()),9)
         self.assertLessEqual(sum(e.LIMITS.values())*600,9000)
+    def test_trusted_index_never_imports_source_checkout_code(self):
+        import builtins
+        original=builtins.__import__
+        def reject_source(name,*args,**kwargs):
+            if name.startswith(('forecast_gorge','gorge_')):
+                raise AssertionError('Publisher imported source checkout')
+            return original(name,*args,**kwargs)
+        with patch('builtins.__import__',side_effect=reject_source):
+            self.assertEqual(len(e.build_index(e.migration(region()))[0]),25900)
 
 
 class UpgradeTests(unittest.TestCase):
@@ -153,6 +162,55 @@ class ZeroOutputRecoveryTests(unittest.TestCase):
             with self.assertRaises(a.Halt):self.audit(f)
         f=self.fixture();f[3][0]['attemptConsumed']=False
         with self.assertRaises(a.Halt):self.audit(f)
+
+
+class RecoveredContinuationTests(unittest.TestCase):
+    def owner(self):
+        return dict(GITHUB_REPOSITORY=d.REPO,GITHUB_REF='refs/heads/'+d.WORKER,GITHUB_RUN_ATTEMPT='1',
+            GITHUB_ACTOR='ryanredrivergorgehiker',GITHUB_EVENT_NAME='push',
+            GITHUB_WORKFLOW_REF=d.REPO+'/.github/workflows/rrgh-controller-launch.yml@refs/heads/'+d.WORKER)
+    def prepared(self):
+        api=FakeGitHub();api.value.update(status='halted',mode='produce',runID=123,dispatchID='f'*64)
+        receipt=dict(bytes=1000,generation='123',key='exact-recovery',sha256='c'*64)
+        api.value['recoveredResumeAuthorization']={k:api.value[k] for k in ('runID','planSHA256','sourceSHA','dispatchID')}
+        api.value['recoveredResumeAuthorization'].update(authorizedBy='ryanredrivergorgehiker',
+            authorizedOn='2026-11-02',recoveryReceipt=receipt)
+        return api,dict(receiptRef=receipt)
+    def test_only_exact_owner_recovery_continuation_is_read_only(self):
+        api,report=self.prepared();before=copy.deepcopy(api.value)
+        with patch.dict(os.environ,self.owner(),clear=True),patch.object(d,'audit_state',return_value=report) as verify:
+            self.assertEqual(d.audit_recovered(api,ROOT),report)
+            self.assertTrue(verify.call_args.kwargs['allow_failed_controller'])
+        self.assertEqual(api.value,before)
+        self.assertFalse(any(c[0]!='GET' for c in api.calls))
+    def test_changed_authorization_receipt_active_producer_or_source_lease_rejected(self):
+        for key in ('runID','planSHA256','sourceSHA','dispatchID','authorizedBy','authorizedOn','recoveryReceipt'):
+            api,report=self.prepared();api.value['recoveredResumeAuthorization'][key]='forged'
+            with patch.dict(os.environ,self.owner(),clear=True),patch.object(d,'audit_state',return_value=report):
+                with self.assertRaises(d.Halt):d.audit_recovered(api,ROOT)
+        for mode in ('active','lease','not-halted','bot'):
+            api,report=self.prepared();env=self.owner()
+            if mode=='active':api.active=[dict(id=999,path='.github/workflows/'+d.WORKFLOW)]
+            if mode=='lease':api.head='c'*40
+            if mode=='not-halted':api.value['status']='running'
+            if mode=='bot':env['GITHUB_ACTOR']='github-actions[bot]'
+            with patch.dict(os.environ,env,clear=True),patch.object(d,'audit_state',return_value=report):
+                with self.assertRaises(d.Halt):d.audit_recovered(api,ROOT)
+    def test_failed_controller_requires_completed_successful_independent_work(self):
+        f=ZeroOutputRecoveryTests().fixture();run,jobs,receipt,producer,state=f
+        run.update(status='completed',conclusion='failure')
+        jobs.append(dict(name='advance',status='completed',conclusion='failure'))
+        def audit():
+            return a.audit_run(run,jobs,[json.dumps(receipt)],[json.dumps(x) for x in producer],
+                expected_dispatch=state,allow_failed_controller=True)
+        self.assertEqual(audit()['acceptedRasterTiles'],500)
+        with self.assertRaises(a.Halt):ZeroOutputRecoveryTests().audit(f)
+        for index in (0,1):
+            jobs[index]['conclusion']='failure'
+            with self.assertRaises(a.Halt):audit()
+            jobs[index]['conclusion']='success'
+        run['status']='in_progress';run['conclusion']='failure'
+        with self.assertRaises(a.Halt):audit()
 
 
 if __name__=='__main__':unittest.main()
