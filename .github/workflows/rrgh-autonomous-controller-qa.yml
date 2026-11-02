@@ -67,3 +67,12 @@ jobs:
           persist-credentials: false
       - name: Original wave105 salvage then two fresh synthetic successors with preserved quarantines
         run: python .github/automation/verify_rrgh_salvage_roundtrip.py salvage-source
+      - uses: actions/checkout@v4
+        with:
+          ref: 7225d8659c752598a6dc0258e5514e68d2b44fa4
+          path: overview-migration-source
+          persist-credentials: false
+      - name: Actual installed overview helper migration and trusted publication roundtrip
+        env:
+          RRGH_TEST_OVERVIEW_PILOT: '1'
+        run: python .github/automation/verify_rrgh_dispatch_roundtrip.py overview-migration-source

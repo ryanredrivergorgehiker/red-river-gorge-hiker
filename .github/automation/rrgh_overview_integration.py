@@ -1,11 +1,13 @@
 """Exact source integration for one preserved-child overview pilot."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
 MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py')
 MANIFEST=ROOT/'.github/automation/overview-pilot.json'
+PRIOR_MODULE_SHA256={'rrgh_overview_pilot.py':'8a77ce04f710c74082e1a2ef8e9079d6e972025e417e5594debeef15bac38d58'}
 HOOKS=[
     ("    (root/'worker').mkdir(mode=0o700)\n",
      "    (root/'worker').mkdir(mode=0o700)\n    from rrgh_overview_pilot import read_dependencies\n    overview_proof=read_dependencies(slot,plan,region,root/'worker')\n"),
@@ -47,9 +49,14 @@ def install(root):
     code=augment(path.read_text())
     for name in MODULES:
         template=(ROOT/'.github/automation'/name).read_bytes();target=root/'backend/scripts'/name
-        if target.exists() and target.read_bytes()!=template:raise ValueError('Overview module drift')
+        if target.exists():validate_prior_module(name,target.read_bytes(),template)
         target.write_bytes(template)
     path.write_text(code)
+
+
+def validate_prior_module(name,previous,template):
+    if previous!=template and hashlib.sha256(previous).hexdigest()!=PRIOR_MODULE_SHA256.get(name):
+        raise ValueError('Overview module drift')
 
 
 def validate_modules(root):

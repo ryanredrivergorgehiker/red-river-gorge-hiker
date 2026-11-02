@@ -34,6 +34,20 @@ def synthetic_proof():
 
 
 class OverviewProductionTests(unittest.TestCase):
+    def test_installed_helper_migration_rejects_unknown_prior_code(self):
+        current=(ROOT/'.github/automation/rrgh_overview_pilot.py').read_bytes()
+        i.validate_prior_module('rrgh_overview_pilot.py',current,current)
+        prior=(ROOT/'.github/automation/fixtures/overview-pilot-v1.py.txt').read_bytes()
+        i.validate_prior_module('rrgh_overview_pilot.py',prior,current)
+        with tempfile.TemporaryDirectory() as temporary:
+            scripts=Path(temporary)/'backend/scripts';scripts.mkdir(parents=True)
+            (scripts/'gorge_campaign.py').write_bytes((SOURCE/'backend/scripts/gorge_campaign.py').read_bytes())
+            (scripts/'rrgh_overview_pilot.py').write_bytes(prior)
+            i.install(temporary);i.validate_modules(temporary)
+            self.assertEqual((scripts/'rrgh_overview_pilot.py').read_bytes(),current)
+        for module in i.MODULES:
+            with self.assertRaisesRegex(ValueError,'drift'):
+                i.validate_prior_module(module,b'unreviewed prior module',current)
     def test_exact_campaign_integration_is_idempotent(self):
         code=(SOURCE/'backend/scripts/gorge_campaign.py').read_text()
         from rrgh_recovery_catalog_integration import augment_campaign
