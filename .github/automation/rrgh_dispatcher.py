@@ -100,7 +100,7 @@ def caller(mode):
         guard(os.environ.get('GITHUB_EVENT_NAME')=='push' and
               os.environ.get('GITHUB_ACTOR')=='ryanredrivergorgehiker' and
               os.environ.get('GITHUB_WORKFLOW_REF')==REPO+'/.github/workflows/rrgh-controller-launch.yml@refs/heads/'+WORKER,
-              'Only the owner-authenticated initial launch is allowed')
+              'Only the owner-authenticated launch or resume is allowed')
     else:
         guard(os.environ.get('GITHUB_EVENT_NAME')=='workflow_dispatch' and
               os.environ.get('GITHUB_ACTOR')=='github-actions[bot]' and
@@ -123,8 +123,22 @@ def assert_no_other_producers(api,allowed_run=None):
 def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
-    guard(state['status'] in (('awaiting-auth','auth-required') if mode=='probe' else ('ready',)),
+    guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else ('ready',)),
           'Allocation already claimed, running or unresolved')
+    if mode=='probe' and state['status']=='ready':
+        previous=state.get('lastRecovered',{})
+        guard(state.get('runID') is None and state.get('dispatchID') is None and
+              previous.get('sequence')==state['sequence']-1 and
+              isinstance(previous.get('runID'),int) and previous['runID']>0 and
+              bool(state.get('checkpoint')) and
+              previous.get('recoveryReceipt')==state['checkpoint'],
+              'Prepared resume lacks an exact recovered predecessor')
+    policy=state.get('githubBudgetPolicy',{})
+    guard(policy.get('enforcement')=='github-platform' and
+          policy.get('authorizedBy')=='ryanredrivergorgehiker' and
+          policy.get('authorizedOn')=='2026-11-02' and
+          policy.get('stopProtectionConfirmedByOwner') is True,
+          'Owner-authorized GitHub platform budget policy missing')
     assert_no_other_producers(api,allowed_run)
     _,legacy=api.file(ORIGINAL)
     guard(digest(legacy)==state.get('legacyFenceSHA256') and
@@ -136,10 +150,8 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     head=api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']
     guard(head==state['sourceSHA'],'Source lease moved')
     current=copy.deepcopy(state)
-    reserve=Decimal('0.10') if mode=='probe' else Decimal('5.00')
-    charged=Decimal(current['githubReservedUSD'])
-    guard(charged.is_finite() and 0<=charged and charged+reserve<=Decimal('350'),'GitHub cumulative reservation limit')
-    current['githubReservedUSD']=str(charged+reserve)
+    # The owner retired the stale October estimate on 2026-11-02. GitHub's
+    # account-level stop protection is authoritative; do not invent a second bill.
     current['launchCounter']=current.get('launchCounter',0)+1
     current['dispatchID']=digest(canonical({'epoch':current['epoch'],'plan':current['planSHA256'],
         'counter':current['launchCounter'],'mode':mode}))
@@ -295,6 +307,25 @@ def probe_source(source_root,state):
             'sourceContextPassed':True,'cloudWrites':0,'receiptSHA256':ref.sha256}
 
 
+def retain_failure(api,root,run_id,dispatch_id):
+    old,state=api.state();validate_state(state,root)
+    previous=state.get('lastRecovered',{})
+    if (previous.get('runID')==run_id and previous.get('dispatchID')==dispatch_id and
+            previous.get('sequence')==state['sequence']-1 and
+            bool(state.get('checkpoint')) and previous.get('recoveryReceipt')==state['checkpoint']):
+        # Recovery was already committed and ownership advanced. Keep the new
+        # allocation intact, including any ambiguous dispatch claim; never replay.
+        return {'status':'RECOVERED_SUCCESSOR_PRESERVED','runID':run_id,
+                'successorSequence':state['sequence'],'successorStatus':state['status'],
+                'automaticRetryPermitted':False,'stateChanged':False}
+    guard(str(state.get('runID'))==str(run_id) and state.get('dispatchID')==dispatch_id,
+          'Failed run cannot modify another allocation')
+    state['status']='auth-required' if state.get('mode')=='probe' else 'halted'
+    state['failureRunID']=run_id
+    api.cas(old,state,'failure retained; no automatic retry')
+    return {'status':state['status'],'runID':run_id,'automaticRetryPermitted':False}
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
@@ -317,14 +348,7 @@ def main():
         state['status']='ready';state['authenticationProbeRun']=run_id;state['runID']=None
         old=api.cas(old,state,'authenticated source and Cloud probe passed')
         result=dispatch(api,a.root,old,state,'produce',allowed_run=run_id)
-    else:
-        old,state=api.state();validate_state(state,a.root)
-        guard(str(state.get('runID'))==str(run_id) and state.get('dispatchID')==os.environ.get('RRGH_DISPATCH_ID'),
-              'Failed run cannot modify another allocation')
-        state['status']='auth-required' if state.get('mode')=='probe' else 'halted'
-        state['failureRunID']=run_id
-        api.cas(old,state,'failure retained; no automatic retry')
-        result={'status':state['status'],'runID':run_id,'automaticRetryPermitted':False}
+    else:result=retain_failure(api,a.root,run_id,os.environ.get('RRGH_DISPATCH_ID'))
     if a.output:a.output.write_bytes(canonical(result))
     print(json.dumps(result,sort_keys=True))
 
