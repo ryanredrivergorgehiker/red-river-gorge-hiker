@@ -31,9 +31,9 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered')
+          assert action in ('launch','resume-recovered','recover-unstarted')
           source=request.get('source_sha','')
-          if action=='resume-recovered':
+          if action in ('resume-recovered','recover-unstarted'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and state['status']=='halted'
@@ -45,6 +45,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py launch
+      - name: Dispatch recovery only after proving its original execution never started
+        if: steps.request.outputs.action == 'recover-unstarted'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py recover-unstarted
       - name: Revalidate the exact completed production and independent recovery
         if: steps.request.outputs.action == 'resume-recovered'
         env:
