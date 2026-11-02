@@ -1,0 +1,50 @@
+name: RRGH sample missing-region official source pixels safely
+on:
+  push:
+    branches: [lane20/coverage-expansion-20261102]
+    paths: [.github/workflows/rrgh-sample-official-source-pixels.yml]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-official-source-pixel-samples-20261102
+  cancel-in-progress: false
+jobs:
+  bounded-public-source-qa:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.event_name == 'push' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout protected independent engineering candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout immutable previously validated production source baseline
+        uses: actions/checkout@v4
+        with:
+          ref: df9baacd13a09ffbde6e4b33b0a67549ef023e7e
+          path: accepted-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install exact original-source COG read dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy==2.3.5' 'rasterio==1.5.2'
+      - name: Read bounded original COG pixels from missing-region locations
+        run: |
+          python backend/scripts/rrgh_sample_new_official_source_pixels.py \
+            --catalog backend/config/official-source-intake-20261102/official-source-candidates.json \
+            --region accepted-source/backend/config/gorge-campaign-wave-054-20261031/REGION-PLAN.json.z.b64 \
+            --per-layer 3 \
+            --output /tmp/rrgh-public-source-samples.json
+      - name: Retain exact source-pixel sample evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rrgh-new-official-native-pixel-samples
+          path: /tmp/rrgh-public-source-samples.json
+          if-no-files-found: warn
+          retention-days: 90
