@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-109-20261102'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-110-20261102'
 WAVE011_SALVAGE={'key':'engineering/map-production/plans/ad02daf172b88db0e6de4c0e1099b33f238ad88b2fe5df89aa597b633ae7c335/slots/00001/receipt.json','generation':'1793405625604649','bytes':1048,'sha256':'1509488d4bc7d448fcbf5af20aa267ce61c2dfb0baf6c7c16c3d7c1e84195b1b'}
 WAVE011_PRODUCER={'key':'engineering/map-production/plans/03edea40b63ad8d937064e10f7b221445a55da1fa87f7689657a70efab3d96eb/slots/00001/receipt.json','generation':'1793401709392186','bytes':728,'sha256':'eaf01977e64789af249b51e12046a6007613ace8523271716fc8921455d0920c'}
 WAVE011_AMBIGUOUS='leaf-on-16-17535-25316'
@@ -214,6 +214,8 @@ def bootstrap(slot,plan,region,root):
     from benchmark_ky_naip_usgs import ServiceCache
     svc=ServiceCache(service,byte_limit=region['sourceLimits']['serviceBytes'],request_limit=region['sourceLimits']['serviceRequests']);svc.close()
     (root/'worker').mkdir(mode=0o700)
+    from rrgh_overview_pilot import read_dependencies
+    overview_proof=read_dependencies(slot,plan,region,root/'worker')
     private_write(root/'REGION-PLAN.json',canonical(region))
     # New sources are pinned by the established source HEAD/If-Match path before
     # their first pixel read. Accepted cached identities never silently refresh.
@@ -233,7 +235,8 @@ def bootstrap(slot,plan,region,root):
     neighbors+=proof_catalogs(proof,es)
     return {'inputProofValidated':True,'proofRef':h['proof'],'acceptedBase':b,'sharedBytesReusedWithoutTransfer':73865407,
         'selectedCOGBytes':selection['selectedBytes'],'selectedCOGBlocks':len(keys),'neighbors':neighbors,
-        'campaignFence':fence,'workingCachePolicy':plan['cachePolicy'],'workerHandoff':json.loads(r.stdout)}
+        'campaignFence':fence,'workingCachePolicy':plan['cachePolicy'],'workerHandoff':json.loads(r.stdout),
+        'overviewPilot':overview_proof}
 
 def handoff(ticket):
     import socket
@@ -250,7 +253,9 @@ def handoff(ticket):
         if j['id'] in plan['completedJobIDs'] or not j['outputTiles']:raise ValueError('Invalid job')
         for sid in j['sourceIDs']:
             if j['layer']!='leaf-on':official_url(sources[sid]['url'])
-        if j['operation']=='overview':raise ValueError('First sustained wave must use explicit source windows')
+        if j['operation']=='overview':
+            from rrgh_overview_pilot import validate_scope
+            validate_scope(plan,region,j)
     cache=Cache(root/'working-cog',limit=region['sourceLimits']['cogBytes'],maximum_limit=1_000_000_000_000);cache.close()
     service=ServiceCache(root/'working-service',byte_limit=region['sourceLimits']['serviceBytes'],request_limit=region['sourceLimits']['serviceRequests'])
     meta,_=service.fetch(NAIP,{'f':'pjson'});service.close()
@@ -354,6 +359,8 @@ def produce(plan,evidence,region,root,store,opener,owner):
                 stopped='worker deadline reserve reached before next attempt';break
             try:
                 receipt=bounded_child(slot,plan,root/'REGION-PLAN.json',job,root)
+                from rrgh_overview_pilot import attach_proof
+                receipt=attach_proof(plan,region,receipt,initial)
             except RuntimeError:
                 # Only a verified original-source pixel-gap ValueError may be
                 # skipped. The child consumes its FULL reservation on failure;
@@ -452,6 +459,8 @@ def recover(plan,region,root,store,opener,owner):
         (root/'state').mkdir();states=check_states(load_large(slot,detail['stateRef']),root/'state')
         parts=assemble(slot,records,root) if records else []
         qa['sourceLedgerVerification']=states;qa['parts']=parts;qa['regionComplete']=False
+        from rrgh_overview_pilot import verify as verify_overview
+        qa['overviewPilotVerification']=verify_overview(slot,plan,region,records,root,SOURCE.parent.parent)
         # Additive evidence for later overviews/packages; never replace raster QA.
         qa['verifiedTileCatalogStatus']='empty' if not records else 'unavailable'
         if records:
@@ -479,7 +488,8 @@ def recover(plan,region,root,store,opener,owner):
             'producerSeconds':detail['seconds'],'settlement':ledger,'nextCarry':nextcarry,
             'sourcePixelGapJobs':detail.get('sourcePixelGapJobs',[]),
             'pixelGapAttemptsConsumed':detail.get('pixelGapAttemptsConsumed',0),
-            'allOutputHashesAndPixelsVerified':True,'allNewPackageChunksReadBack':True,'allExistingCachesPreserved':True}
+            'allOutputHashesAndPixelsVerified':True,'allNewPackageChunksReadBack':True,'allExistingCachesPreserved':True,
+            'overviewPilotVerification':qa.get('overviewPilotVerification')}
     except Exception as exc:
         import traceback
         error={'errorClass':type(exc).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(exc.__traceback__)]}
