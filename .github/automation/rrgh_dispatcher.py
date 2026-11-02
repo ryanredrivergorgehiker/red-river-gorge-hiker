@@ -389,6 +389,12 @@ def candidate_entries(source_root,audit,state):
         tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],
             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
         if not tracked:allowed.add(target)
+        else:
+            from rrgh_overview_integration import validate_prior_module
+            before=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+target])
+            after=(root/target).read_bytes()
+            validate_prior_module(module,before,after)
+            if before!=after:allowed.add(target)
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()

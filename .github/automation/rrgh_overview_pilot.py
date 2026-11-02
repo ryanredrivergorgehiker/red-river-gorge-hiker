@@ -77,13 +77,20 @@ def read_dependencies(slot,plan,region,destination):
         require(len(members)==1,'Child checkpoint member ambiguous')
         pack,entry=members[0]
         require(all(entry[k]==out[k] for k in ('path','bytes','sha256')),'Child output/pack mismatch')
-        recover_catalogs(slot,[pack],[out['path']],destination)
-        raw=(Path(destination)/out['path']).read_bytes()
+        # The checkpoint reader atomically publishes into a NEW directory.
+        # Bootstrap already created the worker directory, and four children
+        # cannot each recover into the same destination. Keep each immutable
+        # range read separate, then exclusively publish its verified tile.
+        recovered=Path(destination)/('overview-readback-'+child_job)
+        recover_catalogs(slot,[pack],[out['path']],recovered)
+        raw=(recovered/out['path']).read_bytes()
         require(len(raw)==out['bytes'] and digest(raw)==out['sha256'],'Child byte readback mismatch')
-        with Image.open(Path(destination)/out['path']) as image:
+        with Image.open(recovered/out['path']) as image:
             image.load();require(image.size==(256,256) and
                 (image.mode!='RGBA' or image.getextrema()[3]==(255,255)) and
                 max(ImageStat.Stat(image.convert('RGB')).stddev)>=0.1,'Incomplete child pixels')
+        target=Path(destination)/out['path'];target.parent.mkdir(parents=True,exist_ok=True)
+        with target.open('xb') as stream:stream.write(raw)
         children.append(dict(tile=['leaf-on',16,x,y],path=out['path'],bytes=out['bytes'],sha256=out['sha256'],
             job=child_job,jobReceipt=reference,checkpointObject=pack['ref'],checkpointOffset=entry['offset'],
             pixelReadbackVerified=True))

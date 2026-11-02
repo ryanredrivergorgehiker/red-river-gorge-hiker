@@ -1,9 +1,14 @@
 """Synthetic overview migration/provenance tests; no live acceptance."""
 import copy
+import base64
+import io
+import json
 import os
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+import zlib
 
 import rrgh_overview_integration as i
 import rrgh_overview_pilot as p
@@ -29,6 +34,20 @@ def synthetic_proof():
 
 
 class OverviewProductionTests(unittest.TestCase):
+    def test_installed_helper_migration_rejects_unknown_prior_code(self):
+        current=(ROOT/'.github/automation/rrgh_overview_pilot.py').read_bytes()
+        i.validate_prior_module('rrgh_overview_pilot.py',current,current)
+        prior=(ROOT/'.github/automation/fixtures/overview-pilot-v1.py.txt').read_bytes()
+        i.validate_prior_module('rrgh_overview_pilot.py',prior,current)
+        with tempfile.TemporaryDirectory() as temporary:
+            scripts=Path(temporary)/'backend/scripts';scripts.mkdir(parents=True)
+            (scripts/'gorge_campaign.py').write_bytes((SOURCE/'backend/scripts/gorge_campaign.py').read_bytes())
+            (scripts/'rrgh_overview_pilot.py').write_bytes(prior)
+            i.install(temporary);i.validate_modules(temporary)
+            self.assertEqual((scripts/'rrgh_overview_pilot.py').read_bytes(),current)
+        for module in i.MODULES:
+            with self.assertRaisesRegex(ValueError,'drift'):
+                i.validate_prior_module(module,b'unreviewed prior module',current)
     def test_exact_campaign_integration_is_idempotent(self):
         code=(SOURCE/'backend/scripts/gorge_campaign.py').read_text()
         from rrgh_recovery_catalog_integration import augment_campaign
@@ -74,6 +93,66 @@ class OverviewProductionTests(unittest.TestCase):
         for plan,audit in [(dict(overviewPilot=i.manifest()),{}),({},dict(overviewPilotVerification=synthetic_proof()))]:
             with self.assertRaises(ValueError):i.validate_recovery(plan,audit)
         i.validate_recovery(dict(overviewPilot=i.manifest()),dict(overviewPilotVerification=synthetic_proof()))
+
+
+class OverviewCheckpointIntegrationTests(unittest.TestCase):
+    """Use actual record decoding/range recovery/rendering; only GCS is in memory."""
+    def test_bootstrap_then_fresh_recovery_use_real_checkpoint_reader(self):
+        sys.path.insert(0,str(SOURCE/'backend/scripts'))
+        from gorge_checkpoint import Meter,DIMENSIONS,canonical,digest,encode_record
+        from PIL import Image
+        from rrgh_verified_overview import render
+        objects={}
+        def put(key,raw):
+            ref=dict(key=key,generation=str(len(objects)+1),bytes=len(raw),sha256=digest(raw))
+            objects[key]=raw
+            return ref
+        def record(key,obj):return put(key,encode_record(obj,2**20,True))
+        class Slot:
+            def __init__(self):self.meter=Meter(dict.fromkeys(DIMENSIONS,10_000_000))
+            def get(self,ref,start=0,length=None):
+                raw=objects[ref.key]
+                if len(raw)!=ref.bytes or digest(raw)!=ref.sha256:raise ValueError('Immutable read mismatch')
+                length=ref.bytes if length is None else length
+                self.meter.reserve(classBRequests=1,egressBytes=length+1)
+                return raw[start:start+length]
+        m=i.manifest();m['sourceJobCount']=4
+        prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
+        refs=[]
+        for n,jid in enumerate(m['children']):
+            x,y=map(int,jid.rsplit('-',2)[1:]);path=f'tiles/leaf-on/16/{x}/{y}.png'
+            image=Image.new('RGB',(256,256))
+            image.putdata([((a+13*n)%256,(b+19*n)%256,(a+b)//2) for b in range(256) for a in range(256)])
+            stream=io.BytesIO();image.save(stream,format='PNG');raw=stream.getvalue()
+            output=dict(path=path,bytes=len(raw),sha256=digest(raw))
+            pack=dict(ref=put(prefix+'slots/00001/outputs/'+digest(raw),raw),members=[dict(output,offset=0)])
+            original=dict(job=jid,validated=True,recipeSHA256=m['sourceRecipeSHA256'],outputs=[output])
+            refs.append(record(prefix+'slots/00001/jobs/'+jid+'.json',dict(format='rrgh-checkpoint-job-v1',
+                planSHA256=m['sourcePlanSHA256'],slot=1,job=jid,result=dict(originalReceipt=original,outputPacks=[pack]))))
+        detail=record(prefix+'slots/00001/indexes/details',dict(completedJobReceipts=refs))
+        worker=record(prefix+'slots/00001/receipt.json',dict(format='rrgh-slot-receipt-v1',
+            planSHA256=m['sourcePlanSHA256'],slot=1,result=dict(status='complete',detailRef=detail)))
+        result=dict(status='verified',jobs=4,workerReceipt=worker,detailRef=detail,
+            settlement=dict(sequence=m['sourceSequence'],independentRecoveryComplete=True),
+            allOutputHashesAndPixelsVerified=True,allNewPackageChunksReadBack=True,allExistingCachesPreserved=True)
+        m['recovery']=record(prefix+'slots/00002/receipt.json',dict(format='rrgh-slot-receipt-v1',
+            planSHA256=m['sourcePlanSHA256'],slot=2,result=result))
+        plan=dict(overviewPilot=m,approvedJobIDs=[m['job']],completedJobIDs=m['children'],priorAttemptCounts={},
+            jobPolicies={m['job']:dict(seconds=600,sourceBytes=0,sourceRequests=0)})
+        raw=(SOURCE/'backend/config/gorge-campaign-wave-058-20261102/REGION-PLAN.json.z.b64').read_bytes()
+        region=json.loads(zlib.decompress(base64.b64decode(raw)));job=p.job_for(m);region['jobs']=[job]
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);worker_dir=root/'worker';worker_dir.mkdir()
+            before={k:digest(v) for k,v in objects.items()}
+            proof=p.read_dependencies(Slot(),plan,region,worker_dir)
+            self.assertEqual(len(proof['children']),4)
+            rendered=render(region,job,proof['children'],worker_dir,root/'parent',SOURCE)
+            original=dict(rendered['receipt'],overviewProof=proof)
+            verified=p.verify(Slot(),plan,region,[dict(job=m['job'],result=dict(originalReceipt=original))],root/'recovery',SOURCE)
+            self.assertTrue(verified['independentParentRecomputationMatches'])
+            self.assertEqual(verified['officialSourceRequests'],0)
+            self.assertEqual(before,{k:digest(v) for k,v in objects.items()})
+            with self.assertRaises(ValueError):p.read_dependencies(Slot(),plan,region,worker_dir)
 
 
 if __name__=='__main__':unittest.main()
