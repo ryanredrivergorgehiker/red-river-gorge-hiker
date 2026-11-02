@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-104-20261102'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-105-20261102'
 WAVE011_SALVAGE={'key':'engineering/map-production/plans/ad02daf172b88db0e6de4c0e1099b33f238ad88b2fe5df89aa597b633ae7c335/slots/00001/receipt.json','generation':'1793405625604649','bytes':1048,'sha256':'1509488d4bc7d448fcbf5af20aa267ce61c2dfb0baf6c7c16c3d7c1e84195b1b'}
 WAVE011_PRODUCER={'key':'engineering/map-production/plans/03edea40b63ad8d937064e10f7b221445a55da1fa87f7689657a70efab3d96eb/slots/00001/receipt.json','generation':'1793401709392186','bytes':728,'sha256':'eaf01977e64789af249b51e12046a6007613ace8523271716fc8921455d0920c'}
 WAVE011_AMBIGUOUS='leaf-on-16-17535-25316'
@@ -452,6 +452,18 @@ def recover(plan,region,root,store,opener,owner):
         (root/'state').mkdir();states=check_states(load_large(slot,detail['stateRef']),root/'state')
         parts=assemble(slot,records,root) if records else []
         qa['sourceLedgerVerification']=states;qa['parts']=parts;qa['regionComplete']=False
+        # Additive evidence for later overviews/packages; never replace raster QA.
+        qa['verifiedTileCatalogStatus']='empty' if not records else 'unavailable'
+        if records:
+            try:
+                from rrgh_verified_tile_catalog import catalog
+                qa['verifiedTileCatalog']=catalog(plan,region,records,detail['completedJobReceipts'],qa,parts,root)
+                qa['verifiedTileCatalogStatus']='verified'
+            except Exception as catalog_error:
+                qa['verifiedTileCatalogError']={'class':type(catalog_error).__name__,'message':str(catalog_error)}
+        emit(phase='verified-tile-catalog',status=qa['verifiedTileCatalogStatus'],
+            tiles=qa.get('verifiedTileCatalog',{}).get('tileCount',0),
+            error=qa.get('verifiedTileCatalogError'),productionAccepted=False)
         qaref=save_large(slot,qa)
         completed=worker['result']['status'] in ('complete','bounded-stop')
         used=add_usage(boot['used'],worker['used'],slot.meter.used)
