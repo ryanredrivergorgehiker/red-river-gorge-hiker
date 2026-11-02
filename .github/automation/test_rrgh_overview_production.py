@@ -17,8 +17,8 @@ ROOT=Path(__file__).resolve().parents[2]
 SOURCE=Path(os.environ.get('RRGH_TEST_SOURCE','rrgh-expansion-source')).resolve()
 
 
-def synthetic_proof():
-    m=i.manifest();prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
+def synthetic_proof(job=None):
+    m=i.manifest(job);prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
     rows=[]
     for jid in m['children']:
         x,y=map(int,jid.rsplit('-',2)[1:])
@@ -34,6 +34,21 @@ def synthetic_proof():
 
 
 class OverviewProductionTests(unittest.TestCase):
+    def test_all_twenty_two_parents_continue_once_then_native_production_remains(self):
+        picked=[dict(id=f'{layer}-{n}',layer=layer,operation='source-window') for layer in ('hiking','terrain','leaf-off') for n in range(4)]
+        manifests=i.candidates();accepted=set(c for m in manifests for c in m['children']);before=set(accepted)
+        planned=[]
+        for expected in manifests:
+            new,authority=i.select(picked,accepted,{},True)
+            self.assertEqual(authority,expected);self.assertEqual(len(new),12)
+            self.assertEqual(sum(j['operation']=='overview' for j in new),1)
+            i.validate_verification(synthetic_proof(expected['job']))
+            accepted.add(expected['job']);planned.append(expected['job'])
+        self.assertEqual(len(set(planned)),22);self.assertTrue(before<=accepted)
+        self.assertEqual(i.select(picked,accepted,{},True),(picked,None))
+        skipped,authority=i.select(picked,before,{manifests[0]['job']:1},True)
+        self.assertEqual(authority,manifests[1]);self.assertEqual(len(skipped),12)
+        with self.assertRaises(ValueError):i.manifest('leaf-on-15-1-1')
     def test_installed_helper_migration_rejects_unknown_prior_code(self):
         current=(ROOT/'.github/automation/rrgh_overview_pilot.py').read_bytes()
         i.validate_prior_module('rrgh_overview_pilot.py',current,current)

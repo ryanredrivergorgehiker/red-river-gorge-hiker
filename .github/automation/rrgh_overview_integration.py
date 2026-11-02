@@ -24,7 +24,26 @@ HOOKS=[
 ]
 
 
-def manifest():return json.loads(MANIFEST.read_bytes())
+def candidates():
+    base=json.loads(MANIFEST.read_bytes())
+    queue=json.loads((ROOT/'.github/automation/overview-candidates.json').read_bytes())
+    if queue['format']!='rrgh-wave32-interior-overview-queue-v1' or queue['originalPilot']!=base['job']:
+        raise ValueError('Unreviewed overview queue')
+    result=[]
+    for z,x,y in queue['parentsXYZ']:
+        if z!=15 or type(x) is not int or type(y) is not int:raise ValueError('Unreviewed parent geometry')
+        m=copy.deepcopy(base);m.update(z=z,x=x,y=y,job=f'leaf-on-{z}-{x}-{y}',
+            children=[f'leaf-on-16-{2*x+dx}-{2*y+dy}' for dx in range(2) for dy in range(2)])
+        result.append(m)
+    if len(result)!=22 or len({m['job'] for m in result})!=22 or result[0]!=base:
+        raise ValueError('Exact finite overview queue changed')
+    return result
+
+
+def manifest(job=None):
+    for m in candidates():
+        if job is None or m['job']==job:return m
+    raise ValueError('Overview is outside the reviewed queue')
 
 
 def strip(code):
@@ -65,9 +84,9 @@ def validate_modules(root):
             raise ValueError('Unreviewed overview module')
 
 
-def pilot_job():
+def pilot_job(job=None):
     from rrgh_overview_pilot import job_for
-    return job_for(manifest())
+    return job_for(manifest(job))
 
 
 def validate_previous(plan,region):
@@ -75,15 +94,18 @@ def validate_previous(plan,region):
     if not overview:
         if plan.get('overviewPilot') is not None:raise ValueError('Unused overview authority')
         return
-    if overview!=[pilot_job()] or plan.get('overviewPilot')!=manifest():raise ValueError('Unreviewed prior overview')
+    if len(overview)!=1 or overview!=[pilot_job(overview[0]['id'])] or plan.get('overviewPilot')!=manifest(overview[0]['id']):
+        raise ValueError('Unreviewed prior overview')
     from rrgh_overview_pilot import validate_scope
     validate_scope(plan,region,overview[0])
 
 
 def select(picked,accepted,attempts,enabled):
-    m=manifest();candidate=pilot_job()
-    if not enabled or m['job'] in accepted or attempts.get(m['job'],0)>0:return picked,None
-    if not set(m['children'])<=set(accepted):return picked,None
+    if not enabled:return picked,None
+    eligible=[m for m in candidates() if m['job'] not in accepted and attempts.get(m['job'],0)==0
+              and set(m['children'])<=set(accepted)]
+    if not eligible:return picked,None
+    m=eligible[0];candidate=pilot_job(m['job'])
     result=copy.deepcopy(picked)
     choices=[i for i,j in enumerate(result) if j['layer']=='leaf-off']
     if not choices:raise ValueError('Pilot requires a native job slot to replace')
@@ -95,7 +117,8 @@ def select(picked,accepted,attempts,enabled):
 def validate_verification(proof):
     if proof is None:return None
     from rrgh_verified_tile_catalog import ref,require
-    m=manifest();prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
+    if not isinstance(proof,dict):raise ValueError('Invalid overview proof')
+    m=manifest(proof.get('job'));prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
     require(isinstance(proof,dict) and proof.get('job')==m['job'] and
             all(proof.get(k) is True for k in ('fourChildrenHashAndPixelVerified',
                 'independentParentRecomputationMatches','sourceQualityUnchanged')) and
