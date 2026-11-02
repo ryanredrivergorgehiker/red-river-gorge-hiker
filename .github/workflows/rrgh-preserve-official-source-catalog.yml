@@ -1,0 +1,99 @@
+name: RRGH preserve original official source discovery evidence
+on:
+  push:
+    branches: [lane20/coverage-expansion-20261102]
+    paths: [.github/workflows/rrgh-preserve-official-source-catalog.yml]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: rrgh-official-source-archive-20261102
+  cancel-in-progress: false
+jobs:
+  preserve:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.event_name == 'push' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Recover validated full-region source candidates
+        uses: actions/download-artifact@v4
+        with:
+          name: rrgh-original-source-expansion-candidates
+          run-id: '41346860346'
+          github-token: ${{ github.token }}
+          path: original-candidates
+      - name: Recover complete official STAC metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: rrgh-official-source-metadata
+          run-id: '41344607996'
+          github-token: ${{ github.token }}
+          path: stac
+      - name: Recover nine original Kentucky map quadrangles
+        uses: actions/download-artifact@v4
+        with:
+          name: rrgh-ky-original-map-sources
+          run-id: '41344701807'
+          github-token: ${{ github.token }}
+          path: kytopo
+      - name: Verify prior evidence hashes and preserve exact bytes without any source download
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          sources={
+              'official-source-candidates.json': (
+                  'original-candidates/rrgh-original-source-expansion-candidates.json',
+                  'fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193'),
+              'official-stac-coverage.json': (
+                  'stac/rrgh-official-coverage.json',
+                  'a6822c5e242aae1b096d2f9bd548b8acaab61242340a466e348d28ba2727e66e'),
+              'official-ky-nine-quads.json': (
+                  'kytopo/rrgh-ky-nine-quads.json',
+                  '6ce341912fea7cd292227a7a3b5c0b458fb7dfa011335648155bdd7588d7bc6c'),
+          }
+          target=Path('backend/config/official-source-intake-20261102')
+          target.mkdir(parents=True,exist_ok=True)
+          for name,(path,sha) in sources.items():
+              data=Path(path).read_bytes()
+              assert hashlib.sha256(data).hexdigest()==sha,('Hash mismatch',name)
+              json.loads(data)
+              (target/name).write_bytes(data)
+          c=json.loads((target/'official-source-candidates.json').read_bytes())
+          assert c['metadataCandidateCounts']=={'dem':558,'hiking':9,'leaf-off':558}
+          assert c['unchangedPinnedSourceIDsVerified'] is True
+          assert c['officialSTACFullRegionManifestSHA256']==sources['official-stac-coverage.json'][1]
+          assert c['officialS3NineQuadsManifestSHA256']==sources['official-ky-nine-quads.json'][1]
+          assert 'NOT YET CERTIFIED' in c['status']
+          note={
+            'format':'rrgh-official-source-intake-preservation-v1',
+            'purpose':'Durably retain metadata-only candidate evidence; NOT production authority',
+            'recoveredFromRuns':[41346860346,41344607996,41344701807],
+            'sourcePixelCoverageVerified':False,
+            'licenseReviewComplete':False,
+            'productionSourcePinsModified':False,
+            'sha256':{k:v[1] for k,v in sources.items()}
+          }
+          (target/'README.json').write_text(json.dumps(note,sort_keys=True,indent=2)+'\n')
+          print('OFFICIAL_SOURCE_EVIDENCE_VERIFIED: source files preserved with exact SHA256')
+          PY
+      - name: Commit only preserved public metadata to isolated engineering branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/config/official-source-intake-20261102/
+          if git diff --cached --quiet; then
+            echo "Exact public metadata already preserved"
+          else
+            git commit -m "Lane20: archive official map source candidates without production changes [skip ci]"
+            git push origin HEAD:refs/heads/lane20/coverage-expansion-20261102
+          fi
