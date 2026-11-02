@@ -282,8 +282,11 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 "Unexplained consumed source attempt")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
+    from rrgh_overview_integration import validate_verification
+    overview_proof=validate_verification(result.get('overviewPilotVerification'))
     return {
         "verified": True,
+        "overviewPilotVerification": overview_proof,
         "partialRecovered": partial,
         "partialCompletedJobIDs": recovered_ids,
         "failedJobID": failed_job,
