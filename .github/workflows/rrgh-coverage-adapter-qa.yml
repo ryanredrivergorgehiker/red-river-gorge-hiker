@@ -2,6 +2,12 @@ name: RRGH verified tile catalog and expanded-window validation
 on:
   push:
     branches: [lane20/verified-coverage-adapters-20261102]
+    paths:
+      - .github/automation/rrgh_verified_tile_catalog.py
+      - .github/automation/test_rrgh_verified_tile_catalog.py
+      - .github/automation/rrgh_validate_expanded_windows.py
+      - .github/automation/rrgh_source_window_intake.py
+      - .github/automation/rrgh_required_inventory.py
 permissions:
   contents: read
 env:

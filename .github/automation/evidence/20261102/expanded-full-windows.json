@@ -1,0 +1,239 @@
+{
+  "format": "rrgh-expanded-full-window-evidence-v1",
+  "run": 41493577029,
+  "job": 125442574988,
+  "sourceCommit": "444fa31cab3e321bc6e93b32b315efaba1ed24cd",
+  "validatorCommit": "f65d598ea629177d839c9fc5885d139caf6e5a6b",
+  "reports": [
+    {
+      "acceptedSourceOrCacheModified": false,
+      "cache": {
+        "byteCeiling": 67108864,
+        "cacheHitBytesThisProcess": 196608,
+        "cacheHitsThisProcess": 3,
+        "failedRequests": 0,
+        "networkSeconds": 1.0415664380000038,
+        "receivedBytes": 327680,
+        "requests": 3,
+        "reservedBytes": 327680
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "format": "rrgh-expanded-full-window-validation-v1",
+      "fullRegionalCoverageProved": false,
+      "fullWindowMaskPassed": true,
+      "layer": "hiking",
+      "nativeSources": [
+        {
+          "bands": 3,
+          "crs": "EPSG:3089",
+          "nativePixelSizeMeters": [
+            0.8466683600033373,
+            0.8466683600034113
+          ],
+          "nativeSize": [
+            21600,
+            14400
+          ],
+          "sourceID": "N13E29",
+          "sourceIdentity": {
+            "etag": "\"eee90d6bc0c56e159c8b4fd308068559\"",
+            "identity": "227f202c112d242c2ade42cb68a6d0de95cefbbd68c7624411dedb84f98f39a7",
+            "lastModified": "Wed, 10 Jun 2026 03:13:41 GMT",
+            "length": 70955362,
+            "pinnedAtUTC": "2026-11-02T17:42:26Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/KyTopoMapSeries/COGs/KyTopo_24K_N13E29_Coburn_cog.tif"
+          },
+          "verticalUnit": null
+        }
+      ],
+      "productionPromotionApproved": false,
+      "rightsReviewComplete": false,
+      "sourceIDs": [
+        "N13E29"
+      ],
+      "sourceRequests": 4,
+      "terrainHaloIncluded": false,
+      "validPixelCounts": [
+        262144
+      ],
+      "verticalConversion": null,
+      "workingRasterSHA256": "3bed98664857a96806befe52f14c40374015c3490e53dd24cecff122c733054e",
+      "x": 17512,
+      "y": 25290,
+      "z": 16
+    },
+    {
+      "acceptedSourceOrCacheModified": false,
+      "cache": {
+        "byteCeiling": 134217728,
+        "cacheHitBytesThisProcess": 5046272,
+        "cacheHitsThisProcess": 77,
+        "failedRequests": 0,
+        "networkSeconds": 2.494555326000004,
+        "receivedBytes": 5242880,
+        "requests": 5,
+        "reservedBytes": 5242880
+      },
+      "dimensions": [
+        514,
+        514
+      ],
+      "format": "rrgh-expanded-full-window-validation-v1",
+      "fullRegionalCoverageProved": false,
+      "fullWindowMaskPassed": true,
+      "layer": "terrain",
+      "nativeSources": [
+        {
+          "bands": 1,
+          "crs": "EPSG:3089",
+          "nativePixelSizeMeters": [
+            0.6096012192024385,
+            0.6096012192024385
+          ],
+          "nativeSize": [
+            2500,
+            2500
+          ],
+          "sourceID": "N097E341_2024_DEM_Phase2_cog.tif",
+          "sourceIdentity": {
+            "etag": "\"09ce982bad63ae51895e07daa4237168\"",
+            "identity": "72183a5dc706296819aec0d158ff483ae996eed0972c8498b9efd94115bce134",
+            "lastModified": "Mon, 16 Dec 2024 22:45:44 GMT",
+            "length": 28910919,
+            "pinnedAtUTC": "2026-11-02T17:42:28Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N097E341_2024_DEM_Phase2_cog.tif"
+          },
+          "verticalUnit": "US survey foot"
+        },
+        {
+          "bands": 1,
+          "crs": "EPSG:3089",
+          "nativePixelSizeMeters": [
+            0.6096012192024385,
+            0.6096012192024385
+          ],
+          "nativeSize": [
+            2500,
+            2500
+          ],
+          "sourceID": "N098E341_2024_DEM_Phase2_cog.tif",
+          "sourceIdentity": {
+            "etag": "\"9344b43ef2f85ccc4e6600ac085b1848\"",
+            "identity": "1061d83675f0e9046d2a958286a3fc5c7d99d6202beb32215ce3229aaf414f2a",
+            "lastModified": "Mon, 16 Dec 2024 22:46:07 GMT",
+            "length": 30044395,
+            "pinnedAtUTC": "2026-11-02T17:42:28Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N098E341_2024_DEM_Phase2_cog.tif"
+          },
+          "verticalUnit": "US survey foot"
+        }
+      ],
+      "productionPromotionApproved": false,
+      "rightsReviewComplete": false,
+      "sourceIDs": [
+        "N097E341_2024_DEM_Phase2_cog.tif",
+        "N098E341_2024_DEM_Phase2_cog.tif"
+      ],
+      "sourceRequests": 7,
+      "terrainHaloIncluded": true,
+      "validPixelCounts": [
+        233413,
+        30785
+      ],
+      "verticalConversion": "metres from exact per-source units",
+      "workingRasterSHA256": "fadf2eef2ce4a42b567eab0c3666a7f2bb7b6df33819cb8d3b573bf7987a4006",
+      "x": 17512,
+      "y": 25290,
+      "z": 16
+    },
+    {
+      "acceptedSourceOrCacheModified": false,
+      "cache": {
+        "byteCeiling": 536870912,
+        "cacheHitBytesThisProcess": 148439040,
+        "cacheHitsThisProcess": 2265,
+        "failedRequests": 0,
+        "networkSeconds": 32.99984438900005,
+        "receivedBytes": 89260032,
+        "requests": 57,
+        "reservedBytes": 89260032
+      },
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "format": "rrgh-expanded-full-window-validation-v1",
+      "fullRegionalCoverageProved": false,
+      "fullWindowMaskPassed": true,
+      "layer": "leaf-off",
+      "nativeSources": [
+        {
+          "bands": 4,
+          "crs": "EPSG:3089",
+          "nativePixelSizeMeters": [
+            0.07620015240030481,
+            0.07620015240030481
+          ],
+          "nativeSize": [
+            20000,
+            20000
+          ],
+          "sourceID": "N097E341_2024_Season1_3IN_cog.tif",
+          "sourceIdentity": {
+            "etag": "\"53c3a6ab46e8d879c52ce6a7e98ac50e-10\"",
+            "identity": "d3f473addef18995aa83e2c87d73d58396b84f9b45daa33b65868742c68d90af",
+            "lastModified": "Wed, 26 Mar 2025 07:37:42 GMT",
+            "length": 1036831015,
+            "pinnedAtUTC": "2026-11-02T17:42:32Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2024_Season1_3IN/N097E341_2024_Season1_3IN_cog.tif"
+          },
+          "verticalUnit": null
+        },
+        {
+          "bands": 4,
+          "crs": "EPSG:3089",
+          "nativePixelSizeMeters": [
+            0.07620015240030481,
+            0.07620015240030481
+          ],
+          "nativeSize": [
+            20000,
+            20000
+          ],
+          "sourceID": "N098E341_2024_Season1_3IN_cog.tif",
+          "sourceIdentity": {
+            "etag": "\"9e9a8fcb003eb992524e7250b6eb51a3-11\"",
+            "identity": "a7da574369570dc28a2d964187b93f046b1dfc2e56cacf03a5319be2cfe0227f",
+            "lastModified": "Wed, 26 Mar 2025 08:29:35 GMT",
+            "length": 1069589719,
+            "pinnedAtUTC": "2026-11-02T17:42:32Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2024_Season1_3IN/N098E341_2024_Season1_3IN_cog.tif"
+          },
+          "verticalUnit": null
+        }
+      ],
+      "productionPromotionApproved": false,
+      "rightsReviewComplete": false,
+      "sourceIDs": [
+        "N097E341_2024_Season1_3IN_cog.tif",
+        "N098E341_2024_Season1_3IN_cog.tif"
+      ],
+      "sourceRequests": 59,
+      "terrainHaloIncluded": false,
+      "validPixelCounts": [
+        927991,
+        120587
+      ],
+      "verticalConversion": null,
+      "workingRasterSHA256": "2a9be6666ea501d9ee02d63c6a6f39f324e897f0db649aeb67b3715cc736f6f3",
+      "x": 17512,
+      "y": 25290,
+      "z": 16
+    }
+  ],
+  "fullRegionalCoverageProved": false,
+  "productionPromotionApproved": false
+}
