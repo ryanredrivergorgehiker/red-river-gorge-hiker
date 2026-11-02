@@ -1,4 +1,6 @@
 name: RRGH bounded source-local map campaign and independent recovery
+# Wave053 original-push, new run after GH41422998340 failed at setup-gcloud.
+# Previous job never entered producer phase; exact source, WIF trust and caps unchanged.
 on:
   push:
     branches: [lane20/offline-production-preflight-20261029]
