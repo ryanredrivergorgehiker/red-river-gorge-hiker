@@ -13,10 +13,10 @@ import rrgh_dispatcher as d
 import rrgh_checkpoint_salvage as s
 import rrgh_salvage_audit as a
 from rrgh_prepare_dispatch_successor import prepare
-from test_rrgh_checkpoint_salvage import AuditTests
 
 root=Path(sys.argv[1]).resolve()
 sys.path.insert(0,str(root/'backend/scripts'))
+from test_rrgh_checkpoint_salvage import AuditTests
 from gorge_campaign import configuration
 plan,_,region=configuration()
 assert d.digest(d.canonical(plan))==a.manifest()['planSHA256']
