@@ -132,16 +132,49 @@ def caller(mode):
               'Wrong authenticated dispatcher identity')
 
 
-def assert_no_other_producers(api,allowed_run=None):
+class IncompleteActiveRunSnapshot(Halt):pass
+
+
+def scan_active_runs(api,allowed_run=None):
+    """Read one complete inventory; a changing page set is never clearance."""
     paths={ORIGINAL,'.github/workflows/'+WORKFLOW}
     for status in ('queued','in_progress','waiting','pending','requested'):
-        page=1;seen=0
+        page=1;seen=set();expected=None
         while True:
             data=api.call('GET',f'actions/runs?status={status}&per_page=100&page={page}')
-            runs=data.get('workflow_runs',[]);seen+=len(runs)
+            guard(isinstance(data,dict),'Malformed active-run response')
+            runs=data.get('workflow_runs');total=data.get('total_count')
+            guard(type(total) is int and total>=0 and isinstance(runs,list) and len(runs)<=100,
+                  'Malformed active-run count or page')
+            guard(all(isinstance(r,dict) and type(r.get('id')) is int and r['id']>0 and
+                      isinstance(r.get('path'),str) and bool(r['path']) for r in runs),
+                  'Malformed active-run identity')
+            # A conflicting producer is decisive, even on an inconsistent page.
             guard(not any(r.get('path') in paths and r.get('id')!=allowed_run for r in runs),'Another producer is active')
-            if seen>=data.get('total_count',0):break
-            guard(bool(runs) and page<20,'Active-run pagination incomplete');page+=1
+            ids={r['id'] for r in runs}
+            reason=f'status={status} page={page} seen={len(seen)} returned={len(runs)} total={total}'
+            if ((expected is not None and total!=expected) or len(ids)!=len(runs) or
+                    bool(ids & seen) or len(seen)+len(ids)>total):
+                raise IncompleteActiveRunSnapshot('Active-run pagination changed: '+reason)
+            expected=total;seen.update(ids)
+            if len(seen)==total:break
+            if not runs:
+                raise IncompleteActiveRunSnapshot('Active-run pagination incomplete: '+reason)
+            guard(page<20,'Active-run pagination limit exceeded: '+reason)
+            page+=1
+
+
+def assert_no_other_producers(api,allowed_run=None):
+    # GitHub's filtered run count and pages can disagree while jobs transition.
+    # Restart only these GETs, from page one and every status, at most twice.
+    # Never retry a claim, source publication, workflow dispatch or Cloud slot.
+    for attempt in range(3):
+        try:
+            return scan_active_runs(api,allowed_run)
+        except IncompleteActiveRunSnapshot as exc:
+            if attempt==2:raise Halt(str(exc)+'; three read-only scans exhausted') from None
+            print('CONTROLLER_READ_RETRY: '+str(exc)+'; restarting active-run inventory',file=sys.stderr)
+            time.sleep(attempt+1)
 
 
 def dispatch(api,root,state_sha,state,mode,allowed_run=None):
@@ -411,7 +444,7 @@ def audit_recovered(api,root):
     guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce',
           'Only a halted independently recovered production allocation can advance')
     auth=state.get('recoveredResumeAuthorization',{})
-    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03') and
           all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
           'Exact owner-authorized recovered continuation missing')
     assert_no_other_producers(api)
