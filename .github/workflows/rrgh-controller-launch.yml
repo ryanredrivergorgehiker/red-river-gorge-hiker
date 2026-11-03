@@ -31,12 +31,16 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered','recover-unstarted','inspect-halted','salvage-halted')
+          assert action in ('launch','resume-recovered','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed')
           source=request.get('source_sha','')
           if action in ('resume-recovered','recover-unstarted','inspect-halted','salvage-halted'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and state['status']=='halted'
+          if action=='resume-unclaimed':
+              assert re.fullmatch('[0-9a-f]{40}',source)
+              state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
+              assert source==state['sourceSHA'] and state['status']=='dispatching' and state.get('runID') is None
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
               out.write('action='+action+'\nsource='+source+'\n')
           PY
@@ -50,6 +54,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py recover-unstarted
+      - name: Reconcile an unclaimed admission failure and dispatch an unused-allocation probe
+        if: steps.request.outputs.action == 'resume-unclaimed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py resume-unclaimed
       - name: Dispatch bounded read-only inspection of the exact halted allocation
         if: steps.request.outputs.action == 'inspect-halted'
         env:

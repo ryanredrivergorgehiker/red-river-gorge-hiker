@@ -18,6 +18,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, build_opener, HTTPRedirectHandler
@@ -70,10 +71,17 @@ class GitHub:
         req=Request('https://api.github.com/repos/'+REPO+'/'+path,data=raw,method=method,
             headers={'Authorization':'Bearer '+self.token,'Accept':'application/vnd.github+json',
                      'Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
-        try:
-            with build_opener(NoRedirect).open(req,timeout=40) as response:body=response.read(8_000_001)
-        except HTTPError as exc:
-            raise Halt('GitHub '+method+' '+path.split('?')[0]+' HTTP '+str(exc.code)+'; no automatic retry') from None
+        # Only idempotent reads may retry a transient server response. An
+        # ambiguous write/dispatch retains its durable claim and never retries.
+        for attempt in range(3):
+            try:
+                with build_opener(NoRedirect).open(req,timeout=40) as response:body=response.read(8_000_001)
+                break
+            except HTTPError as exc:
+                if method=='GET' and exc.code in (500,502,503,504) and attempt<2:
+                    time.sleep(attempt+1)
+                    continue
+                raise Halt('GitHub '+method+' '+path.split('?')[0]+' HTTP '+str(exc.code)+'; no automatic retry') from None
         guard(len(body)<=8_000_000,'GitHub response limit exceeded')
         return json.loads(body) if body else {}
     def file(self,path,ref=WORKER):
@@ -200,6 +208,84 @@ def claim(api,root,inputs,run_id):
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
+
+
+def resume_unclaimed(api,root):
+    """Owner-reviewed admission failure -> read-only probe, never producer replay.
+
+    Eligibility is intentionally limited to the initial state GET failing before
+    claim. Failed writes, unknown job outcomes and duplicate runs stay unresolved.
+    The existing probe must additionally prove the Cloud allocation unused.
+    """
+    caller('launch')
+    old,state=api.state();validate_state(state,root,allow_upgrade=True)
+    request=json.loads((Path(root)/'.github/automation/rrgh-controller-request.json').read_bytes())
+    guard(request.get('action')=='resume-unclaimed' and
+          request.get('authorizedBy')=='ryanredrivergorgehiker' and
+          request.get('date')=='2026-11-03','Exact owner admission-resume request missing')
+    guard(state.get('enabled') is True and state.get('status')=='dispatching' and
+          state.get('mode')=='produce' and state.get('runID') is None,
+          'Allocation was claimed, disabled or is not a producer admission')
+    for field,key in [('source_sha','sourceSHA'),('plan_sha256','planSHA256'),('dispatch_id','dispatchID')]:
+        guard(request.get(field)==state.get(key),'Admission resume identity differs: '+field)
+    rid=request.get('original_run');head=request.get('failure_head_sha')
+    guard(type(rid) is int and rid>0 and re.fullmatch(r'[0-9a-f]{40}',head or ''),
+          'Failed execution identity missing')
+    run=api.call('GET','actions/runs/'+str(rid))
+    guard(run.get('id')==rid and run.get('head_sha')==head and run.get('head_branch')==WORKER and
+          run.get('path')=='.github/workflows/'+WORKFLOW and run.get('event')=='workflow_dispatch' and
+          (run.get('actor') or {}).get('login')=='github-actions[bot]' and
+          (run.get('triggering_actor') or {}).get('login')=='github-actions[bot]' and
+          run.get('run_attempt')==1 and run.get('status')=='completed' and run.get('conclusion')=='failure' and
+          run.get('display_title')=='RRGH production '+str(state['sequence'])+' '+state['dispatchID'],
+          'Failed run does not bind this unclaimed allocation')
+    _,original_raw=api.file(STATE,ref=head);original=json.loads(original_raw)
+    for key in ('sourceSHA','planSHA256','dispatchID','sequence','controlDigest','checkpoint','lastRecovered','launchCounter'):
+        guard(original.get(key)==state.get(key),'Failed-head allocation changed: '+key)
+    guard(original.get('status')=='dispatching' and original.get('runID') is None,
+          'Original allocation was already claimed')
+    jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
+    rows=jobs.get('jobs',[])
+    guard(jobs.get('total_count')==len(rows) and len(rows)==10,
+          'Incomplete or unexpected admission-failure jobs')
+    required={'admit','bounded-stage','authentication-probe','checkpoint-inspection','finish-inspection',
+              'activate','independent-recovery','independent-salvage','advance','retain-failure'}
+    guard({j.get('name') for j in rows}==required,'Unexpected admission-failure job set')
+    admission=[j for j in rows if j['name']=='admit'][0]
+    guard(all(j.get('status')=='completed' and j.get('run_id')==rid and
+              j.get('conclusion')==('failure' if j['name']=='admit' else 'skipped') for j in rows),
+          'Cloud work started or downstream outcome is ambiguous')
+    failed=[s for s in admission.get('steps',[]) if s.get('conclusion')=='failure']
+    guard(len(failed)==1 and failed[0].get('name')==
+          'Atomically claim the exact controller allocation before Cloud authentication',
+          'Failure was not the controller admission step')
+    from rrgh_dispatch_audit import gh
+    log=gh('actions/jobs/'+str(admission['id'])+'/logs',api.token,raw=True)
+    stops=[line.split('CONTROLLER_STOP: ',1)[1].strip() for line in log.splitlines() if 'CONTROLLER_STOP: ' in line]
+    guard(len(stops)==1 and re.fullmatch(
+        r'GitHub GET contents/\.github/automation/rrgh-controller-state\.json HTTP (500|502|503|504); no automatic retry',
+        stops[0]) is not None,'Cannot establish read-only admission failure')
+    duplicates=api.call('GET','actions/runs?head_sha='+head+'&per_page=100')
+    candidates=duplicates.get('workflow_runs',[])
+    guard(duplicates.get('total_count')==len(candidates) and
+          [r.get('id') for r in candidates if r.get('path')=='.github/workflows/'+WORKFLOW]==[rid],
+          'Duplicate or incompletely enumerated worker execution')
+    assert_no_other_producers(api)
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
+    # Preserve the failed request before a new unique probe dispatch. CAS failure
+    # or a lost dispatch response halts; neither path repeats source production.
+    retained={k:state[k] for k in ('sequence','sourceSHA','planSHA256','dispatchID','launchCounter')}
+    retained.update(runID=rid,headSHA=head,admissionJobID=admission['id'],reason=stops[0],
+                    cloudJobsSkipped=True,logSHA256=digest(log.encode()))
+    if state['controlDigest']!=local_digest(root):
+        upgrade=state.pop('pendingControllerUpgrade')
+        state.setdefault('controllerUpgradeHistory',[]).append({**upgrade,'failedAdmissionRunID':rid,
+            'sequence':state['sequence']})
+        state['controlDigest']=upgrade['toDigest']
+    state.setdefault('unclaimedAdmissionHistory',[]).append(retained)
+    state.update(status='ready',runID=None,dispatchID=None)
+    old=api.cas(old,state,'proven unused admission retained; authenticated probe required')
+    return dispatch(api,root,old,state,'probe')
 
 
 def current_run(api,root,status):
@@ -505,16 +591,17 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection','salvage-halted'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection','salvage-halted','resume-unclaimed'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted','salvage-halted') else a.command)
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed') else a.command)
     api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
     elif a.command=='claim':
         inputs={k:os.environ['INPUT_'+k.upper()] for k in ('mode','source_sha','plan_sha256','sequence','dispatch_id')}
         result=claim(api,a.root,inputs,run_id)
+    elif a.command=='resume-unclaimed':result=resume_unclaimed(api,a.root)
     elif a.command=='audit':result=audit_current(api,a.root)
     elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
     elif a.command=='recover-unstarted':result=arm_unstarted_recovery(api,a.root)
