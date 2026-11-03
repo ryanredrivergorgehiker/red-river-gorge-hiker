@@ -1,7 +1,7 @@
 name: RRGH autonomous controller offline QA
 on:
   push:
-    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102, lane20/verified-overview-pilot-20261102, lane20/overview-recovery-reader-fix-20261102, lane20/finite-overview-queue-20261102]
+    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102, lane20/verified-overview-pilot-20261102, lane20/overview-recovery-reader-fix-20261102, lane20/finite-overview-queue-20261102, lane20/pre-admission-recovery-20261103]
 permissions:
   contents: read
 env:
@@ -27,6 +27,8 @@ jobs:
         env:
           RRGH_TEST_SOURCE: source-checkout
         run: python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
+      - name: Read-only GitHub retry and unclaimed admission reconciliation guards
+        run: python -m unittest discover -s .github/automation -p test_rrgh_pre_admission.py -v
       - name: Expanded catalog, native metadata, rollback and no-replay tests
         env:
           RRGH_TEST_SOURCE: source-checkout
