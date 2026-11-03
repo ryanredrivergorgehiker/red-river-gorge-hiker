@@ -334,7 +334,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 set(pixel_gaps)<=set(batch['quarantinedJobIDs']) and
                 (not (set(batch['quarantinedJobIDs'])-set(pixel_gaps)) or batch['fallbackRequired']),
                 'Unexplained consumed batch attempts')
-    cycle_rate=None
+    cycle_rate=None;seconds=None
     if run.get('created_at') and recovery[0].get('completed_at'):
         from datetime import datetime
         seconds=(datetime.fromisoformat(recovery[0]['completed_at'].replace('Z','+00:00'))-
@@ -347,6 +347,8 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
         "verified": True,
         "batchClosure": batch,
         "cycleTilesPerSecond": cycle_rate,
+        "recoveryCycleSeconds": seconds,
+        "tilesNew": result.get("tiles"),
         "overviewPilotVerification": overview_proof,
         "partialRecovered": partial,
         "partialCompletedJobIDs": recovered_ids,

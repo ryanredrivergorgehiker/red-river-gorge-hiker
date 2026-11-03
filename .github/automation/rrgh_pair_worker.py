@@ -159,6 +159,7 @@ def verify_closure(slot,plan,detail,records,worker,api):
         return None
     a=SimpleNamespace(**api);policy_check(plan['resumableBatch'])
     closure=detail.get('batchClosure');attempted,accepted,quarantined,tail=partition(plan['approvedJobIDs'],closure,sha(plan))
+    require(len(plan['approvedJobIDs'])<=plan['resumableBatch']['targetJobs'],'Unreviewed finite batch size')
     require(worker['result']['status'] in ('complete','bounded-stop'),'Unclosed producer')
     require([r['job'] for r in records]==accepted,'Recovered receipts differ from closed accepted set')
     require([e['job'] for e in detail['batchAttempts']]==attempted and worker['used']['attempts']==len(attempted),
@@ -166,12 +167,18 @@ def verify_closure(slot,plan,detail,records,worker,api):
     sums=dict.fromkeys(('sourceBytes','sourceRequests','seconds','attempts'),0)
     by_id={r['job']:r for r in records};gaps=[]
     for ordinal,entry in enumerate(detail['batchAttempts']):
+        if ordinal%2==0:pair_prior=sums.copy()
         j=entry['job'];ref=a.Ref(**entry['reservationRef']);reservation=json.loads(slot.get(ref))
+        pair=plan['approvedJobIDs'][(ordinal//2)*2:(ordinal//2)*2+2]
         require(ref.key.startswith(a.PREFIX+'plans/'+sha(plan)+'/slots/00001/indexes/') and
                 reservation==entry['reservation'] and reservation['format']=='rrgh-pair-reservation-v1' and
                 reservation['planSHA256']==sha(plan) and reservation['ordinal']==ordinal and
                 reservation['worker']==ordinal%2 and reservation['job']==j and
-                reservation['policy']==plan['jobPolicies'][j], 'Reservation lineage mismatch')
+                reservation['policy']==plan['jobPolicies'][j] and reservation['pairJobIDs']==pair and
+                all(reservation['priorUsed'][k]==pair_prior[k] for k in sums), 'Reservation lineage mismatch')
+        for k in sums:
+            amount=len(pair) if k=='attempts' else sum(plan['jobPolicies'][job][k] for job in pair)
+            require(pair_prior[k]+amount<=plan['slots'][1][k],'Outstanding pair exceeds parent allocation')
         retained=entry.get('retained',{**plan['jobPolicies'][j],'attempts':1})
         require(set(retained)==set(sums) and all(type(v) is int and v>=0 for v in retained.values()) and
                 retained['attempts']==1,'Invalid retained child allowance')
@@ -180,6 +187,10 @@ def verify_closure(slot,plan,detail,records,worker,api):
             require(entry['outcome']=='accepted' and bound['ref']==entry['reservationRef'] and
                     bound['allocation']==reservation and bound['retained']==retained,
                     'Output receipt lost its source reservation')
+            require(entry['jobReceipt']==detail['completedJobReceipts'][accepted.index(j)] and
+                    receipt['execution']['sourceUsage']['completed'] is True and
+                    bound['confirmedUnused']=={k:plan['jobPolicies'][j][k]-retained[k] for k in plan['jobPolicies'][j]},
+                    'Accepted child usage or checkpoint reference changed')
             expected=receipt['execution']['sourceUsage']['reserved']
             require(all(retained[k]==expected[k] for k in ('sourceBytes','sourceRequests')) and
                     all(retained[k]<=plan['jobPolicies'][j][k] for k in plan['jobPolicies'][j]),'Output source charges differ')

@@ -176,7 +176,7 @@ class WorkerTests(unittest.TestCase):
                     usage={'completed':False,'diagnostic':{'failureCode':'SOURCE_PIXEL_GAP' if mode=='consecutive-gaps' else 'UNCLASSIFIED'}}
                     (root/('gate-c-'+job+'.usage.json')).write_text(json.dumps(usage));raise RuntimeError('synthetic child failure')
                 return {'job':job,'outputs':[dict(path='synthetic/'+job,bytes=10,sha256='f'*64)],
-                    'execution':{'sourceUsage':{'reserved':{'sourceBytes':65536 if mode=='source-cap' else 1,'sourceRequests':2 if mode=='request-cap' else 1},
+                    'execution':{'sourceUsage':{'completed':True,'reserved':{'sourceBytes':65536 if mode=='source-cap' else 1,'sourceRequests':2 if mode=='request-cap' else 1},
                                                 'actual':{'receivedBodyBytes':1,'operations':1}}}}
             finally:
                 with lock:active-=1
@@ -221,11 +221,13 @@ class WorkerTests(unittest.TestCase):
             self.assertFalse(set(p['attemptedJobIDs'])&set(p['unattemptedJobIDs']))
     def test_independent_recovery_rejects_changed_attempt_charge_or_output_set(self):
         plan,p,peak,inputs,detail,closed,records,recovery,api=self.exercise('failure')
-        for field in ('attempt','charge','output'):
+        for field in ('attempt','charge','output','completion','checkpoint'):
             d=copy.deepcopy(detail);w=copy.deepcopy(closed);r=copy.deepcopy(records)
             if field=='attempt':d['batchAttempts'].pop()
             elif field=='charge':w['used']['sourceBytes']-=1
-            else:r=[]
+            elif field=='output':r=[]
+            elif field=='completion':r[0]['result']['originalReceipt']['execution']['sourceUsage']['completed']=False
+            else:d['batchAttempts'][1]['jobReceipt']['sha256']='a'*64
             with self.assertRaises(ValueError):worker.verify_closure(recovery,plan,d,r,w,api)
     def test_duplicate_cloud_claim_never_replays_source(self):
         plan,*_=self.exercise()

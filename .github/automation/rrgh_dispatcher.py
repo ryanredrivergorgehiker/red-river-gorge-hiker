@@ -570,7 +570,10 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
     completed={'runID':state['runID'],'sequence':state['sequence'],'dispatchID':state['dispatchID'],
         'parentRunID':state.get('parentRunID'),'sourceSHA':state['sourceSHA'],'planSHA256':state['planSHA256'],
         'recoveryReceipt':audit['receiptRef'],'acceptedJobs':audit['acceptedJobs'],
-        'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew']}
+        'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew'],
+        'tilesNew':audit.get('tilesNew'),'recoveryCycleSeconds':audit.get('recoveryCycleSeconds'),
+        'cycleTilesPerSecond':audit.get('cycleTilesPerSecond')}
+    if audit.get('batchClosure'):completed['batchClosure']=audit['batchClosure']
     if state.get('mode')=='salvage':
         completed['checkpointSalvageOf']=state.pop('salvageOf')
     if state.get('mode')=='recover':
