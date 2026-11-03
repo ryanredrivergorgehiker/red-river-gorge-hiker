@@ -1,7 +1,7 @@
 name: RRGH autonomous controller offline QA
 on:
   push:
-    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102, lane20/verified-overview-pilot-20261102, lane20/overview-recovery-reader-fix-20261102, lane20/finite-overview-queue-20261102, lane20/pre-admission-recovery-20261103, lane20/active-run-pagination-20261103, lane20/real-parallel-trial-20261103]
+    branches: [lane20/autonomous-dispatch-20261102, lane20/platform-budget-resume-20261102, lane20/expanded-source-production-20261102, lane20/recovered-publisher-fix-20261102, lane20/recovery-catalog-production-20261102, lane20/unstarted-recovery-20261102, lane20/measured-source-throughput-20261102, lane20/rollback-policy-20261102, lane20/checkpoint-inspection-20261102, lane20/checkpoint-salvage-20261102, lane20/verified-overview-pilot-20261102, lane20/overview-recovery-reader-fix-20261102, lane20/finite-overview-queue-20261102, lane20/pre-admission-recovery-20261103, lane20/active-run-pagination-20261103, lane20/real-parallel-trial-20261103, lane20/resumable-batch-20261103]
 permissions:
   contents: read
 env:
@@ -96,3 +96,10 @@ jobs:
         run: |
           python .github/automation/verify_rrgh_wave260_roundtrip.py wave260-source
           python .github/automation/verify_rrgh_dispatch_roundtrip.py wave260-source
+
+      - name: Two-process reservation, immutable cache reuse and adversarial closure tests
+        env:
+          RRGH_TEST_SOURCE: source-checkout
+        run: python -m unittest discover -s .github/automation -p test_rrgh_resumable_pairs.py -v
+      - name: Seven synthetic batch rollout, partial continuation and automatic fallback roundtrips
+        run: python .github/automation/verify_rrgh_batch_roundtrip.py wave260-source

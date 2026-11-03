@@ -143,6 +143,15 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     require(result.get("allOutputHashesAndPixelsVerified") is True, "Unverified pixels/hash")
     require(result.get("allNewPackageChunksReadBack") is True, "Unread package chunks")
     require(result.get("allExistingCachesPreserved") is True, "Cache preservation failed")
+    batch=result.get('batchClosure')
+    if batch is not None:
+        from rrgh_batch_contract import partition
+        try:
+            partition(batch.get('attemptedJobIDs',[])+batch.get('unattemptedJobIDs',[]),batch,
+                      expected_dispatch['planSHA256'] if expected_dispatch else None)
+        except (ValueError,TypeError,KeyError) as error:raise Halt('Invalid independent batch closure') from error
+        require(expected_dispatch is not None and not partial and producer_lines is not None,
+                'Batch closure requires the restricted dispatcher and original producer')
     pixel_gaps = result.get("sourcePixelGapJobs")
     require(isinstance(pixel_gaps, list) and len(pixel_gaps) <= MAX_JOBS and
             len(set(pixel_gaps)) == len(pixel_gaps) and
@@ -153,7 +162,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     jobs_count = result.get("jobs")
     require(type(jobs_count) is int and 0 <= jobs_count <= MAX_JOBS, "Invalid job count")
     if jobs_count == 0:
-        require(expected_dispatch is not None and not partial and bool(pixel_gaps) and
+        require(expected_dispatch is not None and not partial and (bool(pixel_gaps) or batch is not None) and
                 all(type(result.get(k)) is int and result[k] == 0 for k in
                     ("tiles","outputBytes","packageParts","packageBytes","adjacentEdgesMeasured")),
                 "Zero-output recovery must contain only independently verified consumed pixel gaps")
@@ -256,7 +265,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                     any(f.get('file') == 'rrgh_wif_credentials.py' and f.get('function') == 'token'
                         for f in diagnostic.get('frames', [])), 'Pinned partial closure changed')
     source_completed = []
-    if pixel_gaps:
+    if pixel_gaps and batch is None:
         require(not partial and producer_lines is not None, "Cannot combine uncertain partial with pixel gaps")
         source_gap_logs = []
         final_production = []
@@ -295,15 +304,51 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 final_production[0].get("jobs") == jobs_count and
                 final_production[0].get("status") == "bounded-stop",
                 "Nonmatching producer pixel-gap exclusion and independent recovery")
-    else:
+    elif batch is None:
         require(result.get("pixelGapAttemptsConsumed", 0) == 0,
                 "Unexplained consumed source attempt")
     require(decimal(settlement.get("ceilingUSD")) in (Decimal("25"), Decimal("125")),
             "Unexpected production ceiling")
+    if batch is not None:
+        parsed=[]
+        for line in producer_lines:
+            try:parsed.append(json.loads(line[line.index('{'):]))
+            except (ValueError,TypeError):continue
+        finals=[r for r in parsed if r.get('phase')=='production']
+        rows=[r for r in parsed if 'completedJobs' in r and 'durableJobReceipt' in r]
+        require(len(finals)==1 and finals[0].get('batchClosure')==batch and
+                finals[0].get('receiptRef')==result.get('workerReceipt') and
+                finals[0].get('jobs')==jobs_count and
+                finals[0].get('status') in ('complete','bounded-stop'),
+                'Producer and independent batch closure disagree')
+        require([r.get('job') for r in rows]==batch['acceptedJobIDs'] and len(rows)==jobs_count,
+                'Batch accepted output receipt log differs')
+        for n,row in enumerate(rows,1):
+            ref_job=row['durableJobReceipt']
+            require(row['completedJobs']==n and
+                    ref_job.get('key')==PREFIX+plan_sha+'/slots/00001/jobs/'+row['job']+'.json' and
+                    SHA256.fullmatch(str(ref_job.get('sha256',''))) is not None and
+                    re.fullmatch(r'[1-9][0-9]*',str(ref_job.get('generation',''))) is not None,
+                    'Batch output receipt lineage differs')
+        require([r.get('job') for r in parsed if r.get('status')=='source-pixel-gap-quarantined']==pixel_gaps and
+                set(pixel_gaps)<=set(batch['quarantinedJobIDs']) and
+                (not (set(batch['quarantinedJobIDs'])-set(pixel_gaps)) or batch['fallbackRequired']),
+                'Unexplained consumed batch attempts')
+    cycle_rate=None;seconds=None
+    if run.get('created_at') and recovery[0].get('completed_at'):
+        from datetime import datetime
+        seconds=(datetime.fromisoformat(recovery[0]['completed_at'].replace('Z','+00:00'))-
+                 datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))).total_seconds()
+        require(seconds>0,'Invalid dispatch-to-recovery timing')
+        cycle_rate=result['tiles']/seconds
     from rrgh_overview_integration import validate_verification
     overview_proof=validate_verification(result.get('overviewPilotVerification'))
     return {
         "verified": True,
+        "batchClosure": batch,
+        "cycleTilesPerSecond": cycle_rate,
+        "recoveryCycleSeconds": seconds,
+        "tilesNew": result.get("tiles"),
         "overviewPilotVerification": overview_proof,
         "partialRecovered": partial,
         "partialCompletedJobIDs": recovered_ids,

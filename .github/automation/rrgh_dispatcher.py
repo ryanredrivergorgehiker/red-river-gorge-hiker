@@ -37,6 +37,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
     'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
+    'rrgh_batch_contract.py','rrgh_pair_cache.py','rrgh_pair_worker.py','rrgh_batch_integration.py',
     'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json','overview-candidates.json',
     'source-templates/run_gorge_checkpoint_slot.py',
     'expanded-source-rights-20261102.json',
@@ -110,7 +111,7 @@ def validate_state(state,root,allow_upgrade=False):
               upgrade.get('fromDigest')==state.get('controlDigest') and
               upgrade.get('toDigest')==current and
               upgrade.get('authorizedBy')=='ryanredrivergorgehiker' and
-              upgrade.get('authorizedOn')=='2026-11-02' and
+              upgrade.get('authorizedOn') in ('2026-11-02','2026-11-03') and
               upgrade.get('preserveAcceptedHistory') is True,
               'Reviewed controller code changed')
     guard(type(state.get('sequence')) is int and state['sequence']>=58,'Bad sequence')
@@ -239,6 +240,7 @@ def claim(api,root,inputs,run_id):
         state['controlDigest']=upgrade['toDigest']
         state.setdefault('sourcePolicyMode','expanded')
         if upgrade.get('enableOverviewPilot') is True:state['overviewPilotEnabled']=True
+        if upgrade.get('enableBatchPilot') is True:state['batchPilotEnabled']=True
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
@@ -362,6 +364,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
     report['overviewPilotEnabled']=state.get('overviewPilotEnabled') is True
+    report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
 
@@ -484,7 +487,10 @@ def candidate_entries(source_root,audit,state):
     from rrgh_recovery_catalog_integration import augment_campaign, TARGET as CATALOG_TARGET
     from rrgh_overview_integration import augment as augment_overview, MODULES as OVERVIEW_MODULES,validate_recovery
     validate_recovery(prior,audit)
-    guard(new_code==augment_overview(augment_campaign(old_code)).replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
+    from rrgh_batch_integration import strip as strip_batch, augment as augment_batch, installed as batch_installed, MODULES as BATCH_MODULES
+    expected_code=augment_overview(augment_campaign(strip_batch(old_code)))
+    if batch_installed(root):expected_code=augment_batch(expected_code)
+    guard(new_code==expected_code.replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
     from rrgh_expanded_production import validate_publication, ENGINE
     validate_publication(root,old_dir,new_dir,plan,audit)
     guard(plan['limits']=={**prior['limits'],'attempts':len(jobs)} and plan['maxConcurrency']==1 and
@@ -515,6 +521,15 @@ def candidate_entries(source_root,audit,state):
             after=(root/target).read_bytes()
             validate_prior_module(module,before,after)
             if before!=after:allowed.add(target)
+    if batch_installed(root):
+        for module in BATCH_MODULES:
+            target='backend/scripts/'+module
+            tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],
+                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+            if not tracked:allowed.add(target)
+            else:
+                guard(subprocess.check_output(['git','-C',str(root),'show','HEAD:'+target])==(root/target).read_bytes(),
+                      'Installed batch module changed')
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
@@ -555,13 +570,21 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
     completed={'runID':state['runID'],'sequence':state['sequence'],'dispatchID':state['dispatchID'],
         'parentRunID':state.get('parentRunID'),'sourceSHA':state['sourceSHA'],'planSHA256':state['planSHA256'],
         'recoveryReceipt':audit['receiptRef'],'acceptedJobs':audit['acceptedJobs'],
-        'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew']}
+        'acceptedRasterTiles':audit['acceptedRasterTiles'],'jobsNew':audit['jobsNew'],
+        'tilesNew':audit.get('tilesNew'),'recoveryCycleSeconds':audit.get('recoveryCycleSeconds'),
+        'cycleTilesPerSecond':audit.get('cycleTilesPerSecond')}
+    if audit.get('batchClosure'):completed['batchClosure']=audit['batchClosure']
     if state.get('mode')=='salvage':
         completed['checkpointSalvageOf']=state.pop('salvageOf')
     if state.get('mode')=='recover':
         completed['originalProducerRunID']=state['recoveryOnlyOf']['runID']
         completed['originalProducerReceipt']=state['recoveryOnlyOf']['producerReceipt']
         state.pop('recoveryOnlyOf')
+    if state.get('batchPilotEnabled') and audit.get('batchClosure') and not plan.get('resumableBatch'):
+        state['batchPilotEnabled']=False
+        state.setdefault('batchFallbackHistory',[]).append({'runID':state['runID'],'sequence':state['sequence'],
+            'recoveryReceipt':audit['receiptRef'],'reason':audit['batchClosure'].get('stopReason') or 'measured throughput gate',
+            'acceptedHistoryPreserved':True,'nextWorkers':1,'nextJobLimit':12})
     state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
     old=api.cas(old,state,'successor source prepared')
