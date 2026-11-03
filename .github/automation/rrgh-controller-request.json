@@ -1,17 +1,1 @@
-{
-  "action": "resume-recovered",
-  "authorizedBy": "ryanredrivergorgehiker",
-  "date": "2026-11-03",
-  "source_sha": "ce82b87547e1bc4d70f9cabe1966e525d5bee076",
-  "plan_sha256": "4025a0364ff06c1fd4771ee669cbb158671e248b300a18a1ad1815536a484b3e",
-  "original_run": 41650050176,
-  "dispatch_id": "7430f75e0b96b365b165722fa62a7aebb53f319cc9a3e10fb0f8a354e6c77009",
-  "recovery_receipt": {
-    "bytes": 1499,
-    "generation": "1793715040820021",
-    "key": "engineering/map-production/plans/4025a0364ff06c1fd4771ee669cbb158671e248b300a18a1ad1815536a484b3e/slots/00002/receipt.json",
-    "sha256": "d67f0c37f2e1bde56d024e346ac52b48f733cc97dd69c458f704b772428f1a4c"
-  },
-  "reviewed_commit": "93386f8678a13b2f51677ecc00fa625a99d5307b",
-  "purpose": "Reconcile verified wave239 and publish fresh wave240 without replaying any producer or Cloud checkpoint"
-}
+{"action":"resume-recovered","source_sha":"e6a2e6ccf0a8a8de8efcd958f83587291b14ee83","authorizedBy":"ryanredrivergorgehiker","authorizedOn":"2026-11-03","requestID":"wave260-exact-partial-to261-real-parallel-trial","recoveryReceipt":{"bytes":1477,"generation":"1793728567727399","key":"engineering/map-production/plans/65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88/slots/00002/receipt.json","sha256":"df0b69c14fa1091ee2beb3f3046bb4bdbeca456fba0591b7d361bf2d461d75d0"}}

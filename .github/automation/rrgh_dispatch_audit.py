@@ -24,6 +24,13 @@ SUNLIGHT = 320
 MAX_JOBS = 512
 # Exact immutable exceptions, never a blanket authorization for failed producers.
 PARTIAL_INCIDENTS = {
+    260: dict(run=41687927485, head="b4f80f989341c7d651894679d670f9e9564fab3a",
+              plan="65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88",
+              receipt="df0b69c14fa1091ee2beb3f3046bb4bdbeca456fba0591b7d361bf2d461d75d0",
+              jobs=9, tiles=59, parts=7, failed="leaf-off-16-17512-25319",
+              error="RuntimeError", dispatcher=True,
+              source="e6a2e6ccf0a8a8de8efcd958f83587291b14ee83",
+              dispatch="40cfb7d5c70605c4f6b84bc14d358bccee81385d0f320bcced60930858fb3e16"),
     23: dict(run=41225003991, head="a0d966e92654c412e1ae6259e77feb4a005321d9",
              plan="b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
              receipt="3b11557e069de5362569e6567afe6351b06cc7bb47d507de2707783f2db229ed",
@@ -83,8 +90,12 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     require(sequence >= 20, "Pre-campaign run")
     # Only explicitly pinned, independently recovered partial incidents qualify.
     incident = PARTIAL_INCIDENTS.get(sequence)
-    partial = (expected_dispatch is None and incident is not None and run.get("id") == incident["run"] and
-               run.get("head_sha") == incident["head"])
+    pinned_dispatch_partial = (allow_failed_controller and expected_dispatch is not None and
+        incident is not None and incident.get('dispatcher') is True and
+        expected_dispatch.get('sourceSHA') == incident['source'] and
+        expected_dispatch.get('dispatchID') == incident['dispatch'])
+    partial = ((expected_dispatch is None or pinned_dispatch_partial) and incident is not None and
+               run.get("id") == incident["run"] and run.get("head_sha") == incident["head"])
     if recovery_execution is not None:
         from rrgh_recovery_only import validate_split_recovery
         validate_split_recovery(run,jobs,expected_dispatch,recovery_execution)
@@ -220,7 +231,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 ref_job = item["durableJobReceipt"]
                 require(type(number) is int and number == len(recovered_ids) + 1 and
                         isinstance(jid, str) and
-                        jid.startswith(("usgs-topo-16-", "leaf-on-16-")) and
+                        jid.startswith(("usgs-topo-16-", "leaf-on-16-", "hiking-16-", "terrain-16-", "leaf-off-16-")) and
                         jid not in recovered_ids and
                         ref_job.get("key") == PREFIX + plan_sha +
                         "/slots/00001/jobs/" + jid + ".json" and
@@ -234,9 +245,16 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                 "Incomplete or ambiguous producer receipt log")
         diagnostic = failure_reports[0].get("diagnostic") or {}
         failed_job = diagnostic.get("lastJobConsidered")
-        require(failed_job == incident["failed"] and
-                (diagnostic.get("child") or {}).get("errorClass") == incident["error"] and
+        failure_class = diagnostic.get('errorClass') if pinned_dispatch_partial else (diagnostic.get('child') or {}).get('errorClass')
+        require(failed_job == incident["failed"] and failure_class == incident["error"] and
                 failed_job not in recovered_ids, "Unexpected incident failure or job overlap")
+        if pinned_dispatch_partial:
+            final = failure_reports[0]
+            require(final.get('receiptRef') == result.get('workerReceipt') and
+                    final.get('jobs') == jobs_count and final.get('sourcePixelGapJobs') == [] and
+                    final.get('stopped') is None and
+                    any(f.get('file') == 'rrgh_wif_credentials.py' and f.get('function') == 'token'
+                        for f in diagnostic.get('frames', [])), 'Pinned partial closure changed')
     source_completed = []
     if pixel_gaps:
         require(not partial and producer_lines is not None, "Cannot combine uncertain partial with pixel gaps")
