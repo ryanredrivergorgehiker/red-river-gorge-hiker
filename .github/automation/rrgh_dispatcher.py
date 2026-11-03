@@ -36,6 +36,8 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
+    'rrgh_batch_contract.py','rrgh_pair_cache.py','rrgh_pair_worker.py','rrgh_batch_integration.py',
     'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json','overview-candidates.json',
     'source-templates/run_gorge_checkpoint_slot.py',
     'expanded-source-rights-20261102.json',
@@ -109,7 +111,7 @@ def validate_state(state,root,allow_upgrade=False):
               upgrade.get('fromDigest')==state.get('controlDigest') and
               upgrade.get('toDigest')==current and
               upgrade.get('authorizedBy')=='ryanredrivergorgehiker' and
-              upgrade.get('authorizedOn')=='2026-11-02' and
+              upgrade.get('authorizedOn') in ('2026-11-02','2026-11-03') and
               upgrade.get('preserveAcceptedHistory') is True,
               'Reviewed controller code changed')
     guard(type(state.get('sequence')) is int and state['sequence']>=58,'Bad sequence')
@@ -132,16 +134,49 @@ def caller(mode):
               'Wrong authenticated dispatcher identity')
 
 
-def assert_no_other_producers(api,allowed_run=None):
+class IncompleteActiveRunSnapshot(Halt):pass
+
+
+def scan_active_runs(api,allowed_run=None):
+    """Read one complete inventory; a changing page set is never clearance."""
     paths={ORIGINAL,'.github/workflows/'+WORKFLOW}
     for status in ('queued','in_progress','waiting','pending','requested'):
-        page=1;seen=0
+        page=1;seen=set();expected=None
         while True:
             data=api.call('GET',f'actions/runs?status={status}&per_page=100&page={page}')
-            runs=data.get('workflow_runs',[]);seen+=len(runs)
+            guard(isinstance(data,dict),'Malformed active-run response')
+            runs=data.get('workflow_runs');total=data.get('total_count')
+            guard(type(total) is int and total>=0 and isinstance(runs,list) and len(runs)<=100,
+                  'Malformed active-run count or page')
+            guard(all(isinstance(r,dict) and type(r.get('id')) is int and r['id']>0 and
+                      isinstance(r.get('path'),str) and bool(r['path']) for r in runs),
+                  'Malformed active-run identity')
+            # A conflicting producer is decisive, even on an inconsistent page.
             guard(not any(r.get('path') in paths and r.get('id')!=allowed_run for r in runs),'Another producer is active')
-            if seen>=data.get('total_count',0):break
-            guard(bool(runs) and page<20,'Active-run pagination incomplete');page+=1
+            ids={r['id'] for r in runs}
+            reason=f'status={status} page={page} seen={len(seen)} returned={len(runs)} total={total}'
+            if ((expected is not None and total!=expected) or len(ids)!=len(runs) or
+                    bool(ids & seen) or len(seen)+len(ids)>total):
+                raise IncompleteActiveRunSnapshot('Active-run pagination changed: '+reason)
+            expected=total;seen.update(ids)
+            if len(seen)==total:break
+            if not runs:
+                raise IncompleteActiveRunSnapshot('Active-run pagination incomplete: '+reason)
+            guard(page<20,'Active-run pagination limit exceeded: '+reason)
+            page+=1
+
+
+def assert_no_other_producers(api,allowed_run=None):
+    # GitHub's filtered run count and pages can disagree while jobs transition.
+    # Restart only these GETs, from page one and every status, at most twice.
+    # Never retry a claim, source publication, workflow dispatch or Cloud slot.
+    for attempt in range(3):
+        try:
+            return scan_active_runs(api,allowed_run)
+        except IncompleteActiveRunSnapshot as exc:
+            if attempt==2:raise Halt(str(exc)+'; three read-only scans exhausted') from None
+            print('CONTROLLER_READ_RETRY: '+str(exc)+'; restarting active-run inventory',file=sys.stderr)
+            time.sleep(attempt+1)
 
 
 def dispatch(api,root,state_sha,state,mode,allowed_run=None):
@@ -205,6 +240,7 @@ def claim(api,root,inputs,run_id):
         state['controlDigest']=upgrade['toDigest']
         state.setdefault('sourcePolicyMode','expanded')
         if upgrade.get('enableOverviewPilot') is True:state['overviewPilotEnabled']=True
+        if upgrade.get('enableBatchPilot') is True:state['batchPilotEnabled']=True
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state
@@ -328,6 +364,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
     report['overviewPilotEnabled']=state.get('overviewPilotEnabled') is True
+    report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
 
@@ -411,7 +448,7 @@ def audit_recovered(api,root):
     guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce',
           'Only a halted independently recovered production allocation can advance')
     auth=state.get('recoveredResumeAuthorization',{})
-    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03') and
           all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
           'Exact owner-authorized recovered continuation missing')
     assert_no_other_producers(api)
@@ -450,7 +487,10 @@ def candidate_entries(source_root,audit,state):
     from rrgh_recovery_catalog_integration import augment_campaign, TARGET as CATALOG_TARGET
     from rrgh_overview_integration import augment as augment_overview, MODULES as OVERVIEW_MODULES,validate_recovery
     validate_recovery(prior,audit)
-    guard(new_code==augment_overview(augment_campaign(old_code)).replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
+    from rrgh_batch_integration import strip as strip_batch, augment as augment_batch, installed as batch_installed, MODULES as BATCH_MODULES
+    expected_code=augment_overview(augment_campaign(strip_batch(old_code)))
+    if batch_installed(root):expected_code=augment_batch(expected_code)
+    guard(new_code==expected_code.replace(old_dir.name,new_dir.name),'Unreviewed source code edit')
     from rrgh_expanded_production import validate_publication, ENGINE
     validate_publication(root,old_dir,new_dir,plan,audit)
     guard(plan['limits']=={**prior['limits'],'attempts':len(jobs)} and plan['maxConcurrency']==1 and
@@ -481,6 +521,15 @@ def candidate_entries(source_root,audit,state):
             after=(root/target).read_bytes()
             validate_prior_module(module,before,after)
             if before!=after:allowed.add(target)
+    if batch_installed(root):
+        for module in BATCH_MODULES:
+            target='backend/scripts/'+module
+            tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],
+                stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+            if not tracked:allowed.add(target)
+            else:
+                guard(subprocess.check_output(['git','-C',str(root),'show','HEAD:'+target])==(root/target).read_bytes(),
+                      'Installed batch module changed')
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
@@ -528,6 +577,11 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
         completed['originalProducerRunID']=state['recoveryOnlyOf']['runID']
         completed['originalProducerReceipt']=state['recoveryOnlyOf']['producerReceipt']
         state.pop('recoveryOnlyOf')
+    if state.get('batchPilotEnabled') and audit.get('batchClosure') and not plan.get('resumableBatch'):
+        state['batchPilotEnabled']=False
+        state.setdefault('batchFallbackHistory',[]).append({'runID':state['runID'],'sequence':state['sequence'],
+            'recoveryReceipt':audit['receiptRef'],'reason':audit['batchClosure'].get('stopReason') or 'measured throughput gate',
+            'acceptedHistoryPreserved':True,'nextWorkers':1,'nextJobLimit':12})
     state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
     old=api.cas(old,state,'successor source prepared')

@@ -109,7 +109,17 @@ def prepare(root, verified):
     prior_salvage=old['campaign'].get('checkpointSalvageQuarantines',[])
     m=salvage_manifest()
     check(prior_salvage==([] if wave<=105 else m['uncertainJobIDs']), 'Salvage quarantine lineage changed')
-    if salvage:
+    from rrgh_batch_contract import partition as batch_partition, next_policy
+    batch=old.get('resumableBatch') is not None
+    prior_batch=old['campaign'].get('batchQuarantines',[])
+    batch_quarantines=[]
+    if batch:
+        check(not partial and not salvage, 'Batch closure cannot use historical incident exceptions')
+        attempted,recovered,quarantined,untouched=batch_partition(old['approvedJobIDs'],verified.get('batchClosure'),prior_plan_sha)
+        check(len(recovered)==verified['jobsNew'] and set(pixel_gaps)<=set(quarantined), 'Batch recovery inventory mismatch')
+        accepted=old['completedJobIDs']+recovered
+        batch_quarantines=[j for j in quarantined if j not in pixel_gaps]
+    elif salvage:
         check(wave==105 and verified.get('run')==m['originalRunID'] and prior_plan_sha==m['planSHA256'] and
               verified.get('salvageManifestSHA256')==manifest_sha() and
               verified.get('partialCompletedJobIDs')==m['completedJobIDs'] and
@@ -122,6 +132,9 @@ def prepare(root, verified):
         # Exact, independently verified partial incidents only. Every consumed
         # prefix and the failing attempt are retained; never replay a checkpoint.
         incidents = {
+            260: (41687927485,
+                  "65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88",
+                  9, "leaf-off-16-17512-25319"),
             23: (41225003991,
                  "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
                  207, "usgs-topo-16-17570-25321"),
@@ -171,9 +184,9 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps) + len(prior_salvage)
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + (1 if wave > 260 else 0) + len(prior_pixel_gaps) + len(prior_salvage) + len(prior_batch)
     check(len(historical_excluded) == inherited_exclusion_count and
-          set(prior_pixel_gaps) <= historical_excluded and
+          set(prior_pixel_gaps) <= historical_excluded and set(prior_batch) <= historical_excluded and
           verified["historicalExclusions"] == 45,
           "Historical exclusions or incident quarantine changed")
     check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
@@ -184,7 +197,7 @@ def prepare(root, verified):
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
     excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == inherited_exclusion_count + (len(m["uncertainJobIDs"]) if salvage else 1 if partial else 0) + len(pixel_gaps) and
+    check(len(excluded) == inherited_exclusion_count + (len(m["uncertainJobIDs"]) if salvage else 1 if partial else 0) + len(pixel_gaps) + len(batch_quarantines) and
           set(pixel_gaps) <= excluded and
           (not partial or salvage or verified["failedJobID"] in excluded),
           "Failed job must remain excluded from fresh territory")
@@ -205,16 +218,20 @@ def prepare(root, verified):
     migration(region, verified.get('sourcePolicyMode', 'expanded'))
     install_engine(root)
     from rrgh_recovery_catalog_integration import install as install_catalog, MODULE as CATALOG_MODULE
+    from rrgh_batch_integration import strip as strip_batch, install as install_batch, installed as batch_installed, MODULES as BATCH_MODULES
+    code_path.write_text(strip_batch(code_path.read_text()))
     install_catalog(root)
     from rrgh_credential_integration import install as install_credentials, MODULE as CRED_MODULE
     install_credentials(root)
     install_overview(root)
+    batch_policy=next_policy(old,verified)
+    if batch_policy or batch_installed(root):install_batch(root)
     original_code=code_path.read_text()
     index, missing = build_index(region)
     if region['expandedSourceProduction']['mode'] == 'expanded':
         check(len(index) == 25900 and sum(missing.values()) == 0,
               "Expanded catalog metadata does not cover unchanged region")
-    limits = LIMITS
+    limits = {k:(batch_policy['targetJobs']//3 if batch_policy else v) for k,v in LIMITS.items()}
     picked = []
     for layer, limit in limits.items():
         landmarks = [index[jid] for jid in accepted if jid in index and
@@ -237,7 +254,7 @@ def prepare(root, verified):
         sample.sort(key=lambda job: (
             tuple(job["sourceIDs"]), morton(job["x"], job["y"]), job["id"]))
         picked.extend(sample)
-    picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True)
+    picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True and batch_policy is None)
     jobs = [j["id"] for j in picked]
     check(bool(jobs),
           "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed hiking, terrain or leaf-off "
@@ -287,8 +304,11 @@ def prepare(root, verified):
           <= old["slots"][1]["sourceRequests"], "Source requests cannot exceed prior envelope")
     check(sum(policy[j["layer"]]["sourceBytes"] for j in picked)
           <= old["slots"][1]["sourceBytes"], "Source bytes cannot exceed prior envelope")
-    check(sum(policy[j["layer"]]["seconds"] for j in picked)
-          <= old["slots"][1]["seconds"], "Production seconds cannot exceed prior envelope")
+    if not batch_policy:
+        check(sum(policy[j['layer']]['seconds'] for j in picked)<=old['slots'][1]['seconds'],
+              'Production seconds cannot exceed prior envelope')
+    # A larger finite allocation is an eligibility list, not permission to start
+    # every job. The coordinator reserves whole pairs against the unchanged slot.
 
     # Update only the one canonical source CONFIG pin. Old source files remain
     # byte-identical, and the new scope is generated from the same provenance.
@@ -298,6 +318,8 @@ def prepare(root, verified):
     code_path.write_text(original_code.replace(before, after))
 
     plan = copy.deepcopy(old)
+    plan['resumableBatch']=batch_policy
+    plan['campaign']['batchQuarantines']=prior_batch+batch_quarantines
     plan["campaign"]["sequence"] = wave + 1
     plan["campaign"]["sourcePixelGapQuarantines"] = prior_pixel_gaps + pixel_gaps
     plan["campaign"]["checkpointSalvageQuarantines"] = prior_salvage + (m["uncertainJobIDs"] if salvage else [])
@@ -331,6 +353,9 @@ def prepare(root, verified):
     region["engineHashes"]["gorge_campaign.py"] = digest(code_path.read_bytes())
     region["engineHashes"]["benchmark_gorge_pipeline.py"] = digest(
         (root / "backend/scripts/benchmark_gorge_pipeline.py").read_bytes())
+    if batch_installed(root):
+        for name in BATCH_MODULES:
+            region['engineHashes'][name]=digest((root/'backend/scripts'/name).read_bytes())
     for overview_module in OVERVIEW_MODULES:
         region['engineHashes'][overview_module]=digest((root/'backend/scripts'/overview_module).read_bytes())
     for credential_file in ('run_gorge_checkpoint_slot.py',CRED_MODULE):

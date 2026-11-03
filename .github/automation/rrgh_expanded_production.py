@@ -165,13 +165,18 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
         overviews==[pilot_job(overviews[0]['id'])] and
         plan.get('overviewPilot')==pilot_manifest(overviews[0]['id']) and len(new['jobs'])<=12), 'Unreviewed overview allocation')
     require(bool(overviews)==bool(plan.get('overviewPilot')), 'Unused overview authority')
-    counts={layer:sum(j['layer']==layer for j in native) for layer in LIMITS}
-    require(all(n<=LIMITS[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
+    from rrgh_batch_integration import validate as validate_batch, installed as batch_installed, MODULES as BATCH_MODULES
+    old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
+    batch=validate_batch(root,old_plan,plan,audit)
+    require(not batch or not overviews,'Pair production cannot claim overview work')
+    limits={k:(batch['targetJobs']//3 if batch else v) for k,v in LIMITS.items()}
+    counts={layer:sum(j['layer']==layer for j in native) for layer in limits}
+    require(all(n<=limits[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
             'Expanded allocation exceeds reviewed finite limits')
     # Twelve worst-case 600-second children leave 1800 seconds in the unchanged
     # 9000-second producer slot, even when every window is a consumed pixel gap.
     producer=plan['slots'][1]
-    for key in ('seconds','sourceBytes','sourceRequests'):
+    for key in (('sourceBytes','sourceRequests') if batch else ('seconds','sourceBytes','sourceRequests')):
         require(sum(v[key] for v in plan['jobPolicies'].values())<=producer[key],
                 'Expanded child reservations exceed producer slot: '+key)
     require((root/ENGINE).read_bytes()==(Path(controller_root)/TEMPLATE).read_bytes(),
@@ -181,5 +186,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     wanted=copy.deepcopy(old['engineHashes'])
     for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
+    if batch_installed(root):
+        for name in BATCH_MODULES:wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 
