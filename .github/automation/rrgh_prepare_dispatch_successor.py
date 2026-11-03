@@ -122,6 +122,9 @@ def prepare(root, verified):
         # Exact, independently verified partial incidents only. Every consumed
         # prefix and the failing attempt are retained; never replay a checkpoint.
         incidents = {
+            260: (41687927485,
+                  "65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88",
+                  9, "leaf-off-16-17512-25319"),
             23: (41225003991,
                  "b661abadce4c7977e2e3d7770e76d8912d8f9bd4d79bfac8a0531f097588dffb",
                  207, "usgs-topo-16-17570-25321"),
@@ -171,7 +174,7 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + len(prior_pixel_gaps) + len(prior_salvage)
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + (1 if wave > 260 else 0) + len(prior_pixel_gaps) + len(prior_salvage)
     check(len(historical_excluded) == inherited_exclusion_count and
           set(prior_pixel_gaps) <= historical_excluded and
           verified["historicalExclusions"] == 45,

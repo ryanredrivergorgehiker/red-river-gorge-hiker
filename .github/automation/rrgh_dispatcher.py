@@ -36,6 +36,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
     'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json','overview-candidates.json',
     'source-templates/run_gorge_checkpoint_slot.py',
     'expanded-source-rights-20261102.json',

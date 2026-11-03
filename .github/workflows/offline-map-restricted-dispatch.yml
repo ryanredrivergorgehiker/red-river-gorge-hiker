@@ -158,6 +158,43 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py activate
+  parallel-render-trial:
+    needs: admit
+    if: inputs.mode == 'produce' && inputs.sequence == '261'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: e6a2e6ccf0a8a8de8efcd958f83587291b14ee83
+          path: trial-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r trial-source/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Compare real verified-child renders in isolated private scratch with bounded Cloud reads
+        env:
+          RRGH_TRIAL_SEQUENCE: ${{ inputs.sequence }}
+          RRGH_TRIAL_SOURCE_SHA: e6a2e6ccf0a8a8de8efcd958f83587291b14ee83
+        run: python .github/automation/rrgh_cloud_render_trial.py trial-source
   bounded-stage:
     needs: admit
     if: inputs.mode == 'produce'
