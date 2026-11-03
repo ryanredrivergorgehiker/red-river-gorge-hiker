@@ -81,7 +81,7 @@ def next_policy(old, audit):
         return None
     stage=policy['stage'];count=min(2,policy['successfulWaves']+1)
     if stage=='pilot12' and count==2:
-        if sum(recent[-2:])/2<baseline or proof.get('childWallSeconds',0)<=proof.get('producerSeconds',0):
+        if sum(recent[-2:])/2<baseline:
             return None
         stage='pilot24';count=0;recent=[]
     elif stage=='pilot24' and count==2:
