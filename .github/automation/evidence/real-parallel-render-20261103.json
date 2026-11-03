@@ -1,0 +1,108 @@
+{
+  "budgetReservationUSD": "0.01",
+  "budgetSource": "existing protected 2 USD completion reserve",
+  "childRecovery": {
+    "bytes": 1557,
+    "generation": "1793541240727174",
+    "key": "engineering/map-production/plans/ff14047e73b99604fa47fda9acc057fd0f02818eccb695445369a6e508aafe1b/slots/00002/receipt.json",
+    "sha256": "8ca770f8c72089eef8d4b7a5c85b72bd55a9b8730d2cc338ba15e116737e8c7e"
+  },
+  "children": 88,
+  "cloudReadRequests": 179,
+  "cloudReadReservedBytes": 3316452,
+  "cloudReadSeconds": 48.842773545,
+  "cloudWrites": 0,
+  "officialSourceRequests": 0,
+  "phase": "real-verified-child-parallel-render-trial",
+  "productionAccepted": false,
+  "productionClaimCreated": false,
+  "results": [
+    {
+      "independentHashPixelReadback": true,
+      "medianSeconds": 1.0337715520000046,
+      "outputHashesSHA256": "fa454b384832d361e38fec9bb7b5e18264a7fd5d7ed4e7bdc5d9944baead0383",
+      "outputsIdentical": true,
+      "productionAccepted": false,
+      "renderedTilesPerHour": 76612.67119101343,
+      "runs": [
+        {
+          "distinctWorkerProcesses": 1,
+          "peakConcurrentRenders": 1,
+          "seconds": 1.0322981580000032
+        },
+        {
+          "distinctWorkerProcesses": 1,
+          "peakConcurrentRenders": 1,
+          "seconds": 1.0337715520000046
+        },
+        {
+          "distinctWorkerProcesses": 1,
+          "peakConcurrentRenders": 1,
+          "seconds": 1.0495431279999963
+        }
+      ],
+      "speedupVsSerial": 1,
+      "tiles": 22,
+      "workers": 1
+    },
+    {
+      "independentHashPixelReadback": true,
+      "medianSeconds": 0.6665441199999975,
+      "outputHashesSHA256": "fa454b384832d361e38fec9bb7b5e18264a7fd5d7ed4e7bdc5d9944baead0383",
+      "outputsIdentical": true,
+      "productionAccepted": false,
+      "renderedTilesPerHour": 118821.84183096582,
+      "runs": [
+        {
+          "distinctWorkerProcesses": 2,
+          "peakConcurrentRenders": 2,
+          "seconds": 0.6665441199999975
+        },
+        {
+          "distinctWorkerProcesses": 2,
+          "peakConcurrentRenders": 2,
+          "seconds": 0.6593985309999937
+        },
+        {
+          "distinctWorkerProcesses": 2,
+          "peakConcurrentRenders": 2,
+          "seconds": 0.6833507359999942
+        }
+      ],
+      "speedupVsSerial": 1.5509424222360682,
+      "tiles": 22,
+      "workers": 2
+    },
+    {
+      "independentHashPixelReadback": true,
+      "medianSeconds": 0.5796743239999955,
+      "outputHashesSHA256": "fa454b384832d361e38fec9bb7b5e18264a7fd5d7ed4e7bdc5d9944baead0383",
+      "outputsIdentical": true,
+      "productionAccepted": false,
+      "renderedTilesPerHour": 136628.44242174958,
+      "runs": [
+        {
+          "distinctWorkerProcesses": 4,
+          "peakConcurrentRenders": 4,
+          "seconds": 0.5790566790000042
+        },
+        {
+          "distinctWorkerProcesses": 4,
+          "peakConcurrentRenders": 4,
+          "seconds": 0.5796743239999955
+        },
+        {
+          "distinctWorkerProcesses": 4,
+          "peakConcurrentRenders": 4,
+          "seconds": 0.5876260929999972
+        }
+      ],
+      "speedupVsSerial": 1.7833661233544864,
+      "tiles": 22,
+      "workers": 4
+    }
+  ],
+  "sourcePlanSHA256": "65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88",
+  "sourceSHA": "e6a2e6ccf0a8a8de8efcd958f83587291b14ee83",
+  "targets": 22
+}
