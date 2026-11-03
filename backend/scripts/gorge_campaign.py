@@ -23,7 +23,7 @@ from gorge_cache_selection import select_cog_cache,seed_selected_cog
 from run_gorge_checkpoint_slot import code_snapshot,token
 
 SOURCE=Path(__file__).resolve().parent
-CONFIG=SOURCE.parent/'config/gorge-campaign-wave-267-20261102'
+CONFIG=SOURCE.parent/'config/gorge-campaign-wave-268-20261102'
 WAVE011_SALVAGE={'key':'engineering/map-production/plans/ad02daf172b88db0e6de4c0e1099b33f238ad88b2fe5df89aa597b633ae7c335/slots/00001/receipt.json','generation':'1793405625604649','bytes':1048,'sha256':'1509488d4bc7d448fcbf5af20aa267ce61c2dfb0baf6c7c16c3d7c1e84195b1b'}
 WAVE011_PRODUCER={'key':'engineering/map-production/plans/03edea40b63ad8d937064e10f7b221445a55da1fa87f7689657a70efab3d96eb/slots/00001/receipt.json','generation':'1793401709392186','bytes':728,'sha256':'eaf01977e64789af249b51e12046a6007613ace8523271716fc8921455d0920c'}
 WAVE011_AMBIGUOUS='leaf-on-16-17535-25316'
@@ -55,6 +55,9 @@ def configuration(directory=CONFIG):
     if len(plan['slots'])!=3 or plan['slots'][1]['storedBytes']<OUTPUT_CAP+64*2**20 or plan['slots'][2]['egressBytes']<2*OUTPUT_CAP+128*2**20:
         raise ValueError('Full output/recovery/assembly must be prepaid')
     if set(plan['jobPolicies'])!=set(jobs):raise ValueError('Missing bounded job policy')
+    if plan.get('resumableBatch'):
+        from rrgh_batch_contract import policy_check
+        policy_check(plan['resumableBatch'])
     return plan,evidence,region
 
 def emit(**value):print(json.dumps(value,sort_keys=True),flush=True)
@@ -473,6 +476,8 @@ def recover(plan,region,root,store,opener,owner):
         emit(phase='verified-tile-catalog',status=qa['verifiedTileCatalogStatus'],
             tiles=qa.get('verifiedTileCatalog',{}).get('tileCount',0),
             error=qa.get('verifiedTileCatalogError'),productionAccepted=False)
+        from rrgh_pair_worker import verify_closure
+        batch_proof=verify_closure(slot,plan,detail,records,worker,globals())
         qaref=save_large(slot,qa)
         completed=worker['result']['status'] in ('complete','bounded-stop')
         used=add_usage(boot['used'],worker['used'],slot.meter.used)
@@ -490,6 +495,7 @@ def recover(plan,region,root,store,opener,owner):
             'pixelGapAttemptsConsumed':detail.get('pixelGapAttemptsConsumed',0),
             'allOutputHashesAndPixelsVerified':True,'allNewPackageChunksReadBack':True,'allExistingCachesPreserved':True,
             'overviewPilotVerification':qa.get('overviewPilotVerification')}
+        if batch_proof is not None:result['batchClosure']=batch_proof
     except Exception as exc:
         import traceback
         error={'errorClass':type(exc).__name__,'frames':[{'file':Path(t.filename).name,'line':t.lineno,'function':t.name} for t in traceback.extract_tb(exc.__traceback__)]}
@@ -507,7 +513,10 @@ def main():
         from gorge_producer_identity import require_owner
         require_owner(plan,a.phase)
         root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener);owner=os.environ['GITHUB_RUN_ID']
-        if a.phase=='produce':produce(plan,evidence,region,root,store,opener,owner)
+        if a.phase=='produce' and plan.get('resumableBatch'):
+            from rrgh_pair_worker import produce as produce_pair
+            produce_pair(plan,evidence,region,root,store,opener,owner,globals())
+        elif a.phase=='produce':produce(plan,evidence,region,root,store,opener,owner)
         else:recover(plan,region,root,store,opener,owner)
     except Exception as error:
         import traceback
