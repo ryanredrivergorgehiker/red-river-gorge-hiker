@@ -1,1 +1,17 @@
-{"action":"resume-unclaimed","authorizedBy":"ryanredrivergorgehiker","date":"2026-11-03","original_run":41641972697,"failure_head_sha":"abbab549696cbf4dd5aa1beee224bdd18d6940c8","source_sha":"54810bc1c8f8daffc04809e3c0bca47a4eddbd2c","plan_sha256":"dbe0104298c89900ae2d9b0c808216712bd9ddec61791c311d60434bf334479a","dispatch_id":"46dab86731c7068b4c4f1a59829b3be9abe35e4d70c59bb09a7e97e2b37e80cd","reason":"Owner-approved continuity: establish unused wave236 and authenticate readback before new producer request"}
+{
+  "action": "resume-recovered",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "date": "2026-11-03",
+  "source_sha": "ce82b87547e1bc4d70f9cabe1966e525d5bee076",
+  "plan_sha256": "4025a0364ff06c1fd4771ee669cbb158671e248b300a18a1ad1815536a484b3e",
+  "original_run": 41650050176,
+  "dispatch_id": "7430f75e0b96b365b165722fa62a7aebb53f319cc9a3e10fb0f8a354e6c77009",
+  "recovery_receipt": {
+    "bytes": 1499,
+    "generation": "1793715040820021",
+    "key": "engineering/map-production/plans/4025a0364ff06c1fd4771ee669cbb158671e248b300a18a1ad1815536a484b3e/slots/00002/receipt.json",
+    "sha256": "d67f0c37f2e1bde56d024e346ac52b48f733cc97dd69c458f704b772428f1a4c"
+  },
+  "reviewed_commit": "93386f8678a13b2f51677ecc00fa625a99d5307b",
+  "purpose": "Reconcile verified wave239 and publish fresh wave240 without replaying any producer or Cloud checkpoint"
+}
