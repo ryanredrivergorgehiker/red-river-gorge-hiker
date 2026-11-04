@@ -32,6 +32,17 @@ class MonitorTests(unittest.TestCase):
         self.run['display_title'] = 'RRGH production 289 other'
         self.assertFalse(evaluate(self.state, self.run, [])['healthy'])
 
+    def test_successful_run_without_ownership_advance_is_red(self):
+        self.run.update(status='completed', conclusion='success')
+        self.assertFalse(evaluate(self.state, self.run, [])['healthy'])
+
+    def test_current_completion_is_active_without_counting_unverified_output(self):
+        self.state['mode'] = 'complete'
+        self.run['display_title'] = 'RRGH completion 289 exact'
+        result = evaluate(self.state, self.run, [])
+        self.assertTrue(result['healthy'])
+        self.assertEqual(result['acceptedRasterTiles'], 144088)
+
     def test_disabled_controller_is_red(self):
         self.state['enabled'] = False
         self.assertFalse(evaluate(self.state, self.run, [])['healthy'])
