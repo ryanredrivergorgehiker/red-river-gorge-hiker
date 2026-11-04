@@ -5,6 +5,7 @@ This is NOT an allocation, a publisher, or an authorization to render.
 The caller must independently validate each catalog's protected immutable
 recovery receipt and byte-read the children before rendering.
 """
+import re
 from rrgh_verified_tile_catalog import ref, require, TILE
 
 def eligible_parents(catalogs, required_children, required_parents):
@@ -25,7 +26,7 @@ def eligible_parents(catalogs, required_children, required_parents):
                 "Protected independently verified catalog required")
         require(type(catalog.get("sequence")) is int and catalog["sequence"] > 0
                 and type(catalog.get("planSHA256")) is str
-                and len(catalog["planSHA256"]) == 64,
+                and re.fullmatch(r"[0-9a-f]{64}", catalog["planSHA256"]) is not None,
                 "Missing immutable catalog lineage")
         tiles = catalog.get("tiles")
         require(type(tiles) is list and len(tiles) == catalog.get("tileCount"),
@@ -34,7 +35,9 @@ def eligible_parents(catalogs, required_children, required_parents):
             identity = tile.get("tile")
             require(type(identity) is list and len(identity) == 4
                     and type(identity[0]) is str
-                    and all(type(v) is int for v in identity[1:]),
+                    and all(type(v) is int for v in identity[1:])
+                    and 0 <= identity[1] <= 18
+                    and all(0 <= v < 2**identity[1] for v in identity[2:]),
                     "Invalid XYZ identity")
             key = tuple(identity)
             require(key not in by_tile, "Duplicate or replayed tile identity")
@@ -62,7 +65,7 @@ def eligible_parents(catalogs, required_children, required_parents):
     for layer, z, x, y in sorted(required_parents):
         require(layer in ("hiking", "terrain", "leaf-on", "leaf-off")
                 and type(z) is int and 10 <= z <= 15
-                and all(type(v) is int and v >= 0 for v in (x, y)),
+                and all(type(v) is int and 0 <= v < 2**z for v in (x, y)),
                 "Unsupported parent/boundary policy")
         children = [(layer, z+1, 2*x+dx, 2*y+dy)
                     for dx in range(2) for dy in range(2)]
