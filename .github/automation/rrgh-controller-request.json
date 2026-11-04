@@ -1,1 +1,11 @@
-{"action":"resume-recovered","source_sha":"e6a2e6ccf0a8a8de8efcd958f83587291b14ee83","authorizedBy":"ryanredrivergorgehiker","authorizedOn":"2026-11-03","requestID":"wave260-exact-partial-to261-real-parallel-trial","recoveryReceipt":{"bytes":1477,"generation":"1793728567727399","key":"engineering/map-production/plans/65e5d8891320ca386dbdaced9acfc3956a3153fc64c8556e132cbc1b6a1b4b88/slots/00002/receipt.json","sha256":"df0b69c14fa1091ee2beb3f3046bb4bdbeca456fba0591b7d361bf2d461d75d0"}}
+{
+  "action": "complete-halted",
+  "source_sha": "3ed911830fc2a1d69d8c3f30e457068ca2ca78ab",
+  "plan_sha256": "f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf",
+  "original_run_id": 41732537976,
+  "original_dispatch_id": "84a3ccd6d87e8e10902c06738b2ba232a209e28ffc4ead4701abe4af6f2ac73f",
+  "completion_manifest_sha256": "017f8ac5f8226e5b914ae357341f0a94647439de05b63f04790d1bd3b69c05b5",
+  "review_pr": 94,
+  "authorized_by": "ryanredrivergorgehiker",
+  "authorized_on": "2026-11-04"
+}
