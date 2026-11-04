@@ -3,9 +3,9 @@
   "source_sha": "3ed911830fc2a1d69d8c3f30e457068ca2ca78ab",
   "plan_sha256": "f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf",
   "original_run_id": 41732537976,
-  "original_dispatch_id": "84a3ccd6d87e8e10902c06738b2ba232a209e28ffc4ead4701abe4af6f2ac73f",
-  "completion_manifest_sha256": "017f8ac5f8226e5b914ae357341f0a94647439de05b63f04790d1bd3b69c05b5",
-  "review_pr": 94,
+  "failed_completion_run_id": 41757687246,
+  "completion_manifest_sha256": "684135e243bda9d45e9b25d103115d078399a279ffe9d20f43675d2fa29996b9",
+  "review_pr": 95,
   "authorized_by": "ryanredrivergorgehiker",
   "authorized_on": "2026-11-04"
 }
