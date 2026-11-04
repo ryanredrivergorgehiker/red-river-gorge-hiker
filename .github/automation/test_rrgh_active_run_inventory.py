@@ -185,6 +185,11 @@ class RecoveredResumeTests(unittest.TestCase):
                 self.state['recoveredResumeAuthorization'][key]='changed'
                 with self.assertRaises(d.Halt): d.audit_recovered(self.api,ROOT)
 
+    def test_exact_nov4_owner_authorization_preserves_receipt_only_resume(self):
+        self.state['recoveredResumeAuthorization']['authorizedOn']='2026-11-04'
+        self.assertEqual(d.audit_recovered(self.api,ROOT),{'receiptRef':self.receipt})
+        self.audit.assert_called_once_with(self.api,ROOT,self.state,allow_failed_controller=True)
+
     def test_claimed_or_unrecovered_modes_are_not_eligible(self):
         original = copy.deepcopy(self.state)
         for key,value in [('status','running'),('status','publishing'),('mode','recover'),('enabled',False)]:
