@@ -2,15 +2,15 @@
   "action": "resume-recovered",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-04",
-  "original_run": 41808154554,
-  "source_sha": "f1eef97574ba06041902a0604afcbcab01f0492f",
-  "plan_sha256": "95ae68b28eadeb071f5008b1d0d2a39b4b2bad5b9e9a5f63f36c8365bdc5127d",
-  "dispatch_id": "65c86364a3de110bbdaf1127a356347acf0b2a53b41b2f410ac2c8c5d4f55d90",
+  "original_run": 41860891636,
+  "source_sha": "6b055bda5443e4cae2bfb378a3db05a33adf0bf6",
+  "plan_sha256": "8e9f886d11abbcab0c923c4d148c02c570a68d64296f3e9073655b26fd8ac046",
+  "dispatch_id": "f7aaf885fe2125051470f0c78345abda4deec0937514aa067a9070687f5f1424",
   "recovery_receipt": {
-    "bytes": 1505,
-    "generation": "1793785071117177",
-    "key": "engineering/map-production/plans/95ae68b28eadeb071f5008b1d0d2a39b4b2bad5b9e9a5f63f36c8365bdc5127d/slots/00002/receipt.json",
-    "sha256": "ad72d7aca6657d97b37c416e4f3d6f8e2ee5bb1a77e2cea37d41d3285d1a9d23"
+    "bytes": 1502,
+    "generation": "1793807424687206",
+    "key": "engineering/map-production/plans/8e9f886d11abbcab0c923c4d148c02c570a68d64296f3e9073655b26fd8ac046/slots/00002/receipt.json",
+    "sha256": "c2c111ae65a9da968ba94bb43a1e8fca65e087e49e76b7293bc3eb96ca8991a9"
   },
-  "reason": "Reconcile failed state writes and advance already independently verified wave356 without production/recovery replay"
+  "reason": "Existing reviewed publisher-only continuation after wave383 audit-status stop; no new rendering or consumed recovery replay"
 }
