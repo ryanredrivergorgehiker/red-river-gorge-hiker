@@ -82,8 +82,8 @@ def run(source_root):
         qa['overviewPilotVerification'] = verify_overview(slot, plan, region, records, root, source)
         closure = verify_closure(slot, plan, detail, records, worker, vars(campaign))
         require(closure == m['batchClosure'], 'Independent closure differs from saved producer')
-        from rrgh_verified_tile_catalog import catalog
-        qa['verifiedTileCatalog'] = catalog(plan, region, records, detail['completedJobReceipts'], qa, parts, root)
+        from rrgh_completion_catalog import catalog
+        qa['verifiedTileCatalog'] = catalog(plan, region, records, detail['completedJobReceipts'], qa, parts, root, recovery_plan_sha=sha(funded))
         qa['verifiedTileCatalogStatus'] = 'verified'
         qaref = campaign.save_large(slot, qa)
         ledger = settlement(dict(slot.meter.used))

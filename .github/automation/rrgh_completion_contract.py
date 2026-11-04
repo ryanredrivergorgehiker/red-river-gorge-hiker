@@ -46,6 +46,14 @@ def monthly(stored):
     return Decimal(stored)/2**30*Decimal('.036')
 
 
+def retained_allocation(m):
+    previous = m.get('retainedCompletions', [])
+    require(len(previous) <= 1 and all(p['allocation'] == m['completionAllocation'] for p in previous),
+            'Only the exact bounded failed completion reservation may be retained')
+    allocations = [m['originalAllocation'], m['completionAllocation']]+[p['allocation'] for p in previous]
+    return {k:sum(v[k] for v in allocations) for k in m['completionAllocation']}
+
+
 def funding(m=None):
     m = manifest() if m is None else m
     cap = m['completionAllocation']
@@ -58,9 +66,10 @@ def funding(m=None):
                 sourceSnapshotSHA256=m['sourceSnapshotSHA256'],
                 originalPlanSHA256=m['planSHA256'], originalRunID=m['originalRunID'],
                 failedRecoveryReceipt=m['failedRecoveryReceipt'], authorizationSHA256=manifest_sha(),
+                retainedCompletions=m.get('retainedCompletions', []),
                 slots=[copy.deepcopy(cap)], limits=copy.deepcopy(cap), slotJobs={})
     reserve = cost(cap)
-    retained = {k: m['originalAllocation'][k]+cap[k] for k in cap}
+    retained = retained_allocation(m)
     carry = m['priorCarry']
     require(Decimal(carry['chargedUSD'])+cost(retained) <= Decimal('123') and
             monthly(carry['storedBytes']+retained['storedBytes']) <= Decimal('2'),
@@ -81,12 +90,13 @@ def settlement(used, m=None):
     cap = m['completionAllocation']
     require(set(used) == set(cap) and all(type(v) is int and 0 <= v <= cap[k] for k,v in used.items()),
             'Completion usage exceeds its separate allocation')
-    retained = {k: m['originalAllocation'][k]+cap[k] for k in cap}
+    retained = retained_allocation(m)
     charged = str(Decimal(m['priorCarry']['chargedUSD'])+cost(retained))
     stored = m['priorCarry']['storedBytes']+retained['storedBytes']
     return dict(format='rrgh-campaign-settlement-v1', campaignID='gorge-full-quality-125usd-20261031',
                 sequence=m['sequence'], planSHA256=sha(funded), originalPlanSHA256=m['planSHA256'],
                 originalAllocation=m['originalAllocation'], completionAllocation=cap,
+                retainedCompletions=m.get('retainedCompletions', []),
                 retainedUsage=retained, observedCompletionUsage=used,
                 demonstrablyUnused={k:0 for k in cap},
                 independentRecoveryComplete=True, ambiguousAllocationRetained=True,
