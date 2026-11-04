@@ -26,7 +26,9 @@ jobs:
       - name: Consumed allocation, source-free completion, accounting, duplicate-claim and proof mutation tests
         env:
           RRGH_TEST_SOURCE: completion-source
-        run: python -m unittest discover -s .github/automation -p test_rrgh_completion.py -v
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_completion.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_completion_catalog.py -v
       - name: Existing single-owner dispatch, read-only retries, split-recovery and batch preservation regressions
         env:
           RRGH_TEST_SOURCE: completion-source

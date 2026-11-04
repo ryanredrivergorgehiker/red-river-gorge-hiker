@@ -46,8 +46,9 @@ class CompletionTests(unittest.TestCase):
 
     def test_full_failed_and_completion_allocations_retained_even_with_zero_usage(self):
         m=c.manifest();ledger=c.settlement(dict.fromkeys(m['completionAllocation'],0))
-        self.assertEqual(ledger['retainedUsage'],{k:m['originalAllocation'][k]+m['completionAllocation'][k]
+        self.assertEqual(ledger['retainedUsage'],{k:m['originalAllocation'][k]+2*m['completionAllocation'][k]
                                                for k in m['completionAllocation']})
+        self.assertEqual(ledger['retainedCompletions'],m['retainedCompletions'])
         self.assertTrue(ledger['ambiguousAllocationRetained'])
         self.assertTrue(ledger['independentRecoveryComplete'])
         self.assertEqual(c.next_carry(ledger)['priorCompletedJobs'],14021)
@@ -109,6 +110,26 @@ class CompletionTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('RRGH_TEST_SOURCE'),'Actual checkpoint engine path required')
 class CheckpointEngineTests(unittest.TestCase):
+    def test_exact_retained_completion_is_durably_claimed_once(self):
+        sys.path.insert(0,str(Path(os.environ['RRGH_TEST_SOURCE']).resolve()/'backend/scripts'))
+        from test_rrgh_dispatcher import FakeGitHub, ROOT
+        m=c.manifest();prior=m['retainedCompletions'][0]
+        api=FakeGitHub();api.head=m['sourceSHA']
+        api.value.update(status='halted',mode='complete',sequence=289,sourceSHA=m['sourceSHA'],
+                         planSHA256=m['planSHA256'],runID=prior['runID'],dispatchID=prior['dispatchID'],
+                         completionOf=dict(manifestSHA256=prior['manifestSHA256']),
+                         completionAuthorization=dict(authorizedBy='ryanredrivergorgehiker',
+                             authorizedOn='2026-11-04',manifestSHA256=c.manifest_sha()))
+        with patch.object(d,'caller'),patch.object(a,'original'):
+            d.complete_halted(api,ROOT)
+            self.assertEqual(api.value['status'],'dispatching')
+            self.assertEqual(api.value['mode'],'complete')
+            self.assertEqual(api.value['sourceSHA'],m['sourceSHA'])
+            self.assertEqual(api.value['completionOf']['runID'],m['originalRunID'])
+            self.assertEqual(api.value['retainedCompletionHistory'],m['retainedCompletions'])
+            with self.assertRaises(d.Halt):d.complete_halted(api,ROOT)
+            self.assertEqual(sum(call[0]=='POST' for call in api.calls),1)
+
     def test_funded_immutable_slot_and_duplicate_claim(self):
         sys.path.insert(0,str(Path(os.environ['RRGH_TEST_SOURCE']).resolve()/'backend/scripts'))
         from gorge_checkpoint import Slot,Ref,require_live_allowance,digest

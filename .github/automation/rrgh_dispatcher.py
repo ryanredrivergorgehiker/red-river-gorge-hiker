@@ -36,7 +36,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
-    'rrgh_completion_contract.py','rrgh_checkpoint_completion.py','rrgh_completion_audit.py','wave289-completion.json',
+    'rrgh_completion_contract.py','rrgh_checkpoint_completion.py','rrgh_completion_audit.py','rrgh_completion_catalog.py','wave289-completion.json',
     'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
     'rrgh_batch_contract.py','rrgh_pair_cache.py','rrgh_pair_worker.py','rrgh_batch_integration.py',
     'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json','overview-candidates.json',
@@ -408,17 +408,27 @@ def complete_halted(api,root):
     from rrgh_completion_contract import manifest,manifest_sha,funding
     from rrgh_completion_audit import original
     m=manifest()
-    guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce' and
-          all(state.get(k)==m[v] for k,v in [('runID','originalRunID'),('dispatchID','originalDispatchID'),
-              ('sourceSHA','sourceSHA'),('planSHA256','planSHA256'),('sequence','sequence')]) and
-          'completionOf' not in state,'Only the exact original consumed recovery can be completed')
+    previous=m.get('retainedCompletions',[])
+    if previous:
+        prior=previous[-1]
+        eligible=(len(previous)==1 and state.get('mode')=='complete' and state.get('runID')==prior['runID'] and
+                  state.get('dispatchID')==prior['dispatchID'] and
+                  state.get('completionOf',{}).get('manifestSHA256')==prior['manifestSHA256'])
+    else:
+        eligible=(state.get('mode')=='produce' and state.get('runID')==m['originalRunID'] and
+                  state.get('dispatchID')==m['originalDispatchID'] and 'completionOf' not in state)
+    guard(state.get('enabled') is True and state.get('status')=='halted' and eligible and
+          all(state.get(k)==m[k] for k in ('sourceSHA','planSHA256','sequence')),
+          'Only the exact original or fully retained consumed recovery can be completed')
     auth=state.get('completionAuthorization',{})
     guard(auth=={'authorizedBy':'ryanredrivergorgehiker','authorizedOn':'2026-11-04',
                  'manifestSHA256':manifest_sha()},'Exact owner completion authorization missing')
     original(api);funding()
     assert_no_other_producers(api)
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
-    state['completionOf']={k:state[k] for k in ('runID','dispatchID','sourceSHA','planSHA256','sequence')}
+    if previous:state.setdefault('retainedCompletionHistory',[]).append(previous[-1])
+    state['completionOf']={k:m[v] for k,v in [('runID','originalRunID'),('dispatchID','originalDispatchID'),
+        ('sourceSHA','sourceSHA'),('planSHA256','planSHA256'),('sequence','sequence')]}
     state['completionOf'].update(manifestSHA256=manifest_sha(),failedRecoveryReceipt=m['failedRecoveryReceipt'])
     state.pop('completionAuthorization')
     state['status']='completion-ready'

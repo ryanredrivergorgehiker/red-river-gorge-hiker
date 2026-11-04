@@ -371,5 +371,25 @@
     "storedBytes": 838860800
   },
   "expiresAt": "2026-11-10T22:38:08Z",
-  "sourceSnapshotSHA256": "933460c21b3d858e9b36b0372294223d19bbcd322fdef50ebd2b8a4b2b8ea044"
+  "sourceSnapshotSHA256": "933460c21b3d858e9b36b0372294223d19bbcd322fdef50ebd2b8a4b2b8ea044",
+  "retainedCompletions": [
+    {
+      "runID": 41757687246,
+      "headSHA": "e449f07a05222c77879f9994bd94b07a62193b49",
+      "dispatchID": "e043185846aca196c89e4a3db98afff123b2db25c200885c8e05479015393a51",
+      "manifestSHA256": "017f8ac5f8226e5b914ae357341f0a94647439de05b63f04790d1bd3b69c05b5",
+      "planSHA256": "687a4cf74a6e8585458c072298dbead863eab54d5d686ea052b673127636776b",
+      "allocation": {
+        "attempts": 0,
+        "classARequests": 250,
+        "classBRequests": 4000,
+        "egressBytes": 2147483648,
+        "seconds": 2400,
+        "sourceBytes": 0,
+        "sourceRequests": 0,
+        "storedBytes": 838860800
+      },
+      "reason": "Native catalog expected the original plan namespace; all completed package writes retained without acceptance"
+    }
+  ]
 }

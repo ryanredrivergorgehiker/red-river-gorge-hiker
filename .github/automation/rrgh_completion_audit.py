@@ -53,6 +53,22 @@ def original(api):
             failed[0]['result'].get('status') == 'failed' and
             failed[0]['result'].get('allWaveAllocationsRetained') is True and
             failed[0]['result'].get('diagnostic') == m['originalFailure'], 'Consumed recovery failure changed')
+    for prior in m.get('retainedCompletions', []):
+        previous = api.call('GET', 'actions/runs/'+str(prior['runID']))
+        identity(previous, 'completion', prior['runID'], prior['dispatchID'])
+        require(previous.get('head_sha') == prior['headSHA'] and previous.get('status') == 'completed' and
+                previous.get('conclusion') == 'failure', 'Retained completion run changed')
+        previous_jobs = jobs_for(api, prior['runID'])
+        require(all(one(previous_jobs,n)['conclusion'] == c for n,c in
+                    [('admit','success'), ('bounded-stage','skipped'), ('independent-recovery','skipped'),
+                     ('independent-completion','failure'), ('advance','skipped'), ('retain-failure','success')]),
+                'Retained completion executed production or has an ambiguous outcome')
+        from rrgh_dispatch_audit import gh
+        log = gh('actions/jobs/'+str(one(previous_jobs,'independent-completion')['id'])+'/logs', api.token, raw=True)
+        require('ValueError: Noncontiguous or foreign package chunk' in log and
+                'rrgh_verified_tile_catalog.py' in log and 'rrgh_checkpoint_completion.py' in log and
+                not [r for r in reports(log.splitlines()) if r.get('phase') == 'independent-checkpoint-completion'],
+                'Exact unaccepted catalog failure was not established')
     return run
 
 
