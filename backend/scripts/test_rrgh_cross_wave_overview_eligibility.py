@@ -40,4 +40,19 @@ class TestEligibility(unittest.TestCase):
         row=cat([tile(200,400)],1);row["independentPixelsAndHashesVerified"]=False
         with self.assertRaises(ValueError):
             eligible_parents([row],C,P)
+    def test_child_path_mismatch_fails(self):
+        row=tile(200,400);row["path"]="tiles/leaf-on/16/201/400.jpg"
+        with self.assertRaises(ValueError):
+            eligible_parents([cat([row],1)],C,P)
+    def test_child_checkpoint_range_overflow_fails(self):
+        row=tile(200,400);row["checkpointOffset"]=990
+        with self.assertRaises(ValueError):
+            eligible_parents([cat([row],1)],C,P)
+    def test_unverified_package_membership_fails(self):
+        row=cat([tile(200,400)],1);row["nativePackageMembershipVerified"]=False
+        with self.assertRaises(ValueError):
+            eligible_parents([row],C,P)
+    def test_invalid_parent_zoom_fails(self):
+        with self.assertRaises(ValueError):
+            eligible_parents([cat([tile(200,400)],1)],C,{("leaf-on",16,100,200)})
 if __name__=="__main__":unittest.main()
