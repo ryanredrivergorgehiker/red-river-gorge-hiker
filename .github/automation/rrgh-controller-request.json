@@ -2,15 +2,15 @@
   "action": "resume-recovered",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-04",
-  "original_run": 41860891636,
-  "source_sha": "6b055bda5443e4cae2bfb378a3db05a33adf0bf6",
-  "plan_sha256": "8e9f886d11abbcab0c923c4d148c02c570a68d64296f3e9073655b26fd8ac046",
-  "dispatch_id": "f7aaf885fe2125051470f0c78345abda4deec0937514aa067a9070687f5f1424",
+  "original_run": 41903329869,
+  "source_sha": "5a84c6d9d2fd80a78b45acb28154924393839116",
+  "plan_sha256": "f721777ac1192403fc17822cfb5faadc576a9530925596f81e28afa5ade4df36",
+  "dispatch_id": "279ea5e62d073cb84981e36b0106c28aa791c9634b36866b8a95f5d6b88f2ae3",
   "recovery_receipt": {
     "bytes": 1502,
-    "generation": "1793807424687206",
-    "key": "engineering/map-production/plans/8e9f886d11abbcab0c923c4d148c02c570a68d64296f3e9073655b26fd8ac046/slots/00002/receipt.json",
-    "sha256": "c2c111ae65a9da968ba94bb43a1e8fca65e087e49e76b7293bc3eb96ca8991a9"
+    "generation": "1793823056126054",
+    "key": "engineering/map-production/plans/f721777ac1192403fc17822cfb5faadc576a9530925596f81e28afa5ade4df36/slots/00002/receipt.json",
+    "sha256": "e836cd90717b49f4001037410dc79b412845e172bed0bb9f961f826f06de68d7"
   },
-  "reason": "Existing reviewed publisher-only continuation after wave383 audit-status stop; no new rendering or consumed recovery replay"
+  "reason": "Resume exact independently verified399 after log-service HTTP503; reviewed log retries/in-run fallback deployed; no consumed-slot replay"
 }
