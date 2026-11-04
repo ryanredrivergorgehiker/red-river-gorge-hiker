@@ -34,6 +34,8 @@ def evaluate(state, run, jobs):
         report['reason'] = 'Current run identity does not match controller ownership'
     elif run and run.get('conclusion') in ('failure', 'cancelled', 'timed_out', 'action_required'):
         report['reason'] = 'Current production/recovery run failed'
+    elif run and run.get('status') == 'completed':
+        report['reason'] = 'Current run ended but controller ownership has not advanced'
     elif state.get('status') in ('running', 'probing', 'publishing') and run:
         report.update(healthy=True, reason='Current controller run is active; only the last independently verified inventory is counted')
     elif state.get('status') in ('ready', 'dispatching', 'recovery-ready', 'completion-ready') and not state.get('runID'):
