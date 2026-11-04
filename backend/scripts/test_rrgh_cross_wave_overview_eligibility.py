@@ -55,4 +55,15 @@ class TestEligibility(unittest.TestCase):
     def test_invalid_parent_zoom_fails(self):
         with self.assertRaises(ValueError):
             eligible_parents([cat([tile(200,400)],1)],C,{("leaf-on",16,100,200)})
+    def test_out_of_grid_child_fails(self):
+        row=tile(65536,400)
+        with self.assertRaises(ValueError):
+            eligible_parents([cat([row],1)],C,P)
+    def test_out_of_grid_parent_fails(self):
+        with self.assertRaises(ValueError):
+            eligible_parents([cat([tile(200,400)],1)],C,{("leaf-on",15,32768,200)})
+    def test_malformed_plan_digest_fails(self):
+        row=cat([tile(200,400)],1);row["planSHA256"]="Z"*64
+        with self.assertRaises(ValueError):
+            eligible_parents([row],C,P)
 if __name__=="__main__":unittest.main()
