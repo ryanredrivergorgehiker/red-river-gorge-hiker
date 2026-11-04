@@ -36,6 +36,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'rrgh_completion_contract.py','rrgh_checkpoint_completion.py','rrgh_completion_audit.py','wave289-completion.json',
     'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
     'rrgh_batch_contract.py','rrgh_pair_cache.py','rrgh_pair_worker.py','rrgh_batch_integration.py',
     'rrgh_overview_pilot.py','rrgh_overview_integration.py','rrgh_verified_overview.py','overview-pilot.json','overview-candidates.json',
@@ -183,7 +184,7 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
     guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
-          ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
+          ('completion-ready',) if mode=='complete' else ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -337,6 +338,9 @@ def audit_current(api,root):
 
 
 def audit_state(api,root,state,allow_failed_controller=False):
+    if state.get('mode')=='complete':
+        from rrgh_completion_audit import audit
+        return audit(api,state)
     if state.get('mode')=='salvage':
         from rrgh_salvage_audit import audit
         return audit(api,state)
@@ -397,6 +401,29 @@ def arm_unstarted_recovery(api,root,automatic=False):
     state.pop('recoveryStartAuthorization',None)
     old=api.cas(old,state,'verified recovery never started; preserve exact producer')
     return dispatch(api,root,old,state,'recover',allowed_run=parent['runID'])
+
+
+def complete_halted(api,root):
+    caller('launch');old,state=api.state();validate_state(state,root)
+    from rrgh_completion_contract import manifest,manifest_sha,funding
+    from rrgh_completion_audit import original
+    m=manifest()
+    guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce' and
+          all(state.get(k)==m[v] for k,v in [('runID','originalRunID'),('dispatchID','originalDispatchID'),
+              ('sourceSHA','sourceSHA'),('planSHA256','planSHA256'),('sequence','sequence')]) and
+          'completionOf' not in state,'Only the exact original consumed recovery can be completed')
+    auth=state.get('completionAuthorization',{})
+    guard(auth=={'authorizedBy':'ryanredrivergorgehiker','authorizedOn':'2026-11-04',
+                 'manifestSHA256':manifest_sha()},'Exact owner completion authorization missing')
+    original(api);funding()
+    assert_no_other_producers(api)
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==state['sourceSHA'],'Source lease changed')
+    state['completionOf']={k:state[k] for k in ('runID','dispatchID','sourceSHA','planSHA256','sequence')}
+    state['completionOf'].update(manifestSHA256=manifest_sha(),failedRecoveryReceipt=m['failedRecoveryReceipt'])
+    state.pop('completionAuthorization')
+    state['status']='completion-ready'
+    old=api.cas(old,state,'retain consumed recovery; reserve one separately funded completion')
+    return dispatch(api,root,old,state,'complete',allowed_run=m['originalRunID'])
 
 
 def salvage_halted(api,root):
@@ -474,6 +501,9 @@ def candidate_entries(source_root,audit,state):
     guard(parent==state['sourceSHA'],'Local source parent differs from durable ownership')
     old_dir,prior,old_code=config(root,True);new_dir,plan,new_code=config(root)
     guard(digest(canonical(prior))==state['planSHA256']==audit['planSHA256'],'Prior plan differs from recovery')
+    if audit.get('completedConsumedRecovery') is True:
+        from rrgh_completion_contract import check_report
+        check_report(audit)
     guard(new_dir!=old_dir and plan['campaign']['sequence']==prior['campaign']['sequence']+1,'Allocation not advanced')
     guard(plan['campaign']['previousRecovery']==audit['receiptRef'] and plan['campaign']['carry']==audit['nextCarry'],
           'Exact predecessor settlement lost')
@@ -574,6 +604,9 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
         'tilesNew':audit.get('tilesNew'),'recoveryCycleSeconds':audit.get('recoveryCycleSeconds'),
         'cycleTilesPerSecond':audit.get('cycleTilesPerSecond')}
     if audit.get('batchClosure'):completed['batchClosure']=audit['batchClosure']
+    if state.get('mode')=='complete':
+        completed['consumedRecoveryCompletionOf']=state.pop('completionOf')
+        completed['completionSettlement']=audit['completionSettlement']
     if state.get('mode')=='salvage':
         completed['checkpointSalvageOf']=state.pop('salvageOf')
     if state.get('mode')=='recover':
@@ -583,7 +616,7 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
     if state.get('batchPilotEnabled') and audit.get('batchClosure') and not plan.get('resumableBatch'):
         state['batchPilotEnabled']=False
         state.setdefault('batchFallbackHistory',[]).append({'runID':state['runID'],'sequence':state['sequence'],
-            'recoveryReceipt':audit['receiptRef'],'reason':audit['batchClosure'].get('stopReason') or 'measured throughput gate',
+            'recoveryReceipt':audit['receiptRef'],'reason':audit.get('fallbackReason') or audit['batchClosure'].get('stopReason') or 'measured throughput gate',
             'acceptedHistoryPreserved':True,'nextWorkers':1,'nextJobLimit':12})
     state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
@@ -648,10 +681,10 @@ def retain_failure(api,root,run_id,dispatch_id):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection','salvage-halted','resume-unclaimed'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['launch','claim','audit','publish','probe','activate','failed','audit-recovered','publish-recovered','recover-unstarted','inspect-halted','finish-inspection','salvage-halted','resume-unclaimed','complete-halted'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);p.add_argument('--output',type=Path)
-    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed') else a.command)
+    a=p.parse_args();caller('launch' if a.command.endswith('-recovered') or a.command in ('recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted') else a.command)
     api=GitHub(os.environ.get('GH_TOKEN',''));run_id=int(os.environ['GITHUB_RUN_ID'])
     if a.command=='launch':
         old,state=api.state();result=dispatch(api,a.root,old,state,'probe')
@@ -662,6 +695,7 @@ def main():
     elif a.command=='audit':result=audit_current(api,a.root)
     elif a.command=='audit-recovered':result=audit_recovered(api,a.root)
     elif a.command=='recover-unstarted':result=arm_unstarted_recovery(api,a.root)
+    elif a.command=='complete-halted':result=complete_halted(api,a.root)
     elif a.command=='salvage-halted':result=salvage_halted(api,a.root)
     elif a.command=='inspect-halted':result=inspect_halted(api,a.root)
     elif a.command=='finish-inspection':result=finish_inspection(api,a.root)

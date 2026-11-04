@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce, recover, inspect, salvage]
+        options: [probe, produce, recover, inspect, salvage, complete]
         required: true
       source_sha:
         type: string
@@ -299,11 +299,48 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_checkpoint_salvage.py source-checkout
+  independent-completion:
+    needs: admit
+    if: inputs.mode == 'complete'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Complete saved output verification with a new allocation and no source work
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_checkpoint_completion.py source-checkout
   advance:
-    needs: [admit, bounded-stage, independent-recovery, independent-salvage]
+    needs: [admit, bounded-stage, independent-recovery, independent-salvage, independent-completion]
     if: >-
       always() && needs.admit.result == 'success' &&
-      ((inputs.mode == 'salvage' && needs.independent-salvage.result == 'success') ||
+      ((inputs.mode == 'complete' && needs.independent-completion.result == 'success') ||
+       (inputs.mode == 'salvage' && needs.independent-salvage.result == 'success') ||
        (needs.independent-recovery.result == 'success' &&
         ((inputs.mode == 'produce' && needs.bounded-stage.result == 'success') || inputs.mode == 'recover')))
     runs-on: ubuntu-latest
@@ -337,12 +374,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py publish --source source-checkout --audit "${{ runner.temp }}/recovery.json"
   retain-failure:
-    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, advance]
+    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, independent-completion, advance]
     if: >-
       always() && needs.admit.result == 'success' &&
       (needs.authentication-probe.result == 'failure' || needs.activate.result == 'failure' ||
        needs.bounded-stage.result == 'failure' || needs.independent-recovery.result == 'failure' ||
-       needs.independent-salvage.result == 'failure' || needs.advance.result == 'failure')
+       needs.independent-salvage.result == 'failure' || needs.independent-completion.result == 'failure' || needs.advance.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

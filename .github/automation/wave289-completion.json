@@ -1,0 +1,375 @@
+{
+  "format": "rrgh-wave289-completion-v1",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-04",
+  "authorization": "Owner: fix it; preserve prior accepted work and roll back prospectively if needed",
+  "sequence": 289,
+  "originalRunID": 41732537976,
+  "originalHeadSHA": "0733009168699828e4a74db0d92c381ec53aa5fa",
+  "originalDispatchID": "84a3ccd6d87e8e10902c06738b2ba232a209e28ffc4ead4701abe4af6f2ac73f",
+  "sourceSHA": "3ed911830fc2a1d69d8c3f30e457068ca2ca78ab",
+  "planSHA256": "f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf",
+  "priorCarry": {
+    "chargedUSD": "25.78381634212820529937744146",
+    "priorCompletedJobs": 13997,
+    "priorRasterTiles": 144088,
+    "priorSunlightAssets": 320,
+    "storedBytes": 27833755618
+  },
+  "originalAllocation": {
+    "attempts": 24,
+    "classARequests": 3000,
+    "classBRequests": 3000,
+    "egressBytes": 2147483648,
+    "seconds": 12300,
+    "sourceBytes": 34359738368,
+    "sourceRequests": 30000,
+    "storedBytes": 1610612736
+  },
+  "bootstrapReceipt": {
+    "bytes": 624,
+    "generation": "1793745629743260",
+    "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00000/receipt.json",
+    "sha256": "f31fef3e8ee29d5f809d3855bf855615936520e7afbcc628f3c019e5f1f5bccc"
+  },
+  "producerReceipt": {
+    "bytes": 713,
+    "generation": "1793745860006959",
+    "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/receipt.json",
+    "sha256": "8a333e85c7201fc5a6599edaa0fc33c8c3634b34f0d2cb0201a6c2d613e41ede"
+  },
+  "failedRecoveryReceipt": {
+    "bytes": 793,
+    "generation": "1793745924634935",
+    "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00002/receipt.json",
+    "sha256": "3e15081733c7ce134ee3950c11e2301b14734553d569d3e5f8e758f2ad9c9be7"
+  },
+  "batchClosure": {
+    "acceptedJobIDs": [
+      "hiking-16-17533-25310",
+      "hiking-16-17532-25311",
+      "hiking-16-17534-25310",
+      "hiking-16-17535-25309",
+      "hiking-16-17512-25313",
+      "hiking-16-17513-25313",
+      "hiking-16-17514-25312",
+      "hiking-16-17515-25312",
+      "terrain-16-17522-25322",
+      "terrain-16-17524-25321",
+      "terrain-16-17525-25321",
+      "terrain-16-17523-25322",
+      "terrain-16-17526-25321",
+      "terrain-16-17527-25321",
+      "terrain-16-17520-25324",
+      "terrain-16-17522-25323",
+      "leaf-off-16-17532-25316",
+      "leaf-off-16-17535-25315",
+      "leaf-off-16-17533-25316",
+      "leaf-off-16-17534-25316",
+      "leaf-off-16-17528-25319",
+      "leaf-off-16-17530-25318",
+      "leaf-off-16-17531-25317",
+      "leaf-off-16-17529-25319"
+    ],
+    "allChildrenJoined": true,
+    "allocationSHA256": "566992c2781d56f370902187bbb77d1734f7bc36d7f6d0fe5004b5c65743802a",
+    "attemptedJobIDs": [
+      "hiking-16-17533-25310",
+      "hiking-16-17532-25311",
+      "hiking-16-17534-25310",
+      "hiking-16-17535-25309",
+      "hiking-16-17512-25313",
+      "hiking-16-17513-25313",
+      "hiking-16-17514-25312",
+      "hiking-16-17515-25312",
+      "terrain-16-17522-25322",
+      "terrain-16-17524-25321",
+      "terrain-16-17525-25321",
+      "terrain-16-17523-25322",
+      "terrain-16-17526-25321",
+      "terrain-16-17527-25321",
+      "terrain-16-17520-25324",
+      "terrain-16-17522-25323",
+      "leaf-off-16-17532-25316",
+      "leaf-off-16-17535-25315",
+      "leaf-off-16-17533-25316",
+      "leaf-off-16-17534-25316",
+      "leaf-off-16-17528-25319",
+      "leaf-off-16-17530-25318",
+      "leaf-off-16-17531-25317",
+      "leaf-off-16-17529-25319"
+    ],
+    "childWallSeconds": 298.802075,
+    "fallbackRequired": false,
+    "format": "rrgh-closed-batch-v1",
+    "immutableCacheBytesAvailableForReuse": 7185884912,
+    "planSHA256": "f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf",
+    "producerSeconds": 228.279448,
+    "quarantinedJobIDs": [],
+    "sourceLedgersMerged": true,
+    "stopReason": null,
+    "unattemptedJobIDs": [],
+    "workers": 2
+  },
+  "completedJobIDs": [
+    "hiking-16-17533-25310",
+    "hiking-16-17532-25311",
+    "hiking-16-17534-25310",
+    "hiking-16-17535-25309",
+    "hiking-16-17512-25313",
+    "hiking-16-17513-25313",
+    "hiking-16-17514-25312",
+    "hiking-16-17515-25312",
+    "terrain-16-17522-25322",
+    "terrain-16-17524-25321",
+    "terrain-16-17525-25321",
+    "terrain-16-17523-25322",
+    "terrain-16-17526-25321",
+    "terrain-16-17527-25321",
+    "terrain-16-17520-25324",
+    "terrain-16-17522-25323",
+    "leaf-off-16-17532-25316",
+    "leaf-off-16-17535-25315",
+    "leaf-off-16-17533-25316",
+    "leaf-off-16-17534-25316",
+    "leaf-off-16-17528-25319",
+    "leaf-off-16-17530-25318",
+    "leaf-off-16-17531-25317",
+    "leaf-off-16-17529-25319"
+  ],
+  "completedJobRefs": [
+    {
+      "bytes": 1876,
+      "generation": "1793745635195706",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17533-25310.json",
+      "sha256": "d0230c1ec68bf9865822ac7cc44e86fd0d56021f1b62f5d84cd2a4ef8b7b965e"
+    },
+    {
+      "bytes": 1869,
+      "generation": "1793745636308274",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17532-25311.json",
+      "sha256": "2af7f514201889df33fc1e85c37055f6478d62a4e8d731ebe567d8fadbf19be0"
+    },
+    {
+      "bytes": 1878,
+      "generation": "1793745641852616",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17534-25310.json",
+      "sha256": "a850fa3ae8fe54784317128d23f27795097b75363444f7507472aa3f952f18ab"
+    },
+    {
+      "bytes": 2060,
+      "generation": "1793745642966676",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17535-25309.json",
+      "sha256": "5e7866abe69373619be202134c5cf00e85aa1bc35550594d6e5ee3c40a64be94"
+    },
+    {
+      "bytes": 1932,
+      "generation": "1793745648130901",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17512-25313.json",
+      "sha256": "812f221415e18e31a174e107dcf583033a6a6e5699daf99a698f59bca1450328"
+    },
+    {
+      "bytes": 2054,
+      "generation": "1793745648651385",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17513-25313.json",
+      "sha256": "c25a93525448289021102b2efbe359cfa02069edecbaad644793ceb3cee05db7"
+    },
+    {
+      "bytes": 2051,
+      "generation": "1793745653423083",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17514-25312.json",
+      "sha256": "82a63ecf9b4cd86a58a8c75a32b8d31ba9f8d4386e3c90fe3da63a2f36a8ef6e"
+    },
+    {
+      "bytes": 2049,
+      "generation": "1793745654500562",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/hiking-16-17515-25312.json",
+      "sha256": "8677409aae713dd07b9dd858c846a1e75adfeba9a888940841a2a91adb630b82"
+    },
+    {
+      "bytes": 2288,
+      "generation": "1793745662290539",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17522-25322.json",
+      "sha256": "deaf274194cdb59bd8be980f1167161c7a9db8765746683a130603f3f86ff14b"
+    },
+    {
+      "bytes": 1860,
+      "generation": "1793745663304162",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17524-25321.json",
+      "sha256": "c5c0fcfe60eb40e8e06f60a48789a48036b256d65054b812199118f0b8fa633f"
+    },
+    {
+      "bytes": 2010,
+      "generation": "1793745669080397",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17525-25321.json",
+      "sha256": "38bc012f41dbea98d5c359cacf5ce796f68820fda1ddc36b34f2ddab30d50c66"
+    },
+    {
+      "bytes": 2010,
+      "generation": "1793745670149479",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17523-25322.json",
+      "sha256": "8811b9060e3d374a9dabe6bcd1bb8a3b999d0b8a44b15de70fa3be7fff04718c"
+    },
+    {
+      "bytes": 1855,
+      "generation": "1793745678186661",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17526-25321.json",
+      "sha256": "9b3b5bc720e154b5902deffc02511f69538db02056e6f5ce02bab7050ad3bde6"
+    },
+    {
+      "bytes": 1859,
+      "generation": "1793745678962492",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17527-25321.json",
+      "sha256": "b9c725af4f3e725ec3788ca9cf69a578a4344a6dbb4a91cb6ae53e6693d37e1d"
+    },
+    {
+      "bytes": 1860,
+      "generation": "1793745684982728",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17520-25324.json",
+      "sha256": "714eafab59a7871c9dce30f480756bb0eca8c3267f3a595003958cd0baf5a4ba"
+    },
+    {
+      "bytes": 2012,
+      "generation": "1793745686036279",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/terrain-16-17522-25323.json",
+      "sha256": "7d4034d9b9895f3f1426bf8ce8c7f763280ca4f0fbfb3fca220c097f5a8a6500"
+    },
+    {
+      "bytes": 3258,
+      "generation": "1793745731827541",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17532-25316.json",
+      "sha256": "5bd82540f341e9628deaecc71ed428387e39548d05ed357e51cfaf473c0f5792"
+    },
+    {
+      "bytes": 2980,
+      "generation": "1793745733350221",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17535-25315.json",
+      "sha256": "29d909375d413f121503daa064b07010366a6d203049f2fa33961e4049619280"
+    },
+    {
+      "bytes": 2980,
+      "generation": "1793745765687848",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17533-25316.json",
+      "sha256": "c8fd4e6fdd0e0198f9a21295752ba812796487f5c490440a80255dcfa31600ea"
+    },
+    {
+      "bytes": 2978,
+      "generation": "1793745767251845",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17534-25316.json",
+      "sha256": "f584bc05ee4d1881a513ba08a73f99b6edbb64d8557397ea27dd4ce9d79b5046"
+    },
+    {
+      "bytes": 3266,
+      "generation": "1793745813689419",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17528-25319.json",
+      "sha256": "1ad17f53cb2af08134052df2047fd597e016a2784eb296e4193ecff4b9603629"
+    },
+    {
+      "bytes": 2825,
+      "generation": "1793745815521776",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17530-25318.json",
+      "sha256": "574ee8e02a15f63bfd10591034d6f15d791e707188f860a265c88da18c492237"
+    },
+    {
+      "bytes": 2978,
+      "generation": "1793745855655178",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17531-25317.json",
+      "sha256": "d62ac8c7e5cd39c66acd6c444632c7bfb7e64b94229792c2f9ac875fca2fc166"
+    },
+    {
+      "bytes": 2985,
+      "generation": "1793745857583674",
+      "key": "engineering/map-production/plans/f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf/slots/00001/jobs/leaf-off-16-17529-25319.json",
+      "sha256": "c1e961e94fd31291614f9ce8358aaaa4ebbe9bace48567e2ac2066bc2b2d5540"
+    }
+  ],
+  "jobs": 24,
+  "tiles": 246,
+  "originalFailure": {
+    "errorClass": "RemoteDisconnected",
+    "frames": [
+      {
+        "file": "gorge_campaign.py",
+        "function": "recover",
+        "line": 463
+      },
+      {
+        "file": "gorge_campaign.py",
+        "function": "assemble",
+        "line": 437
+      },
+      {
+        "file": "gorge_checkpoint.py",
+        "function": "put",
+        "line": 343
+      },
+      {
+        "file": "gorge_checkpoint.py",
+        "function": "create",
+        "line": 260
+      },
+      {
+        "file": "gorge_checkpoint.py",
+        "function": "_request",
+        "line": 248
+      },
+      {
+        "file": "gorge_stage_coordinator.py",
+        "function": "__call__",
+        "line": 90
+      },
+      {
+        "file": "request.py",
+        "function": "open",
+        "line": 515
+      },
+      {
+        "file": "request.py",
+        "function": "_open",
+        "line": 532
+      },
+      {
+        "file": "request.py",
+        "function": "_call_chain",
+        "line": 492
+      },
+      {
+        "file": "request.py",
+        "function": "https_open",
+        "line": 1405
+      },
+      {
+        "file": "request.py",
+        "function": "do_open",
+        "line": 1361
+      },
+      {
+        "file": "client.py",
+        "function": "getresponse",
+        "line": 1478
+      },
+      {
+        "file": "client.py",
+        "function": "begin",
+        "line": 343
+      },
+      {
+        "file": "client.py",
+        "function": "_read_status",
+        "line": 312
+      }
+    ]
+  },
+  "completionAllocation": {
+    "attempts": 0,
+    "classARequests": 250,
+    "classBRequests": 4000,
+    "egressBytes": 2147483648,
+    "seconds": 2400,
+    "sourceBytes": 0,
+    "sourceRequests": 0,
+    "storedBytes": 838860800
+  },
+  "expiresAt": "2026-11-10T22:38:08Z",
+  "sourceSnapshotSHA256": "933460c21b3d858e9b36b0372294223d19bbcd322fdef50ebd2b8a4b2b8ea044"
+}
