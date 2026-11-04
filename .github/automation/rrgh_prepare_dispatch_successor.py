@@ -91,8 +91,12 @@ def prepare(root, verified):
     prior_plan_sha = digest(canonical(old))
     check(verified["planSHA256"] == prior_plan_sha, "Previous plan digest mismatch")
     ref = verified["receiptRef"]
-    check(ref["key"] == "engineering/map-production/plans/" + prior_plan_sha +
-          "/slots/00002/receipt.json", "Previous receipt key mismatch")
+    if verified.get('completedConsumedRecovery') is True:
+        from rrgh_completion_contract import check_report
+        check_report(verified)
+    else:
+        check(ref["key"] == "engineering/map-production/plans/" + prior_plan_sha +
+              "/slots/00002/receipt.json", "Previous receipt key mismatch")
     check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
 
     partial = verified.get("partialRecovered") is True

@@ -31,9 +31,9 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed')
+          assert action in ('launch','resume-recovered','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted')
           source=request.get('source_sha','')
-          if action in ('resume-recovered','recover-unstarted','inspect-halted','salvage-halted'):
+          if action in ('resume-recovered','recover-unstarted','inspect-halted','salvage-halted','complete-halted'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and state['status']=='halted'
@@ -64,6 +64,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py inspect-halted
+      - name: Complete the exact consumed recovery using a separately funded source-free slot
+        if: steps.request.outputs.action == 'complete-halted'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_dispatcher.py complete-halted
       - name: Dispatch the exact independently inspected checkpoint salvage
         if: steps.request.outputs.action == 'salvage-halted'
         env:
