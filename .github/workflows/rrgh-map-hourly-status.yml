@@ -2,7 +2,7 @@ name: RRGH hourly map production status
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/rrgh-map-hourly-status.yml]
+    paths: [.github/workflows/rrgh-map-hourly-status.yml, .github/automation/rrgh_map_status.py]
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
@@ -18,44 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Report exact original producer and independent recovery state — READ ONLY
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify current-controller status rules
+        run: python3 -m unittest discover -s .github/automation -p test_rrgh_map_status.py
+      - name: Report the exact current controller and independently verified inventory
         env:
           GH_TOKEN: ${{ github.token }}
-          GH_REPO: ryanredrivergorgehiker/red-river-gorge-hiker
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json,os,urllib.request
-          repo=os.environ['GH_REPO']
-          def gh(path):
-              req=urllib.request.Request('https://api.github.com/repos/'+repo+'/'+path,
-                   headers={'Accept':'application/vnd.github+json',
-                            'Authorization':'Bearer '+os.environ['GH_TOKEN'],
-                            'X-GitHub-Api-Version':'2022-11-28'})
-              with urllib.request.urlopen(req,timeout=25) as r:return json.load(r)
-          runs=gh('actions/workflows/offline-map-producer-access.yml/runs?branch=lane20/offline-production-preflight-20261029&per_page=30')['workflow_runs']
-          candidates=[r for r in runs if r['event']=='push' and
-                r.get('head_commit',{}).get('message','').startswith('Lane20: execute verified new-territory wave')]
-          if not candidates: raise SystemExit('No original-push production wave found')
-          last=candidates[0]
-          jobs=gh('actions/runs/'+str(last['id'])+'/jobs?per_page=100').get('jobs',[])
-          status={j['name']:j.get('conclusion') or j.get('status') for j in jobs}
-          url=last['html_url']
-          print(json.dumps({'workflow':last['name'],'run':url,'state':last['status'],
-               'conclusion':last['conclusion'],'jobs':status,'headSHA':last['head_sha']},
-               sort_keys=True))
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-              f.write('### Red River Gorge Hiker — source-verified map production\n\n')
-              f.write('Run: '+url+'\n\n')
-              f.write('Status: **'+last['status']+' / '+str(last['conclusion'])+'**\n\n')
-              for name,value in status.items():f.write('- '+name+': '+str(value)+'\n')
-              f.write('\nThis is a read-only hourly status monitor, not the producer.\n')
-          if last['status']!='completed':
-              print('MAP_MONITOR_RUNNING: do not overlap or retry')
-          elif last['conclusion']=='success' and status.get('bounded-stage')=='success' and status.get('independent-recovery')=='success':
-              print('MAP_MONITOR_RECOVERY_JOBS_SUCCEEDED: inspect immutable pixel/receipt proof before accepting')
-          else:
-              print('::error::RRGH_MAP_PRODUCER_STOPPED: see exact run URL '+url)
-              raise SystemExit(1)
-          PY
+        run: python3 .github/automation/rrgh_map_status.py
