@@ -19,7 +19,7 @@ import re
 import subprocess
 import sys
 import time
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
@@ -48,6 +48,9 @@ CODE_FILES=['.github/automation/'+x for x in (
 
 
 class Halt(Exception):pass
+
+
+class TransientGitHubError(Halt):pass
 
 
 def guard(ok,message):
@@ -84,7 +87,8 @@ class GitHub:
                 if method=='GET' and exc.code in (500,502,503,504) and attempt<2:
                     time.sleep(attempt+1)
                     continue
-                raise Halt('GitHub '+method+' '+path.split('?')[0]+' HTTP '+str(exc.code)+'; no automatic retry') from None
+                error=TransientGitHubError if exc.code in (500,502,503,504) else Halt
+                raise error('GitHub '+method+' '+path.split('?')[0]+' HTTP '+str(exc.code)+'; no automatic retry') from None
         guard(len(body)<=8_000_000,'GitHub response limit exceeded')
         return json.loads(body) if body else {}
     def file(self,path,ref=WORKER):
@@ -93,9 +97,23 @@ class GitHub:
     def state(self):
         blob,raw=self.file(STATE);return blob['sha'],json.loads(raw)
     def cas(self,old_sha,state,message):
-        result=self.call('PUT','contents/'+STATE,{'message':'Lane20 controller: '+message+' [skip ci]',
-            'branch':WORKER,'sha':old_sha,'content':base64.b64encode(canonical(state)).decode()})
-        return result['content']['sha']
+        # Reconcile only this SHA-conditional state write. Dispatches and other
+        # mutations remain single-attempt. Never overwrite a competing owner.
+        raw=canonical(state)
+        wanted_sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+        payload={'message':'Lane20 controller: '+message+' [skip ci]',
+            'branch':WORKER,'sha':old_sha,'content':base64.b64encode(raw).decode()}
+        for attempt in range(3):
+            try:
+                result=self.call('PUT','contents/'+STATE,payload)
+                return result['content']['sha']
+            except (TransientGitHubError,URLError,TimeoutError,ConnectionError):
+                observed_sha,observed=self.state()
+                if observed_sha==wanted_sha and canonical(observed)==raw:
+                    return observed_sha
+                guard(observed_sha==old_sha,'State write reconciliation found a different owner; no retry')
+                guard(attempt<2,'State write unchanged after three conditional attempts; stopped')
+                time.sleep(attempt+1)
 
 
 def local_digest(root):
@@ -485,7 +503,7 @@ def audit_recovered(api,root):
     guard(state.get('enabled') is True and state.get('status')=='halted' and state.get('mode')=='produce',
           'Only a halted independently recovered production allocation can advance')
     auth=state.get('recoveredResumeAuthorization',{})
-    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03') and
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-04') and
           all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
           'Exact owner-authorized recovered continuation missing')
     assert_no_other_producers(api)

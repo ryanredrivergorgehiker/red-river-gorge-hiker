@@ -1,0 +1,35 @@
+name: RRGH state reconciliation offline QA
+on:
+  push:
+    branches: [lane20/state-reconciliation-20261104]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  offline-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: f1eef97574ba06041902a0604afcbcab01f0492f
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Conditional write, dispatch, ownership and recovered receipt regressions
+        env:
+          RRGH_TEST_SOURCE: source-checkout
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_state_reconciliation.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_pre_admission.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_active_run_inventory.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
+      - name: Exact current source to fresh successors with no credentials or Cloud writes
+        run: python .github/automation/verify_rrgh_dispatch_roundtrip.py source-checkout
