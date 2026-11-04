@@ -1,0 +1,63 @@
+name: RRGH verified handoff recovery
+on:
+  workflow_run:
+    workflows: [RRGH automated restricted map producer]
+    types: [completed]
+    branches: [lane20/offline-production-preflight-20261029]
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/rrgh-controller-handoff.yml]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: rrgh-controller-initial-launch
+  cancel-in-progress: false
+jobs:
+  reconcile:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && github.run_attempt == 1 &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: lane20/offline-production-preflight-20261029
+          persist-credentials: false
+      - name: Verify completed recovery and reserve only its successor handoff
+        id: handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py prepare --audit "$RUNNER_TEMP/recovery.json"
+      - uses: actions/checkout@v4
+        if: steps.handoff.outputs.active == 'true'
+        with:
+          ref: ${{ steps.handoff.outputs.source }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: steps.handoff.outputs.active == 'true'
+        with:
+          python-version: '3.12'
+      - name: Prepare fresh successor without GitHub credentials or Cloud access
+        if: steps.handoff.outputs.active == 'true'
+        run: |
+          python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+          python .github/automation/rrgh_prepare_dispatch_successor.py source-checkout "$RUNNER_TEMP/recovery.json"
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Revalidate receipt then publish and dispatch one fresh allocation
+        if: steps.handoff.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py publish --source source-checkout --audit "$RUNNER_TEMP/recovery.json"
+      - name: Preserve pending recovery or unresolved writes after failure
+        if: failure() && steps.handoff.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py release

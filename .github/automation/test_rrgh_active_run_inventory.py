@@ -55,19 +55,25 @@ class PaginationTests(unittest.TestCase):
         api = ReadAPI(respond)
         d.assert_no_other_producers(api)
         self.assertEqual(api.calls[:3], [('queued',1,1),('in_progress',1,1),('queued',1,2)])
-        self.sleep.assert_called_once_with(1)
+        self.sleep.assert_called_once_with(5)
 
     def test_two_transient_inventories_can_recover_on_third(self):
         api = ReadAPI(lambda status, number, attempt: page(total=1 if attempt < 3 else 0))
         d.assert_no_other_producers(api)
         self.assertEqual(api.attempt, 3)
-        self.assertEqual([c.args[0] for c in self.sleep.call_args_list], [1, 2])
+        self.assertEqual([c.args[0] for c in self.sleep.call_args_list], [5, 15])
 
     def test_persistent_incomplete_snapshot_halts_without_writes(self):
         api = ReadAPI(lambda *args: page(total=1))
-        with self.assertRaisesRegex(d.Halt, 'three read-only scans exhausted'):
+        with self.assertRaisesRegex(d.Halt, 'bounded read-only scans exhausted'):
             d.assert_no_other_producers(api)
-        self.assertEqual(api.calls, [('queued',1,1),('queued',1,2),('queued',1,3)])
+        self.assertEqual(api.calls, [('queued',1,n) for n in range(1,6)])
+        self.assertEqual(sum(c.args[0] for c in self.sleep.call_args_list),110)
+
+    def test_wave387_mismatch_can_settle_after_original_three_attempts(self):
+        api=ReadAPI(lambda status,number,attempt: page(total=1 if attempt<5 else 0))
+        d.assert_no_other_producers(api)
+        self.assertEqual(api.attempt,5)
 
     def test_competitor_discovered_after_retry_still_blocks(self):
         for producer in (PRODUCER, d.ORIGINAL):
@@ -198,7 +204,7 @@ class RecoveredResumeTests(unittest.TestCase):
 
     def test_persistent_incomplete_inventory_cannot_reach_recovery_audit(self):
         self.api.respond = lambda *args: page(total=1)
-        with patch.object(d.time,'sleep'), self.assertRaisesRegex(d.Halt,'three read-only scans exhausted'):
+        with patch.object(d.time,'sleep'), self.assertRaisesRegex(d.Halt,'bounded read-only scans exhausted'):
             d.audit_recovered(self.api,ROOT)
         self.audit.assert_not_called()
 

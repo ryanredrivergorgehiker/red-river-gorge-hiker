@@ -32,7 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
-    'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_prepare_dispatch_successor.py',
+    'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
@@ -44,7 +44,9 @@ CODE_FILES=['.github/automation/'+x for x in (
     'expanded-source-rights-20261102.json',
     'source-templates/benchmark_gorge_pipeline.py')] + [
     'backend/config/official-source-intake-20261102/official-source-candidates.json'] + ['.github/workflows/'+x for x in (
-    WORKFLOW,'rrgh-controller-launch.yml')]
+    WORKFLOW,'rrgh-controller-launch.yml','rrgh-controller-handoff.yml')]
+
+READ_DELAYS=(5,15,30,60)
 
 
 class Halt(Exception):pass
@@ -187,15 +189,25 @@ def scan_active_runs(api,allowed_run=None):
 
 def assert_no_other_producers(api,allowed_run=None):
     # GitHub's filtered run count and pages can disagree while jobs transition.
-    # Restart only these GETs, from page one and every status, at most twice.
+    # Restart only these GETs, from page one and every status, over 110 seconds.
     # Never retry a claim, source publication, workflow dispatch or Cloud slot.
-    for attempt in range(3):
+    for attempt in range(len(READ_DELAYS)+1):
         try:
             return scan_active_runs(api,allowed_run)
         except IncompleteActiveRunSnapshot as exc:
-            if attempt==2:raise Halt(str(exc)+'; three read-only scans exhausted') from None
+            if attempt==len(READ_DELAYS):raise Halt(str(exc)+'; bounded read-only scans exhausted') from None
             print('CONTROLLER_READ_RETRY: '+str(exc)+'; restarting active-run inventory',file=sys.stderr)
-            time.sleep(attempt+1)
+            time.sleep(READ_DELAYS[attempt])
+
+
+def read_audit_run(api,rid):
+    """Wait only for transient run-status metadata; identity checks still follow."""
+    for attempt in range(len(READ_DELAYS)+1):
+        run=api.call('GET','actions/runs/'+str(rid))
+        if run.get('status') not in ('queued','waiting','pending','requested'):return run
+        guard(attempt<len(READ_DELAYS),f'Run {rid} status={run.get("status")!r}; bounded metadata reads exhausted')
+        print(f'CONTROLLER_READ_RETRY: run={rid} status={run.get("status")!r}',file=sys.stderr)
+        time.sleep(READ_DELAYS[attempt])
 
 
 def dispatch(api,root,state_sha,state,mode,allowed_run=None):
@@ -363,7 +375,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
         from rrgh_salvage_audit import audit
         return audit(api,state)
     rid=state['runID']
-    run=api.call('GET','actions/runs/'+str(rid))
+    run=read_audit_run(api,rid)
     jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
     guard(jobs['total_count']<=100,'Job pagination not complete')
     from rrgh_dispatch_audit import audit_run,gh
@@ -604,19 +616,25 @@ def candidate_entries(source_root,audit,state):
     return parent,plan_hash,plan,entries
 
 
-def publish_and_advance(api,root,source_root,audit,recovered=False):
-    if recovered:
+def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=False):
+    if automatic:
+        from rrgh_handoff import audit_pending,caller as handoff_caller
+        handoff_caller();old,state=api.state();validate_state(state,root)
+    elif recovered:
         caller('launch');old,state=api.state();validate_state(state,root)
     else:
         old,state=current_run(api,root,'running')
     guard(state.get('enabled') is True,'Controller paused after recovery')
     # Re-read live successful producer/recovery evidence; do not trust a caller's flag.
-    guard((audit_recovered(api,root) if recovered else audit_current(api,root))==audit,
+    guard((audit_pending(api,root) if automatic else audit_recovered(api,root) if recovered else audit_current(api,root))==audit,
           'Audit does not match live independent recovery')
     parent,plan_hash,plan,entries=candidate_entries(source_root,audit,state)
     assert_no_other_producers(api,state['runID'])
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Source publication lease moved')
     state['status']='publishing';state['recoveredReceipt']=audit['receiptRef']
+    # A later failure must not turn an ambiguous source publication into an
+    # automatic retry. The watchdog only resumes before this durable boundary.
+    state['publicationOf']={k:state[k] for k in ('runID','dispatchID','sourceSHA','planSHA256','sequence')}
     state.pop('recoveredResumeAuthorization',None)
     old=api.cas(old,state,'recovered '+state['dispatchID'])
     base=api.call('GET','git/commits/'+parent)
@@ -646,6 +664,8 @@ def publish_and_advance(api,root,source_root,audit,recovered=False):
         state.setdefault('batchFallbackHistory',[]).append({'runID':state['runID'],'sequence':state['sequence'],
             'recoveryReceipt':audit['receiptRef'],'reason':audit.get('fallbackReason') or audit['batchClosure'].get('stopReason') or 'measured throughput gate',
             'acceptedHistoryPreserved':True,'nextWorkers':1,'nextJobLimit':12})
+    if automatic:state.setdefault('handoffRecoveryHistory',[]).append(state['handoffPending'])
+    state.pop('handoffPending',None);state.pop('publicationOf',None)
     state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
     old=api.cas(old,state,'successor source prepared')
