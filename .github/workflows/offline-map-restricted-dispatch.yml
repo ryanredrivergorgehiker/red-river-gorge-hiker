@@ -394,3 +394,50 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py failed
+  resume-handoff:
+    needs: [admit, bounded-stage, independent-recovery, advance, retain-failure]
+    if: >-
+      always() && inputs.mode == 'produce' && needs.admit.result == 'success' &&
+      needs.bounded-stage.result == 'success' && needs.independent-recovery.result == 'success' &&
+      needs.advance.result == 'failure' && needs.retain-failure.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Reserve only this run's independently verified pending handoff
+        id: handoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py prepare --audit "$RUNNER_TEMP/recovery.json"
+      - uses: actions/checkout@v4
+        if: steps.handoff.outputs.active == 'true'
+        with:
+          ref: ${{ steps.handoff.outputs.source }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: steps.handoff.outputs.active == 'true'
+        with:
+          python-version: '3.12'
+      - name: Prepare the fresh successor without GitHub credentials or Cloud access
+        if: steps.handoff.outputs.active == 'true'
+        run: |
+          python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+          python .github/automation/rrgh_prepare_dispatch_successor.py source-checkout "$RUNNER_TEMP/recovery.json"
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Revalidate recovery and dispatch a fresh allocation
+        if: steps.handoff.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py publish --source source-checkout --audit "$RUNNER_TEMP/recovery.json"
+      - name: Retain pending recovery or unresolved publication on failure
+        if: failure() && steps.handoff.outputs.active == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py release
