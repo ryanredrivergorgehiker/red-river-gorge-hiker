@@ -146,6 +146,66 @@ class HandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(d.Halt,'settled recovery'):self.prepare()
 
 
+class InRunHandoffTests(unittest.TestCase):
+    def setUp(self):
+        self.env={**ENV,'GITHUB_REF':'refs/heads/'+d.WORKER,'GITHUB_JOB':'resume-handoff',
+            'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_ACTOR':'github-actions[bot]',
+            'GITHUB_WORKFLOW_REF':d.REPO+'/.github/workflows/'+d.WORKFLOW+'@refs/heads/'+d.WORKER,
+            'GITHUB_RUN_ID':'387','RRGH_DISPATCH_ID':'c'*64}
+        patch.dict(os.environ,self.env,clear=True).start()
+        self.audit=patch.object(d,'audit_state',return_value=copy.deepcopy(AUDIT)).start()
+        self.api=API();self.jobs=[dict(name=n,conclusion=c,status='completed') for n,c in
+            [('bounded-stage','success'),('independent-recovery','success'),('advance','failure'),('retain-failure','success')]]
+        original=self.api.call
+        def call(method,path,payload=None):
+            if path=='actions/runs/387':return dict(status='in_progress',conclusion=None)
+            if path=='actions/runs/387/jobs?per_page=100':return dict(total_count=len(self.jobs),jobs=self.jobs)
+            return original(method,path,payload)
+        self.api.call=call;self.addCleanup(patch.stopall)
+    def test_exact_failed_handoff_recovers_inside_original_workflow(self):
+        result=h.prepare(self.api,ROOT)
+        self.assertTrue(result['active']);self.assertEqual(self.api.value['handoffPending']['reconcilerRunID'],387)
+        with patch.object(d,'candidate_entries',return_value=('a'*40,'f'*64,{'campaign':{'sequence':388}},[])),patch.object(d,'dispatch') as dispatch:
+            d.publish_and_advance(self.api,ROOT,None,AUDIT,automatic=True)
+        self.assertEqual(self.api.value['sequence'],388)
+        self.assertEqual(self.api.value['lastRecovered']['acceptedRasterTiles'],156172)
+        dispatch.assert_called_once()
+    def test_original_active_run_is_permitted_but_another_producer_is_not(self):
+        original=self.api.call
+        for rid in (387,999):
+            def call(method,path,payload=None):
+                if path.startswith('actions/runs?'):return dict(total_count=1,workflow_runs=[dict(id=rid,path='.github/workflows/'+d.WORKFLOW)])
+                return original(method,path,payload)
+            self.api.call=call
+            if rid==387:self.assertEqual(h.evidence(self.api,ROOT,self.api.value),AUDIT)
+            else:
+                with self.assertRaisesRegex(d.Halt,'Another producer'):h.evidence(self.api,ROOT,self.api.value)
+    def test_failed_worker_or_missing_failed_advance_never_qualifies(self):
+        initial=copy.deepcopy(self.jobs)
+        for index,conclusion in ((0,'failure'),(1,'failure'),(2,'success')):
+            self.jobs=copy.deepcopy(initial);self.jobs[index]['conclusion']=conclusion
+            with self.assertRaisesRegex(d.Halt,'controller-only'):h.prepare(self.api,ROOT)
+        self.assertEqual(self.api.version,0);self.audit.assert_not_called()
+    def test_other_run_or_dispatch_claim_never_qualifies(self):
+        for key,value in [('GITHUB_RUN_ID','999'),('RRGH_DISPATCH_ID','e'*64)]:
+            with patch.dict(os.environ,{key:value}),self.assertRaisesRegex(d.Halt,'exact allocation'):h.prepare(self.api,ROOT)
+        self.assertEqual(self.api.version,0)
+    def test_every_inrun_identity_dimension_is_required(self):
+        h.caller()
+        for key in self.env:
+            if key in ('GITHUB_RUN_ID','RRGH_DISPATCH_ID'):continue
+            with patch.dict(os.environ,{key:'untrusted'}),self.assertRaises(d.Halt):h.caller()
+    def test_sibling_job_cannot_use_active_run_exception(self):
+        with patch.dict(os.environ,GITHUB_JOB='bounded-stage'),self.assertRaises(d.Halt):h.prepare(self.api,ROOT)
+    def test_workflow_requires_successful_verification_and_has_no_cloud_credentials(self):
+        job=(ROOT/'.github/workflows'/d.WORKFLOW).read_text().split('\n  resume-handoff:\n',1)[1]
+        for gate in ("needs.bounded-stage.result == 'success'","needs.independent-recovery.result == 'success'",
+                     "needs.advance.result == 'failure'","needs.retain-failure.result == 'success'"):
+            self.assertIn(gate,job)
+        self.assertNotIn('id-token:',job)
+        self.assertNotIn('google-github-actions',job)
+
+
 class CallerAndReadTests(unittest.TestCase):
     def test_exact_workflow_identity_and_first_attempt_required(self):
         with patch.dict(os.environ,ENV,clear=True):h.caller()

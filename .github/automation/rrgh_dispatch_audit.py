@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read-only, fail-closed supervision of the restricted map production campaign.
 
-No cloud credentials, no Git writes and no retries. The future dispatcher must
+No cloud credentials or Git writes. Only transient GET failures retry. The dispatcher must
 not consume this report unless its ready flag is true AND its separate GitHub
 account billing hard-stop has been verified. Test with unittest in this module.
 """
@@ -9,6 +9,8 @@ import json
 import os
 import re
 import sys
+import time
+from http.client import IncompleteRead
 import urllib.error
 import urllib.request
 from decimal import Decimal, InvalidOperation
@@ -103,7 +105,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
     recovered_controller_failure = (allow_failed_controller and expected_dispatch is not None and
         run.get('status') == 'completed' and run.get('conclusion') == 'failure' and
         any(j.get('name') == 'advance' and j.get('conclusion') == 'failure' for j in jobs) and
-        all(j.get('name') in ('advance','retain-failure') for j in jobs if j.get('conclusion') == 'failure'))
+        all(j.get('name') in ('advance','retain-failure','resume-handoff') for j in jobs if j.get('conclusion') == 'failure'))
     require(recovery_execution is not None or recovered_controller_failure or
             (expected_dispatch is not None and run.get("status") == "in_progress" and run.get("conclusion") is None)
             or run.get("conclusion") == ("failure" if partial else "success"),
@@ -395,12 +397,27 @@ def gh(path, token, *, raw=False):
                 redirected.remove_header("Authorization")
                 redirected.unredirected_hdrs.pop("Authorization", None)
             return redirected
-    try:
-        client = urllib.request.build_opener(SafeRedirect)
-        with client.open(req, timeout=30) as response:
-            data = response.read(12_000_000)
-    except urllib.error.HTTPError as e:
-        raise Halt("GitHub read HTTP " + str(e.code) + " at " + path.split("?")[0]) from None
+    delays=(5,15,30,60)
+    log_read=raw and re.fullmatch(r'actions/jobs/[1-9][0-9]*/logs',path) is not None
+    for attempt in range(len(delays)+1):
+        try:
+            # Always reacquire the API redirect; never cache an expired signed
+            # URL, forward its bearer token, or retain a partial log response.
+            client = urllib.request.build_opener(SafeRedirect)
+            with client.open(req, timeout=30) as response:
+                data = response.read(12_000_001)
+            require(len(data)<=12_000_000,'GitHub read response limit exceeded')
+            break
+        except urllib.error.HTTPError as e:
+            reason='HTTP '+str(e.code)
+            if e.code not in (408,429,500,502,503,504) and not (log_read and e.code==404):
+                raise Halt('GitHub read '+reason+' at '+path.split('?')[0]) from None
+        except (urllib.error.URLError,TimeoutError,ConnectionError,IncompleteRead) as e:
+            reason=type(e).__name__
+        if attempt==len(delays):
+            raise Halt('GitHub read '+reason+' at '+path.split('?')[0]+'; bounded GET retries exhausted') from None
+        print('CONTROLLER_READ_RETRY: '+reason+' at '+path.split('?')[0]+'; reacquiring read',file=sys.stderr)
+        time.sleep(delays[attempt])
     return data.decode("utf-8") if raw else json.loads(data)
 
 
