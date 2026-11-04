@@ -78,7 +78,8 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
         sequence = int(match.group(1))
     else:
         expected = expected_dispatch
-        require(run.get("status") in ("in_progress", "completed"), "Dispatcher run not active/completed")
+        require(run.get("status") in ("in_progress", "completed"),
+                "Dispatcher run not active/completed: status=" + repr(run.get("status")))
         require(run.get("event") == "workflow_dispatch" and
                 run.get("path") == ".github/workflows/offline-map-restricted-dispatch.yml" and
                 (run.get("actor") or {}).get("login") == "github-actions[bot]", "Unapproved dispatcher identity")
