@@ -237,8 +237,10 @@ class WorkerTests(unittest.TestCase):
 
 class IntegrationTests(unittest.TestCase):
     def test_exact_hooks_idempotent_and_partial_hooks_rejected(self):
-        code=(SOURCE/'backend/scripts/gorge_campaign.py').read_text()
+        installed=(SOURCE/'backend/scripts/gorge_campaign.py').read_text()
+        code=integration.strip(installed)
         changed=integration.augment(code)
+        self.assertEqual(integration.augment(installed),changed)
         self.assertEqual(integration.augment(changed),changed)
         self.assertEqual(integration.strip(changed),code)
         with self.assertRaises(ValueError):integration.strip(changed.replace('batch_proof=verify_closure','tampered=verify_closure'))
