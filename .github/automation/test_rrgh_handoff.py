@@ -113,7 +113,7 @@ class HandoffTests(unittest.TestCase):
             d.publish_and_advance(self.api,ROOT,None,AUDIT,automatic=True)
         self.assertTrue(all(c[0]=='GET' for c in self.api.calls))
     def candidate(self):
-        return 'a'*40,'f'*64,{'campaign':{'sequence':388}},[]
+        return 'a'*40,'f'*64,{'campaign':{'sequence':388}},[{'path':'backend/config/gorge-campaign-wave-388-20261102/PLAN.json'}]
     def test_success_settles_once_and_dispatches_fresh_sequence(self):
         self.prepare()
         with patch.object(d,'candidate_entries',return_value=self.candidate()),patch.object(d,'dispatch') as dispatch:
@@ -165,7 +165,7 @@ class InRunHandoffTests(unittest.TestCase):
     def test_exact_failed_handoff_recovers_inside_original_workflow(self):
         result=h.prepare(self.api,ROOT)
         self.assertTrue(result['active']);self.assertEqual(self.api.value['handoffPending']['reconcilerRunID'],387)
-        with patch.object(d,'candidate_entries',return_value=('a'*40,'f'*64,{'campaign':{'sequence':388}},[])),patch.object(d,'dispatch') as dispatch:
+        with patch.object(d,'candidate_entries',return_value=('a'*40,'f'*64,{'campaign':{'sequence':388}},[{'path':'backend/config/gorge-campaign-wave-388-20261102/PLAN.json'}])),patch.object(d,'dispatch') as dispatch:
             d.publish_and_advance(self.api,ROOT,None,AUDIT,automatic=True)
         self.assertEqual(self.api.value['sequence'],388)
         self.assertEqual(self.api.value['lastRecovered']['acceptedRasterTiles'],156172)

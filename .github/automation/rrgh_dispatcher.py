@@ -109,7 +109,8 @@ class GitHub:
             try:
                 result=self.call('PUT','contents/'+STATE,payload)
                 return result['content']['sha']
-            except (TransientGitHubError,URLError,TimeoutError,ConnectionError):
+            except (TransientGitHubError,URLError,TimeoutError,ConnectionError) as exc:
+                print(f'STATE_RECONCILE attempt={attempt+1} cause={type(exc).__name__}: {exc}',file=sys.stderr)
                 observed_sha,observed=self.state()
                 if observed_sha==wanted_sha and canonical(observed)==raw:
                     return observed_sha
@@ -633,7 +634,7 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Source publication lease moved')
     state['status']='publishing';state['recoveredReceipt']=audit['receiptRef']
     # A later failure must not turn an ambiguous source publication into an
-    # automatic retry. The watchdog only resumes before this durable boundary.
+    # automatic retry. Only an exact recorded successor may later be reconciled.
     state['publicationOf']={k:state[k] for k in ('runID','dispatchID','sourceSHA','planSHA256','sequence')}
     state.pop('recoveredResumeAuthorization',None)
     old=api.cas(old,state,'recovered '+state['dispatchID'])
@@ -641,8 +642,21 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
     tree=api.call('POST','git/trees',{'base_tree':base['tree']['sha'],'tree':entries})
     commit=api.call('POST','git/commits',{'message':'Lane20: autonomous immutable wave '+str(plan['campaign']['sequence'])+' [skip ci]',
         'tree':tree['sha'],'parents':[parent]})
+    # Bind the already-validated immutable candidate BEFORE changing the source
+    # ref. A lost final state write can then settle this exact commit by reads;
+    # it cannot authorize replanning or replaying an uncertain publication.
+    state['publicationOf']['successor']={'sourceSHA':commit['sha'],'planSHA256':plan_hash,
+        'sequence':plan['campaign']['sequence'],
+        'planPath':next(e['path'] for e in entries if e['path'].endswith('/PLAN.json'))}
+    old=api.cas(old,state,'record exact validated successor before source publication')
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Source publication lease moved')
     api.call('PATCH','git/refs/heads/'+SOURCE,{'sha':commit['sha'],'force':False})
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==commit['sha'],'Published source readback mismatch')
+    return settle_successor(api,root,old,state,audit,plan,commit['sha'],plan_hash,automatic=automatic)
+
+
+def settle_successor(api,root,old,state,audit,plan,source_sha,plan_hash,automatic=False,reconciled=False):
+    """Commit one inclusive settlement; dispatch only after its CAS succeeds."""
     completed={'runID':state['runID'],'sequence':state['sequence'],'dispatchID':state['dispatchID'],
         'parentRunID':state.get('parentRunID'),'sourceSHA':state['sourceSHA'],'planSHA256':state['planSHA256'],
         'recoveryReceipt':audit['receiptRef'],'acceptedJobs':audit['acceptedJobs'],
@@ -664,9 +678,14 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
         state.setdefault('batchFallbackHistory',[]).append({'runID':state['runID'],'sequence':state['sequence'],
             'recoveryReceipt':audit['receiptRef'],'reason':audit.get('fallbackReason') or audit['batchClosure'].get('stopReason') or 'measured throughput gate',
             'acceptedHistoryPreserved':True,'nextWorkers':1,'nextJobLimit':12})
-    if automatic:state.setdefault('handoffRecoveryHistory',[]).append(state['handoffPending'])
+    if automatic and state.get('handoffPending'):
+        state.setdefault('handoffRecoveryHistory',[]).append(state['handoffPending'])
+    if reconciled:
+        state.setdefault('publicationRecoveryHistory',[]).append({
+            **state['publicationOf'],'reconcilerRunID':int(os.environ['GITHUB_RUN_ID']),
+            'recoveryReceipt':audit['receiptRef'],'sourceWrites':0,'producerReplays':0})
     state.pop('handoffPending',None);state.pop('publicationOf',None)
-    state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=commit['sha'],planSHA256=plan_hash,
+    state.update(status='ready',sequence=plan['campaign']['sequence'],sourceSHA=source_sha,planSHA256=plan_hash,
         checkpoint=audit['receiptRef'],lastRecovered=completed,runID=None,dispatchID=None)
     old=api.cas(old,state,'successor source prepared')
     return dispatch(api,root,old,state,'produce',allowed_run=completed['runID'])
