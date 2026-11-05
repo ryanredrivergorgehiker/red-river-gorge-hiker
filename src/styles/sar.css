@@ -320,7 +320,7 @@
 .sar-camping-action > a:not(.sar-button) { font-size: .86rem; font-weight: 750; }
 
 /* Conditions */
-.sar-conditions { padding: 0 0 4.8rem; }
+.sar-conditions { padding: 0 0 4.8rem; scroll-margin-top: 12rem; }
 .sar-condition-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .sar-condition-card {
   display: flex;

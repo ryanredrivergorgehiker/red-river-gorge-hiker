@@ -1,0 +1,51 @@
+name: Generate Gorge-wide LiDAR sun overlay
+
+on:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - scripts/generate-rrg-lidar-sun.py
+      - .github/workflows/generate-rrg-lidar-sun.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rrg-lidar-sun
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v6
+        with:
+          ref: staging/routes-tracks-interactive-map
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install terrain-only generator dependencies
+        run: pip install numpy==2.3.5 scipy==1.17.0 rasterio==1.5.1 pyproj==3.8.0 shapely==2.1.2 requests==2.34.2
+
+      - name: Generate locked Gorge-wide LiDAR overlay
+        run: python scripts/generate-rrg-lidar-sun.py
+
+      - name: Commit deterministic outputs
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/map/rrg-lidar-sun-manifest.json public/data/map/rrg-lidar-sun/
+          if git diff --cached --quiet; then
+            echo "Generated Gorge-wide LiDAR overlay already current."
+          else
+            git commit -m "Generate Gorge-wide LiDAR-only sunrise sunset overlay"
+            git push
+          fi

@@ -1,0 +1,1551 @@
+import hashlib
+import json
+import re
+import unittest
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+ROUTE = json.loads((ROOT / 'src/data/routes/skybridge-arch.json').read_text(encoding='utf-8'))
+GPX = ROOT / 'public/downloads/routes/Skybridge_Arch_APPROVED_v1.gpx'
+GEO = ROOT / 'public/data/routes/skybridge-arch-v1.geojson'
+PRINCESS_ROUTE = json.loads((ROOT / 'src/data/routes/princess-arch.json').read_text(encoding='utf-8'))
+PRINCESS_GEO = ROOT / 'public/data/routes/princess-arch-v1.geojson'
+PRINCESS_CACHE = json.loads((ROOT / '.ci-cache/princess-arch.elevation.json').read_text(encoding='utf-8'))
+CACHE_SEEDER = (ROOT / 'scripts/seed-route-elevation-cache.mjs').read_text(encoding='utf-8')
+CONTENT_CONFIG = (ROOT / 'src/content.config.ts').read_text(encoding='utf-8')
+LAYERS = (ROOT / 'src/data/map/layers.ts').read_text(encoding='utf-8')
+MAP = (ROOT / 'src/components/RouteMap.astro').read_text(encoding='utf-8')
+ROUTES_CSS = (ROOT / 'src/styles/routes.css').read_text(encoding='utf-8')
+SAR_CSS = (ROOT / 'src/styles/sar.css').read_text(encoding='utf-8')
+SAR = (ROOT / 'src/pages/search-and-rescue.astro').read_text(encoding='utf-8')
+NOTICE = (ROOT / 'src/components/RouteNotice.astro').read_text(encoding='utf-8')
+GPX_COMPONENT = (ROOT / 'src/components/GpxDownload.astro').read_text(encoding='utf-8')
+DETAIL = (ROOT / 'src/pages/routes/[slug].astro').read_text(encoding='utf-8')
+INDEX = (ROOT / 'src/pages/routes/index.astro').read_text(encoding='utf-8')
+LIBRARY = (ROOT / 'src/components/RouteLibrary.astro').read_text(encoding='utf-8')
+FULL_MAP = (ROOT / 'src/pages/routes/map.astro').read_text(encoding='utf-8')
+GUIDE = (ROOT / 'src/pages/guides/kentucky-lidar.astro').read_text(encoding='utf-8')
+PRIVACY = (ROOT / 'src/pages/privacy.astro').read_text(encoding='utf-8')
+TERMS = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
+OSM_CACHE_PATH = ROOT / 'public/data/map/osm-informal-trails.geojson'
+OSM_CACHE = json.loads(OSM_CACHE_PATH.read_text(encoding='utf-8'))
+USGS_TRAILS_CACHE_PATH = ROOT / 'public/data/map/usgs-aggregated-trails.geojson'
+USGS_TRAILS_CACHE = json.loads(USGS_TRAILS_CACHE_PATH.read_text(encoding='utf-8'))
+USGS_TRAILS_GENERATOR = (ROOT / 'scripts/update_usgs_aggregated_trails.py').read_text(encoding='utf-8')
+OSM_TRAILS_GENERATOR = (ROOT / 'scripts/update_osm_informal_trails.py').read_text(encoding='utf-8')
+OSM_LOCAL_ROAD_MANIFEST_PATH = ROOT / 'public/data/map/osm-local-roads-manifest.json'
+OSM_LOCAL_ROAD_MANIFEST = json.loads(OSM_LOCAL_ROAD_MANIFEST_PATH.read_text(encoding='utf-8'))
+OSM_LOCAL_ROAD_CACHE_DIR = ROOT / 'public/data/map/osm-local-roads'
+OSM_LOCAL_ROAD_GENERATOR = (ROOT / 'scripts/update_osm_local_roads.py').read_text(encoding='utf-8')
+GENERATOR = (ROOT / 'scripts/generate-route-elevation.mjs').read_text(encoding='utf-8')
+LIDAR_SUN_GEO = ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.geojson'
+LIDAR_SUN_META = json.loads((ROOT / 'public/data/map/pinch-em-tight-lidar-sun-pilot.meta.json').read_text(encoding='utf-8'))
+LIDAR_SUN_GENERATOR = (ROOT / 'scripts/generate-pinch-lidar-sun-pilot.py').read_text(encoding='utf-8')
+RRG_LIDAR_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-manifest.json'
+RRG_LIDAR_MANIFEST = json.loads(RRG_LIDAR_MANIFEST_PATH.read_text(encoding='utf-8'))
+RRG_LIDAR_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun.py').read_text(encoding='utf-8')
+CONTINUOUS_SUN_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-continuous-manifest.json'
+CONTINUOUS_SUN_MANIFEST = json.loads(CONTINUOUS_SUN_MANIFEST_PATH.read_text(encoding='utf-8'))
+CONTINUOUS_SUN_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-continuous.py').read_text(encoding='utf-8')
+MOBILE_SUN_MANIFEST_PATH = ROOT / 'public/data/map/rrg-lidar-sun-mobile-manifest.json'
+MOBILE_SUN_MANIFEST = json.loads(MOBILE_SUN_MANIFEST_PATH.read_text(encoding='utf-8'))
+MOBILE_SUN_GENERATOR = (ROOT / 'scripts/generate-rrg-lidar-sun-mobile.py').read_text(encoding='utf-8')
+SUNLIGHT = (ROOT / 'src/lib/sunlight.ts').read_text(encoding='utf-8')
+
+
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class RoutesTracksContractTests(unittest.TestCase):
+    def test_pinch_lidar_sun_pilot_is_locked_to_terrain_only_inputs(self):
+        self.assertEqual(LIDAR_SUN_META['version'], 'lidar-only-pilot-v1')
+        self.assertEqual(LIDAR_SUN_META['area'], 'Pinch-Em-Tight')
+        self.assertEqual(LIDAR_SUN_META['minimumElevationFeet'], 1100.0)
+        self.assertEqual(LIDAR_SUN_META['boundsWgs84'], [-83.6365, 37.813, -83.6175, 37.8255])
+        inputs = LIDAR_SUN_META['generationInputs']
+        self.assertTrue(inputs['usesOnlyLidarDerivedBareEarthTerrain'])
+        self.assertFalse(inputs['usesAerial'])
+        self.assertFalse(inputs['usesCanopy'])
+        self.assertFalse(inputs['usesTrails'])
+        self.assertFalse(inputs['usesMarkedReviewPoints'])
+        self.assertEqual(
+            LIDAR_SUN_META['source']['expectedDemArraySha256'],
+            '26eb2dd2f56fe2731f82df99392098d6f79301dc9b7894b71a65b106ef7552cc'
+        )
+        self.assertEqual(sha256(LIDAR_SUN_GEO), LIDAR_SUN_META['outputSha256']['geojson'])
+        self.assertIn('MIN_ELEVATION_FT = 1100.0', LIDAR_SUN_GENERATOR)
+        self.assertIn('hard line at directional cliff lip; fade inward/uphill to local crest', LIDAR_SUN_GENERATOR)
+        self.assertNotIn('ImageServices/', LIDAR_SUN_GENERATOR)
+        self.assertNotIn('ortho', LIDAR_SUN_GENERATOR.lower())
+
+    def test_historical_pilot_is_removed_from_public_map_ui(self):
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
+        self.assertNotIn('pinch-lidar-sun-pilot', MAP)
+        self.assertNotIn('LiDAR sunrise / sunset pilot', MAP)
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', conditions_markup)
+        self.assertIn('Sunrise / Sunset Potential', conditions_markup)
+        self.assertIn('Sunrise Potential', conditions_markup)
+        self.assertIn('Sunset Potential', conditions_markup)
+        self.assertNotIn('<strong>Potential:</strong>', conditions_markup)
+        self.assertIn('data-sun-potential-master', conditions_markup)
+        self.assertIn('data-sun-kind-toggle="sunrise"', conditions_markup)
+        self.assertIn('data-sun-kind-toggle="sunset"', conditions_markup)
+        self.assertIn('.swatch-sun-potential::before', ROUTES_CSS)
+        self.assertIn('.swatch-sunrise-potential::before', ROUTES_CSS)
+        self.assertIn('.swatch-sunset-potential::before', ROUTES_CSS)
+        self.assertIn("kind === 'sunset' ? '#4640b0' : '#f2685c'", MAP)
+
+    def test_gorge_lidar_expansion_reuses_locked_terrain_only_method(self):
+        self.assertEqual(RRG_LIDAR_MANIFEST['version'], 'lidar-only-home-extent-v2')
+        self.assertEqual(RRG_LIDAR_MANIFEST['minimumElevationFeet'], 1100.0)
+        self.assertEqual(RRG_LIDAR_MANIFEST['boundsWgs84'], [-83.745, 37.73, -83.475, 37.93])
+        self.assertTrue(RRG_LIDAR_MANIFEST['processingEnvelopeNotLegalBoundary'])
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['rows'], 5)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['cols'], 6)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['coreRows'], 3)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['coreCols'], 4)
+        self.assertEqual(RRG_LIDAR_MANIFEST['sectorGrid']['ring'], 1)
+        self.assertEqual(RRG_LIDAR_MANIFEST['counts']['sectors'], 30)
+        self.assertGreater(RRG_LIDAR_MANIFEST['counts']['features'], 0)
+        inputs = RRG_LIDAR_MANIFEST['generationInputs']
+        self.assertTrue(inputs['usesOnlyLidarDerivedBareEarthTerrain'])
+        self.assertFalse(inputs['usesAerial'])
+        self.assertFalse(inputs['usesCanopy'])
+        self.assertFalse(inputs['usesTrails'])
+        self.assertFalse(inputs['usesMarkedReviewPoints'])
+        self.assertIn('MIN_ELEVATION_FT = 1100.0', RRG_LIDAR_GENERATOR)
+        self.assertIn('six-band smooth fade inward/uphill to local crest', RRG_LIDAR_GENERATOR)
+        self.assertIn('categories[alpha >= 0.15] = 1', RRG_LIDAR_GENERATOR)
+        self.assertIn('categories[alpha >= 0.85] = 6', RRG_LIDAR_GENERATOR)
+        self.assertNotIn('ImageServices/', RRG_LIDAR_GENERATOR)
+        self.assertNotIn('ortho', RRG_LIDAR_GENERATOR.lower())
+        core_ids = {f'r{row}c{col}' for row in range(1, 4) for col in range(1, 5)}
+        self.assertTrue(core_ids.issubset({sector['id'] for sector in RRG_LIDAR_MANIFEST['sectors']}))
+        self.assertEqual(sum(1 for sector in RRG_LIDAR_MANIFEST['sectors'] if sector.get('core')), 12)
+        for sector in RRG_LIDAR_MANIFEST['sectors']:
+            path = ROOT / 'public' / sector['file']
+            self.assertTrue(path.is_file(), sector['file'])
+            self.assertEqual(sha256(path), sector['geojsonSha256'])
+            self.assertEqual(len(sector['demArraySha256']), 64)
+
+    def test_continuous_raster_sunlight_is_promoted_without_changing_terrain_contract(self):
+        manifest = CONTINUOUS_SUN_MANIFEST
+        self.assertEqual(manifest['version'], 'lidar-continuous-gradient-v1')
+        self.assertEqual(manifest['status'], 'staging-promotion-candidate')
+        self.assertEqual(manifest['minimumElevationFeet'], 1100.0)
+        rendering = manifest['rendering']
+        self.assertEqual(rendering['gradient'], 'continuous raster alpha WebP')
+        self.assertTrue(rendering['separateSunriseSunsetRasters'])
+        self.assertEqual(rendering['outerAlphaCutoff'], 0.15)
+        self.assertEqual(rendering['fullStrengthThreshold'], 0.85)
+        self.assertFalse(rendering['terrainQualificationChanged'])
+        self.assertFalse(rendering['hardLipGeometryChanged'])
+        self.assertTrue(rendering['acceptedHardLipReusedVerbatim'])
+        self.assertEqual(manifest['counts']['sectors'], RRG_LIDAR_MANIFEST['counts']['sectors'])
+        self.assertGreater(manifest['counts']['rasterBytes'], 0)
+        self.assertGreater(manifest['counts']['hardFeatures'], 0)
+        self.assertIn('OUTER_ALPHA_CUTOFF = 0.15', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('FULL_STRENGTH_ALPHA = 0.85', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('rgba_for_kind', CONTINUOUS_SUN_GENERATOR)
+        self.assertIn('Accepted stepped sunlight files changed', CONTINUOUS_SUN_GENERATOR)
+        for sector in manifest['sectors']:
+            sunrise = ROOT / 'public' / sector['sunriseRasterFile']
+            sunset = ROOT / 'public' / sector['sunsetRasterFile']
+            hard = ROOT / 'public' / sector['hardFile']
+            self.assertTrue(sunrise.is_file(), sector['sunriseRasterFile'])
+            self.assertTrue(sunset.is_file(), sector['sunsetRasterFile'])
+            self.assertTrue(hard.is_file(), sector['hardFile'])
+            self.assertEqual(sha256(sunrise), sector['sunriseRasterSha256'])
+            self.assertEqual(sha256(sunset), sector['sunsetRasterSha256'])
+            self.assertEqual(sha256(hard), sector['hardSha256'])
+
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
+        self.assertNotIn('TEST</strong> — Smooth sunlight gradient', conditions_markup)
+        self.assertNotIn('Off by default. Same accepted 1,100+', conditions_markup)
+        self.assertNotIn('data-map-layer="rrg-lidar-sun-raster-test"', conditions_markup)
+        self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
+        self.assertIn('data/map/rrg-lidar-sun-continuous-manifest.json', MAP)
+        self.assertIn('sunriseRasterFile', MAP)
+        self.assertIn('sunsetRasterFile', MAP)
+        self.assertIn('L.imageOverlay(', MAP)
+        self.assertIn('container.dataset.rrgLidarSunImageCount', MAP)
+        self.assertIn("rendering?.gradient !== 'continuous raster alpha WebP'", MAP)
+        self.assertIn("rendering?.separateSunriseSunsetRasters !== true", MAP)
+
+    def test_sunrise_sunset_potential_is_off_by_default_and_sector_loaded(self):
+        conditions_markup = MAP.split('aria-label="Conditions and analysis layers"', 1)[1].split('aria-label="Oil and gas layers"', 1)[0]
+        self.assertIn('data-map-layer="rrg-lidar-sun" data-sun-potential-master', conditions_markup)
+        self.assertIn('Sunrise / Sunset Potential', conditions_markup)
+        self.assertIn('data-opacity="rrg-lidar-sun"', MAP)
+        self.assertIn('data-fine-tune-layer="rrg-lidar-sun"', MAP)
+        self.assertIn("const gorgeLayerId = 'rrg-lidar-sun'", MAP)
+        self.assertIn("data/map/rrg-lidar-sun-continuous-manifest.json", MAP)
+        self.assertIn("loadedGorgeSectorIds", MAP)
+        self.assertIn("map.getBounds().pad(0.35)", MAP)
+        self.assertIn("container.dataset.rrgLidarSunLoadedSectors", MAP)
+        self.assertIn("container.dataset.rrgLidarSunImageCount", MAP)
+        self.assertIn("container.dataset.rrgLidarSunHardFeatureCount", MAP)
+        self.assertIn("container.dataset.rrgLidarSunLoadState = 'loading'", MAP)
+        self.assertIn("container.dataset.rrgLidarSunLoadState = 'loaded'", MAP)
+        self.assertIn("setMapActivity('sunlight', true)", MAP)
+        self.assertIn("setMapActivity('sunlight', false)", MAP)
+        self.assertIn("waitForSunImage", MAP)
+        self.assertIn('data-map-activity="sunlight"', MAP)
+        self.assertIn('route-map-sunrise-load', MAP)
+        self.assertIn('Loading sunlight…', MAP)
+        self.assertIn('@keyframes rrgh-sun-rise', ROUTES_CSS)
+        self.assertNotIn('Potential does not guarantee standing room', MAP)
+        self.assertIn("const aerialLayerIds = new Set(['kyaerial-phase3', 'kyaerial-phase2-leafoff'])", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', true, 100)", MAP)
+        self.assertIn("Number(terrainSlider.value) < 75", MAP)
+        self.assertIn("data-fine-tune-layer=\"rrg-lidar-sun\"", MAP)
+        self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunrise\"", MAP)
+        self.assertNotIn("data-fine-tune-layer=\"rrg-lidar-sunset\"", MAP)
+        self.assertIn("rrghSun", MAP)
+
+    def test_skybridge_public_package_identity(self):
+        self.assertEqual(ROUTE['routeId'], 'RTE-0001')
+        self.assertEqual(ROUTE['publicationStatus'], 'Approved — Publication Ready')
+        self.assertEqual(ROUTE['publicationClass'], 'A')
+        self.assertEqual(ROUTE['distanceMi'], 0.784)
+        self.assertEqual(sha256(GPX), '2469c85ebaddd3e701ba6dc8eea3664d90a0667dcd86f2aab43ae1445986830d')
+        self.assertEqual(sha256(GEO), '123fdb57e1142299f86c714367cc466b70f18fa90cfbaabb92b0d9ced157dc66')
+
+    def test_princess_arch_is_exact_approved_geometry_without_public_gpx(self):
+        self.assertEqual(PRINCESS_ROUTE['routeId'], 'RTE-0002')
+        self.assertEqual(PRINCESS_ROUTE['publicationClass'], 'A')
+        self.assertEqual(PRINCESS_ROUTE['routeCategory'], 'day-hike')
+        self.assertEqual(PRINCESS_ROUTE['shape'], 'out-and-back')
+        self.assertEqual(PRINCESS_ROUTE['distanceMi'], 0.571)
+        self.assertFalse(PRINCESS_ROUTE['approvedPublicationGpx']['publicDownload'])
+        self.assertNotIn('publicPath', PRINCESS_ROUTE['approvedPublicationGpx'])
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['sha256'], 'b2ed32a8d3648b895b4a290d3c1e5399dea2e3ce44258b301a43cb46a492cfe3')
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['trackPointCount'], 82)
+        self.assertEqual(PRINCESS_ROUTE['approvedPublicationGpx']['waypointCount'], 1)
+        self.assertFalse((ROOT / 'public/downloads/routes/Princess_Arch_APPROVED_v1.gpx').exists())
+        self.assertEqual(sha256(PRINCESS_GEO), 'ced314bb34392750b0f823c9a11bc95a48e6fa52c59830d4ee83619f615d6602')
+        geo = json.loads(PRINCESS_GEO.read_text(encoding='utf-8'))
+        lines = [f for f in geo['features'] if f['geometry']['type'] == 'LineString']
+        points = [f for f in geo['features'] if f['geometry']['type'] == 'Point']
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(len(lines[0]['geometry']['coordinates']), 82)
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]['properties']['waypointId'], 'WP-0003')
+        self.assertEqual(points[0]['geometry']['coordinates'], [-83.61963, 37.82733])
+        self.assertEqual(PRINCESS_CACHE['inputFingerprint'], '8cdae886a1c34917df6fd30b7006fca98dde0c50a9b45f8741350a321ba52084')
+        self.assertEqual(PRINCESS_CACHE['stats'], {'ascentFt': 127, 'descentFt': 128, 'minElevationFt': 1117, 'maxElevationFt': 1215})
+        self.assertEqual(PRINCESS_CACHE['sampleCount'], 100)
+        self.assertEqual(len(PRINCESS_CACHE['points']), 100)
+
+    def test_route_download_policy_and_elevation_cache_are_generic(self):
+        self.assertIn("publicDownload: z.boolean()", CONTENT_CONFIG)
+        self.assertIn("publicPath: z.string().startsWith('/').optional()", CONTENT_CONFIG)
+        self.assertIn("if (route.gpxUrl)", MAP)
+        self.assertIn("controlled GPX leaked into public downloads", CACHE_SEEDER)
+        self.assertIn("elevationInputFingerprint", CACHE_SEEDER)
+        self.assertNotIn("skybridge-arch", CACHE_SEEDER)
+
+    def test_approved_gpx_is_public_hygiene_only(self):
+        text = GPX.read_text(encoding='utf-8')
+        self.assertIn('version="1.1"', text)
+        self.assertEqual(len(re.findall(r'<trkpt\b', text)), 100)
+        self.assertEqual(len(re.findall(r'<wpt\b', text)), 2)
+        self.assertNotRegex(text, r'<time>|<ele>|Gaia|PROPOSED|RAW')
+        root = ET.fromstring(text)
+        ns = {'g': 'http://www.topografix.com/GPX/1/1'}
+        names = [w.find('g:name', ns).text for w in root.findall('g:wpt', ns)]
+        self.assertEqual(names, ['Skybridge Arch', 'Turnaround Overlook'])
+
+    def test_public_waypoints_match_approved_geometry_exactly(self):
+        geo = json.loads(GEO.read_text(encoding='utf-8'))
+        points = [f for f in geo['features'] if f['geometry']['type'] == 'Point']
+        self.assertEqual(len(points), 2)
+        expected = {
+            'WP-0001': ('Skybridge Arch', 37.81886, -83.57903),
+            'WP-0002': ('Turnaround Overlook', 37.81913, -83.57684),
+        }
+        for feature in points:
+            wid = feature['properties']['waypointId']
+            name, lat, lon = expected[wid]
+            self.assertEqual(feature['properties']['name'], name)
+            self.assertEqual(feature['geometry']['coordinates'], [lon, lat])
+        self.assertEqual(len(ROUTE['publicWaypoints']), 2)
+
+    def test_public_package_excludes_private_and_sensitive_lane19_data(self):
+        combined = '\n'.join([
+            (ROOT / 'src/data/routes/skybridge-arch.json').read_text(encoding='utf-8'),
+            GPX.read_text(encoding='utf-8'),
+            GEO.read_text(encoding='utf-8'),
+        ])
+        for prohibited in (
+            'drive.google.com', 'RAW Gaia', 'PROPOSED', '1w0Uq5LPJxmVKEQCqJ6SIvdSGOEAnP_lM',
+            '1PaL0N8YX811a7q0n5X7rmvT4DYVil6HK', 'eagle nest', "eagle's nest", 'Lane 19'
+        ):
+            self.assertNotIn(prohibited.lower(), combined.lower())
+
+    def test_schema_is_data_only_and_supports_zero_or_many_waypoints(self):
+        self.assertIn("glob({ pattern: '**/*.json', base: './src/data/routes' })", CONTENT_CONFIG)
+        self.assertIn("publicWaypoints: z.array(waypointSchema)", CONTENT_CONFIG)
+        self.assertIn("publicationClass: z.enum(['A', 'B', 'C'])", CONTENT_CONFIG)
+        self.assertNotIn("publicationClass: z.enum(['A', 'B', 'C', 'D'])", CONTENT_CONFIG)
+        self.assertIn("routeCategory: z.enum(['day-hike', 'backpacking', 'off-trail'])", CONTENT_CONFIG)
+        self.assertIn("internalTrailContext: z.string().min(1)", CONTENT_CONFIG)
+        self.assertNotIn("tripType:", CONTENT_CONFIG)
+        self.assertNotIn("trailStatus:", CONTENT_CONFIG)
+        self.assertNotIn("'multi-day'", CONTENT_CONFIG)
+
+    def test_public_route_taxonomy_is_exactly_three_categories(self):
+        self.assertEqual(ROUTE['routeCategory'], 'day-hike')
+        self.assertEqual(ROUTE['internalTrailContext'], 'Mostly official trail')
+        self.assertNotIn('tripType', ROUTE)
+        self.assertNotIn('trailStatus', ROUTE)
+        self.assertNotIn('trailStatusDisplay', ROUTE)
+        self.assertIn('data-route-category-filter="day-hike"', MAP)
+        self.assertIn('data-route-category-filter="backpacking"', MAP)
+        self.assertIn('data-route-category-filter="off-trail"', MAP)
+        map_preset_css = ROUTES_CSS.split('.route-map-preset-buttons button{', 1)[1].split('}', 1)[0]
+        map_route_filter_css = ROUTES_CSS.split('.route-map-trip-options label{', 1)[1].split('}', 1)[0]
+        self.assertIn('min-height:58px;', map_preset_css)
+        self.assertIn('min-height:58px;', map_route_filter_css)
+        self.assertIn('align-items:center;', map_route_filter_css)
+        self.assertIn('padding:.58rem .58rem;', map_route_filter_css)
+        self.assertIn('position:sticky;', ROUTES_CSS.split('.route-layer-panel>summary{', 1)[1].split('}', 1)[0])
+        self.assertIn('.route-map-mobile-topbar{', ROUTES_CSS)
+        self.assertIn('grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.8fr);', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-status{', ROUTES_CSS)
+        self.assertIn('.route-map-status{\n    display:none!important;', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-bar{\n    position:static;', ROUTES_CSS)
+        self.assertIn('height:72svh;', ROUTES_CSS)
+        mobile_scroll_gutter_css = ROUTES_CSS.split('.route-map-mobile-scroll-gutter{', 2)[-1].split('}', 1)[0]
+        self.assertIn('position:absolute;', mobile_scroll_gutter_css)
+        self.assertIn('width:24px;', mobile_scroll_gutter_css)
+        self.assertIn('touch-action:pan-y;', mobile_scroll_gutter_css)
+        self.assertIn('.route-map-mobile-scroll-gutter-left{left:0}', ROUTES_CSS)
+        self.assertIn('.route-map-mobile-scroll-gutter-right{right:0}', ROUTES_CSS)
+        mobile_scale_css = ROUTES_CSS.split('.route-map .leaflet-top.leaflet-left .leaflet-control-scale{', 2)[-1].split('}', 1)[0]
+        self.assertIn('margin-top:.55rem!important;', mobile_scale_css)
+        self.assertIn('margin-left:.55rem!important;', mobile_scale_css)
+        self.assertIn('margin-bottom:0!important;', mobile_scale_css)
+        self.assertIn('.route-layer-panel[open]{\n    top:.5rem;', ROUTES_CSS)
+        desktop_equal_height_css = ROUTES_CSS.split('@media(min-width:981px){', 1)[1]
+        self.assertIn('.route-map-preset-buttons button,', desktop_equal_height_css)
+        self.assertIn('.route-map-trip-options label{', desktop_equal_height_css)
+        self.assertIn('box-sizing:border-box;', desktop_equal_height_css)
+        self.assertGreaterEqual(desktop_equal_height_css.count('height:67px;'), 2)
+        self.assertNotIn('data-route-trip-filter', MAP)
+        self.assertNotIn('data-route-status-filter', MAP)
+        self.assertNotIn('> Multi-day<', MAP)
+        self.assertNotIn('> Official<', MAP)
+        self.assertNotIn('> Mixed<', MAP)
+        self.assertIn('data-route-category-filter="day-hike"', LIBRARY)
+        self.assertIn('data-route-category-filter="backpacking"', LIBRARY)
+        self.assertIn('data-route-category-filter="off-trail"', LIBRARY)
+        self.assertNotIn('data-route-trip', LIBRARY)
+        self.assertNotIn('data-route-status', LIBRARY)
+        self.assertIn('Route category', DETAIL)
+        self.assertIn('Trail context', DETAIL)
+        self.assertIn('RouteNotice publicationClass={data.publicationClass}', DETAIL)
+
+    def test_map_source_registry_includes_real_planning_context(self):
+        for source in (
+            'Ky_KyTopo_Map_Series_WGS84WM',
+            'Ky_Imagery_Phase3_3IN_WGS84WM',
+            'Ky_Imagery_Phase2_6IN_WGS84WM',
+            'Ky_MultiDirectional_Hillshade_WGS84WM',
+            'USGSTopo',
+            'EDW_TrailNFSPublishWithDataStatus_01',
+            'EDW_RoadBasic_01',
+            'Ky_CountyLines_WGS84WM',
+            'Ky_911_Road_Centerlines_WGS84WM',
+            'TIGERweb/tigerWMS_PhysicalFeatures',
+            'EDW_RecInfraRecreationSites_02',
+            'EDW_Wilderness_01',
+            'EDW_SpecialInterestManagementArea_01',
+            'EDW_NFSLandUnit_01',
+        ):
+            self.assertIn(source, LAYERS)
+        self.assertIn("id: 'kyaerial-phase3'", LAYERS)
+        self.assertIn("label: 'Leaf-on aerial imagery'", LAYERS)
+        self.assertIn("id: 'kyaerial-phase2-leafoff'", LAYERS)
+        self.assertIn("label: 'Leaf-off aerial imagery'", LAYERS)
+        self.assertIn("id: 'usfs-trails'", LAYERS)
+        self.assertIn("id: 'usfs-roads'", LAYERS)
+        self.assertIn("id: 'ky-counties'", LAYERS)
+        self.assertIn("id: 'ky-local-roads'", LAYERS)
+        self.assertIn("id: 'osm-local-roads'", LAYERS)
+        local_roads = LAYERS.split("id: 'ky-local-roads'", 1)[1].split("}", 1)[0]
+        self.assertIn("TIGERweb/tigerWMS_PhysicalFeatures/MapServer/5", local_roads)
+        self.assertIn("minZoom: 13", local_roads)
+        self.assertIn("Viewport-only Local Roads geometry", local_roads)
+        self.assertIn("does not establish public access, maintenance, legal travel, or current drivability", local_roads)
+        osm_local_roads = LAYERS.split("id: 'osm-local-roads'", 1)[1].split("}", 1)[0]
+        self.assertIn('RRGH-hosted OpenStreetMap-derived cache', osm_local_roads)
+        self.assertIn('track and service geometry', osm_local_roads)
+        self.assertIn("minZoom: 13", osm_local_roads)
+        self.assertIn("id: 'ky-road-centerlines'", LAYERS)
+        road_planning = LAYERS.split("id: 'ky-road-centerlines'", 1)[1].split("}", 1)[0]
+        self.assertIn('Kentucky 911 Services Board & Kentucky PSAPs', road_planning)
+        self.assertIn('fixed Red River Gorge-area road-centerline query', road_planning)
+        self.assertIn("id: 'usfs-recreation-sites'", LAYERS)
+        self.assertIn("id: 'usfs-wilderness'", LAYERS)
+        self.assertIn("id: 'usfs-special-management'", LAYERS)
+        self.assertIn("id: 'usfs-land-units'", LAYERS)
+        self.assertIn("id: 'osm-informal-trails'", LAYERS)
+        self.assertIn("id: 'parcel-private-property'", LAYERS)
+        parcel = LAYERS.split("id: 'parcel-private-property'", 1)[1].split("}", 1)[0]
+        self.assertIn('enabled: false', parcel)
+        self.assertNotIn('Gaia', LAYERS)
+        self.assertNotIn('CalTopo', LAYERS)
+
+    def test_osm_local_road_cache_preserves_clifty_acceptance_geometry_and_road_classes(self):
+        self.assertEqual(OSM_LOCAL_ROAD_MANIFEST['rows'], 8)
+        self.assertEqual(OSM_LOCAL_ROAD_MANIFEST['cols'], 8)
+        self.assertEqual(len(OSM_LOCAL_ROAD_MANIFEST['tiles']), 64)
+        self.assertIn('track', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('service', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('residential', OSM_LOCAL_ROAD_MANIFEST['highway_classes'])
+        self.assertIn('driveway', OSM_LOCAL_ROAD_MANIFEST['excluded_service_values'])
+        self.assertIn('parking_aisle', OSM_LOCAL_ROAD_MANIFEST['excluded_service_values'])
+        self.assertIn('residential|unclassified|track|service|living_street|road', OSM_LOCAL_ROAD_GENERATOR)
+        self.assertIn("EXCLUDED_SERVICE={'driveway','parking_aisle'}", OSM_LOCAL_ROAD_GENERATOR)
+
+        target_lat, target_lon = 37.822129, -83.541391
+        acceptance = []
+        all_features = []
+        for tile in OSM_LOCAL_ROAD_MANIFEST['tiles']:
+            tile_path = OSM_LOCAL_ROAD_CACHE_DIR / tile['file']
+            self.assertTrue(tile_path.exists(), tile_path)
+            collection = json.loads(tile_path.read_text(encoding='utf-8'))
+            all_features.extend(collection.get('features', []))
+            south, west, north, east = tile['bounds']
+            if south <= target_lat <= north and west <= target_lon <= east:
+                acceptance.extend(collection.get('features', []))
+
+        clifty = [
+            feature for feature in acceptance
+            if re.search(r'clif{1,2}ty\s+school\s+(?:rd|road)\b',
+                         str(feature.get('properties', {}).get('name') or ''),
+                         re.I)
+        ]
+        self.assertTrue(clifty, 'Clifty/Cliffty School Road must be present in the acceptance tile')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'residential'
+            for feature in clifty
+        ), 'The OSM residential continuation at the owner acceptance location must be preserved')
+
+        points = [
+            point
+            for feature in clifty
+            for point in feature.get('geometry', {}).get('coordinates', [])
+            if isinstance(point, list) and len(point) >= 2
+        ]
+        self.assertTrue(any(
+            abs(float(point[1]) - target_lat) < 0.001
+            and abs(float(point[0]) - target_lon) < 0.001
+            for point in points
+        ), 'Clifty/Cliffty School Road geometry must pass near the owner acceptance coordinate')
+
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'track'
+            for feature in all_features
+        ), 'OSM track roads must be preserved in the supplemental cache')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'service'
+            for feature in all_features
+        ), 'OSM service roads must be preserved in the supplemental cache')
+        self.assertTrue(any(
+            feature.get('properties', {}).get('highway') == 'track'
+            and str(feature.get('properties', {}).get('name') or '').lower() == 'old clifty school road'
+            for feature in all_features
+        ), 'Old Clifty School Road must remain available as OSM track context')
+
+    def test_elevation_uses_usgs_3dep_for_published_profiles_and_live_planning(self):
+        self.assertIn('3DEPElevation/ImageServer/getSamples', GENERATOR)
+        self.assertEqual(ROUTE['elevation']['sampleCount'], 100)
+        self.assertIn('RSP_BilinearInterpolation', GENERATOR)
+        elevation = LAYERS.split("id: 'usgs-3dep-bare-earth-dem'", 1)[1].split("}", 1)[0]
+        self.assertIn('browserLoaded: true', elevation)
+        self.assertIn('Measure distance or Build trail route', elevation)
+        self.assertIn("source.serviceUrl + '/getSamples?'", MAP)
+        self.assertIn("interpolation: 'RSP_BilinearInterpolation'", MAP)
+        self.assertIn('fetchElevations', MAP)
+        self.assertIn('scheduleMeasureElevation', MAP)
+        self.assertIn('schedulePlanElevation', MAP)
+        self.assertIn('sample coordinates to the USGS 3D Elevation Program (3DEP)', PRIVACY)
+        self.assertIn('does not automatically send your device’s precise “My location” coordinates', PRIVACY)
+
+    def test_route_pages_and_legal_controls_are_present(self):
+        self.assertIn("getCollection('routes')", INDEX)
+        self.assertIn("getCollection('routes')", DETAIL)
+        self.assertIn('RouteNotice', DETAIL)
+        self.assertIn('GpxDownload', DETAIL)
+        self.assertIn('ElevationProfile', DETAIL)
+        self.assertIn('Dataset', DETAIL)
+        self.assertIn('DataDownload', DETAIL)
+        self.assertIn('Route information is not a safety or access guarantee.', NOTICE)
+        self.assertIn('By downloading this GPX file, you acknowledge', GPX_COMPONENT)
+        self.assertIn('GPX Download License and site Terms', GPX_COMPONENT)
+        terms = (ROOT / 'src/pages/copyright-and-terms.astro').read_text(encoding='utf-8')
+        explore = (ROOT / 'src/data/explore.ts').read_text(encoding='utf-8')
+        self.assertIn('id="gpx-download-license"', terms)
+        self.assertIn('Routes, Maps, GPS Tracks, and Location Information', terms)
+        self.assertIn('<section id="outdoor-safety-location-disclaimer">', terms)
+        self.assertEqual(terms.count('id="outdoor-safety-location-disclaimer"'), 1)
+        self.assertIn('Outdoor safety and location disclaimer', MAP)
+        self.assertIn('optional Oil &amp; Gas Wells layer', terms)
+        self.assertIn('selected public Kentucky Geological Survey / University of Kentucky well-record fields', terms)
+        self.assertIn('does not request or display KGS farm/lease-name fields', terms)
+        self.assertIn('does not establish present ownership, mineral rights, operator responsibility, legal access', terms)
+        self.assertIn('copyright-and-terms/#outdoor-safety-location-disclaimer', MAP)
+        self.assertIn('Interactive Maps and Map-Data Services', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
+        self.assertIn('default map layers begin loading immediately', PRIVACY)
+        self.assertIn('Oil &amp; Gas Wells', PRIVACY)
+        self.assertIn('Kentucky Geological Survey / University of Kentucky', PRIVACY)
+        self.assertIn('off by default in every Map View', PRIVACY)
+        self.assertIn('sends the current map viewport', PRIVACY)
+        self.assertIn('requests and transforms selected public well fields for web display', PRIVACY)
+        self.assertIn('does not request or display KGS farm/lease-name fields', PRIVACY)
+        self.assertIn('data-local-roads-status', MAP)
+        self.assertIn('Available in every Map View. Off by default in Hiking and Sunlight; Terrain and Aerial turn it on by default.', MAP)
+        self.assertIn("const localRoadLayerId = 'ky-local-roads'", MAP)
+        self.assertIn('<span>Local / old roads</span>', MAP)
+        self.assertIn('data-map-layer="ky-local-roads" title="Available in every Map View."', MAP)
+        self.assertIn('data-fine-tune-layer="ky-local-roads" aria-label="Toggle Local / old roads"', MAP)
+        self.assertNotIn('Available in Terrain or Aerial view.', MAP)
+        self.assertNotIn("setLocalRoadPresetAvailability", MAP)
+        self.assertNotIn("if (id === localRoadLayerId && enabled && checkbox?.disabled) enabled = false", MAP)
+        self.assertEqual(MAP.count("setLayerControl(localRoadLayerId, true);"), 2)
+        self.assertEqual(MAP.count("setLayerControl(localRoadLayerId, false);"), 2)
+        self.assertIn('const localRoadMinZoom = 14', MAP)
+        self.assertIn('const localRoadMaxFeatures = 800', MAP)
+        self.assertIn("map.getBounds().pad(0.06)", MAP)
+        self.assertIn("resultRecordCount: String(localRoadMaxFeatures + 1)", MAP)
+        self.assertIn("outFields: 'OID,NAME,BASENAME'", MAP)
+        self.assertIn("'110206092766', '110206092933', '110206092934', '110206092773'", MAP)
+        self.assertIn("['NAME', 'BASENAME', 'name', 'official_name', 'alt_name']", MAP)
+        self.assertIn("track-service-supplement", MAP)
+        self.assertIn("fullOsmFallback", MAP)
+        self.assertIn("credentials: 'omit'", MAP)
+        self.assertIn("cache: 'no-store'", MAP)
+        self.assertIn('while (localRoadCache.size > 8)', MAP)
+        self.assertIn("container.dataset.localRoadCliftyFound", MAP)
+        self.assertIn("container.dataset.localRoadOsmCliftyFound", MAP)
+        self.assertIn("data/map/osm-local-roads-manifest.json", MAP)
+        self.assertIn("data/map/osm-local-roads/", MAP)
+        self.assertIn("while (localRoadOsmTileCache.size > 16)", MAP)
+        self.assertIn("localRoads: 340", MAP)
+        local_road_section = MAP.split("const localRoadLayerId = 'ky-local-roads'", 1)[1].split("const routeGroup = L.layerGroup()", 1)[0]
+        self.assertIn('renderLocalRoadLabels([...tigerFeatures, ...osmFeatures])', local_road_section)
+        self.assertIn('localRoadPlanningIndexer?.(tigerFeatures, osmFeatures)', local_road_section)
+        self.assertIn("const localRoadLabelMinZoom = 15", local_road_section)
+        self.assertIn("const localRoadLabelMaxCount = 24", local_road_section)
+        self.assertIn("const occupied: Array<{ left: number; right: number; top: number; bottom: number }> = []", local_road_section)
+        self.assertIn("if (overlaps) continue", local_road_section)
+        self.assertIn("pane: 'localRoadLabels'", local_road_section)
+        self.assertNotIn('bindPopup', local_road_section)
+        self.assertIn('interactive: false', local_road_section)
+        self.assertIn("/(?:old\\s+)?clif{1,2}ty\\s+school(?:\\s+(?:rd|road))?\\b/i", local_road_section)
+        self.assertIn('Local / old roads', PRIVACY)
+        self.assertIn('available in every Map View', PRIVACY)
+        self.assertIn('off by default in Hiking and Sunlight, and on by default in Terrain and Aerial', PRIVACY)
+        self.assertIn('They are roads, not trails.', PRIVACY)
+        self.assertIn('current map viewport to the U.S. Census Bureau TIGERweb Local Roads service', PRIVACY)
+        self.assertIn('RRGH-hosted cache derived from OpenStreetMap', PRIVACY)
+        self.assertIn('Normal use of the cached OpenStreetMap road data does not require', PRIVACY)
+        self.assertIn('eligible loaded Local / old roads geometry may be added to the route-planning graph', TERMS)
+        self.assertIn('These features are roads, not trails.', TERMS)
+        self.assertIn('road identifiers, names, and geometry', PRIVACY)
+        self.assertIn('show available road-name labels', PRIVACY)
+        self.assertIn('route-planning snap graph', PRIVACY)
+        self.assertIn('does not establish public access, maintenance, legal travel, or current drivability', PRIVACY)
+        self.assertIn('Last updated: September 25, 2026', PRIVACY)
+        self.assertIn('RRGH Hikes & Routes', explore)
+        self.assertIn('RRGH Interactive Map', explore)
+        self.assertIn('Kentucky LiDAR Guide', explore)
+
+    def test_map_is_immediately_interactive_and_layer_mixable(self):
+        self.assertNotIn('Load interactive map', MAP)
+        for preset in ('hiking', 'terrain', 'aerial'):
+            self.assertIn('data-map-preset="' + preset + '"', MAP)
+        for route_category in ('day-hike', 'backpacking', 'off-trail'):
+            self.assertIn('data-route-category-filter="' + route_category + '"', MAP)
+        self.assertEqual(MAP.count('type="checkbox" data-route-category-filter="'), 3)
+        self.assertNotIn('data-route-trip-filter', MAP)
+        self.assertNotIn('data-route-status-filter', MAP)
+        for layer in (
+            'kytopo', 'kyaerial-phase3', 'usgs-topo', 'ky-hillshade',
+            'usfs-trails', 'usfs-roads', 'ky-local-roads', 'osm-informal-trails',
+            'usfs-special-management', 'usfs-land-units', 'kgs-oil-gas-wells'
+        ):
+            self.assertIn('data-map-layer="' + layer + '"', MAP)
+            self.assertIn('data-opacity="' + layer + '"', MAP)
+        self.assertIn('data-map-layer="usfs-wilderness"', MAP)
+        self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
+        self.assertNotIn('Wilderness full opacity (100%)', MAP)
+        self.assertNotIn('data-opacity="usfs-wilderness"', MAP)
+        for always_on in ('RRGH routes', 'Route starts', 'Trailheads &amp; facilities', 'Landmarks &amp; viewpoints', 'County boundaries'):
+            self.assertIn(always_on, MAP)
+        self.assertIn('route-static-legend-grid', MAP)
+        self.assertNotIn('Always shown', MAP)
+        self.assertNotIn('data-map-layer="routes"', MAP)
+        self.assertNotIn('data-map-layer="route-starts"', MAP)
+        self.assertNotIn('data-map-layer="landmarks"', MAP)
+        self.assertNotIn('data-map-layer="usfs-recreation-sites"', MAP)
+        self.assertNotIn('data-map-layer="ky-counties"', MAP)
+        self.assertNotIn('data-opacity="ky-counties"', MAP)
+        self.assertIn('Fine tune layers', MAP)
+        self.assertIn('value="100" data-opacity="usfs-trails"', MAP)
+        self.assertIn('value="100" data-opacity="osm-informal-trails"', MAP)
+        self.assertIn('value="100" data-opacity="usfs-roads"', MAP)
+        self.assertIn('value="72" data-opacity="ky-local-roads"', MAP)
+        for layer in (
+            'usfs-trails', 'osm-informal-trails', 'usfs-roads', 'ky-local-roads', 'kytopo', 'usgs-topo',
+            'ky-hillshade', 'rrg-lidar-sun', 'kyaerial-phase3', 'usfs-special-management', 'usfs-land-units',
+            'kgs-oil-gas-wells'
+        ):
+            self.assertIn('data-fine-tune-layer="' + layer + '"', MAP)
+        self.assertNotIn('data-fine-tune-layer="pinch-lidar-sun-pilot"', MAP)
+        self.assertIn("syncAllFineTuneControls", MAP)
+        self.assertIn("scrollWheelZoom: false", MAP)
+        self.assertIn("minZoom: 8", MAP)
+        self.assertIn("maxZoom: 20", MAP)
+        self.assertIn('aria-label="Oil and gas layers"', MAP)
+        self.assertIn('Oil &amp; Gas Wells', MAP)
+        self.assertIn('data-map-layer="kgs-oil-gas-wells"', MAP)
+        self.assertIn('value="90" data-opacity="kgs-oil-gas-wells"', MAP)
+        self.assertIn('data-fine-tune-layer="kgs-oil-gas-wells"', MAP)
+        self.assertIn("const oilGasServiceUrl = 'https://kgs.uky.edu/arcgis/rest/services/KYOilGas/KYOilGasWells_static_WGS84/MapServer/1/query'", MAP)
+        self.assertIn("const oilGasMaxRecords = 1500", MAP)
+        self.assertIn("const oilGasMinZoom = 10", MAP)
+        self.assertIn("mode: 'cors'", MAP)
+        self.assertIn("credentials: 'omit'", MAP)
+        self.assertIn("resultRecordCount: String(oilGasMaxRecords)", MAP)
+        self.assertIn("wellReport.asp?id=", MAP)
+        self.assertIn("data transformed for web display", MAP)
+        self.assertIn("oilGas: 495", MAP)
+        self.assertIn("route-oil-gas-popup", ROUTES_CSS)
+        self.assertIn("rrgh-oil-gas-marker-host", MAP)
+        self.assertIn("L.divIcon({", MAP)
+        self.assertNotIn("const marker = L.circleMarker([lat, lng]", MAP)
+        self.assertIn(".rrgh-oil-gas-marker{", ROUTES_CSS)
+        self.assertIn("swatch-oil-gas", ROUTES_CSS)
+        self.assertIn('data-oil-gas-master', MAP)
+        self.assertIn('data-oil-gas-options-toggle', MAP)
+        self.assertIn('data-oil-gas-options hidden', MAP)
+        self.assertIn("aria-expanded=\"false\"", MAP)
+        self.assertIn("oilGasOptions.hidden = expanded", MAP)
+        for kind in ('oil', 'gas', 'oil-gas', 'dry', 'service', 'cbm', 'other'):
+            self.assertIn('data-oil-gas-kind="' + kind + '"', MAP)
+        for label in ('Oil wells', 'Gas wells', 'Oil &amp; gas wells', 'Dry &amp; abandoned', 'Service / recovery', 'Coal-bed methane', 'Locations / other wells'):
+            self.assertIn(label, MAP)
+        self.assertIn("const oilGasKinds = ['oil', 'gas', 'oil-gas', 'dry', 'service', 'cbm', 'other'] as const", MAP)
+        self.assertIn("oilGasKindFor", MAP)
+        self.assertIn("marker.bindPopup(createOilGasPopup(properties), { maxWidth: 360, autoPan: false })", MAP)
+        self.assertIn("cacheKey !== oilGasLastCacheKey", MAP)
+        self.assertIn("url.searchParams.set('rrghOil', oilKinds)", MAP)
+        self.assertIn("params.get('rrghOil')", MAP)
+        self.assertNotIn("add('Farm / lease'", MAP)
+        self.assertNotIn("'farm_name'", MAP)
+        self.assertIn('does not request or display KGS farm/lease-name fields', PRIVACY)
+        for swatch in ('swatch-oil-gas-oil', 'swatch-oil-gas-gas', 'swatch-oil-gas-combined', 'swatch-oil-gas-dry', 'swatch-oil-gas-service', 'swatch-oil-gas-cbm', 'swatch-oil-gas-other'):
+            self.assertIn(swatch, ROUTES_CSS)
+
+    def test_map_visual_legend_matches_cartography(self):
+        for swatch in (
+            'swatch-route', 'swatch-usfs-trail', 'swatch-usfs-road', 'swatch-local-road', 'swatch-county',
+            'swatch-landmark', 'swatch-start', 'swatch-trailhead', 'swatch-informal'
+        ):
+            self.assertIn(swatch, MAP)
+        self.assertIn("routePalette = [", MAP)
+        self.assertIn("routeColorFor", MAP)
+        self.assertIn("color: routeColor", MAP)
+        self.assertIn("color: '#00c8ff'", MAP)
+        self.assertIn("dashArray: '8 5'", MAP)
+        self.assertIn("color: '#ffcf33'", MAP)
+        self.assertIn("dashArray: '12 6'", MAP)
+        self.assertIn('trailCasingPaths', MAP)
+        self.assertIn('roadCasingPaths', MAP)
+        self.assertIn("mapLayers.set('usfs-trails', L.layerGroup([trailCasingLayer, trailLayer]))", MAP)
+        self.assertIn("mapLayers.set('usfs-roads', L.layerGroup([roadCasingLayer, roadLayer]))", MAP)
+        self.assertIn("weight: 5.4", MAP)
+        self.assertIn("weight: 6", MAP)
+        self.assertIn("lineCap: 'round'", MAP)
+        self.assertIn(".swatch-usfs-trail::after{border-top:3px dashed #00c8ff}", ROUTES_CSS)
+        self.assertIn(".swatch-usfs-road::after{border-top:3px dashed #ffcf33}", ROUTES_CSS)
+        self.assertIn(".swatch-local-road::before{border-top:2px solid #776f64}", ROUTES_CSS)
+        self.assertIn(".rrgh-local-road-label", ROUTES_CSS)
+        self.assertIn("pointer-events:none!important", ROUTES_CSS)
+        self.assertIn("border-top:6px dashed #22313a", ROUTES_CSS)
+        self.assertIn("color: '#22313a'", MAP)
+        self.assertIn("color: restricted ? '#b9b9b9' : '#f7f2e7'", MAP)
+        self.assertIn('informalCasingPaths', MAP)
+        self.assertIn("color: '#665d4f'", MAP)
+        self.assertIn("dashArray: '8 5'", MAP)
+        self.assertIn("weight: 7.5", MAP)
+
+    def test_map_has_everyday_controls_and_core_home_view(self):
+        self.assertIn('data-sheet-open="search"', MAP)
+        self.assertIn('data-map-action="locate"', MAP)
+        self.assertIn('data-map-action="home"', MAP)
+        self.assertIn('data-map-action="zoom-out"', MAP)
+        self.assertIn('data-map-action="zoom-in"', MAP)
+        self.assertIn("const homeCenter = L.latLng(37.8196836, -83.6396027)", MAP)
+        self.assertIn("const homeZoom = 13", MAP)
+        self.assertIn("const mobileHomeZoom = 11", MAP)
+        self.assertIn("const mobileHomeCenter = L.latLng(37.8196836, -83.6240)", MAP)
+        self.assertIn("map.setView(mobileHomeCenter, mobileHomeZoom, { animate: false })", MAP)
+        go_home_section = MAP.split('const goHome = () => {', 1)[1].split('};', 1)[0]
+        self.assertIn('map.closePopup();', go_home_section)
+        self.assertIn("const syncViewportDiagnostics = () =>", MAP)
+        self.assertIn("container.dataset.mapCenter", MAP)
+        self.assertIn("container.dataset.mapNorthWest", MAP)
+        self.assertIn("map.on('moveend', syncViewportDiagnostics)", MAP)
+        self.assertIn("L.control.scale({ position: 'topleft'", MAP)
+        self.assertIn('data-coordinate-card', MAP)
+        self.assertIn('<span>Copy</span><span>Coordinates</span>', MAP)
+        self.assertIn('data-coordinate-close', MAP)
+        self.assertIn('display:flex!important;', ROUTES_CSS)
+        self.assertIn('justify-content:flex-start;', ROUTES_CSS)
+        self.assertIn('margin-left:0!important;', ROUTES_CSS)
+        self.assertIn("map.on('contextmenu'", MAP)
+        self.assertIn("container.addEventListener('touchstart'", MAP)
+        self.assertIn("container.addEventListener('selectstart'", MAP)
+        self.assertIn("container.addEventListener('contextmenu'", MAP)
+        self.assertIn("longPressTimer = window.setTimeout", MAP)
+        self.assertIn("window.getSelection()?.removeAllRanges()", MAP)
+        self.assertIn("container.dataset.longPressActivated = 'true'", MAP)
+        self.assertIn("Math.hypot(touch.clientX - longPressStart.x", MAP)
+        self.assertIn("if (activeTool === null) return;", MAP)
+        self.assertIn('navigator.geolocation.getCurrentPosition', MAP)
+        self.assertIn('route-map-mobile-bar', MAP)
+        self.assertIn('route-map-mobile-topbar', MAP)
+        self.assertIn('data-map-mobile-status', MAP)
+        self.assertIn('data-map-scroll-gutter="left"', MAP)
+        self.assertIn('data-map-scroll-gutter="right"', MAP)
+        mobile_topbar = MAP.split('<div class="route-map-mobile-topbar"', 1)[1].split('</div>', 1)[0]
+        self.assertIn('data-map-action="locate"', mobile_topbar)
+        self.assertIn('data-map-action="home"', mobile_topbar)
+        self.assertIn('data-sheet-open="layers"', mobile_topbar)
+        mobile_bottom_bar = MAP.split('<div class="route-map-mobile-bar"', 1)[1].split('</div>', 1)[0]
+        self.assertIn('data-sheet-open="search"', mobile_bottom_bar)
+        self.assertIn('data-sheet-open="explore" data-ready-group="core" disabled', mobile_bottom_bar)
+        self.assertIn('data-sheet-open="plan" data-ready-group="core" disabled', mobile_bottom_bar)
+        self.assertIn('data-map-action="share"', mobile_bottom_bar)
+        self.assertNotIn('data-sheet-open="layers"', mobile_bottom_bar)
+        self.assertIn("const mobileStatus = shell.querySelector<HTMLElement>('[data-map-mobile-status]')", MAP)
+        self.assertIn("mobileStatus.textContent = message", MAP)
+        self.assertNotIn("mobilePageScrollGesture", MAP)
+        self.assertNotIn("mobilePageScrollEscape", MAP)
+        self.assertNotIn("window.scrollBy(0, mobilePageScrollGesture", MAP)
+        self.assertIn("container.addEventListener('touchend'", MAP)
+
+    def test_mobile_fullscreen_keeps_core_navigation_and_quick_reference(self):
+        self.assertIn('data-mobile-map-preset', MAP)
+        self.assertIn('aria-label="Map view while in full screen"', MAP)
+        for value in ('hiking', 'terrain', 'aerial', 'sunlight'):
+            self.assertIn(f'<option value="{value}"', MAP)
+        self.assertIn('<option value="custom" disabled>Custom view</option>', MAP)
+        self.assertIn("mobilePresetSelect.value = 'custom'", MAP)
+        self.assertNotIn("mobilePresetSelect.selectedIndex = -1", MAP)
+        self.assertIn('Fine-tuning <b>Layers</b> shows <b>Custom</b> in the View menu.', MAP)
+        self.assertEqual(MAP.count('class="route-map-fullscreen-icon" data-map-action="fullscreen"'), 2)
+        self.assertIn('route-map-mobile-fullscreen-entry', MAP)
+        self.assertIn('route-map-mobile-fullscreen-cluster', MAP)
+        self.assertIn('route-fullscreen-arrows-expand', MAP)
+        self.assertIn('route-fullscreen-arrows-collapse', MAP)
+        self.assertIn('↗', MAP)
+        self.assertIn('↙', MAP)
+        self.assertIn('route-map-mobile-quickref', MAP)
+        self.assertIn('<summary aria-label="Open full screen map quick reference"><span aria-hidden="true">i</span></summary>', MAP)
+        self.assertIn('Full-screen quick reference', MAP)
+        self.assertIn('<div class="route-map-mobile-status" data-map-mobile-status aria-live="polite">Loading map data…</div>', MAP)
+        mobile_topbar = MAP.split('class="route-map-mobile-topbar"', 1)[1].split('</div>', 1)[0]
+        self.assertIn('data-map-action="locate"', mobile_topbar)
+        self.assertIn('data-map-action="home"', mobile_topbar)
+        self.assertIn('data-sheet-open="layers"', mobile_topbar)
+        self.assertNotIn('data-map-action="fullscreen"', mobile_topbar)
+        self.assertIn("const mobilePresetSelect = shell.querySelector<HTMLSelectElement>('[data-mobile-map-preset]')", MAP)
+        self.assertIn("mobilePresetSelect?.addEventListener('change'", MAP)
+        self.assertIn('Mobile-only full-screen map usability correction — 2026-10-02 owner UAT pass', ROUTES_CSS)
+        self.assertIn('right:.5rem;', ROUTES_CSS)
+        self.assertIn('left:auto;', ROUTES_CSS)
+        self.assertIn('top:.45rem;', ROUTES_CSS)
+        self.assertIn('top:3.55rem;', ROUTES_CSS)
+        self.assertIn('top:3.45rem;', ROUTES_CSS)
+        self.assertIn('z-index:1020;', ROUTES_CSS)
+        self.assertIn('z-index:1018;', ROUTES_CSS)
+        self.assertIn('display:block!important;', ROUTES_CSS)
+        self.assertIn('bottom:calc(.45rem + env(safe-area-inset-bottom));', ROUTES_CSS)
+        self.assertIn('grid-template-columns:3rem minmax(0,1fr)', ROUTES_CSS)
+        self.assertIn('.route-map-service-links{display:flex', ROUTES_CSS)
+        self.assertIn('.route-map-service-icon{position:relative', ROUTES_CSS)
+
+    def test_mobile_owner_uat_copy_layers_and_fullscreen_return_contract(self):
+        self.assertIn('>Tools</button>', MAP)
+        self.assertNotIn('>Plan</button>', MAP)
+        self.assertIn('<strong data-plan-panel-title>Tools</strong>', MAP)
+        self.assertIn("<b>Tools</b> measures, analyzes, or builds a route", MAP)
+        self.assertIn("Use Explore to browse routes or Tools for measurements, terrain analysis, and route building.", MAP)
+        self.assertIn('aria-label="Minimize map tools"', MAP)
+        self.assertIn('aria-label="Close map tools"', MAP)
+        self.assertIn('<strong data-plan-stats-title>Tool results</strong>', MAP)
+        self.assertIn('Searches RRGH routes and landmarks, official trails, Forest Service roads and recreation sites, local amenities, plus loaded community/informal trails.', MAP)
+        self.assertIn('Kentucky GIS · NOAA/NWS · USGS · USDA Forest Service · U.S. Census Bureau · OpenStreetMap.', MAP)
+        self.assertIn('aria-label="Base and imagery layers"', MAP)
+        self.assertIn('>Base &amp; Imagery</p>', MAP)
+        self.assertIn('aria-label="Conditions and analysis layers"', MAP)
+        self.assertIn('>Conditions &amp; Analysis</p>', MAP)
+        base = MAP.index('aria-label="Base and imagery layers"')
+        conditions = MAP.index('aria-label="Conditions and analysis layers"')
+        oil = MAP.index('aria-label="Oil and gas layers"')
+        self.assertLess(base, conditions)
+        self.assertLess(conditions, oil)
+        base_block = MAP[base:conditions]
+        conditions_block = MAP[conditions:oil]
+        for layer in ('kytopo', 'usgs-topo', 'ky-hillshade', 'kyaerial-phase3', 'kyaerial-phase2-leafoff'):
+            self.assertIn(f'data-map-layer="{layer}"', base_block)
+        for layer in ('rrgh-weather', 'rrg-lidar-sun'):
+            self.assertIn(f'data-map-layer="{layer}"', conditions_block)
+        self.assertIn('let fullscreenReturnScrollY: number | null = null', MAP)
+        self.assertIn('rememberFullscreenReturnPosition()', MAP)
+        self.assertIn('restoreFullscreenReturnPosition()', MAP)
+        self.assertIn("window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' })", MAP)
+        self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
+        self.assertIn('bottom:3rem!important;', ROUTES_CSS)
+
+    def test_fullscreen_rehomes_only_when_transition_starts_at_home(self):
+        self.assertIn('let homeViewState = false', MAP)
+        self.assertIn('let rehomeAfterFullscreenResize = false', MAP)
+        self.assertIn('rehomeAfterFullscreenResize = homeViewState', MAP)
+        self.assertIn('if (rehomeAfterFullscreenResize)', MAP)
+        self.assertIn("container.dataset.fullscreenHomeReframed = 'true'", MAP)
+        self.assertIn("container.dataset.homeState = 'true'", MAP)
+        self.assertIn("container.dataset.homeState = homeViewState ? 'true' : 'false'", MAP)
+        self.assertNotIn("map.on('zoomend', () => setHomeView()", MAP)
+
+    def test_mobile_sunlight_uses_prebuilt_bounded_rasters_without_forced_zoom(self):
+        self.assertNotIn("mobileFullscreenSunMinZoom", MAP)
+        self.assertNotIn("map.setView(map.getCenter(), 13", MAP)
+        self.assertNotIn("rrgLidarSunLoadState = 'zoom-required'", MAP)
+        self.assertNotIn("mobileFullscreenSunMaxSectors", MAP)
+        self.assertIn("const mobileMapActive = () =>", MAP)
+        self.assertIn("const mobileSunOverviewMaxZoom = 12", MAP)
+        self.assertIn("data/map/rrg-lidar-sun-mobile-manifest.json", MAP)
+        self.assertIn("const loadMobileSunManifest = async () =>", MAP)
+        self.assertIn("const mobileSunVariant = () =>", MAP)
+        self.assertIn("mobileSunVariant() + ':' + id", MAP)
+        self.assertIn("const mobileGuard = mobileMapActive()", MAP)
+        self.assertIn("map.getBounds().pad(0.08)", MAP)
+        self.assertIn("map.getBounds().pad(0.35)", MAP)
+        self.assertIn("const mobileVariant = mobileSector?.variants?.[variant]", MAP)
+        self.assertIn("await Promise.all([sunriseReady, sunsetReady])", MAP)
+        self.assertIn("const gorgeSectorResources = new Map<string, GorgeSectorResources>()", MAP)
+        self.assertIn("const releaseGorgeSector = (id: string) =>", MAP)
+        self.assertIn("const pruneMobileGorgeSectors = (keepIds: Set<string>) =>", MAP)
+        self.assertIn("image.removeAttribute('src')", MAP)
+        self.assertIn("gorgeSectorResources.set(id", MAP)
+        self.assertNotIn("createImageBitmap(sourceBlob", MAP)
+        self.assertNotIn("canvas.toBlob", MAP)
+        self.assertNotIn("rasterizeMobileSunImage", MAP)
+        self.assertNotIn("drawMobileSunHardRim", MAP)
+        self.assertNotIn("URL.createObjectURL(sourceBlob)", MAP)
+
+        mobile_branch = MAP.split("            if (mobileGuard) {", 1)[1].split("            } else {", 1)[0]
+        self.assertNotIn("hardResponse", mobile_branch)
+        self.assertNotIn("hardData", mobile_branch)
+        self.assertNotIn("canvas", mobile_branch)
+        self.assertIn("mobileSunriseFile", mobile_branch)
+        self.assertIn("mobileSunsetFile", mobile_branch)
+
+        self.assertEqual(MOBILE_SUN_MANIFEST['version'], 'lidar-continuous-mobile-v1')
+        self.assertEqual(MOBILE_SUN_MANIFEST['minimumElevationFeet'], 1100.0)
+        self.assertFalse(MOBILE_SUN_MANIFEST['terrainQualificationChanged'])
+        self.assertFalse(MOBILE_SUN_MANIFEST['hardLipGeometryChanged'])
+        self.assertTrue(MOBILE_SUN_MANIFEST['acceptedHardLipReusedVerbatim'])
+        presentation = MOBILE_SUN_MANIFEST['presentation']
+        self.assertTrue(presentation['hardRimsPrecomposited'])
+        self.assertTrue(presentation['separateSunriseSunsetRasters'])
+        self.assertEqual(presentation['overviewMaxZoom'], 12)
+        self.assertEqual(presentation['overviewSectorWidthPx'], 256)
+        self.assertEqual(presentation['detailMinZoom'], 13)
+        self.assertEqual(presentation['detailSectorWidthPx'], 768)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['sectors'], 30)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['files'], 120)
+        self.assertEqual(MOBILE_SUN_MANIFEST['counts']['hardFeatures'], CONTINUOUS_SUN_MANIFEST['counts']['hardFeatures'])
+        self.assertLess(MOBILE_SUN_MANIFEST['counts']['bytes'], CONTINUOUS_SUN_MANIFEST['counts']['rasterBytes'])
+
+        continuous_by_id = {sector['id']: sector for sector in CONTINUOUS_SUN_MANIFEST['sectors']}
+        self.assertEqual(len(MOBILE_SUN_MANIFEST['sectors']), 30)
+        for sector in MOBILE_SUN_MANIFEST['sectors']:
+            source = continuous_by_id[sector['id']]
+            self.assertEqual(sector['sourceSunriseSha256'], source['sunriseRasterSha256'])
+            self.assertEqual(sector['sourceSunsetSha256'], source['sunsetRasterSha256'])
+            self.assertEqual(sector['sourceHardSha256'], source['hardSha256'])
+            self.assertEqual(sector['hardFeatures'], source['hardFeatures'])
+            for variant, width in (('overview', 256), ('detail', 768)):
+                pair = sector['variants'][variant]
+                for kind in ('sunrise', 'sunset'):
+                    item = pair[kind]
+                    path = ROOT / 'public' / item['file']
+                    self.assertTrue(path.is_file(), item['file'])
+                    self.assertEqual(sha256(path), item['sha256'])
+                    self.assertEqual(item['shape'][1], width)
+
+        desktop_branch = MAP.split("            } else {", 1)[1].split("            }\n            gorgeSectorResources.set", 1)[0]
+        self.assertIn("sunriseRasterFile", desktop_branch)
+        self.assertIn("sunsetRasterFile", desktop_branch)
+        self.assertIn("const hardResponse = await fetch", desktop_branch)
+        self.assertIn("L.geoJSON(hardData", desktop_branch)
+
+        self.assertIn("OVERVIEW_WIDTH = 256", MOBILE_SUN_GENERATOR)
+        self.assertIn("DETAIL_WIDTH = 768", MOBILE_SUN_GENERATOR)
+        self.assertIn("Hard-rim geometry is precomposited", MOBILE_SUN_GENERATOR)
+
+    def test_mobile_tools_layout_spans_build_route_and_centers_actions(self):
+        self.assertIn('.route-plan-mode-buttons button[data-map-tool="plan"]{grid-column:1/-1!important}', ROUTES_CSS)
+        self.assertIn('.route-plan-actions{justify-content:center}', ROUTES_CSS)
+        self.assertIn('@media(min-width:701px)', ROUTES_CSS)
+        self.assertIn('.route-plan-mode-buttons button:last-child{grid-column:1/-1}', ROUTES_CSS)
+
+    def test_explore_is_a_route_browser_and_plan_is_single_entry_point(self):
+        self.assertIn('data-sheet-open="explore"', MAP)
+        self.assertIn('data-sheet-open="plan"', MAP)
+        self.assertIn('const shouldClose = Boolean(panel && !panel.hidden)', MAP)
+        self.assertIn('syncSheetButtons', MAP)
+        self.assertIn('data-explore-route-list', MAP)
+        self.assertIn('renderExploreRoutes', MAP)
+        self.assertIn("pointerenter", MAP)
+        self.assertIn("layer.bringToFront", MAP)
+        self.assertNotIn('data-map-tool="explore"', MAP)
+        self.assertIn('Explore RRGH routes', MAP)
+
+    def test_map_share_builds_and_restores_stateful_permalinks(self):
+        self.assertEqual(MAP.count('data-map-action="share" data-ready-group="share" disabled>Share</button>'), 2)
+        self.assertIn('data-map-sheet="share"', MAP)
+        self.assertIn('data-share-url', MAP)
+        self.assertIn('data-share-copy', MAP)
+        self.assertIn("typeof navigator.share === 'function'", MAP)
+        self.assertIn("navigator.share({ title, text, url })", MAP)
+        self.assertIn("navigator.clipboard.writeText(url)", MAP)
+        for param in ('rrghMap', 'rrghPreset', 'rrghLayers', 'rrghCategories', 'rrghRoute'):
+            self.assertIn(param, MAP)
+        self.assertNotIn("rrghTrips", MAP)
+        self.assertNotIn("rrghStatus", MAP)
+        self.assertIn('const buildShareUrl = () =>', MAP)
+        self.assertIn('const applySharedMapState = () =>', MAP)
+        self.assertIn("line.on('click', () => { selectedRouteId = route.routeId; })", MAP)
+        self.assertIn("if (mode === 'full' && !sharedViewApplied) setHomeView();", MAP)
+        self.assertNotIn('locationLayer', MAP.split('const buildShareUrl = () =>', 1)[1].split('const showShareFallback', 1)[0])
+
+    def test_map_routes_are_clickable_hiking_products(self):
+        self.assertIn('routePopup', MAP)
+        self.assertIn("route.distanceMi.toFixed(2)", MAP)
+        self.assertIn("route.physicalDifficulty", MAP)
+        self.assertIn("route.routeCategory", MAP)
+        self.assertIn('View route guide', MAP)
+        self.assertIn('Download GPX', MAP)
+        self.assertIn('Parking / trailhead', MAP)
+        self.assertIn('Route start · ', MAP)
+        self.assertIn('TRAILHEAD', MAP)
+
+    def test_map_has_mixed_snap_and_offtrail_planning_with_history(self):
+        self.assertIn('data-map-tool="measure"', MAP)
+        self.assertIn('data-map-tool="plan"', MAP)
+        self.assertIn('data-map-tool="save"', MAP)
+        self.assertNotIn('data-plan-segment-mode=', MAP)
+        self.assertIn('data-plan-action="undo"', MAP)
+        self.assertIn('data-plan-action="redo"', MAP)
+        self.assertIn('planHistory', MAP)
+        self.assertIn('commitPlanHistory', MAP)
+        self.assertIn('restorePlanHistory', MAP)
+        self.assertIn("mode: 'straight'", MAP)
+        self.assertIn("mode: 'snap'", MAP)
+        self.assertIn('buildAutoPlanSegment', MAP)
+        self.assertIn('planSnapToleranceMeters = 90', MAP)
+        self.assertIn('savePlanGpx', MAP)
+        self.assertIn('shortestTrailPath', MAP)
+        self.assertIn('nearestNode', MAP)
+        self.assertIn('deletePlanSegment', MAP)
+        self.assertIn("hitLine.on('contextmenu'", MAP)
+        self.assertIn("const planningRenderer = L.svg({ pane: 'planning' })", MAP)
+        self.assertGreaterEqual(MAP.count("renderer: planningRenderer"), 5)
+        self.assertIn("className: 'rrgh-plan-segment-hit'", MAP)
+        self.assertIn("hitElement.dataset.planSegmentIndex = String(segmentIndex)", MAP)
+        self.assertIn('let segmentDragActive = false', MAP)
+        self.assertIn("hitLine.on('mousedown'", MAP)
+        self.assertIn("hitElement.addEventListener('mousedown'", MAP)
+        self.assertIn("hitElement.addEventListener('pointerdown'", MAP)
+        self.assertIn("hitElement.setPointerCapture(event.pointerId)", MAP)
+        self.assertIn("window.addEventListener('mousemove', onMove, true)", MAP)
+        self.assertIn("window.addEventListener('pointermove', onMove, true)", MAP)
+        self.assertIn("window.addEventListener('mouseup', onEnd, true)", MAP)
+        self.assertIn("window.addEventListener('pointerup', onEnd, true)", MAP)
+        self.assertIn("window.addEventListener('pointercancel', onCancel, true)", MAP)
+        self.assertIn('container.dataset.planDragSegment = String(segmentIndex)', MAP)
+        self.assertIn("container.dataset.planDragMoved = 'true'", MAP)
+        self.assertIn("container.dataset.planDragPreviewMode = snapped ? 'snap' : 'straight'", MAP)
+        self.assertIn('let lastResolvedTarget: PlanPoint | null = null', MAP)
+        self.assertIn('const resolvedDrop = lastResolvedTarget', MAP)
+        self.assertIn('buildAutoPlanSegment(startStop, target)', MAP)
+        self.assertIn('movePlanSegmentTarget', MAP)
+        self.assertIn('data-plan-pan-pad', MAP)
+        for direction in ('up', 'down', 'left', 'right'):
+            self.assertIn('data-plan-pan-direction="' + direction + '"', MAP)
+        self.assertIn('map.panBy', MAP)
+        self.assertIn("if (planPanPad) planPanPad.hidden = tool !== 'plan'", MAP)
+        self.assertNotIn('data-plan-pan aria-pressed', MAP)
+        self.assertNotIn("let planPanMode = false", MAP)
+        self.assertNotIn("✥ Resume route", MAP)
+        self.assertNotIn('data-staging-copy-map-view', MAP)
+        self.assertNotIn('Copy current map view', MAP)
+        self.assertIn("application/gpx+xml", MAP)
+        self.assertIn("RRGH-planned-route-", MAP)
+
+    def test_planning_and_measurement_show_live_distance_and_elevation_feedback(self):
+        self.assertIn('data-plan-live-stats', MAP)
+        for marker in ('data-plan-stats-distance', 'data-plan-stats-gain', 'data-plan-stats-loss', 'data-plan-stats-range'):
+            self.assertIn(marker, MAP)
+        self.assertIn('rrgh-planning-distance-label', MAP)
+        self.assertIn("formatDistance(segmentDistance)", MAP)
+        self.assertIn("formatElevationDelta(delta)", MAP)
+        self.assertIn("updateLiveStats('Measured line'", MAP)
+        self.assertIn("updateLiveStats('Planned route'", MAP)
+        self.assertIn("USGS 3DEP sampled along the planned route.", MAP)
+        self.assertIn("USGS 3DEP elevation at each measurement point.", MAP)
+        self.assertIn("redrawMeasure(false)", MAP)
+        self.assertIn("redrawPlan(false)", MAP)
+
+    def test_plan_keyboard_history_guarded_clear_and_close(self):
+        self.assertIn('data-plan-close', MAP)
+        self.assertIn('data-plan-confirm', MAP)
+        self.assertIn('data-plan-confirm-message', MAP)
+        self.assertIn('data-plan-confirm-ok', MAP)
+        self.assertIn('Are you sure you want to delete your built path?', MAP)
+        self.assertIn('Are you sure you want to delete your measurement?', MAP)
+        self.assertIn('Are you sure you want to delete your measurement and built path?', MAP)
+        self.assertIn('type MeasureSnapshot = MeasurePointSnapshot[]', MAP)
+        self.assertIn('let measureHistory: MeasureSnapshot[] = [[]]', MAP)
+        self.assertIn('commitMeasureHistory()', MAP)
+        self.assertIn('restoreMeasureHistory', MAP)
+        self.assertIn('undoCurrentTool', MAP)
+        self.assertIn('redoCurrentTool', MAP)
+        self.assertIn("key === 'z'", MAP)
+        self.assertIn("key === 'y'", MAP)
+        self.assertIn("event.key === 'Escape'", MAP)
+        self.assertIn("requestPlanConfirmAction('clear')", MAP)
+        self.assertIn("requestPlanConfirmAction('exit')", MAP)
+        self.assertIn("planConfirmOk?.focus()", MAP)
+        self.assertIn("planConfirm.returnValue === 'confirm'", MAP)
+        self.assertIn("target.closest('input, textarea, select, [contenteditable=\"true\"]')", MAP)
+        self.assertNotIn("key === 'r'", MAP)
+        self.assertIn('.route-plan-confirm', ROUTES_CSS)
+        self.assertIn('.route-plan-header-actions', ROUTES_CSS)
+        self.assertIn('[data-plan-close]', ROUTES_CSS)
+        self.assertIn('data-plan-mobile-history', MAP)
+        self.assertIn('data-plan-mobile-action="undo"', MAP)
+        self.assertIn('data-plan-mobile-action="redo"', MAP)
+        self.assertIn("planMobileHistory.hidden = !(minimized && activeTool !== null && !planPanel.hidden)", MAP)
+        self.assertNotIn("planMobileHistory.hidden = !(isMobileFullMap()", MAP)
+        self.assertIn("planMobileUndo.disabled = !canUndo", MAP)
+        self.assertIn("planMobileRedo.disabled = !canRedo", MAP)
+        self.assertIn("planMobileUndo?.addEventListener('click', undoCurrentTool)", MAP)
+        self.assertIn("planMobileRedo?.addEventListener('click', redoCurrentTool)", MAP)
+        self.assertIn('Measure distance: click or tap points to measure a straight-line distance.', MAP)
+        self.assertIn('Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.', MAP)
+        self.assertIn('Use Undo / Redo as you edit, or Clear to start over.', MAP)
+        self.assertIn('.route-plan-mobile-history', ROUTES_CSS)
+        self.assertIn('.route-plan-mobile-history:not([hidden])', ROUTES_CSS)
+        self.assertNotIn('data-plan-shake', MAP)
+        self.assertNotIn('DeviceMotionEvent', MAP)
+        self.assertNotIn("addEventListener('devicemotion'", MAP)
+        self.assertNotIn('.route-plan-shake', ROUTES_CSS)
+
+    def test_planner_uses_official_roads_and_loaded_informal_paths(self):
+        self.assertIn("for (const line of geometryLines(feature.geometry)) addSnapLine(line);", MAP)
+        self.assertIn("Not used for route snapping", MAP)
+        self.assertIn("Available for route snapping", MAP)
+        self.assertIn("accessLower === 'no' || accessLower === 'private'", MAP)
+        self.assertIn("bridgeNearbyNetworkNodes();", MAP)
+        self.assertIn("Math.ceil(from.distanceTo(to) / 15)", MAP)
+        self.assertIn("point.distanceTo(other) <= 12", MAP)
+        self.assertIn("fetchPagedGeoJson('ky-road-centerlines')", MAP)
+        self.assertIn("container.dataset.planningRoadFeatureCount", MAP)
+        self.assertIn("const snapEndpointsByTag = new Map<string, Set<string>>()", MAP)
+        self.assertIn("const connectNamedRoadEndpointGaps = (maxGapMeters = 160)", MAP)
+        self.assertIn("normalizeKentuckyRoadTag", MAP)
+        self.assertIn("addSnapLine(line, roadTag)", MAP)
+        self.assertNotIn("connectNearbyKyRoadEndpointGaps", MAP)
+        self.assertNotIn("connectMutualNearestKyRoadEndpointGaps", MAP)
+        self.assertNotIn("nearestKyRoadEndpointCandidate", MAP)
+        self.assertNotIn("kyRoadEndpoints", MAP)
+        self.assertNotIn("axisDifference", MAP)
+        self.assertNotIn("kyRoadEndpointBridgeCount", MAP)
+        self.assertNotIn("kyRoadMutualEndpointBridgeCount", MAP)
+        self.assertIn("container.dataset.namedRoadGapBridgeCount", MAP)
+        self.assertIn("directMeters <= 600 && snappedMeters > Math.max(900, directMeters * 6)", MAP)
+        self.assertIn("container.dataset.planDetourGuardCount", MAP)
+        self.assertIn("excludedRoadClass = /interstate|freeway|expressway|limited\\s*access|ramp|parkway/i", MAP)
+        self.assertIn("addSnapLine(line)", MAP)
+        self.assertIn("const localRoadPlanningKeys = new Set<string>()", MAP)
+        self.assertIn("const localRoadPlanningIndexLimit = 6000", MAP)
+        self.assertIn("localRoadPlanningIndexer = (tigerFeatures: any[], osmFeatures: any[]) =>", MAP)
+        self.assertIn("localRoadRestrictedForPlanning", MAP)
+        self.assertIn("access === 'no' || access === 'private' || foot === 'no' || foot === 'private'", MAP)
+        self.assertIn("container.dataset.localRoadPlanningFeatureCount", MAP)
+
+    def test_map_layer_logic_matches_outdoor_planning_behavior(self):
+        self.assertIn("hillshade: 180", MAP)
+        self.assertIn("baseTopo: 200", MAP)
+        self.assertIn("baseUsTopo: 210", MAP)
+        self.assertIn("baseAerial: 220", MAP)
+        self.assertIn("counties: 415", MAP)
+        self.assertIn("routes: 440", MAP)
+        self.assertIn("pane.style.mixBlendMode = 'multiply'", MAP)
+        self.assertIn("aerialLayerIds.has(id) && checkbox.checked", MAP)
+        self.assertIn("aerialExclusiveIds.has(id) && checkbox.checked", MAP)
+        self.assertIn("for (const otherAerialId of aerialLayerIds)", MAP)
+        self.assertIn("for (const aerialId of aerialLayerIds)", MAP)
+        self.assertIn("setLayerControl('ky-hillshade', false)", MAP)
+        self.assertIn("for (const aerialId of aerialLayerIds) setLayerControl(aerialId, false)", MAP)
+        self.assertIn("new Set(['Wolfe', 'Powell', 'Menifee', 'Lee'])", MAP)
+        self.assertIn("map.setMaxBounds(paddedBounds)", MAP)
+        self.assertIn("countyLayer.addTo(map)", MAP)
+        self.assertIn("maxNativeZoom: source.maxNativeZoom", MAP)
+        self.assertIn("maxNativeZoom: 16", LAYERS)
+        self.assertIn("syncRouteFilters", MAP)
+        self.assertIn("container.dataset.visibleRouteCount", MAP)
+        self.assertIn("container.dataset.plannerNodeCount", MAP)
+        self.assertIn("container.dataset.currentZoom", MAP)
+        self.assertIn("name === 'hiking'", MAP)
+        self.assertIn("name === 'terrain'", MAP)
+        hiking_block = MAP.split("if (name === 'hiking')", 1)[1].split("} else if (name === 'terrain')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', false, 88)", hiking_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 100)", hiking_block)
+        self.assertIn("setLayerControl('ky-hillshade', false, 75)", hiking_block)
+        base_markup = MAP.split('aria-label="Base and imagery layers"', 1)[1].split('aria-label="Conditions and analysis layers"', 1)[0]
+        self.assertIn('data-map-layer="kytopo" />', base_markup)
+        self.assertIn('data-map-layer="usgs-topo" checked', base_markup)
+        self.assertIn('data-map-layer="ky-hillshade" />', base_markup)
+        terrain_block = MAP.split("} else if (name === 'terrain')", 1)[1].split("} else if (name === 'aerial')", 1)[0]
+        self.assertIn("setLayerControl('kytopo', true, 25)", terrain_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 75)", terrain_block)
+        self.assertIn("setLayerControl('ky-hillshade', true, 100)", terrain_block)
+        self.assertIn("setLayerControl('usfs-wilderness', true)", MAP)
+        self.assertNotIn('data-context-full-opacity="usfs-wilderness"', MAP)
+        self.assertNotIn('Wilderness full opacity (100%)', MAP)
+        self.assertNotIn('data-opacity="usfs-wilderness"', MAP)
+        self.assertIn("const syncFineTuneControl = (id: string)", MAP)
+        self.assertIn("slider.disabled = !enabled || blockedByAerial", MAP)
+        self.assertIn("data-fine-tune-layer=\"ky-hillshade\"", MAP)
+        self.assertIn("mainToggle.dispatchEvent(new Event('change', { bubbles: true }))", MAP)
+        self.assertIn("aerialContextStyles", MAP)
+        self.assertIn("color: '#ff4fd8'", MAP)
+        self.assertIn("color: '#ffe14a'", MAP)
+        self.assertIn("color: '#62ff9d'", MAP)
+        self.assertIn("shell.dataset.aerialActive = String(aerialModeActive)", MAP)
+        self.assertIn("setLayerControl('kytopo', false)", MAP)
+        self.assertIn("setLayerControl('usgs-topo', false)", MAP)
+        self.assertIn("aerialExclusiveIds.has(id) && checkbox.checked", MAP)
+
+    def test_informal_trails_have_public_overpass_failover_and_default_on(self):
+        self.assertIn('data-map-layer="osm-informal-trails" checked', MAP)
+        self.assertIn('data-sheet-open="explore" data-ready-group="core" disabled', MAP)
+        self.assertGreaterEqual(MAP.count('data-sheet-open="plan" data-ready-group="core" disabled'), 2)
+        self.assertIn('setPlanningGraphReady(false)', MAP)
+        self.assertIn('setPlanningGraphReady(true)', MAP)
+        self.assertIn('Build trail route will unlock when the planning graph is ready.', MAP)
+        self.assertIn('["informal"="yes"]', MAP)
+        self.assertIn("data/map/osm-informal-trails.geojson", MAP)
+        self.assertIn("data/map/usgs-aggregated-trails.geojson", MAP)
+        self.assertIn("container.dataset.informalTrailUsgsCount", MAP)
+        self.assertIn("rrgh_source ?? '') === 'usgs-aggregated-trails'", MAP)
+        self.assertIn("hikerLower === 'n' || hikerLower === 'no'", MAP)
+        self.assertIn("props.rrgh_planner_eligible === false", MAP)
+        self.assertIn('USGS The National Map — National Digital Trails', MAP)
+        self.assertIn('Hiker/Pedestrian:', MAP)
+        self.assertIn('Pack and Saddle:', MAP)
+        self.assertIn('Source originator:', MAP)
+        self.assertIn('https://overpass.maprva.org/api/interpreter', MAP)
+        self.assertIn('https://overpass.private.coffee/api/interpreter', MAP)
+        self.assertIn('https://overpass-api.de/api/interpreter', MAP)
+        self.assertIn('https://maps.mail.ru/osm/tools/overpass/api/interpreter', MAP)
+        self.assertIn("method: 'POST'", MAP)
+        self.assertIn('Promise.any', MAP)
+        self.assertIn('15000', MAP)
+        self.assertIn('© OpenStreetMap contributors', MAP)
+        self.assertIn("window.setTimeout(() => {", MAP)
+        self.assertIn("void loadInformalTrails();", MAP)
+        self.assertIn("container.dataset.informalTrailSource = 'rrgh-cache'", MAP)
+        self.assertIn('RRGH-hosted caches derived from OpenStreetMap and from supplemental USGS National Digital Trails', PRIVACY)
+        self.assertIn('ordinary visitors do not contact the USGS trail query service', PRIVACY)
+        self.assertIn('supplemental USGS National Digital Trails / National Transportation Dataset Terra Trail features', TERMS)
+        self.assertIn('USGS feature explicitly reports Hiker/Pedestrian as No', TERMS)
+        self.assertIn('do not substantially match the authoritative USDA Forest Service trail geometry', TERMS)
+        self.assertIn('snap to mapped road-centerline geometry from USDA Forest Service and Kentucky public road datasets', TERMS)
+        self.assertIn('does not determine whether a road has a lawful or safe pedestrian route', TERMS)
+        self.assertIn('fixed Red River Gorge-area set of Kentucky 911 road-centerline geometry', PRIVACY)
+        self.assertIn('not generated from the visitor’s device location', PRIVACY)
+
+    def test_cached_osm_candidates_are_nonempty_and_geographically_bounded(self):
+        self.assertEqual(OSM_CACHE.get('type'), 'FeatureCollection')
+        self.assertGreater(len(OSM_CACHE.get('features', [])), 50)
+        meta = OSM_CACHE.get('rrgh_cache', {})
+        self.assertTrue(meta.get('bounds_clipped'))
+        self.assertEqual(meta.get('bbox'), [37.45, -83.93, 38.05, -83.25])
+        classifications = {feature.get('properties', {}).get('rrgh_classification') for feature in OSM_CACHE['features']}
+        self.assertIn('community-candidate', classifications)
+        self.assertTrue(meta.get('natural_bridge_boundary_filtered'))
+        self.assertEqual(meta.get('natural_bridge_boundary_where'), "Abbrev='NB'")
+        self.assertTrue(str(meta.get('natural_bridge_boundary_layer', '')).endswith('/MapServer/8'))
+        self.assertEqual(meta.get('natural_bridge_filter_version'), 'nb-v1')
+        self.assertEqual(meta.get('state_park_match_buffer_m'), 30)
+        self.assertEqual(meta.get('state_park_overlap_exclusion_ratio'), 0.65)
+        official_state_park_names = {
+            "hood's branch trail", 'sand gap trail', 'original natural bridge trail',
+            'rock garden trail', 'battleship rock trail', 'laurel ridge trail',
+            "needle's eye", 'devils gulch trail', 'hensons arch trail'
+        }
+        cached_names = {
+            str(feature.get('properties', {}).get('name', '')).strip().lower()
+            for feature in OSM_CACHE['features']
+            if str(feature.get('properties', {}).get('name', '')).strip()
+        }
+        self.assertTrue(official_state_park_names.isdisjoint(cached_names))
+        south, west, north, east = meta['bbox']
+        for feature in OSM_CACHE['features']:
+            coords = feature.get('geometry', {}).get('coordinates', [])
+            self.assertGreaterEqual(len(coords), 2)
+            for lon, lat in coords:
+                self.assertGreaterEqual(lat, south)
+                self.assertLessEqual(lat, north)
+                self.assertGreaterEqual(lon, west)
+                self.assertLessEqual(lon, east)
+
+    def test_cached_usgs_aggregated_trail_supplement_is_bounded_and_deduped(self):
+        self.assertEqual(USGS_TRAILS_CACHE.get('type'), 'FeatureCollection')
+        self.assertGreater(len(USGS_TRAILS_CACHE.get('features', [])), 0)
+        meta = USGS_TRAILS_CACHE.get('rrgh_cache', {})
+        self.assertTrue(meta.get('bounds_clipped'))
+        self.assertEqual(meta.get('bbox'), [37.45, -83.93, 38.05, -83.25])
+        self.assertGreater(meta.get('raw_feature_count', 0), len(USGS_TRAILS_CACHE['features']))
+        self.assertGreater(meta.get('official_like_removed', 0), 0)
+        self.assertIn('validation_reference', meta)
+        self.assertEqual(meta['validation_reference']['lat'], 37.86393)
+        self.assertEqual(meta['validation_reference']['lon'], -83.55277)
+        self.assertIn('Kentucky DGI USGS Aggregated Trails', USGS_TRAILS_GENERATOR)
+        self.assertIn('USGS The National Map USGSTrails', USGS_TRAILS_GENERATOR)
+        self.assertIn("not in ('n', 'no')", USGS_TRAILS_GENERATOR)
+        south, west, north, east = meta['bbox']
+        for feature in USGS_TRAILS_CACHE['features']:
+            props = feature.get('properties', {})
+            self.assertEqual(props.get('rrgh_source'), 'usgs-aggregated-trails')
+            self.assertEqual(props.get('rrgh_classification'), 'usgs-aggregated-candidate')
+            self.assertEqual(str(props.get('trailtype', '')).lower(), 'terra trail')
+            coords = feature.get('geometry', {}).get('coordinates', [])
+            self.assertGreaterEqual(len(coords), 2)
+            for lon, lat in coords:
+                self.assertGreaterEqual(lat, south)
+                self.assertLessEqual(lat, north)
+                self.assertGreaterEqual(lon, west)
+                self.assertLessEqual(lon, east)
+
+    def test_land_management_defaults_on_and_counties_are_fixed_context(self):
+        self.assertIn('<span>National Forest Wilderness</span>', MAP)
+        self.assertIn("label: 'National Forest Wilderness'", LAYERS)
+        for layer in ('usfs-wilderness', 'usfs-special-management', 'usfs-land-units'):
+            self.assertIn('data-map-layer="' + layer + '" checked', MAP)
+        self.assertIn("loadLandContext('usfs-wilderness')", MAP)
+        self.assertIn("loadLandContext('usfs-special-management')", MAP)
+        self.assertIn("loadLandContext('usfs-land-units')", MAP)
+        self.assertIn('<span>County boundaries</span>', MAP)
+        self.assertNotIn('Always shown', MAP)
+        self.assertIn("const countiesVisible = map.getZoom() <= 13", MAP)
+
+    def test_map_reading_help_and_legal_access_context_are_present(self):
+        self.assertIn('How to read this map — 30-second guide', MAP)
+        self.assertIn('Closer lines mean steeper terrain', MAP)
+        self.assertIn('Advanced Map Details', MAP)
+        self.assertNotIn('Map nerd details', MAP)
+        self.assertIn('Terrain relief (LiDAR)', MAP)
+        self.assertIn('Property boundaries are not shown; this map does not establish legal access.', MAP)
+        self.assertIn('Before you go: check closures, road access &amp; conditions', MAP)
+        self.assertIn("search-and-rescue/#current-conditions", MAP)
+        self.assertNotIn("search-and-rescue/#hiking-safety'}>Before you go", MAP)
+        self.assertIn('id="current-conditions"', SAR)
+        self.assertIn('Current conditions are part of the route', SAR)
+        self.assertIn('.sar-conditions { padding: 0 0 4.8rem; scroll-margin-top: 12rem; }', SAR_CSS)
+        self.assertIn("if (window.location.hash !== '#current-conditions') return;", SAR)
+        self.assertIn("target.scrollIntoView({ block: 'start', behavior: 'auto' })", SAR)
+        self.assertIn("window.setTimeout(alignCurrentConditions, 250)", SAR)
+        self.assertIn('Outdoor safety and location disclaimer', MAP)
+        self.assertIn('If you choose “My location,”', PRIVACY)
+
+    def test_public_route_ui_avoids_internal_workflow_language(self):
+        public_ui = '\n'.join([DETAIL, INDEX, LIBRARY, FULL_MAP, MAP, (ROOT / 'src/components/ElevationProfile.astro').read_text(encoding='utf-8')])
+        for prohibited in (
+            'Publication Ready',
+            'Lane 19',
+            'Approved public waypoints',
+            'Approved waypoints',
+            'current Lane 19-approved route package',
+            'Approved route shape',
+            'approved route geometry',
+        ):
+            self.assertNotIn(prohibited, public_ui)
+        self.assertIn('Landmarks &amp; viewpoints', DETAIL)
+        self.assertIn('Map &amp; route data sources', DETAIL)
+
+    def test_lidar_guide_keeps_gaia_caltopo_as_education_only(self):
+        self.assertIn('Kentucky LiDAR &amp; Custom Map Sources', GUIDE)
+        self.assertIn('Gaia GPS', GUIDE)
+        self.assertIn('CalTopo', GUIDE)
+        self.assertIn('does not publish or redistribute Gaia proprietary/Premium overlays', GUIDE)
+        self.assertIn('Do not copy or rehost CalTopo proprietary map tiles', GUIDE)
+
+
+    def test_owner_approved_six_change_map_refinement_contract(self):
+        self.assertIn('data-map-preset="sunlight"', MAP)
+        self.assertIn('<strong>Sunlight</strong>', MAP)
+        self.assertIn('<strong>Hiking</strong><span>USGS topo · hiking context</span>', MAP)
+        self.assertIn('<strong>Terrain</strong><span>Kentucky + USGS topo · stronger terrain relief</span>', MAP)
+        self.assertIn('<strong>Aerial</strong><span>Imagery + hiking context</span>', MAP)
+        self.assertIn('data-sunlight-preset-times', MAP)
+        self.assertIn("['hiking', 'terrain', 'aerial', 'sunlight']", MAP)
+        sunlight_block = MAP.split("} else if (name === 'sunlight') {", 1)[1].split("      }\n      syncAerialControlState();", 1)[0]
+        self.assertIn("setLayerControl('kytopo', false, 0)", sunlight_block)
+        self.assertIn("setLayerControl('usgs-topo', true, 100)", sunlight_block)
+        self.assertIn("setLayerControl('ky-hillshade', true, 25)", sunlight_block)
+        self.assertNotIn("setLayerControl('kytopo', true, 25)", sunlight_block)
+        self.assertNotIn("setLayerControl('usgs-topo', true, 75)", sunlight_block)
+        self.assertNotIn("setLayerControl('ky-hillshade', true, 100)", sunlight_block)
+        self.assertIn("setSunKinds(true)", sunlight_block)
+        self.assertIn("opacityValue === undefined", MAP)
+        self.assertIn('data-coordinate-sun-today', MAP)
+        self.assertIn('data-coordinate-elevation', MAP)
+        self.assertIn('class="route-coordinate-toolbar"', MAP)
+        self.assertIn('class="route-coordinate-copy"', MAP)
+        self.assertIn('<span>Copy</span><span>Coordinates</span>', MAP)
+        self.assertIn('class="route-map-point-symbol"', MAP)
+        self.assertIn('<strong>Map point</strong>', MAP)
+        self.assertIn('<span aria-hidden="true">—</span>', MAP)
+        self.assertIn('data-coordinate-sunrise-today', MAP)
+        self.assertIn('data-coordinate-first-direct-today', MAP)
+        self.assertIn('data-coordinate-last-direct-today', MAP)
+        self.assertIn('data-coordinate-sunset-today', MAP)
+        self.assertIn("mapPoint: 560", MAP)
+        self.assertIn("pane: 'mapPoint'", MAP)
+        self.assertIn('positionCoordinatePoint', MAP)
+        self.assertIn('map.panBy([offset.x, offset.y]', MAP)
+        self.assertIn("const detailZoom = isMobileFullMap() ? 14 : 15", MAP)
+        self.assertIn("map.getZoom() <= detailZoom - 2", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'zoom'", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'visibility'", MAP)
+        self.assertIn("container.dataset.coordinatePointAutoPan = 'false'", MAP)
+        self.assertIn('data-plan-minimize', MAP)
+        self.assertIn("planPanel.dataset.minimized = 'true'", MAP)
+        self.assertIn("setStatus('Measure distance:", MAP)
+        self.assertIn("setStatus('Build route:", MAP)
+        self.assertGreaterEqual(MAP.count('minimizePlanPanel();'), 4)
+        self.assertIn('.route-plan-panel[data-minimized="true"]', ROUTES_CSS)
+        self.assertIn('.route-plan-panel[data-minimized="true"] [data-plan-panel-title]', ROUTES_CSS)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr))!important;', ROUTES_CSS)
+        self.assertIn('grid-template-columns:22px 22px 22px!important;', ROUTES_CSS)
+        self.assertIn('.route-map-left-stack{', ROUTES_CSS)
+        self.assertIn('top:.45rem!important;', ROUTES_CSS)
+        self.assertIn('right:.45rem!important;', ROUTES_CSS)
+        self.assertIn('left:auto!important;', ROUTES_CSS)
+        self.assertIn('table-layout:fixed;', ROUTES_CSS)
+        self.assertIn('.route-coordinate-close{grid-column:3;grid-row:1;justify-self:end}', ROUTES_CSS)
+        self.assertIn('.route-coordinate-today{grid-column:2 / 4;grid-row:2', ROUTES_CSS)
+        self.assertIn("setTodaySunlight(", MAP)
+        self.assertIn("formatRrgTime(todayDirect?.firstDirectSun ?? null)", MAP)
+        self.assertIn("formatRrgTime(todayDirect?.lastDirectSun ?? null)", MAP)
+        self.assertIn("originElevationMeters * 3.280839895", MAP)
+        self.assertIn('Next 10 days', MAP)
+        self.assertIn('First direct sun', MAP)
+        self.assertIn('Last direct sun', MAP)
+        self.assertIn('kyaped-phase2-dem', MAP)
+        self.assertIn('Kentucky KyFromAbove Phase 2 Bare Earth DEM', LAYERS)
+        self.assertIn('Ky_DEM_KYAPED_2FT_Phase2_ZMeters_WGS84WM/ImageServer', LAYERS)
+        self.assertIn('buildTerrainSamplePoints', SUNLIGHT)
+        self.assertIn('buildTerrainHorizonProfile', SUNLIGHT)
+        self.assertIn('getTerrainDirectTimes', SUNLIGHT)
+        self.assertIn("RRG_TIME_ZONE = 'America/New_York'", SUNLIGHT)
+
+        self.assertIn('data-ready-group="routes"', MAP)
+        self.assertIn('data-ready-group="core"', MAP)
+        self.assertIn('data-ready-group="planning"', MAP)
+        self.assertIn('data-ready-group="share"', MAP)
+        self.assertIn("setReadiness('routes'", MAP)
+        self.assertIn("setReadiness('core', true)", MAP)
+        self.assertIn("setReadiness('share', true)", MAP)
+        self.assertIn("setReadiness('planning'", MAP)
+
+        mode_index = MAP.index('class="route-plan-mode-buttons"')
+        actions_index = MAP.index('class="route-plan-actions"')
+        help_index = MAP.index('class="route-plan-help"')
+        self.assertLess(mode_index, actions_index)
+        self.assertLess(actions_index, help_index)
+        self.assertIn('class="route-plan-history-button"', MAP)
+        self.assertIn('data-tooltip="Undo"', MAP)
+        self.assertIn('data-tooltip="Redo"', MAP)
+        self.assertIn('aria-label="Undo"', MAP)
+        self.assertIn('aria-label="Redo"', MAP)
+        self.assertIn('Measure distance: click or tap points to measure a straight-line distance.', MAP)
+        self.assertIn('Build trail route: click near mapped trails or roads to snap automatically; click away from the network for a straight segment.', MAP)
+        self.assertIn('Use Undo / Redo as you edit, or Clear to start over.', MAP)
+        self.assertIn('Click or tap points to measure straight-line distance.', MAP)
+        self.assertIn('Drag a planned segment to adjust or resnap it.', MAP)
+        self.assertIn("let areaHistory: MeasureSnapshot[] = [[]]", MAP)
+        self.assertIn("let bearingHistory: MeasureSnapshot[] = [[]]", MAP)
+        self.assertIn("let watershedHistory: WatershedSnapshot[] = [null]", MAP)
+        self.assertIn('data-map-activity="watershed"', MAP)
+        self.assertIn('route-map-water-flow', MAP)
+        self.assertIn('Delineating watershed…', MAP)
+        self.assertIn("setMapActivity('watershed', true)", MAP)
+        self.assertIn("setMapActivity('watershed', false)", MAP)
+        self.assertIn('@keyframes rrgh-water-flow', ROUTES_CSS)
+        self.assertIn("commitAreaHistory()", MAP)
+        self.assertIn("commitBearingHistory()", MAP)
+        self.assertIn("commitWatershedHistory(event.latlng)", MAP)
+        self.assertIn("restoreAreaHistory", MAP)
+        self.assertIn("restoreBearingHistory", MAP)
+        self.assertIn("restoreWatershedHistory", MAP)
+        self.assertIn("activeTool === 'area' && areaHistoryIndex > 0", MAP)
+        self.assertIn("activeTool === 'bearing' && bearingHistoryIndex > 0", MAP)
+        self.assertIn("activeTool === 'watershed' && watershedHistoryIndex > 0", MAP)
+        self.assertLess(MAP.index('<span>Forest Service trails</span>'), MAP.index('<span>State Park trails</span>'))
+        self.assertLess(MAP.index('<span>State Park trails</span>'), MAP.index('<span>Community / Informal trails</span>'))
+        self.assertIn("map.getZoom() >= (isMobileFullMap() ? 16 : 15)", MAP)
+        self.assertNotIn("setLayerControl(weatherLayerId, true, 35)", MAP)
+        self.assertIn('Off by default in every Map View.', MAP)
+        self.assertIn("NATURAL_BRIDGE_WHERE=\"Abbrev='NB'\"", OSM_TRAILS_GENERATOR)
+        self.assertIn("PINCH_EM_TIGHT_ACCEPTANCE_BOX", OSM_TRAILS_GENERATOR)
+        self.assertIn("HANSONS_POINT_ACCEPTANCE", OSM_TRAILS_GENERATOR)
+        self.assertIn("baseline_way_count", OSM_TRAILS_GENERATOR)
+        self.assertIn("destructive partial refresh", OSM_TRAILS_GENERATOR)
+        self.assertNotIn("STATE_PARK_BOUNDARY_LAYER", USGS_TRAILS_GENERATOR)
+        self.assertIn('USGS StreamStats', PRIVACY)
+        self.assertIn('Snow / recent precipitation', PRIVACY)
+        self.assertIn('validated Kentucky State Parks boundary record identified as Abbrev=NB', TERMS)
+        osm_ids = {feature.get('properties', {}).get('osm_id') for feature in OSM_CACHE.get('features', [])}
+        self.assertIn(772984506, osm_ids, "Hanson's Point Trail must survive State Park de-duplication")
+        self.assertIn(1341563278, osm_ids, "Pinch-em-Tight community geometry must survive State Park de-duplication")
+        self.assertGreater(len(OSM_CACHE.get('features', [])), 1000, 'Hosted Community / Informal cache must not be replaced by a partial Overpass refresh')
+
+        self.assertIn("fullHtml: 'NATURAL<br>BRIDGE', short: 'NB'", MAP)
+        self.assertIn("fullHtml: 'RED<br>RIVER<br>GORGE', short: 'RRG'", MAP)
+        self.assertIn("fullHtml: 'CLIFTY<br>WILDERNESS', short: 'CW'", MAP)
+        self.assertIn("if (isMobileFullMap())", MAP)
+        self.assertIn("if (zoom >= 14) return 'hidden'", MAP)
+        self.assertIn("if (zoom >= 12) return 'initials-near'", MAP)
+        self.assertIn("if (zoom >= 10) return 'full'", MAP)
+        self.assertIn("if (zoom >= 16) return 'hidden'", MAP)
+        self.assertIn("if (zoom >= 14) return 'initials-near'", MAP)
+        self.assertIn("if (zoom >= 11) return 'full'", MAP)
+        self.assertIn("return 'initials-broad'", MAP)
+        self.assertIn("container.dataset.areaLabelMode = labelMode", MAP)
+        self.assertIn("areaLabels: 600", MAP)
+        self.assertIn("planning: 490", MAP)
+        self.assertIn("mapPoint: 560", MAP)
+        self.assertIn('.rrgh-area-label .rrgh-area-label-text', ROUTES_CSS)
+        self.assertIn('font-style:italic;', ROUTES_CSS)
+        self.assertIn('background:transparent!important;', ROUTES_CSS)
+        self.assertIn('.rrgh-area-label.is-initials.is-broad', ROUTES_CSS)
+        self.assertIn('.rrgh-area-label.is-initials.is-near', ROUTES_CSS)
+
+        self.assertIn("const mobileHomeZoom = 11", MAP)
+        self.assertIn("const mobileHomeCenter = L.latLng(37.8196836, -83.6240)", MAP)
+        self.assertIn("map.setView(mobileHomeCenter, mobileHomeZoom, { animate: false })", MAP)
+        self.assertIn("container.dataset.homeView = 'gorge-overview'", MAP)
+        self.assertIn("lat: 37.823, lng: -83.638", MAP)
+        self.assertIn("mobileFullSize: [118, 70]", MAP)
+        self.assertIn("mobileFullSize: [128, 70]", MAP)
+        self.assertIn("iconSize: [24, 24]", MAP)
+        self.assertIn("iconAnchor: [12, 12]", MAP)
+        self.assertIn("route-sun-header-stack", MAP)
+        self.assertIn("stack: ['First', 'direct', 'sun']", MAP)
+        self.assertIn("stack: ['Last', 'direct', 'sun']", MAP)
+        self.assertIn("route-coordinate-today-tag", MAP)
+        self.assertIn("dateCell.append(document.createTextNode(' · '), todayTag)", MAP)
+        self.assertIn("Owner UAT correction — label readability, below-map instructions", ROUTES_CSS)
+        self.assertIn(".route-map-shell-full>.route-map-status", ROUTES_CSS)
+        self.assertIn("position:static;", ROUTES_CSS)
+        self.assertIn("grid-template-columns:auto minmax(0,1fr) auto!important;", ROUTES_CSS)
+        self.assertIn(".route-coordinate-card:has([data-coordinate-sun-details][open])", ROUTES_CSS)
+        self.assertIn(".route-sun-header-stack", ROUTES_CSS)
+        self.assertIn("Final Map Point interaction and layout correction", ROUTES_CSS)
+        self.assertIn("height:64px;", ROUTES_CSS)
+        self.assertIn("font-size:.56rem;", ROUTES_CSS)
+        self.assertIn("align-content:center;", ROUTES_CSS)
+        self.assertIn("Map Point micro-polish — Copy Coordinates and title spacing", ROUTES_CSS)
+        self.assertIn("font-size:.63rem!important;", ROUTES_CSS)
+        self.assertIn("font-size:.56rem!important;", ROUTES_CSS)
+        self.assertIn("margin-bottom:.26rem!important;", ROUTES_CSS)
+        self.assertIn("margin-bottom:.3rem!important;", ROUTES_CSS)
+        self.assertIn("-webkit-touch-callout:none!important;", ROUTES_CSS)
+        self.assertIn('grid-template-columns:repeat(4,minmax(0,1fr));', ROUTES_CSS)
+        self.assertIn('grid-template-columns:repeat(2,minmax(0,1fr));', ROUTES_CSS)
+
+
+
+    def test_place_marker_hit_targets_and_mobile_popup_compaction(self):
+        self.assertIn('recreation: 510', MAP)
+        self.assertIn('routeStarts: 520', MAP)
+        self.assertIn('places: 530', MAP)
+        self.assertIn('landmarks: 540', MAP)
+        self.assertIn('mapPoint: 560', MAP)
+        self.assertIn("className: 'rrgh-place-leaflet-popup'", MAP)
+        self.assertIn('maxWidth: mobileMapActive() ? 232 : 360', MAP)
+        self.assertIn('minWidth: mobileMapActive() ? 188 : 220', MAP)
+        self.assertIn('keepInView: true', MAP)
+        self.assertIn('autoPanPaddingTopLeft: [16, mobileMapActive() ? 118 : 72]', MAP)
+        self.assertIn('autoPanPaddingBottomRight: [16, mobileMapActive() ? 84 : 56]', MAP)
+        self.assertIn('.rrgh-place-marker-host::before,.route-waypoint-icon::before', ROUTES_CSS)
+        self.assertIn('inset:-8px', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .route-map-service-links{display:grid', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup{width:252px!important;max-width:calc(100vw - 92px)!important}', ROUTES_CSS)
+        self.assertIn('.rrgh-place-leaflet-popup .leaflet-popup-content-wrapper{width:100%!important}', ROUTES_CSS)
+
+
+    def test_public_route_copy_is_visitor_ready(self):
+        self.assertIn('A map or GPX line may contain errors and should not be your only navigation source.', NOTICE)
+        self.assertIn('create new trails', NOTICE)
+        self.assertNotIn('may contain error and', NOTICE)
+        self.assertNotIn('create new trail,', NOTICE)
+
+        self.assertIn("const shapeArticle = /^[aeiou]/i.test(data.shape) ? 'an' : 'a';", DETAIL)
+        self.assertIn('This route is {shapeArticle} {data.shape}.', DETAIL)
+        self.assertNotIn('This route is a {data.shape}.', DETAIL)
+
+        self.assertEqual(
+            ROUTE['accessParking'],
+            'Sky Bridge Picnic Area. Ryan reports ample parking and picnic facilities. There is a gate on the access road that is sometimes closed, including during winter and at other times. USDA Forest Service materials may list the developed picnic area as open all year, but that does not establish continuous road/gate access. Check current Daniel Boone National Forest alerts, road conditions, and gate/access status before departure.'
+        )
+        self.assertIn(
+            'No overnight camping at the Sky Bridge picnic/parking area; Forest Service Red River Gorge rules prohibit camping in picnic/parking areas and within 300 ft of developed roads/trails.',
+            ROUTE['waterCamping']
+        )
+        self.assertEqual(
+            ROUTE['landAccessReview'],
+            'Daniel Boone National Forest / Red River Gorge Geological Area. Sky Bridge Trail #214 is an official Forest Service trail. Check current Forest Service alerts and closures before departure, and follow current land-manager guidance.'
+        )
+        self.assertNotIn('Route copy must tell visitors', json.dumps(ROUTE))
+        self.assertNotIn('owner-observed/not independently verified for publication', json.dumps(ROUTE))
+        self.assertNotIn('before publication/use', json.dumps(ROUTE))
+
+        self.assertEqual(
+            PRINCESS_ROUTE['navigationDifficultyDetail'],
+            "Straightforward established-trail navigation; the mapped route follows Ryan's recorded path around, beneath, and over Princess Arch."
+        )
+        self.assertIn('No water source is documented along this short day hike.', PRINCESS_ROUTE['waterCamping'])
+        self.assertNotIn('No route-specific water or camping claim is supplied.', json.dumps(PRINCESS_ROUTE))
+        self.assertNotIn("approved geometry preserves Ryan's actual movement", json.dumps(PRINCESS_ROUTE))
+
+
+if __name__ == '__main__':
+    unittest.main()

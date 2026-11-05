@@ -1,0 +1,60 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/routes.css';
+const hillshade = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_MultiDirectional_Hillshade_WGS84WM/MapServer/tile/{z}/{y}/{x}';
+const topo = 'https://kygisserver.ky.gov/arcgis/rest/services/WGS84WM_Services/Ky_KyTopo_Map_Series_WGS84WM/MapServer/tile/{z}/{y}/{x}';
+---
+<Base
+  title="Kentucky LiDAR & Custom Map Sources"
+  titleTag="Kentucky LiDAR & Custom Map Sources | Red River Gorge Hiker"
+  description="Current Red River Gorge Hiker guide to Kentucky LiDAR hillshade and custom map sources for Gaia GPS and CalTopo."
+  canonicalPath="/guides/kentucky-lidar/"
+>
+  <article class="page prose route-page lidar-guide">
+    <p class="eyebrow">Maps &amp; Guides</p>
+    <h1>Kentucky LiDAR &amp; Custom Map Sources</h1>
+    <p><small>Last reviewed: September 23, 2026</small></p>
+    <p>Kentucky’s KyFromAbove program publishes mapping data that can add useful terrain context to trip planning. This guide explains the current RRGH source choices and links the current platform instructions rather than reproducing proprietary Gaia GPS or CalTopo map layers.</p>
+
+    <section>
+      <h2>RRGH-approved Kentucky sources</h2>
+      <p><strong>Multidirectional LiDAR hillshade:</strong></p>
+      <p><code>{hillshade}</code></p>
+      <p><strong>KyTopo:</strong></p>
+      <p><code>{topo}</code></p>
+      <p>Source: <a href="https://kyfromabove.ky.gov/" target="_blank" rel="noopener noreferrer">KyFromAbove / Commonwealth of Kentucky<span class="sr-only"> (opens in a new tab)</span></a>. Recheck the source service before relying on saved custom-map settings because providers can change endpoints or terms.</p>
+    </section>
+
+    <section>
+      <h2>Gaia GPS</h2>
+      <p>Gaia GPS documents a Custom Map Source workflow for TMS sources. Ryan’s layered-map workflow requires Gaia Premium because Gaia’s current documentation makes multi-source layering and Premium overlays a Premium feature. RRGH does not publish or redistribute Gaia proprietary/Premium overlays.</p>
+      <ol>
+        <li>Review Gaia’s current <a href="https://help.gaiagps.com/hc/en-us/articles/115003639068-Adding-a-TMS-Map-Source" target="_blank" rel="noopener noreferrer">Adding a TMS Map Source instructions<span class="sr-only"> (opens in a new tab)</span></a>.</li>
+        <li>Create a custom map source using the authorized Kentucky tile URL above and a clear source name such as “Kentucky LiDAR Hillshade.”</li>
+        <li>Keep KyFromAbove attribution with your saved source and review the provider’s current terms.</li>
+        <li>If you layer LiDAR with topo or other sources, confirm your current Gaia plan supports the layering workflow you intend to use.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>CalTopo</h2>
+      <p>CalTopo’s current training materials describe Custom Source Layers for Tile/TMS/WMS sources and currently require a Pro-or-higher subscription for that feature. Reverify that requirement when you use this guide.</p>
+      <ol>
+        <li>Review CalTopo’s current <a href="https://training.caltopo.com/all_users/base-layers/custom-source" target="_blank" rel="noopener noreferrer">Custom Source Layers documentation<span class="sr-only"> (opens in a new tab)</span></a>.</li>
+        <li>Add the authorized Kentucky source as a custom Tile/TMS layer using the exact current KyFromAbove URL.</li>
+        <li>Name the layer clearly and retain source attribution.</li>
+        <li>Do not copy or rehost CalTopo proprietary map tiles as an RRGH asset.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Prior helpful source</h2>
+      <p>Anne’s Sky / The View from Osage Hill previously published a helpful Kentucky tiled-map article. RRGH credits that article as a historical/informational predecessor while independently maintaining this guide from current official/provider documentation: <a href="https://annessky.net/blog/?p=3414" target="_blank" rel="noopener noreferrer">Using Kentucky’s Tiled Base Maps in MotionX-GPS &amp; Gaia GPS apps<span class="sr-only"> (opens in a new tab)</span></a>.</p>
+    </section>
+
+    <section>
+      <h2>Privacy and provider requests</h2>
+      <p>When a browser or mapping app directly requests a tile from an external provider, that provider receives ordinary technical request information associated with the request. RRGH’s interactive map identifies its active sources and treats those requests separately from RRGH Analytics.</p>
+    </section>
+  </article>
+</Base>

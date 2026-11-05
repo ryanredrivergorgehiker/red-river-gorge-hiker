@@ -1,0 +1,65 @@
+name: Generate mobile sunlight rasters
+
+on:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - scripts/generate-rrg-lidar-sun-mobile.py
+      - .github/workflows/generate-rrg-lidar-sun-mobile.yml
+      - public/data/map/rrg-lidar-sun-continuous-manifest.json
+      - public/data/map/rrg-lidar-sun-continuous/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rrg-lidar-sun-mobile
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v6
+        with:
+          ref: staging/routes-tracks-interactive-map
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install deterministic mobile raster dependency
+        run: pip install pillow==11.3.0
+
+      - name: Fingerprint accepted continuous sunlight source
+        shell: bash
+        run: |
+          sha256sum public/data/map/rrg-lidar-sun-continuous-manifest.json public/data/map/rrg-lidar-sun-continuous/* | sort > /tmp/continuous-sun-before.sha256
+
+      - name: Generate bounded-memory mobile sunlight derivatives
+        run: python scripts/generate-rrg-lidar-sun-mobile.py
+
+      - name: Prove accepted continuous sunlight source is untouched
+        shell: bash
+        run: |
+          sha256sum public/data/map/rrg-lidar-sun-continuous-manifest.json public/data/map/rrg-lidar-sun-continuous/* | sort > /tmp/continuous-sun-after.sha256
+          diff -u /tmp/continuous-sun-before.sha256 /tmp/continuous-sun-after.sha256
+          test -z "$(git status --porcelain -- public/data/map/rrg-lidar-sun-continuous-manifest.json public/data/map/rrg-lidar-sun-continuous/)"
+
+      - name: Commit mobile derivatives only
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/map/rrg-lidar-sun-mobile-manifest.json public/data/map/rrg-lidar-sun-mobile/
+          if git diff --cached --quiet; then
+            echo "Mobile sunlight derivatives already current."
+          else
+            git commit -m "Generate bounded-memory mobile sunlight rasters"
+            git push
+          fi

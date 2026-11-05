@@ -1,0 +1,114 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const ROOT = process.cwd();
+const file = path.join(ROOT, 'src', 'data', 'places', 'places.generated.json');
+const EXPECTED_SHA = 'fb939c0d7325cf2bba1350799e8d2575d769f3248641fe4533f1758bd7455f77';
+const EXPECTED_SOURCE = '1GcUKlJTy18qP4yGu4n1qhLzy3IkOM-U2M_2LJLYIW-4';
+const fail = (message) => { throw new Error(message); };
+const bytes = fs.readFileSync(file);
+const sha = crypto.createHash('sha256').update(bytes).digest('hex');
+if (sha !== EXPECTED_SHA) fail('Places snapshot hash mismatch: ' + sha);
+const data = JSON.parse(bytes.toString('utf8'));
+if (data?.metadata?.sourceRegisterId !== EXPECTED_SOURCE) fail('Places source register mismatch');
+if (data?.metadata?.verificationState !== 'owner-uat-reconciled') fail('Places snapshot is not owner-UAT reconciled');
+const places = data.activePlaces;
+const excluded = data.excludedAndSuperseded;
+if (!Array.isArray(places) || !Array.isArray(excluded)) fail('Places snapshot arrays missing');
+const around = places.filter(p => p.aroundTheGorge);
+const hiker = places.filter(p => p.hikerServices);
+const dual = places.filter(p => p.aroundTheGorge && p.hikerServices);
+const presence = places.filter(p => p.rrghPresence);
+const eligible = places.filter(p => p.mapPoiEligible);
+const ids = new Set(places.map(p => p.placeId));
+const names = new Set(places.map(p => p.publicName));
+if (places.length !== 30 || ids.size !== 30 || names.size !== 30) fail('Expected 30 unique active canonical Places');
+if (around.length !== 24) fail('Expected 24 Around the Gorge Places');
+if (hiker.length !== 10) fail('Expected 10 Hiker Services Places');
+if (dual.length !== 4) fail('Expected 4 dual-membership Places');
+if (presence.length !== 3) fail('Expected 3 RRGH Presence Places');
+if (eligible.length !== 30) fail('Expected 30 map-eligible Places');
+if (excluded.length !== 10) fail('Expected 10 excluded/superseded controls');
+const aroundCategories = new Set(['Eat & Drink','Things to Do','Local Shops & Stops']);
+for (const p of places) {
+  if (!/^PLC-\d{3}$/.test(p.placeId)) fail('Invalid Place ID: ' + p.placeId);
+  if (!Number.isFinite(p.latitude) || !Number.isFinite(p.longitude)) fail(p.placeId + ': missing verified coordinates');
+  if (!p.officialSourceUrl || !p.googleMapsUrl || !p.lastVerified) fail(p.placeId + ': missing source/map-link/verification');
+  if (p.aroundTheGorge && !aroundCategories.has(p.aroundCategory)) fail(p.placeId + ': invalid Around category');
+  if (p.hikerServices && (!Array.isArray(p.hikerServiceTypes) || !p.hikerServiceTypes.length)) fail(p.placeId + ': invalid Hiker Service types');
+  if (p.googleMapsUrl && !p.googleMapsUrl.startsWith('https://www.google.com/maps/search/?api=1&query=')) fail(p.placeId + ': invalid Google Maps link');
+  if (JSON.stringify(p).includes('"29"')) fail(p.placeId + ': legacy 29 placeholder leaked into clean snapshot');
+  if (p.rrghPresence && (!p.rrghPresenceSubtype || p.rrghPresenceSubtype === '29' || !p.relationshipDisclosure || p.relationshipDisclosure === '29')) fail(p.placeId + ': invalid RRGH Presence disclosure');
+}
+const presenceContract = new Map(presence.map(p => [p.placeId,p.rrghPresenceSubtype]));
+for (const [id,subtype] of [['PLC-002','photo-display-sales'],['PLC-009','donated-display'],['PLC-018','greeting-card-retail']]) {
+  if (presenceContract.get(id) !== subtype) fail(id + ': RRGH Presence subtype mismatch');
+}
+const rockhouseDisclosure = places.find(p => p.placeId === 'PLC-002')?.relationshipDisclosure;
+if (rockhouseDisclosure !== "Red River Gorge Hiker photography is displayed and sold here. RRGH receives proceeds from photograph sales at this location. The business did not pay for inclusion on this map.") fail('PLC-002 relationship disclosure mismatch');
+const earthShopDisclosure = places.find(p => p.placeId === 'PLC-018')?.relationshipDisclosure;
+if (earthShopDisclosure !== "Red River Gorge Hiker greeting cards are sold here. RRGH receives proceeds from greeting-card sales at this location. The business did not pay for inclusion on this map.") fail('PLC-018 relationship disclosure mismatch');
+if (places.find(p => p.placeId === 'PLC-021')?.publicName !== 'The Brick at the Red River Gorge') fail('PLC-021 canonical name mismatch');
+if (places.find(p => p.placeId === 'PLC-026')?.publicName !== 'Trails Liquor, Souvenir, & General Store') fail('PLC-026 canonical name mismatch');
+if (places.find(p => p.placeId === 'PLC-016')?.publicName !== 'Southeast Mountain Guides') fail('PLC-016 canonical name mismatch');
+if (places.find(p => p.placeId === 'PLC-025')?.publicName !== 'Park N Save') fail('PLC-025 canonical name mismatch');
+const skyBridgeStation = places.find(p => p.placeId === 'PLC-004');
+if (skyBridgeStation?.latitude !== 37.7634 || skyBridgeStation?.longitude !== -83.6126) fail('PLC-004 corrected coordinate mismatch');
+const goTime = places.find(p => p.placeId === 'PLC-024');
+if (goTime?.latitude !== 37.7982345 || goTime?.longitude !== -83.7046152) fail('PLC-024 coordinate mismatch');
+if (JSON.stringify(goTime?.hikerServiceTypes) !== JSON.stringify(['backcountry/overnight pass vendor','fuel','provisions'])) fail('PLC-024 Hiker Services classification mismatch');
+if (goTime?.shortDescription !== 'Convenient stop for backcountry/overnight passes, fuel, food, drinks, and basic provisions.') fail('PLC-024 public description mismatch');
+const parkNSave = places.find(p => p.placeId === 'PLC-025');
+if (parkNSave?.latitude !== 37.7982107 || parkNSave?.longitude !== -83.7026222) fail('PLC-025 corrected coordinate mismatch');
+const hungryHiker = places.find(p => p.placeId === 'PLC-009');
+if (hungryHiker?.latitude !== 37.7845241 || hungryHiker?.longitude !== -83.6914935) fail('PLC-009 corrected coordinate mismatch');
+const farmersMarket = places.find(p => p.placeId === 'PLC-019');
+if (farmersMarket?.latitude !== 37.781217 || farmersMarket?.longitude !== -83.689967) fail('PLC-019 corrected coordinate mismatch');
+const sandstone = places.find(p => p.placeId === 'PLC-003');
+const hemlock = places.find(p => p.placeId === 'PLC-023');
+if (sandstone?.latitude !== hemlock?.latitude || sandstone?.longitude !== hemlock?.longitude) fail('Sandstone Arches and Hemlock Lodge must share the lodge-building coordinate');
+const gorgeUnderground = places.find(p => p.placeId === 'PLC-012');
+const supKentucky = places.find(p => p.placeId === 'PLC-030');
+if (!supKentucky || supKentucky.publicName !== 'SUP Kentucky') fail('PLC-030 SUP Kentucky missing');
+if (gorgeUnderground?.latitude !== supKentucky?.latitude || gorgeUnderground?.longitude !== supKentucky?.longitude) fail('Gorge Underground and SUP Kentucky shared-campus coordinate mismatch');
+for (const p of hiker) if (/canonical record|objective/i.test(p.shortDescription)) fail(p.placeId + ': public Hiker Services description contains internal/governance wording');
+const expectedAddresses = {
+  "PLC-001": "1890 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-002": "4000 KY-11, Campton, KY 41301",
+  "PLC-003": "2135 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-004": "8 KY-715, Pine Ridge, KY 41360",
+  "PLC-005": "2613 KY-11, Campton, KY 41301",
+  "PLC-006": "356 Jim Smith Rd, Campton, KY 41301",
+  "PLC-007": "1289 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-008": "769 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-009": "1255 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-010": "2034 KY-11, Beattyville, KY 41311",
+  "PLC-011": "200 L&E Railroad Pl, Slade, KY 40376",
+  "PLC-012": "2478 Glencairn Rd, Rogers, KY 41365",
+  "PLC-013": "455 Cliffview Rd, Campton, KY 41301",
+  "PLC-014": "693 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-015": "48 Muir Rd, Rogers, KY 41365",
+  "PLC-016": "1617 KY-11, Campton, KY 41301",
+  "PLC-017": "45 KY-715, Frenchburg, KY 40322",
+  "PLC-018": "888 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-019": "607 Skylift Dr, Slade, KY 40376",
+  "PLC-020": "693 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-021": "5412 KY-15 N, Pine Ridge, KY 41360",
+  "PLC-022": "1321 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-023": "2135 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-024": "12056 Campton Rd, Slade, KY 40376",
+  "PLC-025": "12187 Campton Rd, Slade, KY 40376",
+  "PLC-026": "940 Natural Bridge Rd, Slade, KY 40376",
+  "PLC-027": "1433 KY-36, Frenchburg, KY 40322",
+  "PLC-028": "6944 KY-52, Beattyville, KY 41311",
+  "PLC-029": "3451 Sky Bridge Rd, Stanton, KY 40380"
+};
+for (const [id, address] of Object.entries(expectedAddresses)) {
+  const place = places.find(p => p.placeId === id);
+  if (place?.locationContext !== address) fail(id + ': exact owner-supplied map address mismatch');
+}
+const hillTop = places.find(p => p.placeId === 'PLC-010');
+if (!hillTop?.nearbyRrghPickEligible || hillTop?.nearbyRouteContext !== 'Motherlode area') fail('Hill Top Pizza Motherlode Nearby RRGH Pick contract mismatch');
+for (const x of excluded) if (names.has(x.nameOrCandidate)) fail('Excluded/superseded record became active publicName: ' + x.nameOrCandidate);
+console.log('Places contract PASS: 30 active; 24 Around; 10 Hiker Services; 4 dual; 3 RRGH Presence; 30 map POIs; 10 excluded/superseded controls; Google Maps links complete.');

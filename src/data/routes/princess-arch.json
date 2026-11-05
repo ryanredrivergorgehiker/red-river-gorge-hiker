@@ -1,0 +1,79 @@
+{
+  "routeId": "RTE-0002",
+  "title": "Princess Arch",
+  "publicationClass": "A",
+  "publicationStatus": "Approved — Publication Ready",
+  "routeCategory": "day-hike",
+  "internalTrailContext": "USDA Forest Service Princess Arch Trail #233 / established official trail",
+  "shape": "out-and-back",
+  "distanceMi": 0.571,
+  "estimatedDuration": null,
+  "physicalDifficulty": "Easy",
+  "physicalDifficultyDetail": "Easy — short established Forest Service Trail #233; Kentucky Geological Survey lists Princess Arch Trail #233 as an easy 0.25-mile hike. Ryan completed it as a family day hike.",
+  "navigationDifficulty": "Straightforward established-trail navigation",
+  "navigationDifficultyDetail": "Straightforward established-trail navigation; the mapped route follows Ryan's recorded path around, beneath, and over Princess Arch.",
+  "lastPersonallyTraveled": "2026-05-31",
+  "lastInformationReview": "2026-09-28",
+  "accessParking": "Chimney Top Road / Forest Road 10 access. Ryan reports the road is closed at the gate in winter. USDA Forest Service winter-road guidance confirms seasonal winter motorized closure; visitors must check current Daniel Boone National Forest alerts, road conditions, and gate/access status before departure.",
+  "hazards": [
+    "Cliff/drop-off exposure exists around Princess Arch and the ridge.",
+    "Ordinary care is especially important with children."
+  ],
+  "waterCamping": [
+    "No water source is documented along this short day hike.",
+    "This is a short day hike; current Red River Gorge camping and vehicle rules and land-manager guidance control."
+  ],
+  "landAccessReview": "Daniel Boone National Forest / Red River Gorge Geological Area. Princess Arch Trail #233 is an established Forest Service trail. Current Forest Service alerts and road/gate status control access.",
+  "publicWaypoints": [
+    {
+      "waypointId": "WP-0003",
+      "name": "Princess Arch",
+      "type": "Landmark",
+      "lat": 37.82733,
+      "lon": -83.61963,
+      "description": "Princess Arch landmark along the route."
+    }
+  ],
+  "relatedContent": [],
+  "approvedPublicationGpx": {
+    "filename": "Princess_Arch_APPROVED_v1.gpx",
+    "publicDownload": false,
+    "version": "1",
+    "sha256": "b2ed32a8d3648b895b4a290d3c1e5399dea2e3ce44258b301a43cb46a492cfe3",
+    "trackPointCount": 82,
+    "waypointCount": 1
+  },
+  "webGeometry": {
+    "filename": "princess-arch-v1.geojson",
+    "publicPath": "/data/routes/princess-arch-v1.geojson",
+    "version": "1",
+    "sha256": "ced314bb34392750b0f823c9a11bc95a48e6fa52c59830d4ee83619f615d6602"
+  },
+  "elevation": {
+    "publicPath": "/data/routes/princess-arch.elevation.json",
+    "sourceId": "usgs-3dep-bare-earth-dem",
+    "sampleCount": 100,
+    "method": "Sample the public WGS84 route LineString at 100 evenly distributed points through USGS 3DEP getSamples using bilinear interpolation; convert meters to feet; compute cumulative horizontal distance; derive min/max/ascent/descent from the sampled series without altering the horizontal route geometry.",
+    "generatedAtBuild": true
+  },
+  "landManagerResources": [
+    {
+      "label": "Daniel Boone National Forest alerts & closures",
+      "href": "https://www.fs.usda.gov/r08/danielboone/alerts"
+    },
+    {
+      "label": "Red River Gorge / Indian Creek winter road closures",
+      "href": "https://www.fs.usda.gov/r08/danielboone/alerts/red-river-gorge-indian-creek-winter-road-closures"
+    },
+    {
+      "label": "Red River Gorge visitor/rules pamphlet",
+      "href": "https://www.fs.usda.gov/Internet/FSE_DOCUMENTS/stelprdb5276793.pdf"
+    }
+  ],
+  "sourceDependencyIds": [
+    "LEG-DEC-0028",
+    "USDA Forest Service Princess Arch Trail #233",
+    "USDA Forest Service Forest Road 10 / Chimney Top Road winter access guidance",
+    "USGS 3DEP Bare Earth DEM — 3DEPElevation ImageServer"
+  ]
+}

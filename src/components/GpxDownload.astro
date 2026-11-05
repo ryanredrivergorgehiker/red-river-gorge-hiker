@@ -1,0 +1,14 @@
+---
+interface Props {
+  href: string;
+  filename: string;
+}
+const { href, filename } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+<section class="gpx-download" aria-labelledby="gpx-download-heading">
+  <h2 id="gpx-download-heading">Download GPX</h2>
+  <p class="gpx-acknowledgment">By downloading this GPX file, you acknowledge that it is historical/informational route data rather than live navigation or an access/safety guarantee, and that conditions, closures, boundaries, and rules may have changed. You agree to the GPX personal-use license and the site Terms. You remain responsible for current access verification, navigation, preparation, and your decision whether or how to travel.</p>
+  <p><a class="route-action" href={href} download={filename}>Download GPX</a></p>
+  <p class="route-small">Personal, noncommercial use only under the <a href={`${base}copyright-and-terms/#gpx-download-license`}>GPX Download License and site Terms</a>.</p>
+</section>

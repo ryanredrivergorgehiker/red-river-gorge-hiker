@@ -1,0 +1,24 @@
+name: Audit Kentucky recreational trails at Apple reference
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging/routes-tracks-interactive-map
+    paths:
+      - 'scripts/audit_ky_recreational_trails.py'
+      - '.github/workflows/audit-ky-recreational-trails.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Query public Kentucky recreational trail layers
+        run: python scripts/audit_ky_recreational_trails.py
