@@ -1,0 +1,26 @@
+name: Lane20 isolated cross-wave overview exact-repository tests
+on:
+  push:
+    branches:
+      - lane20/cross-wave-overview-exact-ci-20261105
+    paths:
+      - .github/workflows/lane20-cross-wave-overview-exact-ci.yml
+      - backend/scripts/rrgh_cross_wave_overview_eligibility.py
+      - backend/scripts/rrgh_verified_tile_catalog.py
+      - backend/scripts/test_rrgh_cross_wave_overview_eligibility.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  exact-repository-synthetic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run unchanged cross-wave tests against full checkout
+        run: python -m unittest discover -s backend/scripts -p test_rrgh_cross_wave_overview_eligibility.py -v
