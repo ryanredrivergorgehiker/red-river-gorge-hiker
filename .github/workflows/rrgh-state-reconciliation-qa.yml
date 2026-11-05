@@ -1,7 +1,7 @@
-name: RRGH log read and in-run handoff offline QA
+name: RRGH published successor recovery offline QA
 on:
   push:
-    branches: [lane20/log-read-inrun-handoff-20261104]
+    branches: [lane20/published-successor-recovery-20261105]
 permissions:
   contents: read
 env:
@@ -16,8 +16,14 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 5a84c6d9d2fd80a78b45acb28154924393839116
+          ref: 5c010d4e7198f37f91523c3a64c64c0098310f85
           path: source-checkout
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: f3210c84ef5c41ec8a7775ba6f64543b5a48568c
+          path: published-checkout
+          fetch-depth: 2
           persist-credentials: false
       - uses: actions/setup-python@v6
         with:
@@ -31,7 +37,10 @@ jobs:
           python -m unittest discover -s .github/automation -p test_rrgh_pre_admission.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_active_run_inventory.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_log_reads.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
+      - name: Validate actual already-published source against the original independent recovery
+        run: python .github/automation/verify_rrgh_published_source.py source-checkout published-checkout .github/automation/fixtures/wave574-published.json
       - name: Exact current source to fresh successors with no credentials or Cloud writes
         run: python .github/automation/verify_rrgh_dispatch_roundtrip.py source-checkout
