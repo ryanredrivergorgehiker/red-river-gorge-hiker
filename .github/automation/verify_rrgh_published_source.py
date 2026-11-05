@@ -13,11 +13,12 @@ assert git(root,'rev-parse','HEAD')==state['sourceSHA']
 assert git(published,'rev-parse','HEAD')==fixture['publishedSourceSHA']
 assert git(published,'show','-s','--format=%P','HEAD').split()==[state['sourceSHA']]
 changed=git(published,'diff','--name-only','HEAD^','HEAD').splitlines()
-saved={}
+saved={};created_dirs=set()
 try:
     for name in changed:
         assert not name.startswith('/') and '..' not in name.split('/')
         target=root/name;saved[name]=target.read_bytes() if target.exists() else None
+        if not target.parent.exists():created_dirs.add(target.parent)
         target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(published/name,target)
     parent,plan_hash,plan,entries=d.candidate_entries(root,audit,state)
     assert parent==state['sourceSHA'] and plan_hash==fixture['publishedPlanSHA256']
@@ -34,3 +35,4 @@ finally:
     for name,raw in saved.items():
         if raw is None:(root/name).unlink()
         else:(root/name).write_bytes(raw)
+    for folder in sorted(created_dirs,key=lambda p:len(p.parts),reverse=True):folder.rmdir()

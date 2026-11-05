@@ -1,5 +1,7 @@
 """Inject split source/state publication failures; never access Cloud/network."""
 import copy
+import base64
+import hashlib
 import json
 import os
 import unittest
@@ -138,6 +140,43 @@ class PublishedTests(unittest.TestCase):
         self.api.value['status']='halted';self.api.call=original
         self.prepare();self.assertEqual(self.api.value['sequence'],388)
         self.assertTrue(all(c[0]!='PATCH' for c in self.api.calls))
+
+    def test_original_inrun_fallback_can_reconcile_published_source(self):
+        env={**ENV,'GITHUB_REF':'refs/heads/'+d.WORKER,'GITHUB_JOB':'resume-handoff',
+            'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_ACTOR':'github-actions[bot]',
+            'GITHUB_WORKFLOW_REF':d.REPO+'/.github/workflows/'+d.WORKFLOW+'@refs/heads/'+d.WORKER,
+            'GITHUB_RUN_ID':'387','RRGH_DISPATCH_ID':'c'*64}
+        original=self.api.call
+        def call(method,path,payload=None):
+            if path=='actions/runs/387':return {'status':'in_progress','conclusion':None}
+            if path=='actions/runs/387/jobs?per_page=100':return {'total_count':4,'jobs':[
+                {'name':name,'conclusion':result} for name,result in [('bounded-stage','success'),
+                ('independent-recovery','success'),('advance','failure'),('retain-failure','success')]]}
+            return original(method,path,payload)
+        self.api.call=call
+        with patch.dict(os.environ,env,clear=True):self.prepare()
+        self.assertEqual(self.api.value['sequence'],388);self.dispatch.assert_called_once()
+
+
+class ImmutableFileTests(unittest.TestCase):
+    def setUp(self):
+        self.api=d.GitHub('synthetic');self.raw=b'x'*1_050_000
+        self.sha=hashlib.sha1(b'blob '+str(len(self.raw)).encode()+b'\0'+self.raw).hexdigest()
+        self.obj={'encoding':'none','content':'','size':len(self.raw),'sha':self.sha}
+        self.blob={'encoding':'base64','sha':self.sha,'content':base64.b64encode(self.raw).decode()}
+    def test_large_plan_reads_exact_blob_with_size_and_git_hash(self):
+        with patch.object(self.api,'call',side_effect=[self.obj,self.blob]) as call:
+            obj,raw=self.api.file('backend/config/PLAN.json',ref='a'*40)
+        self.assertEqual(raw,self.raw);self.assertEqual(obj,self.obj)
+        self.assertEqual(call.call_args.args,('GET','git/blobs/'+self.sha))
+    def test_mismatched_blob_is_not_accepted(self):
+        for key,value in [('sha','0'*40),('encoding','none'),('content','eA==')]:
+            with patch.object(self.api,'call',side_effect=[self.obj,{**self.blob,key:value}]):
+                with self.assertRaises(d.Halt):self.api.file('PLAN.json',ref='a'*40)
+    def test_oversize_file_stops_before_blob_read(self):
+        with patch.object(self.api,'call',return_value={**self.obj,'size':2_000_001}) as call:
+            with self.assertRaises(d.Halt):self.api.file('PLAN.json',ref='a'*40)
+        self.assertEqual(call.call_count,1)
 
 
 if __name__=='__main__':unittest.main()

@@ -95,6 +95,20 @@ class GitHub:
         return json.loads(body) if body else {}
     def file(self,path,ref=WORKER):
         obj=self.call('GET','contents/'+path+'?ref='+quote(ref,safe=''))
+        if obj.get('encoding')=='none':
+            # Growing immutable plans can exceed the Contents API inline limit.
+            # Fetch only its exact bounded blob; never follow a mutable raw URL.
+            guard(type(obj.get('size')) is int and 0<obj['size']<=2_000_000 and
+                  re.fullmatch('[0-9a-f]{40}',obj.get('sha','')) is not None,
+                  'Non-inline GitHub file exceeds supported source bounds')
+            blob=self.call('GET','git/blobs/'+obj['sha'])
+            guard(blob.get('sha')==obj['sha'] and blob.get('encoding')=='base64',
+                  'GitHub blob identity or encoding changed')
+            raw=base64.b64decode(blob['content'])
+            guard(len(raw)==obj['size'] and
+                hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==obj['sha'],
+                'GitHub blob size or hash mismatch')
+            return obj,raw
         return obj,base64.b64decode(obj['content'])
     def state(self):
         blob,raw=self.file(STATE);return blob['sha'],json.loads(raw)
