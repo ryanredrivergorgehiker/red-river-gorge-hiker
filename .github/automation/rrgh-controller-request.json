@@ -1,16 +1,22 @@
 {
-  "action": "resume-recovered",
+  "action": "resume-published",
   "authorizedBy": "ryanredrivergorgehiker",
-  "date": "2026-11-04",
-  "original_run": 41903329869,
-  "source_sha": "5a84c6d9d2fd80a78b45acb28154924393839116",
-  "plan_sha256": "f721777ac1192403fc17822cfb5faadc576a9530925596f81e28afa5ade4df36",
-  "dispatch_id": "279ea5e62d073cb84981e36b0106c28aa791c9634b36866b8a95f5d6b88f2ae3",
-  "recovery_receipt": {
-    "bytes": 1502,
-    "generation": "1793823056126054",
-    "key": "engineering/map-production/plans/f721777ac1192403fc17822cfb5faadc576a9530925596f81e28afa5ade4df36/slots/00002/receipt.json",
-    "sha256": "e836cd90717b49f4001037410dc79b412845e172bed0bb9f961f826f06de68d7"
+  "date": "2026-11-05",
+  "original_run": 42060930511,
+  "source_sha": "5c010d4e7198f37f91523c3a64c64c0098310f85",
+  "plan_sha256": "9bd2ea1e743389ebb17d88aff771b4239535c10280ce95b669c11bb21e919b34",
+  "dispatch_id": "c2f98472c2f4f60fd0ef9b7ac27e39102c04bdf9479c25df2c7f56d8a2c59410",
+  "published_successor": {
+    "sourceSHA": "f3210c84ef5c41ec8a7775ba6f64543b5a48568c",
+    "planSHA256": "7fc52000425ba23cc39681e39a6ed033c2a488f4602a82cdc29c1c1890e2258e",
+    "sequence": 575,
+    "planPath": "backend/config/gorge-campaign-wave-575-20261102/PLAN.json"
   },
-  "reason": "Resume exact independently verified399 after log-service HTTP503; reviewed log retries/in-run fallback deployed; no consumed-slot replay"
+  "recovery_receipt": {
+    "bytes": 1496,
+    "generation": "1793894933805410",
+    "key": "engineering/map-production/plans/9bd2ea1e743389ebb17d88aff771b4239535c10280ce95b669c11bb21e919b34/slots/00002/receipt.json",
+    "sha256": "c7c543d27dd9d3d2ea846d81b308df39b9f40893c7c9eee732f29088a13b48cd"
+  },
+  "reason": "Reconcile exact independently verified574 with validated already-published575 after final state write failed; preserve all accepted history and consumed slots"
 }
