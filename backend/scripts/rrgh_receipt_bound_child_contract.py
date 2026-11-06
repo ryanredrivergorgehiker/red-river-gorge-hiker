@@ -8,7 +8,7 @@ import re
 from rrgh_verified_tile_catalog import ref, require
 from rrgh_protected_cross_wave_reader import checked_child
 
-_PLAN = re.compile(r"engineering/map-production/plans/([0-9a-f]{64})/slots/00001/jobs/([^/]+)\\.json\\Z")
+_PLAN = re.compile(r"engineering/map-production/plans/([0-9a-f]{64})/slots/00001/jobs/([^/]+)\.json\Z")
 
 
 def checked_catalog_child(catalog, tile, read_generation, maximum_object_bytes=256000000):
