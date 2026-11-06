@@ -8,6 +8,8 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -79,6 +81,20 @@ def result_fixture(m):
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_receipt_audit_in_isolated_controller_without_source_imports(self):
+        (m,p),f=original_fixture();r=result_fixture(m)
+        code='''import importlib.util,json,sys
+sys.path.insert(0,sys.argv[1])
+assert importlib.util.find_spec("gorge_checkpoint") is None
+import rrgh_checkpoint_recovery as c
+m,r,s=json.load(sys.stdin)
+a=c.validate_report(m,r,s)
+assert a["acceptedRasterTiles"]==183535 and a["acceptedJobs"]==17895
+assert "rrgh_campaign_budget_v2" not in sys.modules
+'''
+        result=subprocess.run([sys.executable,'-I','-c',code,str(Path(__file__).resolve().parent)],
+            input=json.dumps([m,r,{**f['state'],'runID':999}]),text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stderr)
     def test_actual_613_log_establishes_ten_checkpoints_not_accepted_output(self):
         (m,p),f=original_fixture()
         self.assertEqual((m['jobs'],m['tiles'],len(m['uncertainJobIDs'])),(10,76,2))
