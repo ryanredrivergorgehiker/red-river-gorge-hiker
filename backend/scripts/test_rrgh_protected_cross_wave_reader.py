@@ -76,6 +76,29 @@ class ProtectedReadbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checked_child(tile, lambda *args: self.fail("unverified child triggered protected read"))
 
+    def test_plan_bound_child_rejects_foreign_receipt_without_read(self):
+        from rrgh_protected_cross_wave_reader import checked_plan_bound_child
+        plan = "a" * 64
+        tile = dict(job="hiking-1", checkpointObject=self.reference,
+                    checkpointOffset=2, bytes=4,
+                    sha256=hashlib.sha256(b"2345").hexdigest(),
+                    pixelReadbackVerified=True,
+                    jobReceipt=dict(self.reference, key="engineering/map-production/plans/" +
+                                    "b"*64 + "/slots/00001/jobs/hiking-1.json"))
+        with self.assertRaises(ValueError):
+            checked_plan_bound_child(tile, plan, lambda *args: self.fail("read"))
+
+    def test_plan_bound_child_accepts_structurally_bound_fake_reader(self):
+        from rrgh_protected_cross_wave_reader import checked_plan_bound_child
+        plan = "a" * 64
+        tile = dict(job="hiking-1", checkpointObject=self.reference,
+                    checkpointOffset=2, bytes=4,
+                    sha256=hashlib.sha256(b"2345").hexdigest(),
+                    pixelReadbackVerified=True,
+                    jobReceipt=dict(self.reference, key="engineering/map-production/plans/" +
+                                    plan + "/slots/00001/jobs/hiking-1.json"))
+        self.assertEqual(checked_plan_bound_child(tile, plan, self.reader), b"2345")
+
 
 if __name__ == "__main__":
     unittest.main()
