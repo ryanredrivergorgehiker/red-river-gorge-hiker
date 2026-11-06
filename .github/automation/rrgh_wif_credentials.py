@@ -4,6 +4,9 @@ Only known transport failures retry. Storage writes never retry here. No stale
 credential fallback, secret logging, identity expansion, or credential file.
 """
 import subprocess
+import json
+import re
+import sys
 import threading
 import time
 
@@ -18,7 +21,7 @@ def transient(stderr):
     if any(x in text for x in ('permission_denied', 'access_denied', 'invalid_grant',
                                'invalid_target', 'unauthorized', 'forbidden')):
         return False
-    return any(x in text for x in ('connection reset', 'connection aborted',
+    return bool(re.search(r'(?:http|status(?: code)?)[ :=]*(?:408|429|500|502|503|504)\b',text)) or any(x in text for x in ('connection reset', 'connection aborted',
         'connectionerror', 'read timed out', 'connecttimeout', 'readtimeout',
         'temporary failure in name resolution', 'remote end closed connection',
         'temporarily unavailable', 'service unavailable', 'bad gateway',
@@ -45,6 +48,9 @@ def token():
                 if retryable: category = 'transport'
             except subprocess.TimeoutExpired:
                 retryable, category = True, 'timeout'
+            # Only fixed categories are emitted; never stderr, stdout, URLs or tokens.
+            print('WIF_REFRESH_FAILURE '+json.dumps({'attempt':attempt+1,'category':category,
+                'retryable':retryable,'storageRequestStarted':False},sort_keys=True),file=sys.stderr,flush=True)
             if not retryable or attempt == 2:
                 raise RuntimeError('Short-lived WIF refresh failed: '+category) from None
             time.sleep(attempt + 1)

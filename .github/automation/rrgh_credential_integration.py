@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 TARGET='backend/scripts/run_gorge_checkpoint_slot.py'
 MODULE='rrgh_wif_credentials.py'
+PREVIOUS_MODULE_SHA256='8ab59ae0c3b7400a75bbdffabaf74a049273f2c611a8cf32a02f7206c32439d1'
 BASE='2600cab47124a977ec97163393f06c55a81fdadf16da231669ceb7e685bae730'
 START='# Direct WIF access-token lifetime'
 END='\n\ndef execute('
@@ -30,7 +31,7 @@ def install(root):
     code=augment(path.read_text())
     template=(ROOT/'.github/automation'/MODULE).read_bytes()
     target=root/'backend/scripts'/MODULE
-    if target.exists() and target.read_bytes()!=template:raise ValueError('Credential module drift')
+    if target.exists():validate_module(target.read_bytes(),template)
     path.write_text(code);target.write_bytes(template)
 
 
@@ -39,3 +40,9 @@ def validate(root,original_code):
     if (root/TARGET).read_text()!=augment(original_code):raise ValueError('Credential migration changed')
     if (root/'backend/scripts'/MODULE).read_bytes()!=(ROOT/'.github/automation'/MODULE).read_bytes():
         raise ValueError('Credential module is not reviewed template')
+
+
+def validate_module(before,after):
+    expected=(ROOT/'.github/automation'/MODULE).read_bytes()
+    if after!=expected or (before!=after and hashlib.sha256(before).hexdigest()!=PREVIOUS_MODULE_SHA256):
+        raise ValueError('Unreviewed credential module migration')

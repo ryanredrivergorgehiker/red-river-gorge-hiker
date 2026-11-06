@@ -35,7 +35,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
-    'rrgh_wif_credentials.py','rrgh_credential_integration.py','wave105-salvage.json',
+    'rrgh_wif_credentials.py','rrgh_credential_integration.py','rrgh_checkpoint_recovery.py','wave105-salvage.json',
     'rrgh_completion_contract.py','rrgh_checkpoint_completion.py','rrgh_completion_audit.py','rrgh_completion_catalog.py','wave289-completion.json',
     'rrgh_cloud_render_trial.py','rrgh_render_pilot.py',
     'rrgh_batch_contract.py','rrgh_pair_cache.py','rrgh_pair_worker.py','rrgh_batch_integration.py',
@@ -229,7 +229,7 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
     guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
-          ('completion-ready',) if mode=='complete' else ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
+          ('checkpoint-recovery-ready',) if mode=='checkpoints' else ('completion-ready',) if mode=='complete' else ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -383,6 +383,9 @@ def audit_current(api,root):
 
 
 def audit_state(api,root,state,allow_failed_controller=False):
+    if state.get('mode')=='checkpoints':
+        from rrgh_checkpoint_recovery import audit
+        return audit(api,state,allow_failed_controller=allow_failed_controller)
     if state.get('mode')=='complete':
         from rrgh_completion_audit import audit
         return audit(api,state)
@@ -569,6 +572,16 @@ def candidate_entries(source_root,audit,state):
           not set(jobs)&set(plan['completedJobIDs']) and
           all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs),'Replayed or malformed successor jobs')
     guard(len(plan['completedJobIDs'])==len(set(plan['completedJobIDs']))==audit['acceptedJobs'],'Accepted inventory mismatch')
+    previous_quarantine=prior['campaign'].get('checkpointRecoveryQuarantines',[])
+    if audit.get('checkpointRecovery'):
+        from rrgh_checkpoint_recovery import validate_planning
+        recovered=validate_planning(prior,audit)
+        guard(plan['completedJobIDs']==prior['completedJobIDs']+recovered['completedJobIDs'] and
+            all(plan['priorAttemptCounts'].get(j)==1 for j in prior['approvedJobIDs']),
+            'Checkpoint accepted prefix or consumed allocation lost')
+        previous_quarantine=previous_quarantine+recovered['uncertainJobIDs']
+    guard(plan['campaign'].get('checkpointRecoveryQuarantines',[])==previous_quarantine,
+          'Checkpoint quarantine lineage changed')
     from rrgh_recovery_catalog_integration import augment_campaign, TARGET as CATALOG_TARGET
     from rrgh_overview_integration import augment as augment_overview, MODULES as OVERVIEW_MODULES,validate_recovery
     validate_recovery(prior,audit)
@@ -595,6 +608,11 @@ def candidate_entries(source_root,audit,state):
     tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+cred_module],
         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
     if not tracked:allowed.add(cred_module)
+    else:
+        from rrgh_credential_integration import validate_module
+        before=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+cred_module])
+        after=(root/cred_module).read_bytes();validate_module(before,after)
+        if before!=after:allowed.add(cred_module)
     for module in OVERVIEW_MODULES:
         target='backend/scripts/'+module
         tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],
@@ -678,6 +696,8 @@ def settle_successor(api,root,old,state,audit,plan,source_sha,plan_hash,automati
         'tilesNew':audit.get('tilesNew'),'recoveryCycleSeconds':audit.get('recoveryCycleSeconds'),
         'cycleTilesPerSecond':audit.get('cycleTilesPerSecond')}
     if audit.get('batchClosure'):completed['batchClosure']=audit['batchClosure']
+    if state.get('mode')=='checkpoints':
+        completed['checkpointRecoveryOf']=state.pop('checkpointRecoveryOf')
     if state.get('mode')=='complete':
         completed['consumedRecoveryCompletionOf']=state.pop('completionOf')
         completed['completionSettlement']=audit['completionSettlement']

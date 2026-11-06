@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || inputs.mode == 'checkpoints' && 'checkpoints' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce, recover, inspect, salvage, complete]
+        options: [probe, produce, recover, inspect, salvage, complete, checkpoints]
         required: true
       source_sha:
         type: string
@@ -299,6 +299,42 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_checkpoint_salvage.py source-checkout
+  independent-checkpoints:
+    needs: admit
+    if: inputs.mode == 'checkpoints'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - run: python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Independently inspect and recover saved native checkpoints without source requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_checkpoint_recovery.py source-checkout
   independent-completion:
     needs: admit
     if: inputs.mode == 'complete'
@@ -336,10 +372,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_checkpoint_completion.py source-checkout
   advance:
-    needs: [admit, bounded-stage, independent-recovery, independent-salvage, independent-completion]
+    needs: [admit, bounded-stage, independent-recovery, independent-salvage, independent-completion, independent-checkpoints]
     if: >-
       always() && needs.admit.result == 'success' &&
-      ((inputs.mode == 'complete' && needs.independent-completion.result == 'success') ||
+      ((inputs.mode == 'checkpoints' && needs.independent-checkpoints.result == 'success') ||
+       (inputs.mode == 'complete' && needs.independent-completion.result == 'success') ||
        (inputs.mode == 'salvage' && needs.independent-salvage.result == 'success') ||
        (needs.independent-recovery.result == 'success' &&
         ((inputs.mode == 'produce' && needs.bounded-stage.result == 'success') || inputs.mode == 'recover')))
@@ -374,12 +411,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py publish --source source-checkout --audit "${{ runner.temp }}/recovery.json"
   retain-failure:
-    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, independent-completion, advance]
+    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, independent-completion, independent-checkpoints, advance]
     if: >-
       always() && needs.admit.result == 'success' &&
       (needs.authentication-probe.result == 'failure' || needs.activate.result == 'failure' ||
        needs.bounded-stage.result == 'failure' || needs.independent-recovery.result == 'failure' ||
-       needs.independent-salvage.result == 'failure' || needs.independent-completion.result == 'failure' || needs.advance.result == 'failure')
+       needs.independent-checkpoints.result == 'failure' || needs.independent-salvage.result == 'failure' || needs.independent-completion.result == 'failure' || needs.advance.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -395,11 +432,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py failed
   resume-handoff:
-    needs: [admit, bounded-stage, independent-recovery, advance, retain-failure]
+    needs: [admit, bounded-stage, independent-recovery, independent-checkpoints, advance, retain-failure]
     if: >-
-      always() && inputs.mode == 'produce' && needs.admit.result == 'success' &&
-      needs.bounded-stage.result == 'success' && needs.independent-recovery.result == 'success' &&
-      needs.advance.result == 'failure' && needs.retain-failure.result == 'success'
+      always() && needs.admit.result == 'success' && needs.retain-failure.result == 'success' &&
+      ((inputs.mode == 'produce' && needs.bounded-stage.result == 'success' &&
+        needs.independent-recovery.result == 'success' && needs.advance.result == 'failure') ||
+       (inputs.mode == 'produce' && needs.bounded-stage.result == 'failure' && needs.independent-recovery.result == 'skipped') ||
+       (inputs.mode == 'checkpoints' && needs.independent-checkpoints.result == 'success' && needs.advance.result == 'failure'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
