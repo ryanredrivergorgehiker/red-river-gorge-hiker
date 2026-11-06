@@ -46,6 +46,29 @@ class ProtectedReadbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checked_child(tile, self.reader)
 
+    def test_foreign_namespace_rejected_before_read(self):
+        foreign = dict(self.reference, key="public/tile.bin")
+        with self.assertRaises(ValueError):
+            checked_object(foreign, lambda *args: self.fail("reader called"), 100)
+
+    def test_missing_generation_rejected_before_read(self):
+        missing = dict(self.reference, generation="")
+        with self.assertRaises(ValueError):
+            checked_object(missing, lambda *args: self.fail("reader called"), 100)
+
+    def test_overlapping_child_boundary_rejected_before_read(self):
+        tile = dict(checkpointObject=self.reference, checkpointOffset=9, bytes=2,
+                    sha256=hashlib.sha256(b"9").hexdigest(),
+                    pixelReadbackVerified=True)
+        with self.assertRaises(ValueError):
+            checked_child(tile, lambda *args: self.fail("reader called"))
+
+    def test_catalog_pixel_flag_cannot_override_bad_child_hash(self):
+        tile = dict(checkpointObject=self.reference, checkpointOffset=2, bytes=4,
+                    sha256="0"*64, pixelReadbackVerified=True)
+        with self.assertRaises(ValueError):
+            checked_child(tile, self.reader)
+
 
 if __name__ == "__main__":
     unittest.main()
