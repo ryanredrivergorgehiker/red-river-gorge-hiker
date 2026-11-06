@@ -1,7 +1,7 @@
 name: RRGH checkpoint recovery offline QA
 on:
   push:
-    branches: [lane20/checkpoint-recovery-20261105]
+    branches: [lane20/checkpoint-recovery-20261105, lane20/checkpoint-audit-isolation-20261105]
 permissions:
   contents: read
 env:

@@ -219,8 +219,14 @@ def validate_report(m,report,state):
         ledger['demonstrablyUnused']=={k:0 for k in allocation} and
         ledger['ambiguousAllocationRetained'] is True and ledger['independentRecoveryComplete'] is False,
         'Entire failed-wave reservation must stay charged')
-    from rrgh_campaign_budget_v2 import cost
-    expected=dict(m['priorCarry'],chargedUSD=str(Decimal(m['priorCarry']['chargedUSD'])+cost(allocation)),
+    # Audit runs without the source checkout on sys.path. Keep the approved
+    # four-rate reservation arithmetic independent of source/Cloud imports.
+    d.guard(all(type(v) is int and v>=0 for v in allocation.values()),'Invalid reservation units')
+    reserved=(Decimal(allocation['storedBytes'])/2**30*Decimal('.03')+
+        Decimal(allocation['egressBytes'])/2**30*Decimal('.23')+
+        Decimal(allocation['classARequests'])/1000*Decimal('.01')+
+        Decimal(allocation['classBRequests'])/1000*Decimal('.001'))*Decimal('1.2')
+    expected=dict(m['priorCarry'],chargedUSD=str(Decimal(m['priorCarry']['chargedUSD'])+reserved),
         storedBytes=m['priorCarry']['storedBytes']+allocation['storedBytes'],
         priorCompletedJobs=m['priorCarry']['priorCompletedJobs']+m['jobs'],
         priorRasterTiles=m['priorCarry']['priorRasterTiles']+m['tiles'])
