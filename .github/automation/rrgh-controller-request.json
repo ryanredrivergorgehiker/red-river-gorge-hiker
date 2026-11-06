@@ -1,22 +1,10 @@
 {
-  "action": "resume-published",
+  "action": "recover-checkpoints",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-05",
-  "original_run": 42060930511,
-  "source_sha": "5c010d4e7198f37f91523c3a64c64c0098310f85",
-  "plan_sha256": "9bd2ea1e743389ebb17d88aff771b4239535c10280ce95b669c11bb21e919b34",
-  "dispatch_id": "c2f98472c2f4f60fd0ef9b7ac27e39102c04bdf9479c25df2c7f56d8a2c59410",
-  "published_successor": {
-    "sourceSHA": "f3210c84ef5c41ec8a7775ba6f64543b5a48568c",
-    "planSHA256": "7fc52000425ba23cc39681e39a6ed033c2a488f4602a82cdc29c1c1890e2258e",
-    "sequence": 575,
-    "planPath": "backend/config/gorge-campaign-wave-575-20261102/PLAN.json"
-  },
-  "recovery_receipt": {
-    "bytes": 1496,
-    "generation": "1793894933805410",
-    "key": "engineering/map-production/plans/9bd2ea1e743389ebb17d88aff771b4239535c10280ce95b669c11bb21e919b34/slots/00002/receipt.json",
-    "sha256": "c7c543d27dd9d3d2ea846d81b308df39b9f40893c7c9eee732f29088a13b48cd"
-  },
-  "reason": "Reconcile exact independently verified574 with validated already-published575 after final state write failed; preserve all accepted history and consumed slots"
+  "original_run": 42117136683,
+  "source_sha": "eecdc4a33eea60de48bd7715eace96b155c4285f",
+  "plan_sha256": "46d697b54d7990b85ad800e2981d300c5743fd42dab8e1fc85e653d8b75f7028",
+  "dispatch_id": "246a011788926302b14c3fb7076e2845b12c9953f4cebcb82f65556aa77cfcc9",
+  "reason": "Owner-authorized repair of wave613 credential interruption; inspect saved receipts and prove slot2 unused before independent recovery; preserve consumed work and full failed-wave allocation"
 }
