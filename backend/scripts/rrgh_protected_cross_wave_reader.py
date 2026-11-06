@@ -38,10 +38,10 @@ def checked_child(tile, read_generation, maximum_object_bytes=256000000):
     require(type(offset) is int and offset >= 0 and type(size) is int
             and 0 < size <= 512 * 1024 and offset + size <= object_ref["bytes"],
             "Invalid checkpoint child byte range")
+    require(tile.get("pixelReadbackVerified") is True,
+            "Catalog independent pixel verification missing")
     raw = checked_object(object_ref, read_generation, maximum_object_bytes)
     child = raw[offset:offset + size]
     require(hashlib.sha256(child).hexdigest() == tile["sha256"],
             "Independent child hash mismatch")
-    require(tile.get("pixelReadbackVerified") is True,
-            "Catalog independent pixel verification missing")
     return child
