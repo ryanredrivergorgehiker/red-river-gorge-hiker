@@ -232,4 +232,43 @@ class CredentialDiagnosticsTests(unittest.TestCase):
         with self.assertRaises(ValueError):ci.validate_module(current,current+b'\n')
 
 
+class IndependentAuditTests(unittest.TestCase):
+    def prepared(self):
+        (m,p),f=original_fixture();rid=999999
+        state={**f['state'],'runID':rid,'mode':'checkpoints','dispatchID':'f'*64,
+            'checkpointRecoveryPolicy':c.POLICY,'checkpointRecoveryOf':{'manifestSHA256':d.digest(d.canonical(m))}}
+        run={**f['run'],'id':rid,'status':'in_progress','conclusion':None,
+            'display_title':'RRGH checkpoints 613 '+state['dispatchID']}
+        jobs=[dict(id=i,name=n,status='completed',conclusion=v) for i,(n,v) in enumerate([
+            ('admit','success'),('independent-checkpoints','success'),('bounded-stage','skipped'),
+            ('independent-recovery','skipped'),('independent-salvage','skipped'),('independent-completion','skipped')])]
+        result=result_fixture(m)
+        class API:
+            token='synthetic'
+            def call(self,method,path):return {'total_count':len(jobs),'jobs':jobs} if '/jobs?' in path else run
+        return API(),state,run,jobs,result,m,p
+    def evaluate(self,f,allow=False):
+        api,state,run,jobs,result,m,p=f
+        with patch.object(c,'original',return_value=(m,p)),patch('rrgh_dispatch_audit.gh',return_value=json.dumps(result)):
+            return c.audit(api,state,allow_failed_controller=allow)
+    def test_independent_run_is_required_and_returns_exact_inclusive_receipt(self):
+        result=self.evaluate(self.prepared())
+        self.assertEqual(result['acceptedRasterTiles'],183535)
+        self.assertEqual(result['recoveryRunID'],999999)
+    def test_failed_verification_and_wrong_run_cannot_be_published(self):
+        for fault in ('verification','producer','actor','rerun','manifest','title'):
+            f=self.prepared();api,state,run,jobs,result,m,p=f
+            if fault=='verification':jobs[1]['conclusion']='failure'
+            elif fault=='producer':jobs[2]['conclusion']='success'
+            elif fault=='actor':run['actor']={'login':'other'}
+            elif fault=='rerun':run['run_attempt']=2
+            elif fault=='manifest':state['checkpointRecoveryOf']['manifestSHA256']='0'*64
+            else:run['display_title']='other'
+            with self.subTest(fault=fault),self.assertRaises(d.Halt):self.evaluate(f)
+    def test_verified_recovery_allows_receipt_only_handoff_after_controller_failure(self):
+        f=self.prepared();f[2].update(status='completed',conclusion='failure')
+        with self.assertRaises(d.Halt):self.evaluate(f)
+        self.assertEqual(self.evaluate(f,allow=True)['jobsNew'],10)
+
+
 if __name__=='__main__':unittest.main()

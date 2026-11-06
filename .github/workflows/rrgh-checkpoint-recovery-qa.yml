@@ -6,6 +6,7 @@ permissions:
   contents: read
 env:
   PYTHONDONTWRITEBYTECODE: '1'
+  RRGH_TEST_SOURCE: source-checkout
 jobs:
   offline-qa:
     runs-on: ubuntu-latest
