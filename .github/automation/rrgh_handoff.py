@@ -70,7 +70,7 @@ def evidence(api,root,state,published_source=None):
 def reconcile_publication(api,root,old,state):
     """Settle only an exact, pre-recorded publication. No source mutation."""
     policy(state)
-    d.guard(state.get('enabled') is True and state.get('mode')=='produce' and
+    d.guard(state.get('enabled') is True and state.get('mode') in ('produce','checkpoints') and
         state.get('status') in ('halted','publishing'),'Published recovery is not eligible')
     marker=state.get('publicationOf') or {};successor=marker.get('successor') or {}
     d.guard(all(marker.get(k)==state.get(k) for k in PINS) and
@@ -133,10 +133,17 @@ def prepare(api,root):
             'Ready successor lacks exact settled recovery')
         d.dispatch(api,root,old,state,'produce',allowed_run=previous['runID'])
         return {'active':False,'reason':'fresh successor dispatched'}
-    if state.get('publicationOf') and state.get('status') in ('halted','publishing') and state.get('mode')=='produce':
+    if state.get('publicationOf') and state.get('status') in ('halted','publishing') and state.get('mode') in ('produce','checkpoints'):
         return reconcile_publication(api,root,old,state)
-    if state.get('status') not in ('halted','handoff-pending') or state.get('mode')!='produce':
+    if state.get('status') not in ('halted','handoff-pending') or state.get('mode') not in ('produce','checkpoints'):
         return {'active':False,'reason':'no eligible handoff'}
+    if state.get('status')=='halted' and state.get('mode')=='produce' and state.get('checkpointRecoveryPolicy'):
+        jobs=api.call('GET','actions/runs/'+str(state['runID'])+'/jobs?per_page=100')
+        d.guard(jobs.get('total_count')==len(jobs.get('jobs',[]))<=100,'Incomplete recovery decision inventory')
+        producers=[j for j in jobs['jobs'] if j.get('name')=='bounded-stage']
+        if len(producers)==1 and producers[0].get('conclusion')=='failure':
+            from rrgh_checkpoint_recovery import arm
+            return {'active':False,'checkpointRecovery':arm(api,root,automatic=True)}
     d.guard(not state.get('publicationOf'),'Source publication is unresolved; manual reconciliation required')
     pending=state.get('handoffPending')
     if pending:
@@ -161,7 +168,7 @@ def audit_pending(api,root):
     caller();_,state=api.state();d.validate_state(state,root);policy(state)
     pending=state.get('handoffPending',{})
     d.guard(state.get('enabled') is True and state.get('status')=='handoff-pending' and
-        state.get('mode')=='produce' and not state.get('publicationOf') and
+        state.get('mode') in ('produce','checkpoints') and not state.get('publicationOf') and
         str(pending.get('reconcilerRunID'))==os.environ['GITHUB_RUN_ID'] and
         all(pending.get(k)==state.get(k) for k in PINS),'Automatic handoff no longer owns exact recovery')
     report=evidence(api,root,state)
@@ -184,13 +191,16 @@ def release(api,root):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('command',choices=['prepare','publish','release','resume-published'])
+    p=argparse.ArgumentParser();p.add_argument('command',choices=['prepare','publish','release','resume-published','recover-checkpoints'])
     p.add_argument('--root',type=Path,default=Path('.'));p.add_argument('--source',type=Path)
     p.add_argument('--audit',type=Path);a=p.parse_args()
-    if a.command=='resume-published':d.caller('launch')
+    if a.command in ('resume-published','recover-checkpoints'):d.caller('launch')
     else:caller()
     api=d.GitHub(os.environ.get('GH_TOKEN',''))
-    if a.command=='resume-published':
+    if a.command=='recover-checkpoints':
+        from rrgh_checkpoint_recovery import arm
+        result=arm(api,a.root)
+    elif a.command=='resume-published':
         old,state=api.state();d.validate_state(state,a.root)
         result=reconcile_publication(api,a.root,old,state)
     elif a.command=='prepare':

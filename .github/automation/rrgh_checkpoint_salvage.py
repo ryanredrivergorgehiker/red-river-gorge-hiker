@@ -57,7 +57,7 @@ def merge_pins(database,records,region):
                 allPriorPinsPreserved=True,derivation='prior-independent-ledger-plus-exact-job-source-evidence')
 
 
-def run(source_root):
+def run(source_root,reviewed=None):
     source=Path(source_root).resolve();sys.path.insert(0,str(source/'backend/scripts'))
     from gorge_campaign import configuration,load_large,save_large,check_states,state_snapshot,assemble,emit
     from gorge_checkpoint import GCS,Slot,Ref,canonical,digest,decode_record,MAX_METADATA
@@ -66,17 +66,22 @@ def run(source_root):
     from gorge_second_stage import record,recover_catalogs
     from gorge_producer_identity import require_owner
     from rrgh_wif_credentials import token
-    m=json.loads(MANIFEST.read_bytes());plan,evidence,region=configuration()
+    m=json.loads(MANIFEST.read_bytes()) if reviewed is None else reviewed
+    plan,evidence,region=configuration()
     require(digest(canonical(plan))==m['planSHA256']==os.environ['RRGH_PLAN_SHA256'] and
             os.environ['RRGH_SOURCE_SHA']==m['sourceSHA'] and
             plan['campaign']['sequence']==m['sequence'] and plan['campaign']['carry']==m['priorCarry'],
             'Exact reviewed salvage source changed')
     require(plan['approvedJobIDs']==m['completedJobIDs']+m['uncertainJobIDs'] and
-            len(m['completedJobIDs'])==7 and len(m['uncertainJobIDs'])==2,'Salvage subset changed')
+            ((len(m['completedJobIDs'])==7 and len(m['uncertainJobIDs'])==2) if reviewed is None else
+             (m.get('format')=='bounded-native-checkpoint-recovery-v1' and
+              0<len(m['completedJobIDs'])<=len(plan['approvedJobIDs'])<=12 and
+              plan.get('resumableBatch') is None and plan.get('overviewPilot') is None)), 'Salvage subset changed')
     require_owner(plan,'recovery')
     root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener)
     slot=Slot(store,plan,2,os.environ['GITHUB_RUN_ID']);opener.deadline=slot.meter.deadline
     try:
+        if reviewed is not None:slot.meter.reserve(**m['inspectionUsage'])
         # Read-after-inspection: late receipts are not silently overlooked.
         missing=[slot.prefix+'slots/00001/receipt.json']+[
             slot.prefix+'slots/00001/jobs/'+j+'.json' for j in m['uncertainJobIDs']]
@@ -106,8 +111,9 @@ def run(source_root):
         require(qa['jobs']==m['jobs'] and qa['files']==m['tiles'] and qa['adjacentEdgesMeasured']>0,
                 'Independent full-quality subset verification failed')
         previous=record(slot,plan['campaign']['previousRecovery'])['result']
-        require(previous['status']=='verified' and previous['nextCarry']==plan['campaign']['carry'] and
-                previous['settlement']['sequence']==104,'Accepted predecessor changed')
+        require((previous['status']=='verified' or (reviewed is not None and previous['status']=='partial-verified' and
+                previous['settlement']['ambiguousAllocationRetained'] is True)) and previous['nextCarry']==plan['campaign']['carry'] and
+                previous['settlement']['sequence']==(104 if reviewed is None else m['sequence']-1),'Accepted predecessor changed')
         prior_detail=load_large(slot,previous['detailRef'])
         prior_states=load_large(slot,prior_detail['stateRef'])
         prior_root=root/'prior-state';prior_root.mkdir();check_states(prior_states,prior_root)
@@ -138,7 +144,7 @@ def run(source_root):
         carry=dict(chargedUSD=ledger['chargedUSD'],storedBytes=ledger['storedBytes'],
             priorCompletedJobs=plan['campaign']['carry']['priorCompletedJobs']+qa['jobs'],
             priorRasterTiles=plan['campaign']['carry']['priorRasterTiles']+qa['files'],priorSunlightAssets=320)
-        result=dict(status='partial-verified',salvage='wave105-missing-producer-closure-v1',
+        result=dict(status='partial-verified',salvage=('wave105-missing-producer-closure-v1' if reviewed is None else m['format']),
             originalProducerRunID=m['originalRunID'],producerClaim=m['producerClaim'],workerReceipt=None,
             completedJobRefs=m['completedJobRefs'],completedJobIDs=m['completedJobIDs'],uncertainJobIDs=m['uncertainJobIDs'],
             jobs=qa['jobs'],tiles=qa['files'],outputBytes=qa['bytes'],qaRef=qaref,detailRef=detailref,

@@ -41,11 +41,14 @@ def inspect(source_root):
     keys=[base+f'slots/{slot:05d}/{name}.json' for slot in range(3) for name in ('claim','receipt')]
     keys += [base+'slots/00001/jobs/'+job+'.json' for job in plan['approvedJobIDs']]
     if len(keys)>32:raise ValueError('Inspection is limited to 32 exact known objects')
-    access=credential();opener=build_opener(NoRedirect);total=0;rows=[]
+    from rrgh_wif_credentials import token
+    access=token();opener=build_opener(NoRedirect);total=0;requests=0;rows=[]
     for key in keys:
         url='https://storage.googleapis.com/storage/v1/b/'+plan['bucket']+'/o/'+quote(key,safe='')
         def get(query,maximum):
-            nonlocal total
+            nonlocal total,requests
+            requests+=1
+            if requests>64:raise ValueError('Inspection request bound')
             req=Request(url+'?'+query,headers={'Authorization':'Bearer '+access,'Accept-Encoding':'identity'})
             with opener.open(req,timeout=30) as response:
                 raw=response.read(maximum+1)
@@ -65,6 +68,6 @@ def inspect(source_root):
         if obj.get('planSHA256')!=sha:raise ValueError('Inspection object belongs to another plan')
         rows.append(dict(key=key,exists=True,ref=dict(key=key,generation=generation,bytes=size,sha256=hashlib.sha256(raw).hexdigest()),record=obj))
     return dict(phase='checkpoint-inspection',planSHA256=sha,sequence=plan['campaign']['sequence'],
-        cloudWrites=0,sourceRequests=0,readResponseBytes=total,objects=rows,productionAccepted=False)
+        cloudWrites=0,sourceRequests=0,readResponseBytes=total,readRequests=requests,objects=rows,productionAccepted=False)
 
 if __name__=='__main__':print(json.dumps(inspect(Path(sys.argv[1])),sort_keys=True))

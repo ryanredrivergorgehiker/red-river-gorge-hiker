@@ -99,6 +99,13 @@ def prepare(root, verified):
               "/slots/00002/receipt.json", "Previous receipt key mismatch")
     check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
 
+    checkpoint=verified.get('checkpointRecovery') is not None
+    prior_checkpoint=old['campaign'].get('checkpointRecoveryQuarantines',[])
+    check(isinstance(prior_checkpoint,list) and len(prior_checkpoint)==len(set(prior_checkpoint)), 'Checkpoint quarantine duplicated')
+    recovered_checkpoint=None
+    if checkpoint:
+        from rrgh_checkpoint_recovery import validate_planning
+        recovered_checkpoint=validate_planning(old,verified)
     partial = verified.get("partialRecovered") is True
     pixel_gaps = verified.get("sourcePixelGapJobs", [])
     check(isinstance(pixel_gaps, list) and len(set(pixel_gaps)) == len(pixel_gaps),
@@ -117,7 +124,11 @@ def prepare(root, verified):
     batch=old.get('resumableBatch') is not None
     prior_batch=old['campaign'].get('batchQuarantines',[])
     batch_quarantines=[]
-    if batch:
+    if checkpoint:
+        check(not batch and not partial and not salvage and not pixel_gaps,'Checkpoint recovery mixed with another exception')
+        accepted=old['completedJobIDs']+recovered_checkpoint['completedJobIDs']
+        attempted=old['approvedJobIDs']
+    elif batch:
         check(not partial and not salvage, 'Batch closure cannot use historical incident exceptions')
         attempted,recovered,quarantined,untouched=batch_partition(old['approvedJobIDs'],verified.get('batchClosure'),prior_plan_sha)
         check(len(recovered)==verified['jobsNew'] and set(pixel_gaps)<=set(quarantined), 'Batch recovery inventory mismatch')
@@ -188,9 +199,10 @@ def prepare(root, verified):
     before_attempts = old["priorAttemptCounts"].copy()
     historical_excluded = {jid for jid, n in before_attempts.items()
                            if n > 0 and jid not in accepted}
-    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + (1 if wave > 260 else 0) + len(prior_pixel_gaps) + len(prior_salvage) + len(prior_batch)
+    inherited_exclusion_count = 45 + (1 if wave > 23 else 0) + (1 if wave > 34 else 0) + (1 if wave > 260 else 0) + len(prior_pixel_gaps) + len(prior_salvage) + len(prior_batch) + len(prior_checkpoint)
     check(len(historical_excluded) == inherited_exclusion_count and
           set(prior_pixel_gaps) <= historical_excluded and set(prior_batch) <= historical_excluded and
+          set(prior_checkpoint) <= historical_excluded and
           verified["historicalExclusions"] == 45,
           "Historical exclusions or incident quarantine changed")
     check(not set(accepted) & historical_excluded, "Accepted and excluded overlap")
@@ -201,7 +213,7 @@ def prepare(root, verified):
         check(before_attempts.get(jid, 0) == 0, "Previously attempted new job")
         before_attempts[jid] = 1
     excluded = {jid for jid, n in before_attempts.items() if n > 0 and jid not in accepted}
-    check(len(excluded) == inherited_exclusion_count + (len(m["uncertainJobIDs"]) if salvage else 1 if partial else 0) + len(pixel_gaps) + len(batch_quarantines) and
+    check(len(excluded) == inherited_exclusion_count + (len(m["uncertainJobIDs"]) if salvage else 1 if partial else 0) + len(pixel_gaps) + len(batch_quarantines) + (len(recovered_checkpoint['uncertainJobIDs']) if checkpoint else 0) and
           set(pixel_gaps) <= excluded and
           (not partial or salvage or verified["failedJobID"] in excluded),
           "Failed job must remain excluded from fresh territory")
@@ -324,6 +336,8 @@ def prepare(root, verified):
     plan = copy.deepcopy(old)
     plan['resumableBatch']=batch_policy
     plan['campaign']['batchQuarantines']=prior_batch+batch_quarantines
+    if checkpoint or prior_checkpoint:
+        plan['campaign']['checkpointRecoveryQuarantines']=prior_checkpoint+(recovered_checkpoint['uncertainJobIDs'] if checkpoint else [])
     plan["campaign"]["sequence"] = wave + 1
     plan["campaign"]["sourcePixelGapQuarantines"] = prior_pixel_gaps + pixel_gaps
     plan["campaign"]["checkpointSalvageQuarantines"] = prior_salvage + (m["uncertainJobIDs"] if salvage else [])

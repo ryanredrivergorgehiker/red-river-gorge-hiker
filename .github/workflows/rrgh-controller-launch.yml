@@ -31,9 +31,9 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered','resume-published','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted')
+          assert action in ('launch','resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted')
           source=request.get('source_sha','')
-          if action in ('resume-recovered','resume-published','recover-unstarted','inspect-halted','salvage-halted','complete-halted'):
+          if action in ('resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','complete-halted'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and state['status']=='halted'
@@ -54,6 +54,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_handoff.py resume-published
+      - name: Recover exact saved native checkpoints through the unused verification slot
+        if: steps.request.outputs.action == 'recover-checkpoints'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_handoff.py recover-checkpoints
       - name: Dispatch recovery only after proving its original execution never started
         if: steps.request.outputs.action == 'recover-unstarted'
         env:
