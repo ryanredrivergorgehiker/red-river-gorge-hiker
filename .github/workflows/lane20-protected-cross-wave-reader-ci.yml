@@ -1,0 +1,26 @@
+name: Lane20 protected cross-wave reader isolated tests
+on:
+  push:
+    branches:
+      - lane20/protected-cross-wave-reader-contract-20261105
+    paths:
+      - .github/workflows/lane20-protected-cross-wave-reader-ci.yml
+      - backend/scripts/rrgh_protected_cross_wave_reader.py
+      - backend/scripts/test_rrgh_protected_cross_wave_reader.py
+      - backend/scripts/rrgh_verified_tile_catalog.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protected-reader-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify isolated protected reader tests against exact checkout
+        run: python -m unittest discover -s backend/scripts -p test_rrgh_protected_cross_wave_reader.py -v
