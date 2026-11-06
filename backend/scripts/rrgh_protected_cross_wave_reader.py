@@ -45,3 +45,26 @@ def checked_child(tile, read_generation, maximum_object_bytes=256000000):
     require(hashlib.sha256(child).hexdigest() == tile["sha256"],
             "Independent child hash mismatch")
     return child
+
+
+def checked_plan_bound_child(tile, plan_sha256, read_generation,
+                             maximum_object_bytes=256000000):
+    """Fail closed on cross-plan catalog/job lineage before any protected read.
+
+    Structural binding only: the caller must independently authenticate the
+    catalog and receipt and supply an authenticated generation-pinned reader.
+    """
+    import re
+    require(type(plan_sha256) is str and re.fullmatch(r"[0-9a-f]{64}", plan_sha256),
+            "Exact immutable plan digest required")
+    require(type(tile) is dict and type(tile.get("job")) is str and
+            re.fullmatch(r"[A-Za-z0-9_-]{1,128}", tile["job"]),
+            "Exact catalog job identity required")
+    receipt = ref(tile["jobReceipt"])
+    obj = ref(tile["checkpointObject"])
+    prefix = "engineering/map-production/plans/" + plan_sha256 + "/"
+    require(receipt["key"] == prefix + "slots/00001/jobs/" + tile["job"] + ".json",
+            "Catalog job receipt does not belong to exact plan")
+    require(obj["key"].startswith(prefix + "slots/00001/"),
+            "Catalog child object does not belong to exact plan checkpoint")
+    return checked_child(tile, read_generation, maximum_object_bytes)
