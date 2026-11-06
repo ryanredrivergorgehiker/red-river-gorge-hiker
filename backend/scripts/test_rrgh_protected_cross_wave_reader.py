@@ -69,6 +69,13 @@ class ProtectedReadbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checked_child(tile, self.reader)
 
+    def test_unverified_child_rejected_without_protected_read(self):
+        tile = dict(checkpointObject=self.reference, checkpointOffset=2, bytes=4,
+                    sha256=hashlib.sha256(b"2345").hexdigest(),
+                    pixelReadbackVerified=False)
+        with self.assertRaises(ValueError):
+            checked_child(tile, lambda *args: self.fail("unverified child triggered protected read"))
+
 
 if __name__ == "__main__":
     unittest.main()
