@@ -9,6 +9,8 @@ on:
       - backend/scripts/rrgh_generation_pinned_gcs_reader.py
       - backend/scripts/test_rrgh_protected_cross_wave_reader.py
       - backend/scripts/rrgh_verified_tile_catalog.py
+      - backend/scripts/rrgh_receipt_bound_protected_child.py
+      - backend/scripts/test_rrgh_receipt_bound_protected_child.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,4 +26,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Verify isolated protected reader tests against exact checkout
-        run: python -m unittest discover -s backend/scripts -p test_rrgh_protected_cross_wave_reader.py -v
+        run: |
+          python -m unittest discover -s backend/scripts -p test_rrgh_protected_cross_wave_reader.py -v
+          python -m unittest discover -s backend/scripts -p test_rrgh_receipt_bound_protected_child.py -v
