@@ -142,7 +142,7 @@ class GenerationPinnedAdapterTests(unittest.TestCase):
                 return Bucket()
         reader = generation_pinned_gcs_reader(Client(), "approved-private-bucket")
         with self.assertRaises(ValueError):
-            reader("engineering/map-production/plans/" + "a" * 64 + "/tile", "latest", 100)
+            reader("engineering/map-production/plans/" + "a" * 64 + "/slots/00001/objects/tile.bin", "latest", 100)
 
     def test_noncanonical_protected_keys_rejected_before_cloud_read(self):
         from rrgh_generation_pinned_gcs_reader import generation_pinned_gcs_reader
@@ -176,7 +176,7 @@ class GenerationPinnedAdapterTests(unittest.TestCase):
                 return Bucket()
         reader = generation_pinned_gcs_reader(Client(), "approved-private-bucket")
         with self.assertRaises(ValueError):
-            reader("engineering/map-production/plans/" + "a" * 64 + "/tile", "123", 10)
+            reader("engineering/map-production/plans/" + "a" * 64 + "/slots/00001/objects/tile.bin", "123", 10)
 
 
 if __name__ == "__main__":
