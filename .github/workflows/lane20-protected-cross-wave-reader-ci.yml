@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/lane20-protected-cross-wave-reader-ci.yml
       - backend/scripts/rrgh_protected_cross_wave_reader.py
+      - backend/scripts/rrgh_generation_pinned_gcs_reader.py
       - backend/scripts/test_rrgh_protected_cross_wave_reader.py
       - backend/scripts/rrgh_verified_tile_catalog.py
   workflow_dispatch:
