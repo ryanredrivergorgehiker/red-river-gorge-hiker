@@ -16,6 +16,7 @@ def checked_object(reference, read_generation, limit):
     generation, unauthenticated reads, redirects, and size-limit violations.
     """
     r = ref(reference)
+    require(type(limit) is int and 0 < limit <= 256000000, "Positive bounded read ceiling required")
     require(callable(read_generation), "Authenticated generation-pinned reader required")
     require(r["bytes"] <= limit, "Protected object exceeds bounded read limit")
     data = read_generation(r["key"], r["generation"], limit)
