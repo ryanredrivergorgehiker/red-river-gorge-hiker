@@ -22,7 +22,7 @@ def generation_pinned_gcs_reader(client, bucket_name):
             raise ValueError("Protected production object key required")
         if not isinstance(generation, str) or not re.fullmatch(r"[1-9][0-9]{0,19}", generation):
             raise ValueError("Exact numeric generation required")
-        if type(maximum_bytes) is not int or maximum_bytes < 1:
+        if type(maximum_bytes) is not int or not 1 <= maximum_bytes <= 256000000:
             raise ValueError("Positive read ceiling required")
         version = int(generation)
         blob = bucket.blob(key, generation=version)
