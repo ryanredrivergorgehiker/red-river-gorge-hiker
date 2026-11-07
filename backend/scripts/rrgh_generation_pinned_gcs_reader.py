@@ -16,7 +16,7 @@ def generation_pinned_gcs_reader(client, bucket_name):
     bucket = client.bucket(bucket_name)
 
     def read(key, generation, maximum_bytes):
-        if not isinstance(key, str) or not key.startswith("engineering/map-production/plans/") or ".." in key.split("/"):
+        if not isinstance(key, str) or not re.fullmatch(\n                r"engineering/map-production/plans/[0-9a-f]{64}/slots/[0-9]{5}/[A-Za-z0-9_./-]+", key)\n                or any(segment in ("", ".", "..") for segment in key.split("/")):
             raise ValueError("Protected production object key required")
         if not isinstance(generation, str) or not re.fullmatch(r"[1-9][0-9]{0,19}", generation):
             raise ValueError("Exact numeric generation required")
