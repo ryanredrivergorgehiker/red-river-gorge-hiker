@@ -170,6 +170,20 @@ class GenerationPinnedAdapterTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 reader(key, "123", 100)
 
+    def test_adapter_rejects_invalid_read_ceiling_before_cloud_access(self):
+        from rrgh_generation_pinned_gcs_reader import generation_pinned_gcs_reader
+        class Client:
+            def bucket(self, name):
+                class Bucket:
+                    def blob(self, *args, **kwargs):
+                        raise AssertionError("Cloud read attempted")
+                return Bucket()
+        reader = generation_pinned_gcs_reader(Client(), "approved-private-bucket")
+        key = "engineering/map-production/plans/" + "a" * 64 + "/slots/00001/objects/tile.bin"
+        for limit in (0, -1, True, 1.5, "100", None, 256000001):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                reader(key, "123", limit)
+
     def test_oversized_response_fails_closed(self):
         from rrgh_generation_pinned_gcs_reader import generation_pinned_gcs_reader
         class Client:
