@@ -29,6 +29,13 @@ class ProtectedReadbackTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             checked_object(self.reference, lambda *args: b"", 100)
 
+    def test_invalid_read_ceiling_rejected_before_cloud_call(self):
+        for limit in (0, -1, True, 1.5, "100", None, 256000001):
+            with self.subTest(limit=limit), self.assertRaises(ValueError):
+                checked_object(self.reference,
+                               lambda *args: self.fail("protected read attempted"),
+                               limit)
+
     def test_child_offset_and_hash(self):
         child = self.raw[2:6]
         tile = dict(checkpointObject=self.reference, checkpointOffset=2, bytes=4,
