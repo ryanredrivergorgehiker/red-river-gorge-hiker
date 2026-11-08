@@ -189,6 +189,21 @@ class ReceiptBoundChildTests(unittest.TestCase):
             self.verify_with_reader(guarded_read)
         self.assertEqual(reads, [self.pin["key"]])
 
+    def test_overlapping_authenticated_members_rejected_before_child_read(self):
+        # A second distinct member cannot overlap the selected child bytes.
+        pack = self.record["result"]["outputPacks"][0]
+        pack["members"].append(dict(path="tiles/hiking/1/0/1.png",
+                                    offset=3, bytes=3,
+                                    sha256=hashlib.sha256(b"345").hexdigest()))
+        self.refresh()
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            self.verify_with_reader(guarded_read)
+        self.assertEqual(reads, [self.pin["key"]])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
