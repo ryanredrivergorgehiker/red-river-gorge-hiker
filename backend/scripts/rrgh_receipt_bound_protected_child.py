@@ -44,7 +44,7 @@ def checked_receipt_bound_child(tile, plan_sha256, trusted_receipt_ref,
     require(type(record) is dict and
             record.get("format") == "rrgh-checkpoint-job-v1" and
             record.get("planSHA256") == plan_sha256 and
-            record.get("slot") == 1 and
+            type(record.get("slot")) is int and record["slot"] == 1 and
             record.get("job") == tile.get("job"),
             "Authenticated receipt identity differs")
     result = record.get("result")
