@@ -69,6 +69,39 @@ class ReceiptBoundChildTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.verify()
 
+    def test_untrusted_receipt_is_rejected_before_any_protected_read(self):
+        trusted = dict(self.pin)
+        self.tile["jobReceipt"]["sha256"] = "0" * 64
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, trusted, guarded_read)
+        self.assertEqual(reads, [])
+
+    def test_authenticated_receipt_member_mismatch_never_reads_child(self):
+        self.record["result"]["outputPacks"][0]["members"][0]["sha256"] = "0" * 64
+        self.refresh()
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, self.pin, guarded_read)
+        self.assertEqual(reads, [self.pin["key"]])
+
+    def test_corrupt_child_bytes_fail_after_receipt_binding(self):
+        reads = []
+        def corrupt_read(key, generation, limit):
+            reads.append(key)
+            if key == self.obj["key"]:
+                return b"X" * len(self.raw)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, self.pin, corrupt_read)
+        self.assertEqual(reads, [self.pin["key"], self.obj["key"]])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
