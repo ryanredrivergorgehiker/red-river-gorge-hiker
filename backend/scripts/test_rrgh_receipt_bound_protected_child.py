@@ -124,6 +124,27 @@ class ReceiptBoundChildTests(unittest.TestCase):
             checked_receipt_bound_child(self.tile, self.plan, self.pin, guarded_read)
         self.assertEqual(reads, [])
 
+    def test_malformed_authenticated_member_range_never_reads_child(self):
+        for bad_offset, bad_size in ((True, 4), (-1, 4), (2, True),
+                                     (2, 0), (2, 512 * 1024 + 1),
+                                     (len(self.raw), 4)):
+            with self.subTest(offset=bad_offset, size=bad_size):
+                self.setUp()
+                member = self.record["result"]["outputPacks"][0]["members"][0]
+                member["offset"] = bad_offset
+                member["bytes"] = bad_size
+                self.refresh()
+                reads = []
+                def guarded_read(key, generation, limit):
+                    reads.append(key)
+                    return self.read(key, generation, limit)
+                with self.assertRaises(ValueError):
+                    self.verify_with_reader(guarded_read)
+                self.assertEqual(reads, [self.pin["key"]])
+
+    def verify_with_reader(self, reader):
+        return checked_receipt_bound_child(self.tile, self.plan, self.pin, reader)
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
