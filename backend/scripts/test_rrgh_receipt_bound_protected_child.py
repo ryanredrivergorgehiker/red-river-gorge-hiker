@@ -102,6 +102,28 @@ class ReceiptBoundChildTests(unittest.TestCase):
             checked_receipt_bound_child(self.tile, self.plan, self.pin, corrupt_read)
         self.assertEqual(reads, [self.pin["key"], self.obj["key"]])
 
+    def test_foreign_trusted_receipt_path_rejected_before_read(self):
+        foreign = dict(self.pin, key=self.pin["key"].replace(self.plan, "b" * 64))
+        self.tile["jobReceipt"] = dict(foreign)
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, foreign, guarded_read)
+        self.assertEqual(reads, [])
+
+    def test_foreign_child_object_path_rejected_before_read(self):
+        self.tile["checkpointObject"] = dict(
+            self.obj, key=self.obj["key"].replace(self.plan, "b" * 64))
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, self.pin, guarded_read)
+        self.assertEqual(reads, [])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
