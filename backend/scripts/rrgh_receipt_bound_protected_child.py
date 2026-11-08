@@ -28,8 +28,15 @@ def checked_receipt_bound_child(tile, plan_sha256, trusted_receipt_ref,
             "Catalog child object is outside exact plan slot")
     require(trusted == catalog_ref, "Catalog receipt differs from independent pin")
     raw = checked_object(trusted, read_generation, maximum_object_bytes)
+    def reject_duplicate_fields(pairs):
+        fields = {}
+        for name, value in pairs:
+            require(name not in fields, "Duplicate authenticated receipt JSON field")
+            fields[name] = value
+        return fields
+
     try:
-        record = json.loads(raw)
+        record = json.loads(raw, object_pairs_hook=reject_duplicate_fields)
     except (ValueError, UnicodeDecodeError) as exc:
         raise ValueError("Invalid authenticated job receipt JSON") from exc
     require(type(record) is dict and
