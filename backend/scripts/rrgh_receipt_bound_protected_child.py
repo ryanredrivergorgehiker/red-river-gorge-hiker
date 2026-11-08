@@ -36,7 +36,9 @@ def checked_receipt_bound_child(tile, plan_sha256, trusted_receipt_ref,
         return fields
 
     try:
-        record = json.loads(raw, object_pairs_hook=reject_duplicate_fields)
+        record = json.loads(raw, object_pairs_hook=reject_duplicate_fields,
+                            parse_constant=lambda value: (_ for _ in ()).throw(
+                                ValueError("Nonstandard authenticated receipt JSON constant")))
     except (ValueError, UnicodeDecodeError) as exc:
         raise ValueError("Invalid authenticated job receipt JSON") from exc
     require(type(record) is dict and
