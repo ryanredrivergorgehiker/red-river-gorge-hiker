@@ -145,6 +145,22 @@ class ReceiptBoundChildTests(unittest.TestCase):
     def verify_with_reader(self, reader):
         return checked_receipt_bound_child(self.tile, self.plan, self.pin, reader)
 
+    def test_duplicate_authenticated_receipt_field_rejected_before_child_read(self):
+        # A duplicate key can otherwise give different parsers different identities.
+        self.receipt_raw = self.receipt_raw.replace(
+            b'"format": "rrgh-checkpoint-job-v1"',
+            b'"format": "untrusted", "format": "rrgh-checkpoint-job-v1"', 1)
+        self.pin = dict(self.pin, bytes=len(self.receipt_raw),
+                        sha256=hashlib.sha256(self.receipt_raw).hexdigest())
+        self.tile["jobReceipt"] = dict(self.pin)
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            checked_receipt_bound_child(self.tile, self.plan, self.pin, guarded_read)
+        self.assertEqual(reads, [self.pin["key"]])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
