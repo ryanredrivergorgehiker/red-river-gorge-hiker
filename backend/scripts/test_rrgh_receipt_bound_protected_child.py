@@ -177,6 +177,18 @@ class ReceiptBoundChildTests(unittest.TestCase):
                     self.verify_with_reader(guarded_read)
                 self.assertEqual(reads, [self.pin["key"]])
 
+    def test_boolean_authenticated_slot_rejected_before_child_read(self):
+        # Python considers True == 1; receipt slot identity must be an integer.
+        self.record["slot"] = True
+        self.refresh()
+        reads = []
+        def guarded_read(key, generation, limit):
+            reads.append(key)
+            return self.read(key, generation, limit)
+        with self.assertRaises(ValueError):
+            self.verify_with_reader(guarded_read)
+        self.assertEqual(reads, [self.pin["key"]])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
