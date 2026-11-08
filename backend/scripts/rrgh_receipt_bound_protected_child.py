@@ -13,8 +13,19 @@ def checked_receipt_bound_child(tile, plan_sha256, trusted_receipt_ref,
                                 read_generation, maximum_object_bytes=256000000):
     """Require a separately pinned receipt to bind job, plan, pack and child."""
     require(type(tile) is dict, "Child record required")
+    import re
+    require(type(plan_sha256) is str and re.fullmatch(r"[0-9a-f]{64}", plan_sha256),
+            "Exact immutable plan digest required before protected read")
+    require(type(tile.get("job")) is str and
+            re.fullmatch(r"[A-Za-z0-9_-]{1,128}", tile["job"]),
+            "Exact catalog job identity required before protected read")
     trusted = ref(trusted_receipt_ref)
     catalog_ref = ref(tile["jobReceipt"])
+    prefix = "engineering/map-production/plans/" + plan_sha256 + "/slots/00001/"
+    require(trusted["key"] == prefix + "jobs/" + tile["job"] + ".json",
+            "Independent receipt pin is outside exact plan/job slot")
+    require(ref(tile["checkpointObject"])["key"].startswith(prefix),
+            "Catalog child object is outside exact plan slot")
     require(trusted == catalog_ref, "Catalog receipt differs from independent pin")
     raw = checked_object(trusted, read_generation, maximum_object_bytes)
     try:
