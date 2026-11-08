@@ -55,14 +55,19 @@ def checked_receipt_bound_child(tile, plan_sha256, trusted_receipt_ref,
         require(type(pack) is dict and type(pack.get("members")) is list,
                 "Invalid authenticated output pack")
         pack_ref = ref(pack["ref"])
+        ranges = []
         for member in pack["members"]:
             require(type(member) is dict and type(member.get("offset")) is int and
                     member["offset"] >= 0 and type(member.get("bytes")) is int and
                     0 < member["bytes"] <= 512 * 1024 and
                     member["offset"] + member["bytes"] <= pack_ref["bytes"],
                     "Invalid authenticated member range")
+            ranges.append((member["offset"], member["offset"] + member["bytes"]))
             if member.get("path") == tile.get("path"):
                 found.append((pack_ref, member))
+        ranges.sort()
+        require(all(left[1] <= right[0] for left, right in zip(ranges, ranges[1:])),
+                "Overlapping authenticated receipt members")
     require(len(found) == 1, "Child must occur exactly once in authenticated receipt")
     pack_ref, member = found[0]
     require(pack_ref == ref(tile["checkpointObject"]) and
