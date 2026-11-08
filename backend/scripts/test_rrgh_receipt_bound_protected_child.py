@@ -161,6 +161,22 @@ class ReceiptBoundChildTests(unittest.TestCase):
             checked_receipt_bound_child(self.tile, self.plan, self.pin, guarded_read)
         self.assertEqual(reads, [self.pin["key"]])
 
+    def test_nonstandard_authenticated_json_constant_rejected_before_child_read(self):
+        for constant in (b"NaN", b"Infinity", b"-Infinity"):
+            with self.subTest(constant=constant):
+                self.setUp()
+                self.receipt_raw = self.receipt_raw[:-1] + b', "unexpected": ' + constant + b'}'
+                self.pin = dict(self.pin, bytes=len(self.receipt_raw),
+                                sha256=hashlib.sha256(self.receipt_raw).hexdigest())
+                self.tile["jobReceipt"] = dict(self.pin)
+                reads = []
+                def guarded_read(key, generation, limit):
+                    reads.append(key)
+                    return self.read(key, generation, limit)
+                with self.assertRaises(ValueError):
+                    self.verify_with_reader(guarded_read)
+                self.assertEqual(reads, [self.pin["key"]])
+
     def test_wrong_receipt_generation_fails_closed(self):
         trusted = dict(self.pin, generation="999")
         self.tile["jobReceipt"] = dict(trusted)
