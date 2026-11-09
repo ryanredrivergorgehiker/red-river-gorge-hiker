@@ -18,6 +18,9 @@ def canonical(value):return (json.dumps(value,sort_keys=True,separators=(',',':'
 
 def scope(plan,region,job=None):
     p=plan.get('crosswavePhase')
+    if isinstance(p,dict) and p.get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import scope as batch
+        return batch(plan,region,job)
     require(isinstance(p,dict) and hashlib.sha256(canonical(p)).hexdigest()==PHASE_SHA,
         'Exact immutable cross-wave phase changed')
     jobs=[b['job'] for b in p['bindings']]
@@ -37,10 +40,10 @@ def read_dependencies(slot,plan,region,destination):
     from rrgh_crosswave_dependencies import read
     p=scope(plan,region);destination=Path(destination)
     destination.mkdir(parents=True,exist_ok=True,mode=0o700)
-    proofs=[]
+    proofs=[];wave_cache={}
     for binding in p['bindings']:
         job=binding['job'];private=destination/('crosswave-readback-'+job['id'])
-        proof=read(slot,job,binding,plan['completedJobIDs'],private)
+        proof=read(slot,job,binding,plan['completedJobIDs'],private,wave_cache)
         for child in proof['children']:
             raw=(private/child['path']).read_bytes();target=destination/child['path']
             target.parent.mkdir(parents=True,exist_ok=True)
@@ -48,14 +51,14 @@ def read_dependencies(slot,plan,region,destination):
             else:
                 with target.open('xb') as stream:stream.write(raw)
         proofs.append(proof)
-    return dict(format='rrgh-crosswave-bootstrap-proof-v1',phaseSHA256=PHASE_SHA,proofs=proofs)
+    return dict(format='rrgh-crosswave-bootstrap-proof-v1',phaseSHA256=hashlib.sha256(canonical(plan['crosswavePhase'])).hexdigest(),proofs=proofs)
 
 
 def attach_proof(plan,region,receipt,initial):
     job=next(j for j in region['jobs'] if j['id']==receipt['job']);scope(plan,region,job)
     initial=initial.get('overviewPilot') or {}
     require(initial.get('format')=='rrgh-crosswave-bootstrap-proof-v1' and
-        initial.get('phaseSHA256')==PHASE_SHA,'Verified bootstrap dependencies missing')
+        initial.get('phaseSHA256')==hashlib.sha256(canonical(plan['crosswavePhase'])).hexdigest(),'Verified bootstrap dependencies missing')
     selected=[p for p in initial['proofs'] if p['job']==job['id']]
     require(len(selected)==1,'Exact child proof missing')
     usage=receipt['execution']['sourceUsage']
@@ -81,6 +84,21 @@ def verify(slot,plan,region,records,root,source_root):
         results.append(dict(job=job['id'],fourChildrenHashAndPixelVerified=True,
             independentParentRecomputationMatches=True,officialSourceRequests=0,
             sourceQualityUnchanged=True,childProof=proof))
+    if plan['crosswavePhase'].get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import digest,VERIFY
+        from gorge_campaign import save_large
+        detail=dict(format='rrgh-crosswave-independent-detail-v2',phaseSHA256=digest(plan['crosswavePhase']),
+            planSHA256=digest(plan),bindings=copy.deepcopy(p['bindings']),parents=results)
+        reference=save_large(slot,detail,limit=4*2**20)
+        summary=[]
+        for record in records:
+            out=record['result']['originalReceipt']['outputs']
+            require(len(out)==1,'One exact overview output required')
+            summary.append(dict(job=record['job'],outputSHA256=out[0]['sha256'],outputBytes=out[0]['bytes']))
+        return dict(format=VERIFY,phaseSHA256=detail['phaseSHA256'],planSHA256=detail['planSHA256'],
+            allChildrenHashAndPixelVerified=True,allParentsIndependentlyRecomputed=True,
+            priorChildrenUnmodified=True,sourceQualityUnchanged=True,officialSourceRequests=0,
+            parents=summary,detailRef=reference,detailSHA256=digest(detail))
     return dict(format='rrgh-crosswave-verification-v1',phaseSHA256=PHASE_SHA,
         bindings=copy.deepcopy(p['bindings']),parents=results)
 
