@@ -13,6 +13,8 @@
     "sha256": "94f2ad8d683f93b7fa77ed097dd59992184c38ec81a00f12618a931949a04ea7"
   },
   "reviewed_commit": "1209f7f593e974f2d91b8f6b8263366c9ccf9071",
-  "purpose": "Verify original1358 saved outputs after terminal zero-job GitHub recovery launch; prior failed launch retained; production never replayed",
-  "unstarted_recovery_run": 42672888093
+  "purpose": "Owner requested resume after GitHub mitigation: independently verify exact saved wave1358 outputs; no production replay; preserve prior zero-job dispatch evidence and all consumed allocations",
+  "unstarted_recovery_run": 42672888093,
+  "request_id": "resume1358-after-github-mitigation-20261109-1843",
+  "previous_launch_run": 42673314408
 }
