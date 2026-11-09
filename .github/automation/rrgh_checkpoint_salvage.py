@@ -57,6 +57,58 @@ def merge_pins(database,records,region):
                 allPriorPinsPreserved=True,derivation='prior-independent-ledger-plus-exact-job-source-evidence')
 
 
+def recover_usgs_ledger(cog_database,service_database,records,region,plan,uncertain):
+    """Retain both old ledgers and reconstruct service usage without a request.
+
+    Uncertain positions keep a full one-request reservation. Successful tile
+    bytes themselves are already immutable, independently verified outputs.
+    """
+    from rrgh_completion_phase import checkpoint_bounds
+    checkpoint_bounds(plan,plan['completionPhase']['authority'])
+    jobs={j['id']:j for j in region['jobs']}
+    accepted={r['job']:r['result']['originalReceipt'] for r in records}
+    require(len(accepted)==len(records) and set(accepted).isdisjoint(uncertain) and
+        set(accepted)|set(uncertain)==set(plan['approvedJobIDs']), 'Service recovery allocation changed')
+    base='https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/'
+    with sqlite3.connect(service_database) as db:
+        before=db.execute('SELECT * FROM calls ORDER BY id').fetchall()
+        budget=db.execute('SELECT * FROM budget').fetchall()
+        for jid in plan['approvedJobIDs']:
+            job=jobs[jid]
+            require(job['layer']=='usgs-topo' and job['operation']=='usgs-tile' and
+                job['sourceIDs']==[], 'Service recovery source changed')
+            url=base+f"{job['z']}/{job['y']}/{job['x']}"
+            key=hashlib.sha256(url.encode()).hexdigest()
+            require(db.execute('SELECT 1 FROM calls WHERE key=?',(key,)).fetchone() is None,
+                'Service position already has retained usage; no duplicate recovery')
+            received=0;reserved=plan['jobPolicies'][jid]['sourceBytes'];status='recovered-uncertain'
+            if jid in accepted:
+                receipt=accepted[jid];evidence=receipt['sourceEvidence'];outputs=receipt['outputs']
+                require(len(evidence)==len(outputs)==1,'One original USGS response and tile required')
+                pin=evidence[0];out=outputs[0];usage=receipt['execution']['sourceUsage']
+                prefix=f"tiles/usgs-topo/{job['z']}/{job['x']}/{job['y']}."
+                require(pin['url']==url and pin['parameters']=={} and
+                    pin['bytes']==out['bytes'] and pin['sha256']==out['sha256'] and
+                    out['path'] in (prefix+'jpg',prefix+'png') and
+                    0<pin['bytes']<=500000 and usage['actual']['operations']==1 and
+                    usage['actual']['receivedBodyBytes']==pin['bytes'] and
+                    usage['reserved']['sourceRequests']==1 and
+                    usage['reserved']['sourceBytes']<=plan['jobPolicies'][jid]['sourceBytes'],
+                    'Original service response or usage proof changed')
+                received=reserved=pin['bytes'];status='recovered-complete'
+            db.execute('INSERT INTO calls(key,reserved,received,status,seconds) VALUES (?,?,?,?,0)',
+                (key,reserved,received,status))
+        require(db.execute('SELECT * FROM calls ORDER BY id LIMIT ?', (len(before),)).fetchall()==before and
+            db.execute('SELECT * FROM budget').fetchall()==budget and
+            db.execute('PRAGMA integrity_check(10)').fetchall()==[('ok',)],'Prior service ledger changed')
+    with sqlite3.connect(cog_database) as db:
+        count=db.execute('SELECT COUNT(*) FROM sources').fetchone()[0]
+    return dict(priorPins=count,newPins=0,completedSourcePins=0,allPriorPinsPreserved=True,
+        derivation='prior-ledgers-plus-verified-USGS-responses-and-full-uncertain-reservations',
+        recoveredServiceRequests=len(accepted),uncertainServiceRequestsRetained=len(uncertain),
+        allPriorServiceUsagePreserved=True)
+
+
 def run(source_root,reviewed=None):
     source=Path(source_root).resolve();sys.path.insert(0,str(source/'backend/scripts'))
     from gorge_campaign import configuration,load_large,save_large,check_states,state_snapshot,assemble,emit
@@ -68,6 +120,8 @@ def run(source_root,reviewed=None):
     from rrgh_wif_credentials import token
     m=json.loads(MANIFEST.read_bytes()) if reviewed is None else reviewed
     plan,evidence,region=configuration()
+    from rrgh_checkpoint_recovery import bounds
+    limits=bounds(plan)
     require(digest(canonical(plan))==m['planSHA256']==os.environ['RRGH_PLAN_SHA256'] and
             os.environ['RRGH_SOURCE_SHA']==m['sourceSHA'] and
             plan['campaign']['sequence']==m['sequence'] and plan['campaign']['carry']==m['priorCarry'],
@@ -75,7 +129,7 @@ def run(source_root,reviewed=None):
     require(plan['approvedJobIDs']==m['completedJobIDs']+m['uncertainJobIDs'] and
             ((len(m['completedJobIDs'])==7 and len(m['uncertainJobIDs'])==2) if reviewed is None else
              (m.get('format')=='bounded-native-checkpoint-recovery-v1' and
-              0<len(m['completedJobIDs'])<=len(plan['approvedJobIDs'])<=12 and
+              0<len(m['completedJobIDs'])<=len(plan['approvedJobIDs'])<=limits['jobs'] and
               plan.get('resumableBatch') is None and plan.get('overviewPilot') is None)), 'Salvage subset changed')
     require_owner(plan,'recovery')
     root=private_root();opener=CountedOpener();store=GCS(plan,evidence,token,opener)
@@ -120,7 +174,11 @@ def run(source_root,reviewed=None):
         for kind,file in [('cog','cache.sqlite'),('service','requests.sqlite')]:
             destination=root/('working-'+kind);destination.mkdir()
             shutil.copyfile(prior_root/(kind+'.sqlite'),destination/file)
-        pins=merge_pins(root/'working-cog/cache.sqlite',records,region)
+        if plan.get('completionPhase'):
+            pins=recover_usgs_ledger(root/'working-cog/cache.sqlite',root/'working-service/requests.sqlite',
+                records,region,plan,m['uncertainJobIDs'])
+        else:
+            pins=merge_pins(root/'working-cog/cache.sqlite',records,region)
         states=state_snapshot(root);state_ref=save_large(slot,states)
         require(load_large(slot,state_ref)==states,'Recovered state readback mismatch')
         verify_state=root/'verified-state';verify_state.mkdir();check_states(states,verify_state)

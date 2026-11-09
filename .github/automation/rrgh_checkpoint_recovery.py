@@ -20,6 +20,17 @@ KIND='bounded-native-checkpoint-recovery-v1'
 PINS=('runID','dispatchID','sourceSHA','planSHA256','sequence')
 
 
+def bounds(plan,authority=None):
+    if plan.get('completionPhase') is None:
+        return dict(jobs=12,objects=32,requests=64,bytes=8*2**20)
+    from rrgh_completion_phase import checkpoint_bounds
+    try:
+        return checkpoint_bounds(plan,authority if authority is not None else
+            plan['completionPhase'].get('authority'))
+    except (ValueError,KeyError,TypeError) as error:
+        raise d.Halt('Unreviewed completion checkpoint scope') from error
+
+
 def policy(state):
     d.guard(state.get('checkpointRecoveryPolicy')==POLICY,'Reviewed checkpoint recovery policy missing')
 
@@ -78,16 +89,14 @@ def original(api,state,active=False):
         'Only a proven credential interruption with no producer closure is eligible')
     plan=plan_at(api,state);jobs=plan['approvedJobIDs'];ids=[r['job'] for r in checkpoints]
     native_scope=all(j.rsplit('-',3)[0] in ('hiking','terrain','leaf-off') for j in jobs)
+    limits=bounds(plan,state.get('completionPolicy'))
     if plan.get('completionPhase') is not None:
-        from rrgh_completion_phase import POLICY as COMPLETION_POLICY,PHASE,lower_usgs_index,BOUNDS
-        index=lower_usgs_index(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}))
-        native_scope=(state.get('completionPolicy')==COMPLETION_POLICY and
-            plan['completionPhase']==PHASE and set(jobs)<=set(index) and
-            all(plan['jobPolicies'].get(j)==dict(seconds=600,sourceBytes=1048576,sourceRequests=1) for j in jobs))
+        d.guard(state.get('completionPolicy') is not None,'Completion recovery authority missing')
+        native_scope=True
     d.guard(plan.get('resumableBatch') is None and plan.get('overviewPilot') is None and
         plan['maxConcurrency']==1 and plan['automaticRetryPermitted'] is False and plan['deleteAllowed'] is False and
         plan['campaign']['ceilingUSD']=='125.00' and plan['campaign']['storageTargetUSDPerMonth']=='2.00' and
-        0<len(ids)<=len(jobs)<=12 and len(set(jobs))==len(jobs) and ids==jobs[:len(ids)] and
+        0<len(ids)<=len(jobs)<=limits['jobs'] and len(set(jobs))==len(jobs) and ids==jobs[:len(ids)] and
         native_scope and
         all(plan['priorAttemptCounts'].get(j,0)==0 and j not in plan['completedJobIDs'] for j in jobs),
         'Only a fresh serial native checkpoint prefix is eligible')
@@ -155,8 +164,9 @@ def inspect_manifest(manifest,plan,inspection):
     result=copy.deepcopy(manifest);result['producerClaim']=claim['ref']
     result['inspectionUsage']={'classBRequests':inspection['readRequests'],
                                'egressBytes':inspection['readResponseBytes']+inspection['readRequests']}
-    d.guard(0<result['inspectionUsage']['classBRequests']<=64 and
-        result['inspectionUsage']['egressBytes']<=8*2**20+64,'Inspection exceeds reserved read envelope')
+    limits=bounds(plan)
+    d.guard(0<result['inspectionUsage']['classBRequests']<=limits['requests'] and
+        result['inspectionUsage']['egressBytes']<=limits['bytes']+limits['requests'],'Inspection exceeds reserved read envelope')
     return result
 
 
@@ -255,19 +265,27 @@ def validate_report(m,report,state):
         overviewPilotEnabled=state.get('overviewPilotEnabled') is True,batchPilotEnabled=False)
     if state.get('completionPolicy') is not None:
         from rrgh_completion_phase import authorized
-        authorized(state['completionPolicy']);report['completionPolicy']=state['completionPolicy']
+        authorized(state['completionPolicy'])
+        if all(j.startswith('usgs-topo-') for j in m['completedJobIDs']+m['uncertainJobIDs']):
+            pins=r['sourcePinsReconstructed']
+            d.guard(pins.get('allPriorServiceUsagePreserved') is True and
+                pins.get('recoveredServiceRequests')==m['jobs'] and
+                pins.get('uncertainServiceRequestsRetained')==len(m['uncertainJobIDs']),
+                'Recovered USGS service ledger or uncertain reservation missing')
+        report['completionPolicy']=state['completionPolicy']
     return report
 
 
 def validate_planning(plan,audit):
     proof=audit['checkpointRecovery'];m=proof['manifest']
+    limits=bounds(plan,audit.get('completionPolicy'))
     d.guard(proof.get('manifestSHA256')==d.digest(d.canonical(m)) and m['format']==KIND and
         m['planSHA256']==d.digest(d.canonical(plan))==audit['planSHA256'] and
         m['sequence']==audit['wave']==plan['campaign']['sequence'] and m['originalRunID']==audit['run'] and
         m['priorCarry']==plan['campaign']['carry'] and m['originalAllocation']==plan['limits'] and
         m['completedJobIDs']+m['uncertainJobIDs']==plan['approvedJobIDs'] and
         m['jobs']==len(m['completedJobIDs'])==audit['jobsNew'] and
-        0<m['jobs']<=len(plan['approvedJobIDs'])<=12 and plan.get('resumableBatch') is None and
+        0<m['jobs']<=len(plan['approvedJobIDs'])<=limits['jobs'] and plan.get('resumableBatch') is None and
         plan.get('overviewPilot') is None and audit['acceptedJobs']==len(plan['completedJobIDs'])+m['jobs'] and
         audit['acceptedRasterTiles']==plan['campaign']['carry']['priorRasterTiles']+m['tiles'],
         'Verified checkpoint planning evidence changed')

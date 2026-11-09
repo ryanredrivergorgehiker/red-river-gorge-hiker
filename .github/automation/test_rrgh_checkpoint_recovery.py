@@ -82,7 +82,7 @@ def result_fixture(m):
 
 class CheckpointTests(unittest.TestCase):
     def test_only_explicit_completion_usgs_scope_can_use_saved_checkpoint_recovery(self):
-        from rrgh_completion_phase import POLICY,PHASE,select,BOUNDS
+        from rrgh_completion_phase import POLICY_V1 as POLICY,PHASE_V1 as PHASE,select,BOUNDS
         f=fixture();p=f['plan'];previous=p['approvedJobIDs']
         jobs=select(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}),[],{},POLICY)
         mapping=dict(zip(previous,[j['id'] for j in jobs],strict=True))
@@ -96,7 +96,10 @@ class CheckpointTests(unittest.TestCase):
         (m,_),_=original_fixture(f)
         self.assertEqual(m['tiles'],10)
         self.assertEqual(m['uncertainJobIDs'],p['approvedJobIDs'][10:])
-        report=c.validate_report(m,result_fixture(m),{**f['state'],'runID':999})
+        result=result_fixture(m)
+        result['result']['sourcePinsReconstructed'].update(allPriorServiceUsagePreserved=True,
+            recoveredServiceRequests=10,uncertainServiceRequestsRetained=2)
+        report=c.validate_report(m,result,{**f['state'],'runID':999})
         self.assertEqual(report['completionPolicy'],POLICY)
         for field in ('completionPhase','jobPolicies'):
             bad=copy.deepcopy(f);bad['plan'][field]={}

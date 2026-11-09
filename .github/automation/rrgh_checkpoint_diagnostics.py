@@ -40,7 +40,9 @@ def inspect(source_root):
     base='engineering/map-production/plans/'+sha+'/'
     keys=[base+f'slots/{slot:05d}/{name}.json' for slot in range(3) for name in ('claim','receipt')]
     keys += [base+'slots/00001/jobs/'+job+'.json' for job in plan['approvedJobIDs']]
-    if len(keys)>32:raise ValueError('Inspection is limited to 32 exact known objects')
+    from rrgh_checkpoint_recovery import bounds
+    limits=bounds(plan)
+    if len(keys)>limits['objects']:raise ValueError('Inspection exact object bound')
     from rrgh_wif_credentials import token
     access=token();opener=build_opener(NoRedirect);total=0;requests=0;rows=[]
     for key in keys:
@@ -48,13 +50,13 @@ def inspect(source_root):
         def get(query,maximum):
             nonlocal total,requests
             requests+=1
-            if requests>64:raise ValueError('Inspection request bound')
+            if requests>limits['requests']:raise ValueError('Inspection request bound')
             req=Request(url+'?'+query,headers={'Authorization':'Bearer '+access,'Accept-Encoding':'identity'})
             with opener.open(req,timeout=30) as response:
                 raw=response.read(maximum+1)
                 if len(raw)>maximum:raise ValueError('Inspection response limit')
                 total+=len(raw)
-                if total>8*2**20:raise ValueError('Inspection total byte limit')
+                if total>limits['bytes']:raise ValueError('Inspection total byte limit')
                 return raw
         try:metadata=json.loads(get('fields=name,generation,size',16384))
         except HTTPError as exc:

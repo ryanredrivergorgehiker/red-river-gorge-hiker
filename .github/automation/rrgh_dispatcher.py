@@ -147,7 +147,7 @@ def validate_state(state,root,allow_upgrade=False):
               upgrade.get('fromDigest')==state.get('controlDigest') and
               upgrade.get('toDigest')==current and
               upgrade.get('authorizedBy')=='ryanredrivergorgehiker' and
-              upgrade.get('authorizedOn') in ('2026-11-02','2026-11-03') and
+              upgrade.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-09') and
               upgrade.get('preserveAcceptedHistory') is True,
               'Reviewed controller code changed')
     guard(type(state.get('sequence')) is int and state['sequence']>=58,'Bad sequence')
@@ -287,6 +287,10 @@ def claim(api,root,inputs,run_id):
         state.setdefault('sourcePolicyMode','expanded')
         if upgrade.get('enableOverviewPilot') is True:state['overviewPilotEnabled']=True
         if upgrade.get('enableBatchPilot') is True:state['batchPilotEnabled']=True
+        if upgrade.get('completionPolicy') is not None:
+            from rrgh_completion_phase import authorized
+            authorized(upgrade['completionPolicy'])
+            state['completionPolicy']=upgrade['completionPolicy']
     state['status']='probing' if inputs['mode']=='probe' else 'running';state['runID']=run_id
     api.cas(old,state,'worker claimed '+state['dispatchID'])
     return state

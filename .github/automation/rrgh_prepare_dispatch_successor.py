@@ -226,7 +226,7 @@ def prepare(root, verified):
     check(len(index) == expected_index, "Pinned source inventory changed")
     from rrgh_overview_integration import validate_previous,install as install_overview,select as select_overview,MODULES as OVERVIEW_MODULES
     validate_previous(old,region)
-    from rrgh_completion_phase import lower_usgs_index, validate_plan as validate_completion, select as select_completion, PHASE
+    from rrgh_completion_phase import lower_usgs_index, validate_plan as validate_completion, select as select_completion, PHASE, PHASE_V1, phase_for, job_policy
     if old.get('completionPhase'):
         validate_completion(old,region,verified.get('completionPolicy'))
     from rrgh_overview_integration import validate_recovery
@@ -278,12 +278,12 @@ def prepare(root, verified):
     completion_phase=None
     if not picked and verified.get('completionPolicy') is not None:
         from rrgh_completion_phase import BASELINE_PLAN
-        check(old.get('completionPhase')==PHASE or
+        check(old.get('completionPhase') in (PHASE,PHASE_V1) or
               (wave==1322 and prior_plan_sha==BASELINE_PLAN and verified['acceptedRasterTiles']==265702),
               'Completion queue requires exact approved baseline or enrolled predecessor')
         picked=select_completion(region,accepted,before_attempts,verified['completionPolicy'])
-        completion_phase=copy.deepcopy(PHASE)
-        limits={'usgs-topo':12}
+        completion_phase=copy.deepcopy(phase_for(verified['completionPolicy']))
+        limits={'usgs-topo':verified['completionPolicy']['maxJobs']}
         if not picked and old.get('completionPhase'):
             from rrgh_completion_phase import waiting_summary
             summary=waiting_summary(old,region,verified)
@@ -332,7 +332,10 @@ def prepare(root, verified):
     for jid, perjob in old["jobPolicies"].items():
         if (old.get('overviewPilot') or {}).get('job')==jid:
             check(perjob==dict(seconds=600,sourceBytes=0,sourceRequests=0),'Overview source caps changed')
+        elif old.get('completionPhase'):
+            check(perjob==job_policy(old['completionPhase']['authority']),'Prior completion policy changed')
         else:check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
+    if completion_phase:policy['usgs-topo']=job_policy(verified['completionPolicy'])
     check(all(x in policy for x in limits), "Missing original approved layer policy")
     check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
           <= old["slots"][1]["sourceRequests"], "Source requests cannot exceed prior envelope")

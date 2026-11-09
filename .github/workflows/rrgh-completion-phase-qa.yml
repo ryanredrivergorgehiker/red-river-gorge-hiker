@@ -1,7 +1,7 @@
 name: RRGH completion phase offline QA
 on:
   push:
-    branches: [lane20/completion-phase-20261109]
+    branches: [lane20/completion-phase-20261109, lane20/completion-throughput-20261109]
 permissions:
   contents: read
 env:
@@ -28,6 +28,8 @@ jobs:
         run: |
           python -m unittest discover -s .github/automation -p test_rrgh_completion_phase.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_checkpoint_recovery.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_checkpoint_salvage.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_completion_throughput.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v

@@ -8,15 +8,15 @@ import sys
 import tempfile
 
 import rrgh_dispatcher as d
-from rrgh_completion_phase import POLICY,PHASE
+from rrgh_completion_phase import POLICY,PHASE,POLICY_V1,PHASE_V1
 
 ROOT=Path(__file__).resolve().parents[2]
 source=Path(sys.argv[1]).resolve()
 audit=json.loads((ROOT/'.github/automation/fixtures/wave1322-audit.json').read_bytes())
-audit['completionPolicy']=POLICY
+audit['completionPolicy']=POLICY_V1
 state=json.loads((ROOT/d.STATE).read_bytes())
 state.update(sourceSHA=subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip(),
-    planSHA256=audit['planSHA256'],sequence=1322,completionPolicy=POLICY)
+    planSHA256=audit['planSHA256'],sequence=1322,completionPolicy=POLICY_V1)
 old_dir,old,_=d.config(source)
 old_bytes=(old_dir/'PLAN.json').read_bytes()
 
@@ -33,8 +33,8 @@ def prepare_and_validate(report,state):
 for sequence in (1323,1324):
     parent,sha,plan,entries=prepare_and_validate(audit,state)
     assert plan['campaign']['sequence']==sequence
-    assert plan['completionPhase']==PHASE
-    assert len(plan['approvedJobIDs'])==12
+    assert plan['completionPhase']==(PHASE_V1 if sequence==1323 else PHASE)
+    assert len(plan['approvedJobIDs'])==(12 if sequence==1323 else 64)
     assert plan['campaign']['carry']==audit['nextCarry']
     assert (old_dir/'PLAN.json').read_bytes()==old_bytes
     assert all(plan['priorAttemptCounts'][j]==n for j,n in old['priorAttemptCounts'].items())
@@ -56,10 +56,11 @@ for sequence in (1323,1324):
         audit['receiptSHA256']=audit['receiptRef']['sha256']
         audit['nextCarry']=copy.deepcopy(audit['nextCarry'])
         audit['nextCarry']['priorCompletedJobs']+=12;audit['nextCarry']['priorRasterTiles']+=12
-        state.update(sequence=1323,planSHA256=sha,
+        audit['completionPolicy']=POLICY
+        state.update(sequence=1323,planSHA256=sha,completionPolicy=POLICY,
             sourceSHA=subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip())
 print(json.dumps(dict(verified='1322-to-1323-to-1324 planning and trusted publication',
-    actualBaselineTiles=265702,syntheticSuccessorTiles=24,liveProduction=False,
+    actualBaselineTiles=265702,syntheticSuccessorTiles=76,liveProduction=False,
     acceptedHistoryPreserved=True,consumedAttemptsPreserved=True,engineUnchanged=True)))
 
 # Exercise the real planner and settlement at the final queue boundary using
@@ -83,12 +84,13 @@ subprocess.run(['git','-C',str(source),'add',str(folder/'PLAN.json'),str(folder/
 subprocess.run(['git','-C',str(source),'-c','user.name=Offline QA','-c','user.email=offline-qa@example.invalid',
     'commit','-qm','SYNTHETIC final lower-zoom coverage fixture'],check=True)
 parent=subprocess.check_output(['git','-C',str(source),'rev-parse','HEAD'],text=True).strip()
-audit.update(wave=1324,planSHA256=sha,jobsNew=12,tilesNew=12,
-    acceptedJobs=len(plan['completedJobIDs'])+12,
-    acceptedRasterTiles=plan['campaign']['carry']['priorRasterTiles']+12)
+final_jobs=len(plan['approvedJobIDs'])
+audit.update(wave=1324,planSHA256=sha,jobsNew=final_jobs,tilesNew=final_jobs,
+    acceptedJobs=len(plan['completedJobIDs'])+final_jobs,
+    acceptedRasterTiles=plan['campaign']['carry']['priorRasterTiles']+final_jobs)
 audit['receiptRef']={**audit['receiptRef'],'key':'engineering/map-production/plans/'+sha+'/slots/00002/receipt.json'}
 audit['nextCarry']=copy.deepcopy(plan['campaign']['carry'])
-audit['nextCarry']['priorCompletedJobs']+=12;audit['nextCarry']['priorRasterTiles']+=12
+audit['nextCarry']['priorCompletedJobs']+=final_jobs;audit['nextCarry']['priorRasterTiles']+=final_jobs
 state.update(sourceSHA=parent,planSHA256=sha,sequence=1324)
 with tempfile.TemporaryDirectory() as tmp:
     payload=Path(tmp)/'audit.json';payload.write_text(json.dumps(audit))
