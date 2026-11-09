@@ -8,6 +8,7 @@ import zlib
 from rrgh_gap_mask_diagnostic import CASES,PLAN_SHA
 from rrgh_expanded_production import build_index
 from rrgh_dispatcher import canonical,digest
+from collections import Counter
 
 source=Path(sys.argv[1]);cache={}
 raw=zlib.decompress(base64.b64decode((Path(__file__).parent/'fixtures/completion-history-plan-pins.json.z.b64').read_bytes()))
@@ -28,7 +29,11 @@ def region(folder,plan):
 folder,last=read(1322)
 if digest(canonical(last))!=PLAN_SHA:raise ValueError('Baseline changed')
 current=region(folder,last);index,_=build_index(current)
-for jid in CASES:
+accepted=set(last['completedJobIDs']+last['approvedJobIDs'])
+cases=sorted(j for j,n in last['priorAttemptCounts'].items() if n and j not in accepted and j in index)
+if len(cases)!=376:raise ValueError('Exact blocked native inventory changed')
+results=[]
+for jid in cases:
     low,high=0,1322
     while high-low>1:
         mid=(low+high)//2;_,p=read(mid)
@@ -39,10 +44,23 @@ for jid in CASES:
         raise ValueError('First-consumption transition not proven')
     old=region(folder,p);job=next(j for j in old['jobs'] if j['id']==jid)
     layer=job['layer'];family='dem' if layer=='terrain' else layer
-    selected=[s for s in old['inventory']['sources'][family] if s['id'] in job['sourceIDs']]
-    new=[s for s in current['inventory']['sources'][family] if s['id'] in index[jid]['sourceIDs']]
-    print(json.dumps(dict(phase='original-gap-allocation',job=jid,firstSequence=low,sourceConfig=folder.name,
+    selected=[s for s in old['inventory']['sources'].get(family,[]) if s['id'] in job['sourceIDs']]
+    new=[s for s in current['inventory']['sources'].get(family,[]) if s['id'] in index[jid]['sourceIDs']]
+    def signature(rows):return sorted((dict(id=s['id'],url=s['url'],bbox=s['bbox'],
+        expandedNativePolicy=s.get('expandedNativePolicy')) for s in rows),key=lambda s:s['id'])
+    category='source-pixel-gap' if jid in last['campaign']['sourcePixelGapQuarantines'] else 'other-consumed'
+    row=dict(phase='original-gap-allocation',job=jid,category=category,firstSequence=low,sourceConfig=folder.name,
         originalPlanSHA256=digest(canonical(p)),originalSourceIDs=job['sourceIDs'],currentSourceIDs=index[jid]['sourceIDs'],
-        originalSources=selected,currentSources=new,candidateSelectionChanged=selected!=new,
-        originalAttemptStillConsumed=True,acceptedTilesAdded=0,sourceRequests=0,cloudRequests=0),sort_keys=True))
-print(json.dumps(dict(phase='gap-history-complete',cases=len(CASES),historicalPlansRead=len(cache),productionMutation=False)))
+        originalSourceSelectionSHA256=digest(canonical(signature(selected))),
+        currentSourceSelectionSHA256=digest(canonical(signature(new))),
+        candidateSelectionChanged=signature(selected)!=signature(new),tilePositions=len(index[jid]['outputTiles']),
+        originalAttemptStillConsumed=True,acceptedTilesAdded=0,sourceRequests=0,cloudRequests=0)
+    results.append(row);print(json.dumps(row,sort_keys=True))
+summary=[]
+for category in ('source-pixel-gap','other-consumed'):
+    for changed in (True,False):
+        subset=[r for r in results if r['category']==category and r['candidateSelectionChanged']==changed]
+        summary.append(dict(category=category,candidateSelectionChanged=changed,jobs=len(subset),
+            tilePositions=sum(r['tilePositions'] for r in subset)))
+print(json.dumps(dict(phase='gap-history-complete',cases=len(cases),historicalPlansRead=len(cache),
+    summary=summary,productionMutation=False)))
