@@ -5,9 +5,9 @@ import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py')
+MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py')
 MANIFEST=ROOT/'.github/automation/overview-pilot.json'
-PRIOR_MODULE_SHA256={'rrgh_overview_pilot.py':'8a77ce04f710c74082e1a2ef8e9079d6e972025e417e5594debeef15bac38d58'}
+PRIOR_MODULE_SHA256={'rrgh_overview_pilot.py':('8a77ce04f710c74082e1a2ef8e9079d6e972025e417e5594debeef15bac38d58','5008d355028103e3cdc2beac42f98d3ee60a3a2d516057149308614ccb7fd44c')}
 HOOKS=[
     ("    (root/'worker').mkdir(mode=0o700)\n",
      "    (root/'worker').mkdir(mode=0o700)\n    from rrgh_overview_pilot import read_dependencies\n    overview_proof=read_dependencies(slot,plan,region,root/'worker')\n"),
@@ -74,7 +74,7 @@ def install(root):
 
 
 def validate_prior_module(name,previous,template):
-    if previous!=template and hashlib.sha256(previous).hexdigest()!=PRIOR_MODULE_SHA256.get(name):
+    if previous!=template and hashlib.sha256(previous).hexdigest() not in PRIOR_MODULE_SHA256.get(name,()):
         raise ValueError('Overview module drift')
 
 
@@ -90,6 +90,10 @@ def pilot_job(job=None):
 
 
 def validate_previous(plan,region):
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_phase import validate_plan,POLICY
+        validate_plan(plan,region,POLICY)
+        return
     overview=[j for j in region['jobs'] if j['operation']=='overview']
     if not overview:
         if plan.get('overviewPilot') is not None:raise ValueError('Unused overview authority')
@@ -121,6 +125,9 @@ def select(picked,accepted,attempts,enabled):
 
 def validate_verification(proof):
     if proof is None:return None
+    if isinstance(proof,dict) and proof.get('format')=='rrgh-crosswave-verification-v1':
+        from rrgh_crosswave_runtime import validate_verification as validate_crosswave
+        return validate_crosswave(proof)
     from rrgh_verified_tile_catalog import ref,require
     if not isinstance(proof,dict):raise ValueError('Invalid overview proof')
     m=manifest(proof.get('job'));prefix='engineering/map-production/plans/'+m['sourcePlanSHA256']+'/'
@@ -152,4 +159,8 @@ def validate_verification(proof):
 
 def validate_recovery(plan,audit):
     proof=validate_verification(audit.get('overviewPilotVerification'))
-    if bool(plan.get('overviewPilot'))!=bool(proof):raise ValueError('Overview recovery omitted or invented')
+    if bool(plan.get('overviewPilot') or plan.get('crosswavePhase'))!=bool(proof):raise ValueError('Overview recovery omitted or invented')
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_runtime import PHASE_SHA
+        if proof.get('phaseSHA256')!=PHASE_SHA or proof.get('bindings')!=plan['crosswavePhase']['bindings']:
+            raise ValueError('Cross-wave recovery belongs to another plan')

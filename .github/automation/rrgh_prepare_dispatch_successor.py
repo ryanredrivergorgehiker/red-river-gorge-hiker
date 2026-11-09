@@ -276,6 +276,20 @@ def prepare(root, verified):
         picked.extend(sample)
     picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True and batch_policy is None)
     completion_phase=None
+    crosswave_phase=None
+    if not picked and verified.get('crosswavePolicy') is not None:
+        from rrgh_crosswave_phase import POLICY as CW_POLICY,select as select_crosswave,waiting_summary as crosswave_wait
+        if not old.get('crosswavePhase'):
+            check(wave==CW_POLICY['baselineSequence'] and prior_plan_sha==CW_POLICY['baselinePlanSHA256'] and
+                verified['acceptedRasterTiles']==CW_POLICY['baselineAcceptedTiles'] and
+                not select_completion(region,accepted,before_attempts,verified['completionPolicy']),
+                'Cross-wave pilot must start at the independently settled USGS boundary')
+        picked,crosswave_phase=select_crosswave(accepted,before_attempts,verified['crosswavePolicy'])
+        limits={}
+        if not picked:
+            summary=crosswave_wait(old,region,verified)
+            (root/'RRGH-COMPLETION-WAIT.json').write_bytes(canonical(summary))
+            return summary
     if not picked and verified.get('completionPolicy') is not None:
         from rrgh_completion_phase import BASELINE_PLAN
         check(old.get('completionPhase') in (PHASE,PHASE_V1) or
@@ -330,7 +344,7 @@ def prepare(root, verified):
           and policy.get("leaf-off") == {"seconds":600,"sourceBytes":536870912,"sourceRequests":750},
           "Original source and time bounds changed")
     for jid, perjob in old["jobPolicies"].items():
-        if (old.get('overviewPilot') or {}).get('job')==jid:
+        if old.get('crosswavePhase') or (old.get('overviewPilot') or {}).get('job')==jid:
             check(perjob==dict(seconds=600,sourceBytes=0,sourceRequests=0),'Overview source caps changed')
         elif old.get('completionPhase'):
             check(perjob==job_policy(old['completionPhase']['authority']),'Prior completion policy changed')
@@ -381,6 +395,8 @@ def prepare(root, verified):
     plan["expiresAt"] = (datetime.now(timezone.utc) +
                          timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     plan['overviewPilot']=overview_pilot
+    if crosswave_phase:plan['crosswavePhase']=crosswave_phase
+    else:plan.pop('crosswavePhase',None)
     if completion_phase:plan['completionPhase']=completion_phase
     else:plan.pop('completionPhase',None)
     plan["jobPolicies"] = {j["id"]: (dict(seconds=600,sourceBytes=0,sourceRequests=0)
