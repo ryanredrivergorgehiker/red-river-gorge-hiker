@@ -1,0 +1,23 @@
+name: RRGH original gap allocation diagnosis
+on:
+  push:
+    branches: [lane20/gap-history-diagnostic-20261109]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  gap-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: source-checkout
+          persist-credentials: false
+      - name: Compare original consumed allocation with current approved source selection
+        run: python .github/automation/rrgh_gap_history_diagnostic.py source-checkout
