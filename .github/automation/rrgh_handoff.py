@@ -120,6 +120,16 @@ def prepare(api,root):
     caller();old,state=api.state();d.validate_state(state,root)
     if state.get('enabled') is not True or state.get('automaticHandoffRecovery')!=POLICY:
         return {'active':False,'reason':'disabled'}
+    if (not in_run() and state.get('status') in ('running','halted') and
+        state.get('mode')=='produce' and not state.get('publicationOf') and not state.get('recoveryOnlyOf')):
+        run=d.read_audit_run(api,state['runID'])
+        if run.get('status')=='completed' and run.get('conclusion')=='failure' and run.get('id')==state['runID']:
+            jobs=api.call('GET','actions/runs/'+str(state['runID'])+'/jobs?per_page=100')
+            d.guard(jobs.get('total_count')==len(jobs.get('jobs',[]))<=100,'Incomplete recovery decision inventory')
+            from rrgh_recovery_only import eligible_parent
+            try:eligible_parent(run,jobs['jobs'],state)
+            except ValueError:pass
+            else:return {'active':False,'unusedRecovery':d.arm_unstarted_recovery(api,root,automatic=True,detached=True)}
     if state.get('status')=='ready':
         # Publication settled but the following read-only inventory may have
         # failed. Only an unclaimed fresh successor can enter dispatch here.

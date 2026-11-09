@@ -1,0 +1,29 @@
+name: RRGH unscheduled recovery QA
+on:
+  push:
+    branches: [lane20/recover-unscheduled-verifier-20261109]
+permissions:
+  contents: read
+env:
+  RRGH_TEST_SOURCE: renderer-source
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  exact-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: renderer-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Real scheduler failure and no-replay regression tests
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_recovery_only.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_unscheduled_recovery.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v
