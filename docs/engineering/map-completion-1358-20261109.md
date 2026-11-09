@@ -1,4 +1,12 @@
-# RRGH completion checkpoint — 2026-11-09, including prospective typed-policy enrollment
+# RRGH completion checkpoint — 2026-11-09
+
+## Live resumption after GitHub mitigation
+
+This section supersedes the older halted/no-running-job snapshot below. GitHub reported mitigation at 13:43 Eastern. On Ryan’s explicit request, fresh checks found no active or queued runs, preserved source e0551e17752606cc9baa8280f45ef6209d739362 and halted original wave1358. Owner request ed439580c6f7f8b4919742a0680b082be52ffcd2 launched successfully as42682892232. Recovery-only42682954260 was admitted; independent verifier129382268706 is running. Original bounded-stage is skipped, so production was not replayed. No additional accepted tiles are claimed before its receipt passes the controller audit. Existing V3 successor gates remain configured.
+
+Five source-mask diagnostics completed successfully in42682993035, job129382233656; exact evidence: docs/engineering/evidence/source-boundary-mask-42682993035.json, commit245a903b6104685f0098d312e533cd4be6f7f0b1. Leaf-off17537/25329 has all1,048,576 pixels. Terrain and leaf-off17585/25301 and17512/25339 have zero missing pixels inside the requested AOI; all missing pixels lie outside it. This establishes source-mask evidence only, adds zero accepted tiles, and does not waive full-tile/terrain-halo checks. Further boundary engineering must preserve original output geometry and genuine source pixels. Diagnostic use:160 official requests/216,488,216 received bytes; zero Cloud requests/map writes/replayed production attempts. ChatGPT scheduled engineering task was rechecked disabled, nextRun=null.
+
+## Earlier checkpoint and recovery history
 
 This checkpoint supersedes earlier instructions to resume the ChatGPT engineering task. Ryan explicitly requested that task disabled; it was rechecked disabled, with no next run. Continue only within the original RRGH completion scope and existing resource limits.
 
