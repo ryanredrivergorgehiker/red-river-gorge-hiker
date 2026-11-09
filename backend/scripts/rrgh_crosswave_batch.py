@@ -15,6 +15,9 @@ POLICY=dict(format='rrgh-crosswave-batch-authority-v2',enabled=True,
     baselineAcceptedTiles=267476,requiredRasterTiles=278278,maxJobs=128,jobSeconds=60,
     receiptIndexSHA256=INDEX_SHA,verifiedPilotRecovery={'bytes': 11398, 'generation': '1794245559746794', 'sha256': '52a4fc9b273c75b434b0312895965f84c80a581f54f3769a4ed01ad98b0e8e77', 'key': 'engineering/map-production/plans/e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff/slots/00002/receipt.json'},
     preserveAcceptedOutputs=True,preserveConsumedAttempts=True)
+TYPED_POLICY=dict(POLICY,format='rrgh-crosswave-typed-authority-v3',
+    acceptedReceiptKinds=['ordinary','partial-needs-typed-receipt','wave289-consumed-recovery'],
+    requireIndependentOrdinaryBatch=True,typedPilotMaxJobs=4)
 FORMAT='rrgh-crosswave-batch-phase-v2'
 VERIFY='rrgh-crosswave-batch-verification-v2'
 SOURCE_KEYS=('sequence','sourcePlanSHA256','recovery','recipeSHA256','sourceJobCount','expectedTiles','acceptedJobIDs')
@@ -52,12 +55,21 @@ def advance_history(old,region,audit):
         sourceJobCount=len(old['approvedJobIDs']),expectedTiles=len(old['approvedJobIDs']),
         acceptedJobIDs=sorted(old['approvedJobIDs']))
     require(not any(w['sourcePlanSHA256']==row['sourcePlanSHA256'] for w in history),'Overview provenance duplicated')
+    if old['crosswavePhase'].get('authority')==TYPED_POLICY:
+        row['typedDependenciesVerified']=sorted({s['acceptanceKind'] for s in old['crosswavePhase']['sources'].values() if s.get('acceptanceKind')})
     history.append(row);return history
 
 
-def source_map(history,accepted):
+def source_map(history,accepted,authority=POLICY):
     accepted=set(accepted);sources={}
-    waves=[{k:w[k] for k in SOURCE_KEYS} for w in original_index()['waves'] if w['acceptanceKind']=='ordinary']+history
+    waves=[]
+    for wave in original_index()['waves']:
+        kind=wave['acceptanceKind']
+        if kind!='ordinary' and not (authority==TYPED_POLICY and kind in TYPED_POLICY['acceptedReceiptKinds']):continue
+        value={k:copy.deepcopy(wave[k]) for k in SOURCE_KEYS}
+        if kind!='ordinary':value['acceptanceKind']=kind
+        waves.append(value)
+    waves+=history
     for wave in waves:
         require(set(wave['acceptedJobIDs'])<=accepted,'Historical accepted child removed')
         for jid in wave['acceptedJobIDs']:
@@ -110,9 +122,11 @@ def adjacent_pairs(parents):
 
 def expand(p):
     from rrgh_crosswave_dependencies import FORMAT as CHILD_FORMAT,child_ids
-    require(p.get('format')==FORMAT and p.get('authority')==POLICY and
+    require(p.get('format')==FORMAT and p.get('authority') in (POLICY,TYPED_POLICY) and
         p.get('readBounds')==read_bounds(p) and 0<len(p['jobs'])<=128 and fits(p),
         'Cross-wave batch authority or funded envelope changed')
+    if p.get('typedReadPilot'):
+        require(p['authority']==TYPED_POLICY and len(p['jobs'])<=4,'Typed pilot scope changed')
     sources=p['sources'];used=set();result=[]
     require(set(p['dependencies'])=={j['id'] for j in p['jobs']},'Dependency/job mismatch')
     for job in p['jobs']:
@@ -129,12 +143,15 @@ def expand(p):
 
 
 def select(accepted,attempts,authority,history):
-    require(authority==POLICY,'Exact measured batch policy required')
+    require(authority in (POLICY,TYPED_POLICY),'Exact measured batch policy required')
     from rrgh_completion_phase import lower_usgs_index,BOUNDS
     from rrgh_crosswave_dependencies import child_ids,LAYERS
     index=lower_usgs_index(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}))
-    sources=source_map(history,accepted);done=set(accepted)
-    p=dict(format=FORMAT,authority=copy.deepcopy(POLICY),jobs=[],sources={},dependencies={})
+    sources=source_map(history,accepted,authority);done=set(accepted)
+    typed_pilot=authority==TYPED_POLICY and not any(w.get('typedDependenciesVerified') for w in history)
+    p=dict(format=FORMAT,authority=copy.deepcopy(authority),jobs=[],sources={},dependencies={})
+    if authority==TYPED_POLICY:p['typedReadPilot']=typed_pilot
+    candidates=[]
     for tile in sorted(index.values(),key=lambda j:(-j['z'],j['x'],j['y'])):
         for layer in LAYERS:
             z,x,y=(tile[k] for k in ('z','x','y'))
@@ -149,16 +166,28 @@ def select(accepted,attempts,authority,history):
             lo=xy(BOUNDS[0],BOUNDS[3],z+1);hi=xy(BOUNDS[2],BOUNDS[1],z+1)
             if not all(lo[0]<=int(j.rsplit('-',2)[1])<=hi[0] and
                 lo[1]<=int(j.rsplit('-',1)[1])<=hi[1] for j in ids):continue
-            candidate=copy.deepcopy(p);candidate['jobs'].append(job)
-            candidate['dependencies'][job['id']]=[dict(job=j,source=sources[j]['sourcePlanSHA256']) for j in ids]
-            for jid in ids:candidate['sources'][sources[jid]['sourcePlanSHA256']]=copy.deepcopy(sources[jid])
-            if not fits(candidate):
-                if p['jobs']:
-                    p['readBounds']=read_bounds(p);return p['jobs'],p
-                raise ValueError('One parent cannot fit existing funded envelope')
-            p=candidate
-            if len(p['jobs'])==128:
+            if typed_pilot and not any(sources[j].get('acceptanceKind') for j in ids):continue
+            candidates.append((job,ids))
+    if typed_pilot:
+        # One parent from each distinct known recovery path when its children
+        # are eligible. This stays a four-parent pilot until independently read.
+        chosen=[]
+        for seq in (105,289,260,23):
+            candidate=next((pair for pair in candidates if pair not in chosen and any(sources[j]['sequence']==seq for j in pair[1])),None)
+            if candidate is not None:chosen.append(candidate)
+        candidates=chosen+[pair for pair in candidates if pair not in chosen]
+    maximum=4 if typed_pilot else 128
+    for job,ids in candidates:
+        candidate=copy.deepcopy(p);candidate['jobs'].append(job)
+        candidate['dependencies'][job['id']]=[dict(job=j,source=sources[j]['sourcePlanSHA256']) for j in ids]
+        for jid in ids:candidate['sources'][sources[jid]['sourcePlanSHA256']]=copy.deepcopy(sources[jid])
+        if not fits(candidate):
+            if p['jobs']:
                 p['readBounds']=read_bounds(p);return p['jobs'],p
+            raise ValueError('One parent cannot fit existing funded envelope')
+        p=candidate
+        if len(p['jobs'])==maximum:
+            p['readBounds']=read_bounds(p);return p['jobs'],p
     if not p['jobs']:return [],None
     p['readBounds']=read_bounds(p);return p['jobs'],p
 
@@ -181,7 +210,7 @@ def scope(plan,region,job=None):
 
 
 def validate_plan(plan,region,authority):
-    require(authority==POLICY,'Unreviewed batch enrollment')
+    require(authority in (POLICY,TYPED_POLICY),'Unreviewed batch enrollment')
     jobs,p=select(plan['completedJobIDs'],plan['priorAttemptCounts'],authority,plan.get('crosswaveHistory',[]))
     require(p is not None and plan['crosswavePhase']==p,'Published dependency selection differs')
     scope(plan,region)
