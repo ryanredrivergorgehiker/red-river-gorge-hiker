@@ -33,9 +33,22 @@ def eligible_parent(run,jobs,state,active=False):
     require((active and run.get('status')=='in_progress' and run.get('conclusion') is None) or
         (run.get('status')=='completed' and run.get('conclusion')=='failure'),
         'Original production is not an eligible setup failure')
-    producer=one(jobs,'bounded-stage');recovery=one(jobs,'independent-recovery')
+    producer=one(jobs,'bounded-stage')
     require(producer.get('status')=='completed' and producer.get('conclusion')=='success' and
         producer.get('run_id')==run['id'],'Original producer did not complete successfully')
+    if not any(j.get('name')=='independent-recovery' for j in jobs):
+        # A terminal GitHub scheduler failure can leave downstream jobs absent.
+        # The caller must supply the complete, first-attempt job inventory. The
+        # unchanged Cloud create-only claim remains the final no-replay fence.
+        require(not active and run.get('status')=='completed' and
+            one(jobs,'admit').get('conclusion')=='success' and
+            one(jobs,'advance').get('conclusion')=='skipped' and
+            len({j['name'] for j in jobs})==len(jobs) and
+            all(j.get('run_id')==run['id'] and j.get('status')=='completed' and
+                j.get('conclusion')==('success' if j['name'] in ('admit','bounded-stage') else 'skipped')
+                for j in jobs),'Absent recovery is not a terminal scheduler-only failure')
+        return
+    recovery=one(jobs,'independent-recovery')
     require(recovery.get('status')=='completed' and recovery.get('conclusion')=='failure' and
         recovery.get('run_id')==run['id'],'Original recovery did not fail during setup')
     steps=recovery.get('steps') or []

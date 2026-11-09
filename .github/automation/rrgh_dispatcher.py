@@ -404,7 +404,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
     rid=state['runID']
     run=read_audit_run(api,rid)
     jobs=api.call('GET','actions/runs/'+str(rid)+'/jobs?per_page=100')
-    guard(jobs['total_count']<=100,'Job pagination not complete')
+    guard(jobs['total_count']==len(jobs['jobs'])<=100,'Job pagination not complete')
     from rrgh_dispatch_audit import audit_run,gh
     recovery_execution=None;expected=state;producer_jobs=jobs['jobs']
     if state.get('mode')=='recover':
@@ -412,7 +412,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
         expected=state['recoveryOnlyOf']
         run=api.call('GET','actions/runs/'+str(expected['runID']))
         original=api.call('GET','actions/runs/'+str(expected['runID'])+'/jobs?per_page=100')
-        guard(original['total_count']<=100,'Original job pagination not complete')
+        guard(original['total_count']==len(original['jobs'])<=100,'Original job pagination not complete')
         producer_jobs=original['jobs']
     selected={name:[j for j in (producer_jobs if name=='bounded-stage' else jobs['jobs']) if j['name']==name]
               for name in ('bounded-stage','independent-recovery')}
@@ -437,24 +437,29 @@ def audit_state(api,root,state,allow_failed_controller=False):
     return report
 
 
-def arm_unstarted_recovery(api,root,automatic=False):
-    if not automatic:caller('launch')
+def arm_unstarted_recovery(api,root,automatic=False,detached=False):
+    if detached:
+        from rrgh_handoff import caller as handoff_caller,policy
+        handoff_caller()
+        guard(automatic,'Detached recovery requires the authorized handoff')
+    elif not automatic:caller('launch')
     old,state=api.state();validate_state(state,root)
+    if detached:policy(state)
     guard(state.get('enabled') is True and state.get('mode')=='produce' and
-          state.get('status')==('running' if automatic else 'halted') and
+          state.get('status') in (('running','halted') if detached else ('running',) if automatic else ('halted',)) and
           'recoveryOnlyOf' not in state,'Recovery-only resume is not eligible')
-    if automatic:guard(str(state['runID'])==os.environ.get('GITHUB_RUN_ID'),'Another run owns this allocation')
+    if automatic and not detached:guard(str(state['runID'])==os.environ.get('GITHUB_RUN_ID'),'Another run owns this allocation')
     run=api.call('GET','actions/runs/'+str(state['runID']))
     jobs=api.call('GET','actions/runs/'+str(state['runID'])+'/jobs?per_page=100')
-    guard(jobs['total_count']<=100,'Incomplete parent jobs')
+    guard(jobs['total_count']==len(jobs['jobs'])<=100,'Incomplete parent jobs')
     from rrgh_recovery_only import eligible_parent,one,producer_receipt
-    eligible_parent(run,jobs['jobs'],state,active=automatic)
+    eligible_parent(run,jobs['jobs'],state,active=automatic and not detached)
     from rrgh_dispatch_audit import gh
     producer=one(jobs['jobs'],'bounded-stage')
     receipt=producer_receipt(gh('actions/jobs/'+str(producer['id'])+'/logs',api.token,raw=True).splitlines(),state['planSHA256'])
     if not automatic:
         auth=state.get('recoveryStartAuthorization',{})
-        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-09') and
               all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')) and
               auth.get('producerReceipt')==receipt,'Exact recovery-start authorization missing')
     assert_no_other_producers(api,state['runID'] if automatic else None)
