@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py')
+MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py')
 MANIFEST=ROOT/'.github/automation/overview-pilot.json'
 PRIOR_MODULE_SHA256={'rrgh_overview_pilot.py':('8a77ce04f710c74082e1a2ef8e9079d6e972025e417e5594debeef15bac38d58','5008d355028103e3cdc2beac42f98d3ee60a3a2d516057149308614ccb7fd44c')}
+PRIOR_MODULE_SHA256.update({'rrgh_crosswave_dependencies.py': ('4d03849bea55f1a70e18b4210327591d61afc3c05b69099b48c042567b7a648b',), 'rrgh_crosswave_runtime.py': ('8db67538de04631995bec567af3400df2d04d9c6e638f01b06c75253a48f0fda',)})
 HOOKS=[
     ("    (root/'worker').mkdir(mode=0o700)\n",
      "    (root/'worker').mkdir(mode=0o700)\n    from rrgh_overview_pilot import read_dependencies\n    overview_proof=read_dependencies(slot,plan,region,root/'worker')\n"),
@@ -92,7 +93,7 @@ def pilot_job(job=None):
 def validate_previous(plan,region):
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_phase import validate_plan,POLICY
-        validate_plan(plan,region,POLICY)
+        validate_plan(plan,region,plan['crosswavePhase']['authority'])
         return
     overview=[j for j in region['jobs'] if j['operation']=='overview']
     if not overview:
@@ -125,6 +126,9 @@ def select(picked,accepted,attempts,enabled):
 
 def validate_verification(proof):
     if proof is None:return None
+    if isinstance(proof,dict) and proof.get('format')=='rrgh-crosswave-batch-verification-v2':
+        from rrgh_crosswave_batch import validate_verification as batch
+        return batch(proof)
     if isinstance(proof,dict) and proof.get('format')=='rrgh-crosswave-verification-v1':
         from rrgh_crosswave_runtime import validate_verification as validate_crosswave
         return validate_crosswave(proof)
@@ -160,6 +164,11 @@ def validate_verification(proof):
 def validate_recovery(plan,audit):
     proof=validate_verification(audit.get('overviewPilotVerification'))
     if bool(plan.get('overviewPilot') or plan.get('crosswavePhase'))!=bool(proof):raise ValueError('Overview recovery omitted or invented')
+    if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import digest
+        if proof['phaseSHA256']!=digest(plan['crosswavePhase']) or proof['planSHA256']!=audit['planSHA256'] or [p['job'] for p in proof['parents']]!=plan['approvedJobIDs']:
+            raise ValueError('Batch recovery belongs to another plan')
+        return
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_runtime import PHASE_SHA
         if proof.get('phaseSHA256')!=PHASE_SHA or proof.get('bindings')!=plan['crosswavePhase']['bindings']:

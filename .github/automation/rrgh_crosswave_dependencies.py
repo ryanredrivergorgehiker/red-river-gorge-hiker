@@ -41,7 +41,7 @@ def manifest(index,job,accepted):
     return dict(format=FORMAT,job=copy.deepcopy(job),children=[dict(job=j,source=sources[j]) for j in wanted])
 
 
-def read(slot,job,binding,accepted,destination):
+def read(slot,job,binding,accepted,destination,wave_cache=None):
     from gorge_checkpoint import Ref,digest
     from gorge_second_stage import record,recover_catalogs
     from gorge_campaign import load_large
@@ -58,7 +58,7 @@ def read(slot,job,binding,accepted,destination):
     destination=Path(destination)
     require(not destination.exists(),'Fresh dependency destination required')
     destination.mkdir(parents=True,mode=0o700)
-    waves={};children=[]
+    waves={} if wave_cache is None else wave_cache;children=[];used_waves=set()
 
     def bounded_ref(value,prefix,limit):
         validate_ref(value)
@@ -66,7 +66,7 @@ def read(slot,job,binding,accepted,destination):
         return value
 
     for child in binding['children']:
-        jid=child['job'];source=child['source'];sha=source['sourcePlanSHA256']
+        jid=child['job'];source=child['source'];sha=source['sourcePlanSHA256'];used_waves.add(sha)
         require(re.fullmatch('[0-9a-f]{64}',sha) is not None and
             type(source['sequence']) is int and source['sequence']>0 and
             type(source['sourceJobCount']) is int and 0<source['sourceJobCount']<=512 and
@@ -131,5 +131,5 @@ def read(slot,job,binding,accepted,destination):
         children.append(dict(tile=[layer,z,x,y],path=out['path'],bytes=out['bytes'],sha256=out['sha256'],
             job=jid,jobReceipt=reference,checkpointObject=pack['ref'],checkpointOffset=entry['offset'],
             pixelReadbackVerified=True,independentRecovery=recovery,sourceRecipeSHA256=source['recipeSHA256']))
-    return dict(format=FORMAT,job=job['id'],children=children,sourceWaves=len(waves),
+    return dict(format=FORMAT,job=job['id'],children=children,sourceWaves=len(used_waves),
         officialSourceRequests=0,priorChildrenUnmodified=True,productionAccepted=False)

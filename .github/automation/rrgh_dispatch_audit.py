@@ -179,9 +179,20 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
             checked_overview.get('format')=='rrgh-crosswave-verification-v1' and
             jobs_count==result.get('tiles')==4 and not partial and not pixel_gaps and
             result.get('sourceRequests')==0 and result.get('sourceBytesReceived')==0)
-        require(type(result.get("adjacentEdgesMeasured")) is int and
-                (result["adjacentEdgesMeasured"] > 0 or
-                 (isolated_pilot and result["adjacentEdgesMeasured"] == 0)), "Missing edge QA")
+        if isinstance(checked_overview,dict) and checked_overview.get('format')=='rrgh-crosswave-batch-verification-v2':
+            from rrgh_crosswave_batch import adjacent_pairs
+            require(jobs_count==result.get('tiles')==len(checked_overview['parents']) and
+                not partial and not pixel_gaps and result.get('sourceRequests')==0 and
+                result.get('sourceBytesReceived')==0 and expected_dispatch is not None and
+                checked_overview['planSHA256']==expected_dispatch['planSHA256'],
+                'Incomplete or mismatched overview batch')
+            require(type(result.get('adjacentEdgesMeasured')) is int and
+                result['adjacentEdgesMeasured']>=adjacent_pairs(checked_overview['parents']),
+                'Batch adjacent edge scope differs')
+        else:
+            require(type(result.get("adjacentEdgesMeasured")) is int and
+                    (result["adjacentEdgesMeasured"] > 0 or
+                     (isolated_pilot and result["adjacentEdgesMeasured"] == 0)), "Missing edge QA")
     carry = result.get("nextCarry") or {}
     settlement = result.get("settlement") or {}
     require(settlement.get("independentRecoveryComplete") is (not partial),

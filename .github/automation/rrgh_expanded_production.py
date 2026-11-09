@@ -175,6 +175,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     require(bool(overviews)==bool(plan.get('overviewPilot') or plan.get('crosswavePhase')), 'Unused overview authority')
     from rrgh_batch_integration import validate as validate_batch, installed as batch_installed, MODULES as BATCH_MODULES
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
+    if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import validate_history,validate_funding
+        validate_history(old_plan,old,plan,audit);validate_funding(old_plan,plan)
     batch=validate_batch(root,old_plan,plan,audit)
     require(not batch or not overviews,'Pair production cannot claim overview work')
     limits={k:(batch['targetJobs']//3 if batch else v) for k,v in LIMITS.items()}
@@ -193,7 +196,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
     validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py'):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     if batch_installed(root):
         for name in BATCH_MODULES:wanted[name]=sha((root/'backend/scripts'/name).read_bytes())

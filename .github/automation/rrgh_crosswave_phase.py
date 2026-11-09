@@ -22,7 +22,8 @@ def canonical(value):return (json.dumps(value,sort_keys=True,separators=(',',':'
 
 
 def authorized(value):
-    require(value==POLICY,'Exact reviewed cross-wave pilot authority required')
+    from rrgh_crosswave_batch import POLICY as BATCH_POLICY
+    require(value in (POLICY,BATCH_POLICY),'Exact reviewed cross-wave authority required')
 
 
 def phase():
@@ -34,7 +35,7 @@ def phase():
 
 
 def select(accepted,attempts,authority):
-    authorized(authority);p=phase();jobs=[b['job'] for b in p['bindings']]
+    require(authority==POLICY,'Exact pilot authority required');p=phase();jobs=[b['job'] for b in p['bindings']]
     done=[j['id'] in accepted for j in jobs]
     if all(done):return [],None
     require(not any(done) and all(attempts.get(j['id'],0)==0 for j in jobs),
@@ -45,7 +46,10 @@ def select(accepted,attempts,authority):
 
 
 def validate_plan(plan,region,authority):
-    authorized(authority)
+    if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import validate_plan as batch
+        return batch(plan,region,authority)
+    require(authority==POLICY,'Exact pilot authority required')
     jobs,p=select(plan['completedJobIDs'],plan['priorAttemptCounts'],authority)
     require(p is not None and plan.get('crosswavePhase')==p and region['jobs']==jobs and
         plan['approvedJobIDs']==[j['id'] for j in jobs] and
@@ -55,6 +59,9 @@ def validate_plan(plan,region,authority):
 
 
 def waiting_summary(plan,region,audit):
+    if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
+        from rrgh_crosswave_batch import waiting_summary as batch
+        return batch(plan,region,audit)
     validate_plan(plan,region,audit.get('crosswavePolicy'))
     require(audit['jobsNew']==4 and audit['tilesNew']==4 and not audit.get('partialRecovered') and
         not audit.get('checkpointRecovery') and not audit.get('sourcePixelGapJobs'),
