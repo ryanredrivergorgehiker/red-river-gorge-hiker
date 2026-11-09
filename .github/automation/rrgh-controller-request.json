@@ -1,10 +1,1 @@
-{
-  "action": "recover-checkpoints",
-  "authorizedBy": "ryanredrivergorgehiker",
-  "date": "2026-11-05",
-  "original_run": 42117136683,
-  "source_sha": "eecdc4a33eea60de48bd7715eace96b155c4285f",
-  "plan_sha256": "46d697b54d7990b85ad800e2981d300c5743fd42dab8e1fc85e653d8b75f7028",
-  "dispatch_id": "246a011788926302b14c3fb7076e2845b12c9953f4cebcb82f65556aa77cfcc9",
-  "reason": "Owner-authorized repair of wave613 credential interruption; inspect saved receipts and prove slot2 unused before independent recovery; preserve consumed work and full failed-wave allocation"
-}
+{"action":"resume-recovered","source_sha":"5566a6885eadfad16a8548a58907b6a8805cfe55","authorizedBy":"ryanredrivergorgehiker","authorizedOn":"2026-11-09","requestID":"completion-crosswave-pilot-1356-to-1357-20261109","reason":"Proceed with the exact verified four-layer pilot; scheduled ChatGPT engineering remains disabled"}
