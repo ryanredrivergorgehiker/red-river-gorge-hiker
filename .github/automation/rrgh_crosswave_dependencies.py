@@ -74,11 +74,18 @@ def read(slot,job,binding,accepted,destination,wave_cache=None):
             jid in source['acceptedJobIDs'] and re.fullmatch('[0-9a-f]{64}',source['recipeSHA256']) is not None,
             'Malformed child acceptance authority')
         prefix='engineering/map-production/plans/'+sha+'/slots/'
-        recovery=bounded_ref(source['recovery'],prefix+'00002/receipt.json',16384)
-        require(recovery['key']==prefix+'00002/receipt.json','Ordinary independent recovery required')
+        recovery=source['recovery']
+        typed=source.get('acceptanceKind') is not None
+        if not typed:
+            bounded_ref(recovery,prefix+'00002/receipt.json',16384)
+            require(recovery['key']==prefix+'00002/receipt.json','Ordinary independent recovery required')
         if sha in waves:
             prior_source,refs=waves[sha]
             require(prior_source==source,'Conflicting acceptance pins for one wave')
+        elif typed:
+            from rrgh_typed_child_receipts import resolve
+            refs=resolve(slot,source)
+            waves[sha]=(copy.deepcopy(source),refs)
         else:
             prior=record(slot,recovery);r=prior['result'];settlement=r['settlement']
             require(prior['planSHA256']==sha and prior['slot']==2 and r['status']=='verified' and

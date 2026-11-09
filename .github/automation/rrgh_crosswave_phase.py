@@ -22,8 +22,8 @@ def canonical(value):return (json.dumps(value,sort_keys=True,separators=(',',':'
 
 
 def authorized(value):
-    from rrgh_crosswave_batch import POLICY as BATCH_POLICY
-    require(value in (POLICY,BATCH_POLICY),'Exact reviewed cross-wave authority required')
+    from rrgh_crosswave_batch import POLICY as BATCH_POLICY,TYPED_POLICY
+    require(value in (POLICY,BATCH_POLICY,TYPED_POLICY),'Exact reviewed cross-wave authority required')
 
 
 def phase():
