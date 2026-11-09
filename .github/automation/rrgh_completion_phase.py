@@ -7,14 +7,50 @@ import math
 
 BOUNDS = [-83.8, 37.65, -83.4, 37.95]
 BASELINE_PLAN = 'e2631ee1ca7b5a8b0dd787afcabcf8abfbf9d76e3420f2dbdd28a2f33eaa4902'
-POLICY = dict(format='rrgh-completion-queues-v1', enabled=True,
+POLICY_V1 = dict(format='rrgh-completion-queues-v1', enabled=True,
     authorizedBy='ryanredrivergorgehiker', authorizedOn='2026-11-09',
     baselineSequence=1322, baselinePlanSHA256=BASELINE_PLAN,
     baselineAcceptedTiles=265702, requiredRasterTiles=278278,
     phase='usgs-original-lower-zooms', maxJobs=12,
     preserveConsumedAttempts=True, preserveAcceptedOutputs=True)
-PHASE = dict(format='rrgh-completion-phase-v1', phase=POLICY['phase'],
-    authority=POLICY, originalZoomService=True, requiredPositions=1770)
+POLICY = {**POLICY_V1, 'format':'rrgh-completion-queues-v2', 'maxJobs':64,
+    'jobSeconds':120, 'verifiedPilotSequence':1323,
+    'verifiedPilotPlanSHA256':'c739759141fb56b19f5089afd974e77499c46c5e8c9ea85fe8d3e7b360e34e0d',
+    'verifiedPilotRecovery':dict(bytes=1491,generation='1794232793039490',
+        key='engineering/map-production/plans/c739759141fb56b19f5089afd974e77499c46c5e8c9ea85fe8d3e7b360e34e0d/slots/00002/receipt.json',
+        sha256='2a94ed198f42f6b606636c79cc4f1b05b750bd23f45a349160110836e94b0a8a')}
+
+def phase_for(authority):
+    return dict(format='rrgh-completion-phase-v1',phase=authority['phase'],
+        authority=authority,originalZoomService=True,requiredPositions=1770)
+
+PHASE_V1=phase_for(POLICY_V1)
+PHASE=phase_for(POLICY)
+
+
+def job_policy(authority):
+    authorized(authority)
+    return dict(seconds=authority.get('jobSeconds',600),sourceBytes=1048576,sourceRequests=1)
+
+
+def plan_authority(plan,current):
+    authorized(current)
+    stored=(plan.get('completionPhase') or {}).get('authority')
+    authorized(stored)
+    require(plan['completionPhase']==phase_for(stored) and
+        (current==POLICY or stored==POLICY_V1),'Unreviewed completion policy transition')
+    return stored
+
+
+def checkpoint_bounds(plan,current):
+    stored=plan_authority(plan,current)
+    index=lower_usgs_index(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}))
+    require(set(plan['approvedJobIDs'])<=set(index) and
+        all(plan['jobPolicies'].get(j)==job_policy(stored) for j in plan['approvedJobIDs']),
+        'Checkpoint source scope differs from approved completion phase')
+    return dict(jobs=stored['maxJobs'],objects=70 if stored==POLICY else 32,
+        requests=140 if stored==POLICY else 64,bytes=8*2**20)
+
 
 
 def require(ok, message):
@@ -23,7 +59,7 @@ def require(ok, message):
 
 
 def authorized(value):
-    require(value == POLICY, 'Exact owner-authorized completion queue required')
+    require(value in (POLICY_V1,POLICY), 'Exact owner-authorized completion queue required')
     return True
 
 
@@ -52,39 +88,44 @@ def lower_usgs_index(region):
 def select(region, accepted, attempts, authority):
     authorized(authority)
     index = lower_usgs_index(region)
+    if authority==POLICY:
+        pilot=select(region,[],{},POLICY_V1)
+        require(all(j['id'] in accepted and attempts.get(j['id'])==1 for j in pilot),
+            'All twelve independently accepted pilot positions required before larger batches')
     eligible = [j for j in index.values() if j['id'] not in accepted and
         attempts.get(j['id'], 0) == 0]
     # First allocation samples every original zoom. Later allocations retain
-    # the proven serial twelve-job envelope and proceed from detailed to broad.
+    # their approved finite serial envelope and proceed from detailed to broad.
     if not set(index).intersection(accepted) and not any(attempts.get(j, 0) for j in index):
         result = []
         for z in range(10, 16):
             result += sorted((j for j in eligible if j['z'] == z),
                 key=lambda j: (j['x'], j['y']))[:2]
         return result
-    return sorted(eligible, key=lambda j: (-j['z'], j['x'], j['y']))[:POLICY['maxJobs']]
+    return sorted(eligible, key=lambda j: (-j['z'], j['x'], j['y']))[:authority['maxJobs']]
 
 
 def validate_plan(plan, region, authority):
     authorized(authority)
-    require(plan.get('completionPhase') == PHASE and plan.get('overviewPilot') is None and
+    stored=plan_authority(plan,authority)
+    require(plan.get('overviewPilot') is None and
         plan.get('resumableBatch') is None, 'Completion phase authority changed')
     index = lower_usgs_index(region)
     jobs = region['jobs']
-    require(0 < len(jobs) <= POLICY['maxJobs'] and
+    require(0 < len(jobs) <= stored['maxJobs'] and
         jobs == [index.get(j['id']) for j in jobs] and
         [j['id'] for j in jobs] == plan['approvedJobIDs'], 'Unreviewed lower-zoom jobs')
-    require(jobs == select(region, plan['completedJobIDs'], plan['priorAttemptCounts'], authority),
+    require(jobs == select(region, plan['completedJobIDs'], plan['priorAttemptCounts'], stored),
         'Completion queue skipped, replayed or reordered positions')
     require(all(plan['jobPolicies'].get(j['id']) ==
-        dict(seconds=600, sourceBytes=1048576, sourceRequests=1) for j in jobs),
+        job_policy(stored) for j in jobs),
         'Original USGS source/time policy changed')
 
 
 def waiting_summary(plan, region, audit):
     """Queue exhaustion is a verified phase boundary, never full completion."""
     authorized(audit.get('completionPolicy'))
-    require(plan.get('completionPhase') == PHASE, 'Only the enrolled phase can settle')
+    stored=plan_authority(plan,audit['completionPolicy'])
     require(not audit.get('sourcePixelGapJobs') and not audit.get('partialRecovered') and
         not audit.get('checkpointRecovery') and audit['jobsNew'] == len(plan['approvedJobIDs']),
         'Incomplete allocation cannot close the phase')

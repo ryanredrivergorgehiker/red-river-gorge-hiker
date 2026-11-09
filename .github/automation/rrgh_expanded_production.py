@@ -175,7 +175,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     batch=validate_batch(root,old_plan,plan,audit)
     require(not batch or not overviews,'Pair production cannot claim overview work')
     limits={k:(batch['targetJobs']//3 if batch else v) for k,v in LIMITS.items()}
-    if completion:limits={'usgs-topo':12}
+    if completion:limits={'usgs-topo':plan['completionPhase']['authority']['maxJobs']}
     counts={layer:sum(j['layer']==layer for j in native) for layer in limits}
     require(all(n<=limits[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
             'Expanded allocation exceeds reviewed finite limits')
