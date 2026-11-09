@@ -12,6 +12,7 @@
     "key": "engineering/map-production/plans/d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4/slots/00001/receipt.json",
     "sha256": "94f2ad8d683f93b7fa77ed097dd59992184c38ec81a00f12618a931949a04ea7"
   },
-  "reviewed_commit": "05a9d37dbab91f4475d1a47a465ca3bbca4ca47d",
-  "purpose": "Run only wave1358 unused verification after GitHub never scheduled it; do not repeat production"
+  "reviewed_commit": "1209f7f593e974f2d91b8f6b8263366c9ccf9071",
+  "purpose": "Verify original1358 saved outputs after terminal zero-job GitHub recovery launch; prior failed launch retained; production never replayed",
+  "unstarted_recovery_run": 42672888093
 }
