@@ -46,8 +46,8 @@ def build(source,audit):
         if seq==0:
             stop=dict(reason='pre-campaign accepted seed',remainingJobs=len(remaining));break
         recovery=plan['campaign']['previousRecovery']
-        match=re.fullmatch(r'engineering/map-production/plans/([0-9a-f]{64})/slots/00002/receipt.json',recovery['key'])
-        if not match:
+        match=re.fullmatch(r'engineering/map-production/plans/([0-9a-f]{64})/slots/(00002|00000|00001)/receipt.json',recovery['key'])
+        if not match or (match.group(2)!='00002' and seq-1 not in (289,11)):
             stop=dict(reason='exceptional recovery namespace',afterSequence=seq,recovery=recovery);break
         previous=[]
         exceptional_plan={289:'f5f2666692abc512b68445ea449314d26dad95be73ae7f12a139617490e3abdf',
