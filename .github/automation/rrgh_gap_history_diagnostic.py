@@ -10,12 +10,16 @@ from rrgh_expanded_production import build_index
 from rrgh_dispatcher import canonical,digest
 
 source=Path(sys.argv[1]);cache={}
+raw=zlib.decompress(base64.b64decode((Path(__file__).parent/'fixtures/completion-history-plan-pins.json.z.b64').read_bytes()))
+if digest(raw)!='421bc2ea3461b4bdfded165904cbca6cc30a409654ac57023ec9df34beb2d5d3':
+    raise ValueError('Reviewed history pin inventory changed')
+pins=json.loads(raw)
 def read(seq):
     if seq not in cache:
-        folders=[p for p in (source/'backend/config').glob(f'gorge-campaign-wave-{seq:03d}-*')
-            if re.fullmatch(r'gorge-campaign-wave-\d+-\d{8}',p.name) and (p/'PLAN.json').is_file()]
-        if len(folders)!=1:raise ValueError('Ambiguous historical plan folder '+str(seq))
-        folder=folders[0];cache[seq]=(folder,json.loads((folder/'PLAN.json').read_bytes()))
+        name,sha=pins[str(seq)];folder=source/name
+        p=json.loads((folder/'PLAN.json').read_bytes())
+        if digest(canonical(p))!=sha:raise ValueError('Exact historical plan pin changed')
+        cache[seq]=(folder,p)
     return cache[seq]
 def region(folder,plan):
     value=json.loads(zlib.decompress(base64.b64decode((folder/'REGION-PLAN.json.z.b64').read_bytes())))
