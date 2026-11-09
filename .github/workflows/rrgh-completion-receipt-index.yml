@@ -1,0 +1,24 @@
+name: RRGH immutable completion receipt inventory
+on:
+  push:
+    branches: [lane20/completion-receipt-index-20261109]
+    paths: [.github/automation/build_completion_receipt_index.py, .github/workflows/rrgh-completion-receipt-index.yml]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  receipt-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: source-checkout
+          persist-credentials: false
+      - name: Reconstruct exact immutable acceptance pins without Cloud access
+        run: python .github/automation/build_completion_receipt_index.py source-checkout .github/automation/fixtures/wave1322-audit.json
