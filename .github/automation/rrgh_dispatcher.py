@@ -32,7 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
-    'rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
+    'rrgh_completion_phase.py','rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
     'rrgh_wif_credentials.py','rrgh_credential_integration.py','rrgh_checkpoint_recovery.py','wave105-salvage.json',
@@ -416,6 +416,10 @@ def audit_state(api,root,state,allow_failed_controller=False):
     report['controllerDispatchID']=state['dispatchID'];report['controllerParentRun']=state.get('parentRunID')
     report['sourcePolicyMode']=state.get('sourcePolicyMode','expanded')
     report['overviewPilotEnabled']=state.get('overviewPilotEnabled') is True
+    if state.get('completionPolicy') is not None:
+        from rrgh_completion_phase import authorized
+        authorized(state['completionPolicy'])
+        report['completionPolicy']=state['completionPolicy']
     report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
@@ -661,6 +665,8 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
     # Re-read live successful producer/recovery evidence; do not trust a caller's flag.
     guard((audit_pending(api,root) if automatic else audit_recovered(api,root) if recovered else audit_current(api,root))==audit,
           'Audit does not match live independent recovery')
+    if (Path(source_root)/'RRGH-COMPLETION-WAIT.json').exists():
+        return settle_completion_wait(api,root,source_root,old,state,audit)
     parent,plan_hash,plan,entries=candidate_entries(source_root,audit,state)
     assert_no_other_producers(api,state['runID'])
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Source publication lease moved')
@@ -685,6 +691,34 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
     api.call('PATCH','git/refs/heads/'+SOURCE,{'sha':commit['sha'],'force':False})
     guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==commit['sha'],'Published source readback mismatch')
     return settle_successor(api,root,old,state,audit,plan,commit['sha'],plan_hash,automatic=automatic)
+
+
+def settle_completion_wait(api,root,source_root,old,state,audit):
+    """Settle the last verified wave without inventing an empty successor."""
+    from rrgh_completion_phase import waiting_summary
+    from rrgh_expanded_production import read_region
+    source_root=Path(source_root)
+    parent=subprocess.check_output(['git','-C',str(source_root),'rev-parse','HEAD'],text=True).strip()
+    guard(parent==state['sourceSHA'],'Phase boundary source lease changed')
+    folder,plan,_=config(source_root)
+    guard(digest(canonical(plan))==state['planSHA256']==audit['planSHA256'],
+          'Phase boundary plan changed')
+    expected=waiting_summary(plan,read_region(folder),audit)
+    guard(json.loads((source_root/'RRGH-COMPLETION-WAIT.json').read_bytes())==expected,
+          'Phase boundary settlement differs')
+    changed=subprocess.check_output(['git','-C',str(source_root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
+    guard(changed==['RRGH-COMPLETION-WAIT.json'],'Phase boundary must not change source or prior plans')
+    assert_no_other_producers(api,state['runID'])
+    guard(api.call('GET','git/ref/heads/'+SOURCE)['object']['sha']==parent,'Phase boundary source moved')
+    completed={k:state[k] for k in ('runID','sequence','dispatchID','sourceSHA','planSHA256')}
+    completed.update(recoveryReceipt=audit['receiptRef'],acceptedJobs=audit['acceptedJobs'],
+        acceptedRasterTiles=audit['acceptedRasterTiles'],jobsNew=audit['jobsNew'],tilesNew=audit['tilesNew'])
+    if state.get('handoffPending'):
+        state.setdefault('handoffRecoveryHistory',[]).append(state.pop('handoffPending'))
+    state.update(status='completion-waiting',checkpoint=audit['receiptRef'],
+        lastRecovered=completed,completionProgress=expected)
+    api.cas(old,state,'verified lower-zoom queue complete; awaiting remaining completion phases')
+    return {'status':'COMPLETION_PHASE_SETTLED','progress':expected,'producerReplays':0,'sourceWrites':0}
 
 
 def settle_successor(api,root,old,state,audit,plan,source_sha,plan_hash,automatic=False,reconciled=False):

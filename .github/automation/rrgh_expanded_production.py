@@ -157,6 +157,11 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_overview_integration import pilot_job,manifest as pilot_manifest,validate_modules,validate_previous
     validate_modules(root)
     validate_previous(plan,new)
+    completion=plan.get('completionPhase') is not None
+    if completion:
+        from rrgh_completion_phase import validate_plan,lower_usgs_index
+        validate_plan(plan,new,audit.get('completionPolicy'))
+        index=lower_usgs_index(new)
     native=[j for j in new['jobs'] if j['operation']!='overview']
     overviews=[j for j in new['jobs'] if j['operation']=='overview']
     require(native==[index[j['id']] for j in native], 'Unreviewed source window publication')
@@ -170,6 +175,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     batch=validate_batch(root,old_plan,plan,audit)
     require(not batch or not overviews,'Pair production cannot claim overview work')
     limits={k:(batch['targetJobs']//3 if batch else v) for k,v in LIMITS.items()}
+    if completion:limits={'usgs-topo':12}
     counts={layer:sum(j['layer']==layer for j in native) for layer in limits}
     require(all(n<=limits[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
             'Expanded allocation exceeds reviewed finite limits')

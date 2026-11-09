@@ -77,11 +77,18 @@ def original(api,state,active=False):
         not any(r.get('phase')=='production' or r.get('status')=='source-pixel-gap-quarantined' for r in rows),
         'Only a proven credential interruption with no producer closure is eligible')
     plan=plan_at(api,state);jobs=plan['approvedJobIDs'];ids=[r['job'] for r in checkpoints]
+    native_scope=all(j.rsplit('-',3)[0] in ('hiking','terrain','leaf-off') for j in jobs)
+    if plan.get('completionPhase') is not None:
+        from rrgh_completion_phase import POLICY as COMPLETION_POLICY,PHASE,lower_usgs_index,BOUNDS
+        index=lower_usgs_index(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}))
+        native_scope=(state.get('completionPolicy')==COMPLETION_POLICY and
+            plan['completionPhase']==PHASE and set(jobs)<=set(index) and
+            all(plan['jobPolicies'].get(j)==dict(seconds=600,sourceBytes=1048576,sourceRequests=1) for j in jobs))
     d.guard(plan.get('resumableBatch') is None and plan.get('overviewPilot') is None and
         plan['maxConcurrency']==1 and plan['automaticRetryPermitted'] is False and plan['deleteAllowed'] is False and
         plan['campaign']['ceilingUSD']=='125.00' and plan['campaign']['storageTargetUSDPerMonth']=='2.00' and
         0<len(ids)<=len(jobs)<=12 and len(set(jobs))==len(jobs) and ids==jobs[:len(ids)] and
-        all(j.rsplit('-',3)[0] in ('hiking','terrain','leaf-off') for j in jobs) and
+        native_scope and
         all(plan['priorAttemptCounts'].get(j,0)==0 and j not in plan['completedJobIDs'] for j in jobs),
         'Only a fresh serial native checkpoint prefix is eligible')
     prefix='engineering/map-production/plans/'+state['planSHA256']+'/slots/'
@@ -235,7 +242,7 @@ def validate_report(m,report,state):
         'Conservative recovery carry or budget changed')
     reference(ref,'engineering/map-production/plans/'+m['planSHA256']+'/slots/00002/receipt.json')
     proof={'manifest':m,'manifestSHA256':d.digest(d.canonical(m))}
-    return dict(verified=True,checkpointRecovery=proof,partialRecovered=False,
+    report=dict(verified=True,checkpointRecovery=proof,partialRecovered=False,
         partialCompletedJobIDs=[],sourceCompletedJobIDs=[],sourcePixelGapJobs=[],failedJobID=None,
         uncertainJobIDs=m['uncertainJobIDs'],wave=m['sequence'],run=m['originalRunID'],recoveryRunID=state['runID'],
         jobsNew=m['jobs'],tilesNew=m['tiles'],acceptedJobs=carry['priorCompletedJobs'],
@@ -246,6 +253,10 @@ def validate_report(m,report,state):
         dispatchAuthorized=False,sourcePolicyMode=state.get('sourcePolicyMode','expanded'),
         controllerDispatchID=state['dispatchID'],controllerParentRun=state.get('parentRunID'),
         overviewPilotEnabled=state.get('overviewPilotEnabled') is True,batchPilotEnabled=False)
+    if state.get('completionPolicy') is not None:
+        from rrgh_completion_phase import authorized
+        authorized(state['completionPolicy']);report['completionPolicy']=state['completionPolicy']
+    return report
 
 
 def validate_planning(plan,audit):
