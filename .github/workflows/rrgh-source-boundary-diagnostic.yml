@@ -1,0 +1,27 @@
+name: RRGH blocked source and boundary diagnosis
+on:
+  push:
+    branches: [lane20/source-boundary-diagnostic-20261109]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  source-mask-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Inspect original masks only; no map writes or consumed allocation replay
+        run: timeout 3050 python .github/automation/rrgh_gap_mask_diagnostic.py source-checkout
