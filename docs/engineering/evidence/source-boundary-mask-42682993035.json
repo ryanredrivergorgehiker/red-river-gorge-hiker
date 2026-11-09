@@ -1,0 +1,600 @@
+{
+  "format": "rrgh-bounded-source-mask-evidence-v1",
+  "diagnosticRunID": 42682993035,
+  "diagnosticJobID": 129382233656,
+  "diagnosticCommitSHA": "b4dfb52e241335d1e0fc1d2386dc653317df47a0",
+  "sourceSHA": "2c121dfba317d918749acaadd6842be81c88fee1",
+  "sourcePlanSHA256": "e2631ee1ca7b5a8b0dd787afcabcf8abfbf9d76e3420f2dbdd28a2f33eaa4902",
+  "acceptedTilesAdded": 0,
+  "productionAttemptsReplayed": 0,
+  "mapTilesWritten": 0,
+  "cloudRequests": 0,
+  "results": [
+    {
+      "acceptedTilesAdded": 0,
+      "actual": {
+        "operations": 62,
+        "receivedBodyBytes": 85134739,
+        "reservedResponseBytes": 85134739,
+        "statuses": [
+          200,
+          200,
+          200,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206
+        ]
+      },
+      "allPixelsPresent": true,
+      "cloudRequests": 0,
+      "height": 1024,
+      "job": "leaf-off-16-17537-25329",
+      "mapTilesWritten": 0,
+      "missingInsideAOIPixels": 0,
+      "missingOutsideAOIPixels": 0,
+      "missingPixels": 0,
+      "phase": "source-mask-diagnostic",
+      "productionAttemptReplayed": false,
+      "requiredInsideAOIPixels": 1048576,
+      "reserved": {
+        "attempts": 0,
+        "classARequests": 0,
+        "classBRequests": 0,
+        "egressBytes": 0,
+        "seconds": 0,
+        "sourceBytes": 85134739,
+        "sourceRequests": 62,
+        "storedBytes": 0
+      },
+      "seconds": 49.235,
+      "sources": [
+        {
+          "actualBoundsWGS84": [
+            -83.6779380672161,
+            37.781799827583725,
+            -83.66025318895964,
+            37.795834563080724
+          ],
+          "catalogBoundsWGS84": [
+            -83.6779380672161,
+            37.781799827583725,
+            -83.66025318895964,
+            37.795834563080724
+          ],
+          "id": "N109E349_2023_Season2_3IN_cog.tif",
+          "newlyCoveredPixels": 455787,
+          "nodata": "None",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 4,
+          "sourceIdentity": {
+            "etag": "\"9cad7f658f08ca52e13ad25a296fcbfc-10\"",
+            "identity": "32f58b88df64866acacdd19f21d19e1fa721c49844ea0c7c9707ee864b63a706",
+            "lastModified": "Fri, 28 Mar 2025 21:12:32 GMT",
+            "length": 954273171,
+            "pinnedAtUTC": "2026-11-09T19:24:59Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N109E349_2023_Season2_3IN_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]"
+          ],
+          "validPixels": 455787
+        },
+        {
+          "actualBoundsWGS84": [
+            -83.67832212451566,
+            37.76807126526728,
+            -83.6606405938039,
+            37.782105972550106
+          ],
+          "catalogBoundsWGS84": [
+            -83.67832212451566,
+            37.76807126526728,
+            -83.6606405938039,
+            37.782105972550106
+          ],
+          "id": "N110E349_2023_Season2_3IN_cog.tif",
+          "newlyCoveredPixels": 592789,
+          "nodata": "None",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 4,
+          "sourceIdentity": {
+            "etag": "\"fce29e69def78a580a38853ce563e097-9\"",
+            "identity": "2f0987b4daee616b83e849dc602532ffa163ab85ebe29c079910183352bd3a64",
+            "lastModified": "Fri, 28 Mar 2025 21:20:19 GMT",
+            "length": 912237173,
+            "pinnedAtUTC": "2026-11-09T19:24:59Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N110E349_2023_Season2_3IN_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]"
+          ],
+          "validPixels": 592790
+        },
+        {
+          "actualBoundsWGS84": [
+            -83.66102785506175,
+            37.76776263227988,
+            -83.64334326397814,
+            37.781799827583725
+          ],
+          "catalogBoundsWGS84": [
+            -83.66102785506175,
+            37.76776263227988,
+            -83.64334326397814,
+            37.781799827583725
+          ],
+          "id": "N110E350_2023_Season2_3IN_cog.tif",
+          "newlyCoveredPixels": 0,
+          "nodata": "None",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 4,
+          "sourceIdentity": {
+            "etag": "\"f8edd96fb91c95f99e3a41e1c47dbe0a-10\"",
+            "identity": "e2782ba7f201f0a20f1763fe6d4272cfb8c98284bda29ea45df0ccf0d6531797",
+            "lastModified": "Fri, 28 Mar 2025 21:20:29 GMT",
+            "length": 991263171,
+            "pinnedAtUTC": "2026-11-09T19:24:59Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N110E350_2023_Season2_3IN_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]"
+          ],
+          "validPixels": 0
+        }
+      ],
+      "totalPixels": 1048576,
+      "validPixels": 1048576,
+      "width": 1024
+    },
+    {
+      "acceptedTilesAdded": 0,
+      "actual": {
+        "operations": 4,
+        "receivedBodyBytes": 3820421,
+        "reservedResponseBytes": 3820421,
+        "statuses": [
+          200,
+          206,
+          206,
+          206
+        ]
+      },
+      "allPixelsPresent": false,
+      "cloudRequests": 0,
+      "height": 514,
+      "job": "terrain-16-17585-25301",
+      "mapTilesWritten": 0,
+      "missingInsideAOIPixels": 0,
+      "missingOutsideAOIPixels": 473,
+      "missingPixels": 473,
+      "phase": "source-mask-diagnostic",
+      "productionAttemptReplayed": false,
+      "requiredInsideAOIPixels": 130556,
+      "reserved": {
+        "attempts": 0,
+        "classARequests": 0,
+        "classBRequests": 0,
+        "egressBytes": 0,
+        "seconds": 0,
+        "sourceBytes": 3820421,
+        "sourceRequests": 4,
+        "storedBytes": 0
+      },
+      "seconds": 2.67,
+      "sources": [
+        {
+          "actualBoundsWGS84": [
+            -83.41459539105168,
+            37.90044993752702,
+            -83.39683438980205,
+            37.91452222898684
+          ],
+          "catalogBoundsWGS84": [
+            -83.41459539105168,
+            37.90044993752702,
+            -83.39683438980205,
+            37.91452222898684
+          ],
+          "id": "N100E364_2024_DEM_Phase2_cog.tif",
+          "newlyCoveredPixels": 263723,
+          "nodata": "-999999.0",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 1,
+          "sourceIdentity": {
+            "etag": "\"ab97bb08011ef322efed7dbb214ba6ed\"",
+            "identity": "0e739a6e8a12e8f9694c2367895f89190e8e1193fa7b0f6cfe20abe9e1026177",
+            "lastModified": "Mon, 16 Dec 2024 22:47:15 GMT",
+            "length": 32918405,
+            "pinnedAtUTC": "2026-11-09T19:25:48Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N100E364_2024_DEM_Phase2_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.nodata: 8>]"
+          ],
+          "validPixels": 263723
+        }
+      ],
+      "totalPixels": 264196,
+      "validPixels": 263723,
+      "width": 514
+    },
+    {
+      "acceptedTilesAdded": 0,
+      "actual": {
+        "operations": 59,
+        "receivedBodyBytes": 86245376,
+        "reservedResponseBytes": 86245376,
+        "statuses": [
+          200,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206
+        ]
+      },
+      "allPixelsPresent": false,
+      "cloudRequests": 0,
+      "height": 1024,
+      "job": "leaf-off-16-17585-25301",
+      "mapTilesWritten": 0,
+      "missingInsideAOIPixels": 0,
+      "missingOutsideAOIPixels": 1179,
+      "missingPixels": 1179,
+      "phase": "source-mask-diagnostic",
+      "productionAttemptReplayed": false,
+      "requiredInsideAOIPixels": 517120,
+      "reserved": {
+        "attempts": 0,
+        "classARequests": 0,
+        "classBRequests": 0,
+        "egressBytes": 0,
+        "seconds": 0,
+        "sourceBytes": 86245376,
+        "sourceRequests": 59,
+        "storedBytes": 0
+      },
+      "seconds": 47.455,
+      "sources": [
+        {
+          "actualBoundsWGS84": [
+            -83.41459539105168,
+            37.90044993752702,
+            -83.39683438980205,
+            37.91452222898684
+          ],
+          "catalogBoundsWGS84": [
+            -83.41459539105168,
+            37.90044993752702,
+            -83.39683438980205,
+            37.91452222898684
+          ],
+          "id": "N100E364_2023_Season2_3IN_cog.tif",
+          "newlyCoveredPixels": 1047397,
+          "nodata": "None",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 4,
+          "sourceIdentity": {
+            "etag": "\"c759bc9781ae6fdb685924cca8d0d7b6-10\"",
+            "identity": "770dd2e6ac7e7484cb7928235ba76884b82d47c680145a4cce7bc3b8754a9385",
+            "lastModified": "Fri, 28 Mar 2025 21:23:03 GMT",
+            "length": 952081360,
+            "pinnedAtUTC": "2026-11-09T19:25:51Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2023_Season2_3IN/N100E364_2023_Season2_3IN_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]"
+          ],
+          "validPixels": 1047397
+        }
+      ],
+      "totalPixels": 1048576,
+      "validPixels": 1047397,
+      "width": 1024
+    },
+    {
+      "acceptedTilesAdded": 0,
+      "actual": {
+        "operations": 5,
+        "receivedBodyBytes": 3276800,
+        "reservedResponseBytes": 3276800,
+        "statuses": [
+          200,
+          206,
+          206,
+          206,
+          206
+        ]
+      },
+      "allPixelsPresent": false,
+      "cloudRequests": 0,
+      "height": 514,
+      "job": "terrain-16-17512-25339",
+      "mapTilesWritten": 0,
+      "missingInsideAOIPixels": 0,
+      "missingOutsideAOIPixels": 166980,
+      "missingPixels": 166980,
+      "phase": "source-mask-diagnostic",
+      "productionAttemptReplayed": false,
+      "requiredInsideAOIPixels": 85838,
+      "reserved": {
+        "attempts": 0,
+        "classARequests": 0,
+        "classBRequests": 0,
+        "egressBytes": 0,
+        "seconds": 0,
+        "sourceBytes": 3276800,
+        "sourceRequests": 5,
+        "storedBytes": 0
+      },
+      "seconds": 3.256,
+      "sources": [
+        {
+          "actualBoundsWGS84": [
+            -83.80047000767622,
+            37.728973461416004,
+            -83.78281994674086,
+            37.74299065900554
+          ],
+          "catalogBoundsWGS84": [
+            -83.80047000767622,
+            37.728973461416004,
+            -83.78281994674086,
+            37.74299065900554
+          ],
+          "id": "N113E342_2024_DEM_Phase2_cog.tif",
+          "newlyCoveredPixels": 97216,
+          "nodata": "-999999.0",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 1,
+          "sourceIdentity": {
+            "etag": "\"036c66107aa9cc57cb97af94d29fca31\"",
+            "identity": "3c5785f9f52ff4cfab9303f108aed74a79a5c67e456ea8aa3442316ba9f82488",
+            "lastModified": "Mon, 16 Dec 2024 22:51:05 GMT",
+            "length": 32873402,
+            "pinnedAtUTC": "2026-11-09T19:26:38Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/elevation/DEM/Phase2/N113E342_2024_DEM_Phase2_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.nodata: 8>]"
+          ],
+          "validPixels": 97216
+        }
+      ],
+      "totalPixels": 264196,
+      "validPixels": 97216,
+      "width": 514
+    },
+    {
+      "acceptedTilesAdded": 0,
+      "actual": {
+        "operations": 30,
+        "receivedBodyBytes": 38010880,
+        "reservedResponseBytes": 38010880,
+        "statuses": [
+          200,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206,
+          206
+        ]
+      },
+      "allPixelsPresent": false,
+      "cloudRequests": 0,
+      "height": 1024,
+      "job": "leaf-off-16-17512-25339",
+      "mapTilesWritten": 0,
+      "missingInsideAOIPixels": 0,
+      "missingOutsideAOIPixels": 663244,
+      "missingPixels": 663244,
+      "phase": "source-mask-diagnostic",
+      "productionAttemptReplayed": false,
+      "requiredInsideAOIPixels": 339968,
+      "reserved": {
+        "attempts": 0,
+        "classARequests": 0,
+        "classBRequests": 0,
+        "egressBytes": 0,
+        "seconds": 0,
+        "sourceBytes": 38010880,
+        "sourceRequests": 30,
+        "storedBytes": 0
+      },
+      "seconds": 25.558,
+      "sources": [
+        {
+          "actualBoundsWGS84": [
+            -83.80047000767622,
+            37.728973461416004,
+            -83.78281994674086,
+            37.74299065900554
+          ],
+          "catalogBoundsWGS84": [
+            -83.80047000767622,
+            37.728973461416004,
+            -83.78281994674086,
+            37.74299065900554
+          ],
+          "id": "N113E342_2024_Season1_3IN_cog.tif",
+          "newlyCoveredPixels": 385332,
+          "nodata": "None",
+          "sourceCRS": "EPSG:3089",
+          "sourceCount": 4,
+          "sourceIdentity": {
+            "etag": "\"ce058856474e1350e5de7e3492d43e37-12\"",
+            "identity": "eb2b73e2837f64b4c19038f19aa33d12f8c89d2790856c1affdeadc5c773ee9e",
+            "lastModified": "Wed, 26 Mar 2025 07:14:02 GMT",
+            "length": 1158962781,
+            "pinnedAtUTC": "2026-11-09T19:26:41Z",
+            "url": "https://kyfromabove.s3.us-west-2.amazonaws.com/imagery/orthos/Phase3/KY_KYAPED_2024_Season1_3IN/N113E342_2024_Season1_3IN_cog.tif"
+          },
+          "sourceMaskFlags": [
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]",
+            "[<MaskFlags.all_valid: 1>]"
+          ],
+          "validPixels": 385332
+        }
+      ],
+      "totalPixels": 1048576,
+      "validPixels": 385332,
+      "width": 1024
+    },
+    {
+      "phase": "diagnostic-complete",
+      "cases": 5,
+      "completed": 5,
+      "acceptedTilesAdded": 0,
+      "officialRequests": 160,
+      "receivedSourceBytes": 216488216,
+      "noProductionMutation": true
+    }
+  ]
+}
