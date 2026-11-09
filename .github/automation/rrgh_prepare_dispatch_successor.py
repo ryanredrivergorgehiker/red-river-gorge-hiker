@@ -6,6 +6,7 @@ latest independent recovery receipt supplied from a separate trusted audit.
 This module is outside backend/scripts so it does not change engine snapshots.
 """
 import base64
+import rrgh_crosswave_batch  # Bind trusted inventory before the source import path is added.
 import copy
 import json
 import os
@@ -235,6 +236,7 @@ def prepare(root, verified):
         if prior['operation']=='overview':continue
         prior_index=lower_usgs_index(region) if old.get('completionPhase') else index
         check(prior == prior_index[prior["id"]], "Source-pinned prior job changed")
+    prior_region=copy.deepcopy(region)
     migration(region, verified.get('sourcePolicyMode', 'expanded'))
     install_engine(root)
     from rrgh_recovery_catalog_integration import install as install_catalog, MODULE as CATALOG_MODULE
@@ -277,14 +279,25 @@ def prepare(root, verified):
     picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True and batch_policy is None)
     completion_phase=None
     crosswave_phase=None
+    crosswave_history=None
     if not picked and verified.get('crosswavePolicy') is not None:
         from rrgh_crosswave_phase import POLICY as CW_POLICY,select as select_crosswave,waiting_summary as crosswave_wait
-        if not old.get('crosswavePhase'):
-            check(wave==CW_POLICY['baselineSequence'] and prior_plan_sha==CW_POLICY['baselinePlanSHA256'] and
-                verified['acceptedRasterTiles']==CW_POLICY['baselineAcceptedTiles'] and
-                not select_completion(region,accepted,before_attempts,verified['completionPolicy']),
-                'Cross-wave pilot must start at the independently settled USGS boundary')
-        picked,crosswave_phase=select_crosswave(accepted,before_attempts,verified['crosswavePolicy'])
+        from rrgh_crosswave_batch import POLICY as CW_BATCH,advance_history,select as select_batch
+        if verified['crosswavePolicy']==CW_BATCH:
+            check(old.get('crosswavePhase') is not None,'Batch requires independently verified overview predecessor')
+            if old['crosswavePhase']['format']=='rrgh-crosswave-pilot-phase-v1':
+                check(wave==CW_BATCH['baselineSequence'] and prior_plan_sha==CW_BATCH['baselinePlanSHA256'] and
+                    verified['receiptRef']==CW_BATCH['verifiedPilotRecovery'] and verified['acceptedRasterTiles']==267476,
+                    'Measured batch must start at the exact verified pilot')
+            crosswave_history=advance_history(old,prior_region,verified)
+            picked,crosswave_phase=select_batch(accepted,before_attempts,verified['crosswavePolicy'],crosswave_history)
+        else:
+            if not old.get('crosswavePhase'):
+                check(wave==CW_POLICY['baselineSequence'] and prior_plan_sha==CW_POLICY['baselinePlanSHA256'] and
+                    verified['acceptedRasterTiles']==CW_POLICY['baselineAcceptedTiles'] and
+                    not select_completion(region,accepted,before_attempts,verified['completionPolicy']),
+                    'Cross-wave pilot must start at the independently settled USGS boundary')
+            picked,crosswave_phase=select_crosswave(accepted,before_attempts,verified['crosswavePolicy'])
         limits={}
         if not picked:
             summary=crosswave_wait(old,region,verified)
@@ -345,18 +358,21 @@ def prepare(root, verified):
           "Original source and time bounds changed")
     for jid, perjob in old["jobPolicies"].items():
         if old.get('crosswavePhase') or (old.get('overviewPilot') or {}).get('job')==jid:
-            check(perjob==dict(seconds=600,sourceBytes=0,sourceRequests=0),'Overview source caps changed')
+            prior_seconds=60 if old.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2' else 600
+            check(perjob==dict(seconds=prior_seconds,sourceBytes=0,sourceRequests=0),'Overview source caps changed')
         elif old.get('completionPhase'):
             check(perjob==job_policy(old['completionPhase']['authority']),'Prior completion policy changed')
         else:check(policy[jid.rsplit("-", 3)[0]] == perjob, "Prior layer policy changed")
     if completion_phase:policy['usgs-topo']=job_policy(verified['completionPolicy'])
+    overview_seconds=60 if crosswave_phase and crosswave_phase['format']=='rrgh-crosswave-batch-phase-v2' else 600
+    picked_policies={j['id']:(dict(seconds=overview_seconds,sourceBytes=0,sourceRequests=0) if j['operation']=='overview' else policy[j['layer']]) for j in picked}
     check(all(x in policy for x in limits), "Missing original approved layer policy")
-    check(sum(policy[j["layer"]]["sourceRequests"] for j in picked)
+    check(sum(picked_policies[j['id']]['sourceRequests'] for j in picked)
           <= old["slots"][1]["sourceRequests"], "Source requests cannot exceed prior envelope")
-    check(sum(policy[j["layer"]]["sourceBytes"] for j in picked)
+    check(sum(picked_policies[j['id']]['sourceBytes'] for j in picked)
           <= old["slots"][1]["sourceBytes"], "Source bytes cannot exceed prior envelope")
     if not batch_policy:
-        check(sum(policy[j['layer']]['seconds'] for j in picked)<=old['slots'][1]['seconds'],
+        check(sum(picked_policies[j['id']]['seconds'] for j in picked)<=old['slots'][1]['seconds'],
               'Production seconds cannot exceed prior envelope')
     # A larger finite allocation is an eligibility list, not permission to start
     # every job. The coordinator reserves whole pairs against the unchanged slot.
@@ -399,8 +415,11 @@ def prepare(root, verified):
     else:plan.pop('crosswavePhase',None)
     if completion_phase:plan['completionPhase']=completion_phase
     else:plan.pop('completionPhase',None)
-    plan["jobPolicies"] = {j["id"]: (dict(seconds=600,sourceBytes=0,sourceRequests=0)
-        if j['operation']=='overview' else policy[j["layer"]]) for j in picked}
+    plan['jobPolicies']=picked_policies
+    if crosswave_history is not None:
+        plan['crosswaveHistory']=crosswave_history
+        from rrgh_crosswave_batch import fund
+        fund(plan)
     plan["slots"][1]["attempts"] = len(jobs)
     plan["limits"]["attempts"] = len(jobs)
     check(plan["slots"][1]["classARequests"] == 2000 and
