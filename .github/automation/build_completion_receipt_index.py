@@ -46,6 +46,16 @@ def build(source,audit):
         if seq==0:
             stop=dict(reason='pre-campaign accepted seed',remainingJobs=len(remaining));break
         recovery=plan['campaign']['previousRecovery']
+        if 'failedBootstrapReceiptKey' in recovery:
+            failed=plan['campaign']['failedBootstrap']
+            initial=json.loads((source/'backend/config/gorge-campaign-wave-000-20261030/PLAN.json').read_bytes())
+            assert seq==1 and sha(canonical(initial))==failed['planSHA256']
+            assert initial['completedJobIDs']==plan['completedJobIDs']
+            assert recovery=={'failedBootstrapReceiptKey':failed['receiptKey']}
+            stop=dict(reason='pre-campaign accepted seed; empty failed bootstrap retained',
+                remainingJobs=len(remaining),failedBootstrapSequence=0,
+                failedBootstrapPlanSHA256=failed['planSHA256'])
+            break
         match=re.fullmatch(r'engineering/map-production/plans/([0-9a-f]{64})/slots/(00002|00000|00001)/receipt.json',recovery['key'])
         if not match or (match.group(2)!='00002' and seq-1 not in (289,11)):
             stop=dict(reason='exceptional recovery namespace',afterSequence=seq,recovery=recovery);break
