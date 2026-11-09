@@ -170,8 +170,18 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
                     ("tiles","outputBytes","packageParts","packageBytes","adjacentEdgesMeasured")),
                 "Zero-output recovery must contain only independently verified consumed pixel gaps")
     else:
+        # This exact pilot has one output per layer, so there are no adjacent
+        # output pairs. All sixteen child tiles and all four recomputed parents
+        # must still pass their pinned independent verification.
+        from rrgh_overview_integration import validate_verification
+        checked_overview=validate_verification(result.get('overviewPilotVerification'))
+        isolated_pilot=(isinstance(checked_overview,dict) and
+            checked_overview.get('format')=='rrgh-crosswave-verification-v1' and
+            jobs_count==result.get('tiles')==4 and not partial and not pixel_gaps and
+            result.get('sourceRequests')==0 and result.get('sourceBytesReceived')==0)
         require(type(result.get("adjacentEdgesMeasured")) is int and
-                result["adjacentEdgesMeasured"] > 0, "Missing edge QA")
+                (result["adjacentEdgesMeasured"] > 0 or
+                 (isolated_pilot and result["adjacentEdgesMeasured"] == 0)), "Missing edge QA")
     carry = result.get("nextCarry") or {}
     settlement = result.get("settlement") or {}
     require(settlement.get("independentRecoveryComplete") is (not partial),

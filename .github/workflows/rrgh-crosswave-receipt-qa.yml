@@ -1,0 +1,28 @@
+name: RRGH isolated overview receipt audit QA
+on:
+  push:
+    branches: [lane20/crosswave-receipt-closure-20261109]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  receipt-closure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2a0e8a2a99d7fe3979dc7e2e65c4979667112728
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - run: python -m unittest discover -s .github/automation -p test_rrgh_crosswave_receipt_audit.py -v
+      - run: python .github/automation/verify_rrgh_crosswave_settlement.py source-checkout
+      - run: python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
