@@ -665,7 +665,7 @@ def publish_and_advance(api,root,source_root,audit,recovered=False,automatic=Fal
     # Re-read live successful producer/recovery evidence; do not trust a caller's flag.
     guard((audit_pending(api,root) if automatic else audit_recovered(api,root) if recovered else audit_current(api,root))==audit,
           'Audit does not match live independent recovery')
-    if (Path(source_root)/'RRGH-COMPLETION-WAIT.json').exists():
+    if audit.get('completionPolicy') is not None and (Path(source_root)/'RRGH-COMPLETION-WAIT.json').exists():
         return settle_completion_wait(api,root,source_root,old,state,audit)
     parent,plan_hash,plan,entries=candidate_entries(source_root,audit,state)
     assert_no_other_producers(api,state['runID'])
