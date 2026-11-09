@@ -226,11 +226,15 @@ def prepare(root, verified):
     check(len(index) == expected_index, "Pinned source inventory changed")
     from rrgh_overview_integration import validate_previous,install as install_overview,select as select_overview,MODULES as OVERVIEW_MODULES
     validate_previous(old,region)
+    from rrgh_completion_phase import lower_usgs_index, validate_plan as validate_completion, select as select_completion, PHASE
+    if old.get('completionPhase'):
+        validate_completion(old,region,verified.get('completionPolicy'))
     from rrgh_overview_integration import validate_recovery
     validate_recovery(old,verified)
     for prior in region["jobs"]:
         if prior['operation']=='overview':continue
-        check(prior == index[prior["id"]], "Source-pinned prior job changed")
+        prior_index=lower_usgs_index(region) if old.get('completionPhase') else index
+        check(prior == prior_index[prior["id"]], "Source-pinned prior job changed")
     migration(region, verified.get('sourcePolicyMode', 'expanded'))
     install_engine(root)
     from rrgh_recovery_catalog_integration import install as install_catalog, MODULE as CATALOG_MODULE
@@ -271,6 +275,20 @@ def prepare(root, verified):
             tuple(job["sourceIDs"]), morton(job["x"], job["y"]), job["id"]))
         picked.extend(sample)
     picked,overview_pilot=select_overview(picked,accepted,before_attempts,verified.get('overviewPilotEnabled') is True and batch_policy is None)
+    completion_phase=None
+    if not picked and verified.get('completionPolicy') is not None:
+        from rrgh_completion_phase import BASELINE_PLAN
+        check(old.get('completionPhase')==PHASE or
+              (wave==1322 and prior_plan_sha==BASELINE_PLAN and verified['acceptedRasterTiles']==265702),
+              'Completion queue requires exact approved baseline or enrolled predecessor')
+        picked=select_completion(region,accepted,before_attempts,verified['completionPolicy'])
+        completion_phase=copy.deepcopy(PHASE)
+        limits={'usgs-topo':12}
+        if not picked and old.get('completionPhase'):
+            from rrgh_completion_phase import waiting_summary
+            summary=waiting_summary(old,region,verified)
+            (root/'RRGH-COMPLETION-WAIT.json').write_bytes(canonical(summary))
+            return summary
     jobs = [j["id"] for j in picked]
     check(bool(jobs),
           "SOURCE_TERRITORY_EXHAUSTED: no fresh source-backed hiking, terrain or leaf-off "
@@ -360,6 +378,8 @@ def prepare(root, verified):
     plan["expiresAt"] = (datetime.now(timezone.utc) +
                          timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     plan['overviewPilot']=overview_pilot
+    if completion_phase:plan['completionPhase']=completion_phase
+    else:plan.pop('completionPhase',None)
     plan["jobPolicies"] = {j["id"]: (dict(seconds=600,sourceBytes=0,sourceRequests=0)
         if j['operation']=='overview' else policy[j["layer"]]) for j in picked}
     plan["slots"][1]["attempts"] = len(jobs)

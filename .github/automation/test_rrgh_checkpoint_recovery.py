@@ -81,6 +81,29 @@ def result_fixture(m):
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_only_explicit_completion_usgs_scope_can_use_saved_checkpoint_recovery(self):
+        from rrgh_completion_phase import POLICY,PHASE,select,BOUNDS
+        f=fixture();p=f['plan'];previous=p['approvedJobIDs']
+        jobs=select(dict(boundsWGS84=BOUNDS,profiles={'core':{'usgs-topo':16}}),[],{},POLICY)
+        mapping=dict(zip(previous,[j['id'] for j in jobs],strict=True))
+        p['approvedJobIDs']=[mapping[j] for j in previous]
+        p['jobPolicies']={j:dict(seconds=600,sourceBytes=1048576,sourceRequests=1) for j in p['approvedJobIDs']}
+        p['completionPhase']=PHASE;f['state']['completionPolicy']=POLICY
+        for row in f['producerRows']:
+            if 'durableJobReceipt' in row:
+                before=row['job'];row['job']=mapping[before];row['jobTiles']=1
+                row['durableJobReceipt']['key']=row['durableJobReceipt']['key'].replace(before+'.json',row['job']+'.json')
+        (m,_),_=original_fixture(f)
+        self.assertEqual(m['tiles'],10)
+        self.assertEqual(m['uncertainJobIDs'],p['approvedJobIDs'][10:])
+        report=c.validate_report(m,result_fixture(m),{**f['state'],'runID':999})
+        self.assertEqual(report['completionPolicy'],POLICY)
+        for field in ('completionPhase','jobPolicies'):
+            bad=copy.deepcopy(f);bad['plan'][field]={}
+            with self.assertRaises(d.Halt):original_fixture(bad)
+        bad=copy.deepcopy(f);bad['state'].pop('completionPolicy')
+        with self.assertRaises(d.Halt):original_fixture(bad)
+
     def test_receipt_audit_in_isolated_controller_without_source_imports(self):
         (m,p),f=original_fixture();r=result_fixture(m)
         code='''import importlib.util,json,sys

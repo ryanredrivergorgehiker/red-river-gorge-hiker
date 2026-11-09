@@ -1,0 +1,35 @@
+name: RRGH completion phase offline QA
+on:
+  push:
+    branches: [lane20/completion-phase-20261109]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  RRGH_TEST_SOURCE: source-checkout
+jobs:
+  offline-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Finite queues, receipt recovery and controller ownership
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_completion_phase.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_checkpoint_recovery.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_dispatcher.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v
+      - name: Actual 1322 baseline, two prospective allocations and final phase settlement
+        run: python .github/automation/verify_rrgh_completion_phase_roundtrip.py source-checkout
