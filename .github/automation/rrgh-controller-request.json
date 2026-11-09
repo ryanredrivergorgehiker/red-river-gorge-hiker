@@ -1,17 +1,17 @@
 {
-  "action": "resume-recovered",
+  "action": "recover-unstarted",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-09",
-  "source_sha": "2a0e8a2a99d7fe3979dc7e2e65c4979667112728",
-  "plan_sha256": "e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff",
-  "original_run": 42665121180,
-  "dispatch_id": "5ec533020655ead3ce84c8b2b0ae157c2855bf871c90b5511175489c971d0ea7",
-  "recovery_receipt": {
-    "bytes": 11398,
-    "generation": "1794245559746794",
-    "key": "engineering/map-production/plans/e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff/slots/00002/receipt.json",
-    "sha256": "52a4fc9b273c75b434b0312895965f84c80a581f54f3769a4ed01ad98b0e8e77"
+  "source_sha": "e0551e17752606cc9baa8280f45ef6209d739362",
+  "plan_sha256": "d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4",
+  "original_run": 42669263145,
+  "dispatch_id": "a89729737b5a1001365d1b90575c3a14000658fd07c2b45a08eac0b32ae6e0eb",
+  "producer_receipt": {
+    "bytes": 857,
+    "generation": "1794247693485558",
+    "key": "engineering/map-production/plans/d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4/slots/00001/receipt.json",
+    "sha256": "94f2ad8d683f93b7fa77ed097dd59992184c38ec81a00f12618a931949a04ea7"
   },
-  "reviewed_commit": "15c0b12decf65a80d3bfe379cbcae7098f872dd7",
-  "purpose": "Advance from independently settled1357 to fresh bounded ordinary-child overview batches; no old allocation replay; scheduled ChatGPT task stays disabled"
+  "reviewed_commit": "05a9d37dbab91f4475d1a47a465ca3bbca4ca47d",
+  "purpose": "Run only wave1358 unused verification after GitHub never scheduled it; do not repeat production"
 }
