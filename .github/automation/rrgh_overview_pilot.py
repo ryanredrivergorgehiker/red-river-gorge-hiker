@@ -18,6 +18,9 @@ def job_for(m):
 
 
 def validate_scope(plan,region,job):
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_runtime import scope as crosswave
+        return crosswave(plan,region,job)
     m=plan.get('overviewPilot')
     require(isinstance(m,dict) and m.get('format')=='rrgh-verified-child-overview-pilot-v1' and
             job==job_for(m) and job['layer']=='leaf-on' and job['z']==15 and
@@ -34,6 +37,9 @@ def validate_scope(plan,region,job):
 
 
 def read_dependencies(slot,plan,region,destination):
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_runtime import read_dependencies as crosswave
+        return crosswave(slot,plan,region,destination)
     from gorge_checkpoint import Ref,digest
     from gorge_campaign import load_large
     from gorge_second_stage import record,recover_catalogs
@@ -100,6 +106,9 @@ def read_dependencies(slot,plan,region,destination):
 
 
 def attach_proof(plan,region,receipt,initial):
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_runtime import attach_proof as crosswave
+        return crosswave(plan,region,receipt,initial)
     job=next(j for j in region['jobs'] if j['id']==receipt['job'])
     if job['operation']!='overview':return receipt
     m=validate_scope(plan,region,job);proof=initial.get('overviewPilot')
@@ -113,6 +122,9 @@ def attach_proof(plan,region,receipt,initial):
 
 
 def verify(slot,plan,region,records,root,source_root):
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_runtime import verify as crosswave
+        return crosswave(slot,plan,region,records,root,source_root)
     m=plan.get('overviewPilot')
     if m is None:return None
     selected=[r for r in records if r['job']==m['job']]

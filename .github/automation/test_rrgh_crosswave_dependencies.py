@@ -34,7 +34,7 @@ class MemorySlot:
         return raw[start:start+length]
 
 
-def fixture(layer='terrain',transparent=False):
+def fixture(layer='terrain',transparent=False,wave_offset=0):
     job=dict(id=f'{layer}-15-8756-12645',layer=layer,z=15,x=8756,y=12645,
         operation='overview',sourceIDs=[],outputTiles=[[15,8756,12645]])
     ids=c.child_ids(job);objects={};waves=[]
@@ -43,7 +43,7 @@ def fixture(layer='terrain',transparent=False):
         objects[key]=(ref,raw);return ref
     def record(key,obj):return put(key,encode_record(obj,2**20,True))
     for n in range(2):
-        sha=str(n+1)*64;recipe=str(n+3)*64;prefix='engineering/map-production/plans/'+sha+'/slots/'
+        sha=str(n+1+wave_offset)*64;recipe=str(n+3)*64;prefix='engineering/map-production/plans/'+sha+'/slots/'
         refs=[]
         for k,jid in enumerate(ids[n*2:n*2+2]):
             x,y=map(int,jid.rsplit('-',2)[1:]);path=f'tiles/{layer}/16/{x}/{y}.png'
@@ -64,9 +64,9 @@ def fixture(layer='terrain',transparent=False):
             result=dict(status='complete',detailRef=detail)))
         recovery=record(prefix+'00002/receipt.json',dict(format='rrgh-slot-receipt-v1',planSHA256=sha,slot=2,
             result=dict(status='verified',jobs=2,tiles=2,workerReceipt=worker,detailRef=detail,
-                settlement=dict(sequence=n+10,planSHA256=sha,independentRecoveryComplete=True),
+                settlement=dict(sequence=n+10+wave_offset,planSHA256=sha,independentRecoveryComplete=True),
                 allOutputHashesAndPixelsVerified=True,allNewPackageChunksReadBack=True,allExistingCachesPreserved=True)))
-        waves.append(dict(sequence=n+10,sourcePlanSHA256=sha,recipeSHA256=recipe,recovery=recovery,
+        waves.append(dict(sequence=n+10+wave_offset,sourcePlanSHA256=sha,recipeSHA256=recipe,recovery=recovery,
             sourceJobCount=2,expectedTiles=2,acceptedJobIDs=ids[n*2:n*2+2],acceptanceKind='ordinary'))
     index=dict(waves=waves);return job,index,ids,objects,c.manifest(index,job,ids)
 

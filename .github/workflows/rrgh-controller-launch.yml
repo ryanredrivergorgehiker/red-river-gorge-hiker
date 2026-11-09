@@ -36,7 +36,8 @@ jobs:
           if action in ('resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','complete-halted'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
-              assert source==state['sourceSHA'] and state['status']=='halted'
+              assert source==state['sourceSHA'] and (state['status']=='halted' or
+                  (action=='resume-recovered' and state['status']=='completion-waiting' and state.get('crosswavePolicy')))
           if action=='resume-unclaimed':
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())

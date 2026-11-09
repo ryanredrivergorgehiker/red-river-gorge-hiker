@@ -166,10 +166,13 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     overviews=[j for j in new['jobs'] if j['operation']=='overview']
     require(native==[index[j['id']] for j in native], 'Unreviewed source window publication')
     require([j['id'] for j in new['jobs']]==plan['approvedJobIDs'], 'Job ordering differs from plan')
-    require(not overviews or (audit.get('overviewPilotEnabled') is True and len(overviews)==1 and
+    if plan.get('crosswavePhase'):
+        from rrgh_crosswave_phase import validate_plan as validate_crosswave
+        validate_crosswave(plan,new,audit.get('crosswavePolicy'))
+    require(not overviews or plan.get('crosswavePhase') or (audit.get('overviewPilotEnabled') is True and len(overviews)==1 and
         overviews==[pilot_job(overviews[0]['id'])] and
         plan.get('overviewPilot')==pilot_manifest(overviews[0]['id']) and len(new['jobs'])<=12), 'Unreviewed overview allocation')
-    require(bool(overviews)==bool(plan.get('overviewPilot')), 'Unused overview authority')
+    require(bool(overviews)==bool(plan.get('overviewPilot') or plan.get('crosswavePhase')), 'Unused overview authority')
     from rrgh_batch_integration import validate as validate_batch, installed as batch_installed, MODULES as BATCH_MODULES
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
     batch=validate_batch(root,old_plan,plan,audit)
@@ -190,7 +193,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
     validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py'):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     if batch_installed(root):
         for name in BATCH_MODULES:wanted[name]=sha((root/'backend/scripts'/name).read_bytes())

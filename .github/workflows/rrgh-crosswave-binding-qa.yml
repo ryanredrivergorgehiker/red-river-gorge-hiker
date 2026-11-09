@@ -1,4 +1,4 @@
-name: RRGH cross-wave dependency binding QA
+name: RRGH cross-wave production integration QA
 on:
   push:
     branches: [lane20/verified-crosswave-reader-20261109]
@@ -6,11 +6,11 @@ permissions:
   contents: read
 env:
   PYTHONDONTWRITEBYTECODE: '1'
-  RRGH_TEST_SOURCE: source-checkout
+  RRGH_TEST_SOURCE: renderer-source
 jobs:
-  offline-binding:
+  production-integration:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -18,13 +18,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: 2c121dfba317d918749acaadd6842be81c88fee1
+          path: renderer-source
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 5566a6885eadfad16a8548a58907b6a8805cfe55
           path: source-checkout
           persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
-      - name: Real compact codecs, immutable ranges, four original layer renderers and faults
-        run: python -m unittest discover -s .github/automation -p test_rrgh_crosswave_dependencies.py -v
-      - name: Acquire actual immutable receipt bindings across accepted historical waves
-        run: python .github/automation/verify_rrgh_crosswave_binding.py source-checkout
+      - name: Four layer production, immutable source reads, independent recomputation and corruption gates
+        run: python -m unittest discover -s .github/automation -p 'test_rrgh_crosswave*.py' -v
+      - name: Real settled source to fresh pilot, trusted publication and once-only phase closure
+        run: python .github/automation/verify_rrgh_crosswave_roundtrip.py source-checkout
+      - name: Preserve published-successor and handoff recovery paths
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_completion_throughput.py -v
