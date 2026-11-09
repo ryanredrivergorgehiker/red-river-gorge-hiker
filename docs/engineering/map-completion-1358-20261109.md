@@ -1,4 +1,4 @@
-# RRGH completion checkpoint — 2026-11-09 18:26 UTC
+# RRGH completion checkpoint — 2026-11-09, including prospective typed-policy enrollment
 
 This checkpoint supersedes earlier instructions to resume the ChatGPT engineering task. Ryan explicitly requested that task disabled; it was rechecked disabled, with no next run. Continue only within the original RRGH completion scope and existing resource limits.
 
@@ -24,7 +24,7 @@ Inspect live controller state before acting:
 - Original run failed with GitHub internal server error before independent-recovery or retain-failure jobs existed. Correlation621e2998-284b-4186-9d05-78edc1bcd7ed.
 - Recovery-only dispatch42672888093 failed terminally with zero jobs and no controller claim. Its exact failed-head state, source/plan/dispatch and complete zero-job inventory were verified; a unique-head scan returned only that run. It is preserved in unstartedRecoveryDispatchHistory. No Cloud slot was executed.
 - State was then restored to the original1358 halted production boundary, retaining launchCounter1315 and the failed recovery dispatch history. This is NOT a rollback of any accepted work or consumed Cloud allocation.
-- As last checked: enabled=true, status=halted, mode=produce, runID42669263145; recoveryStartAuthorization pins the original producer receipt. Active crosswavePolicy remains V2, not V3.
+- As last checked: enabled=true, status=halted, mode=produce, runID42669263145; recoveryStartAuthorization pins the original producer receipt. Prospective crosswavePolicy is now V3, activated by commit d979aa7cdc1aa7ff348ecd2bcbe106d60b3587bc. The current producer source, plan, dispatch, saved receipt, accepted history and launchCounter remain unchanged. This policy only selects a successor after independent verification.
 - Current controller digest: df8217c7a858c9a5f23bbea823ff1ae29c7ec508350b96679c0fe2369a1e5c38.
 - Request commit536ee279e7f29037643eee787339f8114ee04ec5 asked only recover-unstarted. Launch42673314408 failed before any job, GitHub internal error b01ef2dc-f320-4d60-a6bf-3467e8a2ef9e.
 - Existing main handoff was manually dispatched once after verifying its live code and original1358 boundary. Run42673794518 also failed with zero jobs, GitHub internal error fe1ebe82-0930-451c-87aa-bb0659991024.
@@ -49,14 +49,14 @@ PR111: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/pull/111
 - Typed read-only accepted-child readers for verified subsets, failed-worker partial recovery, missing-worker saved-checkpoint salvage and separately funded wave289 completion. Failed original allocation remains fully consumed; unresolved jobs never become accepted.
 - Exact QA42672820240 and full CI42672826867 both passed.
 - Actual1357 receipt -> synthetic108 ordinary batch -> typed4 pilot -> larger nonoverlapping batch was tested through the trusted publisher. Synthetic receipt tests are NOT live acceptance.
-- Code is installed; V3 policy is deliberately not activated yet. Require successful independent1358 batch, then four-parent live pilot covering recovery paths105,289,260 before larger typed batches.
+- Code is installed and V3 policy is prospectively enrolled. The controller audit first requires successful independent1358 verification; the planner then selects a four-parent live pilot covering recovery paths105,289,260. Larger typed batches remain blocked until that pilot independently verifies. Exact policy readback matched after enrollment; no new producer or recovery was dispatched by this state-only change.
 - Prospective source-module migration allows only the exact existing PR109 hashes. Original geometry, renderer quality, accepted output bytes, failed attempts and aggregate budgets stay unchanged.
 
 ## Remaining work and safe continuation
 
 1. When GitHub can schedule jobs, use the exact current recovery-start request or existing handoff to run the unused1358 recovery slot. First inspect live state/runs, avoid duplicate dispatches, and never rerun the original production workflow.
 2. Independently verify all108 outputs and package chunks; receipt must bind the saved worker above. Only then accepted count can become267,584 and remaining10,694.
-3. Activate tested V3 policy only at a verified boundary. Do not mutate an active producer source or digest. If pausing future dispatch, wait until producer finished; recovery can finish separately. Use current inclusive ledger for any prospective code rollback.
+3. V3 is already configured prospectively. After1358 independently verifies, allow the tested planner to select the four-parent typed-reader pilot; larger typed batches require its independent acceptance. Do not mutate an active producer source or digest. Use the current inclusive ledger for any prospective code rollback.
 4. Ordinary-only simulated queue adds5,480 parents from1357, leaving1,572 lower-zoom and3,750 native positions. This is a planning simulation, not actual accepted coverage or full-completion forecast.
 5. Complete seed/boundary provenance:44 pre-campaign accepted jobs need explicit seed proof, including two existing hiking/terrainz15 parents. Do not invent ordinary campaign receipts for them.
 6. Original native gaps:321 pixel-gap jobs/2,897 tiles plus55 other consumed jobs/853 tiles. All retain attempt1; global max remains2. Salvage saved bytes first for ambiguous cases. Do not clear attempts or blindly retry.
