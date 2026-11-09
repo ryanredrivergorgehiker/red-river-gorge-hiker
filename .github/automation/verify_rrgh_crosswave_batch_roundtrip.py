@@ -71,14 +71,38 @@ report.update(wave=1358,planSHA256=sha,jobsNew=n,tilesNew=n,acceptedJobs=audit['
     acceptedRasterTiles=267476+n,overviewPilotVerification=proof)
 report['receiptRef']=dict(key='engineering/map-production/plans/'+sha+'/slots/00002/receipt.json',generation='322',bytes=1000,sha256='b'*64)
 report['receiptSHA256']=report['receiptRef']['sha256'];report['nextCarry']['priorCompletedJobs']+=n;report['nextCarry']['priorRasterTiles']+=n
+if os.environ.get('RRGH_TYPED_TRANSITION_TEST')=='1':report['crosswavePolicy']=c.TYPED_POLICY
 _,sha2,p2,entries2=candidate(report)
 assert not set(p2['approvedJobIDs'])&set(plan['approvedJobIDs'])
 assert len(p2['crosswaveHistory'])==2 and p2['completedJobIDs']==plan['completedJobIDs']+plan['approvedJobIDs']
 assert all(p2['priorAttemptCounts'][j]==1 for j in plan['approvedJobIDs'])
 c.validate_funding(plan,p2)
+if os.environ.get('RRGH_TYPED_TRANSITION_TEST')=='1':
+    assert p2['crosswavePhase']['typedReadPilot'] is True and len(p2['approvedJobIDs'])==4
+    assert {v.get('acceptanceKind','ordinary') for v in p2['crosswavePhase']['sources'].values()}=={
+        'ordinary','partial-needs-typed-receipt','wave289-consumed-recovery'}
+    assert {105,289,260} <= {v['sequence'] for v in p2['crosswavePhase']['sources'].values()}
 sys.path.insert(0,str(source/'backend/scripts'))
 from gorge_checkpoint import encode_record,COMPACT_RECEIPT
 encoded=encode_record(dict(result=dict(overviewPilotVerification=proof)),COMPACT_RECEIPT,True)
 assert len(encoded)<COMPACT_RECEIPT//2
 print(json.dumps(dict(verified='nonoverlapping second batch, exact history, bounded compact receipt',
     firstBatch=n,secondBatch=len(p2['approvedJobIDs']),syntheticReceiptBytes=len(encoded),liveProduction=False)))
+
+if os.environ.get('RRGH_TYPED_TRANSITION_TEST')=='1':
+    subprocess.run(['git','-C',str(source),'add',*[e['path'] for e in entries2]],check=True)
+    subprocess.run(['git','-C',str(source),'-c','user.name=Offline QA','-c','user.email=offline-qa@example.invalid','commit','-qm','SYNTHETIC typed pilot fixture'],check=True)
+    typed=copy.deepcopy(report);n2=len(p2['approvedJobIDs'])
+    typed.update(wave=1359,planSHA256=sha2,jobsNew=n2,tilesNew=n2,
+        acceptedJobs=report['acceptedJobs']+n2,acceptedRasterTiles=report['acceptedRasterTiles']+n2)
+    typed['overviewPilotVerification']=dict(proof,phaseSHA256=c.digest(p2['crosswavePhase']),planSHA256=sha2,
+        parents=[dict(job=j,outputSHA256='a'*64,outputBytes=100) for j in p2['approvedJobIDs']],
+        detailRef=dict(key='engineering/map-production/plans/'+sha2+'/slots/00002/indexes/detail',generation='323',bytes=100,sha256='c'*64))
+    typed['receiptRef']=dict(key='engineering/map-production/plans/'+sha2+'/slots/00002/receipt.json',generation='324',bytes=1000,sha256='d'*64)
+    typed['receiptSHA256']=typed['receiptRef']['sha256'];typed['nextCarry']['priorCompletedJobs']+=n2;typed['nextCarry']['priorRasterTiles']+=n2
+    _,_,p3,_=candidate(typed)
+    assert p3['crosswavePhase']['typedReadPilot'] is False and 4<len(p3['approvedJobIDs'])<=128
+    assert set(p3['crosswaveHistory'][-1]['typedDependenciesVerified'])=={'partial-needs-typed-receipt','wave289-consumed-recovery'}
+    assert not set(p3['approvedJobIDs'])&set(p2['approvedJobIDs'])
+    print(json.dumps(dict(verified='four-parent typed pilot gates larger queue after independent acceptance',
+        nextBatch=len(p3['approvedJobIDs']),liveProduction=False)))

@@ -5,10 +5,12 @@ import json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py')
+MODULES=('rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py','rrgh_typed_child_receipts.py')
 MANIFEST=ROOT/'.github/automation/overview-pilot.json'
 PRIOR_MODULE_SHA256={'rrgh_overview_pilot.py':('8a77ce04f710c74082e1a2ef8e9079d6e972025e417e5594debeef15bac38d58','5008d355028103e3cdc2beac42f98d3ee60a3a2d516057149308614ccb7fd44c')}
 PRIOR_MODULE_SHA256.update({'rrgh_crosswave_dependencies.py': ('4d03849bea55f1a70e18b4210327591d61afc3c05b69099b48c042567b7a648b',), 'rrgh_crosswave_runtime.py': ('8db67538de04631995bec567af3400df2d04d9c6e638f01b06c75253a48f0fda',)})
+for _name,_sha in {'rrgh_crosswave_batch.py': '8b36a38b4a7a8cbe4bccdf11886cd2497c49de88122c311b674e4c5ba7f6cf78', 'rrgh_crosswave_dependencies.py': 'b33b650c7a182bc2e9175002a75303c113d199cdd51ab281340df3f030399df9'}.items():
+    PRIOR_MODULE_SHA256[_name]=PRIOR_MODULE_SHA256.get(_name,())+(_sha,)
 HOOKS=[
     ("    (root/'worker').mkdir(mode=0o700)\n",
      "    (root/'worker').mkdir(mode=0o700)\n    from rrgh_overview_pilot import read_dependencies\n    overview_proof=read_dependencies(slot,plan,region,root/'worker')\n"),

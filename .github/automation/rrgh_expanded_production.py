@@ -196,7 +196,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     from rrgh_recovery_catalog_integration import validate as validate_catalog, MODULE as CATALOG_MODULE
     validate_catalog(root,controller_root)
     wanted=copy.deepcopy(old['engineHashes'])
-    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py'):
+    for name in ('gorge_campaign.py','benchmark_gorge_pipeline.py',CATALOG_MODULE,'run_gorge_checkpoint_slot.py','rrgh_wif_credentials.py','rrgh_overview_pilot.py','rrgh_verified_overview.py','rrgh_crosswave_dependencies.py','rrgh_crosswave_runtime.py','rrgh_crosswave_batch.py','rrgh_typed_child_receipts.py'):
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     if batch_installed(root):
         for name in BATCH_MODULES:wanted[name]=sha((root/'backend/scripts'/name).read_bytes())

@@ -282,9 +282,13 @@ def prepare(root, verified):
     crosswave_history=None
     if not picked and verified.get('crosswavePolicy') is not None:
         from rrgh_crosswave_phase import POLICY as CW_POLICY,select as select_crosswave,waiting_summary as crosswave_wait
-        from rrgh_crosswave_batch import POLICY as CW_BATCH,advance_history,select as select_batch
-        if verified['crosswavePolicy']==CW_BATCH:
+        from rrgh_crosswave_batch import POLICY as CW_BATCH,TYPED_POLICY,advance_history,select as select_batch
+        if verified['crosswavePolicy'] in (CW_BATCH,TYPED_POLICY):
             check(old.get('crosswavePhase') is not None,'Batch requires independently verified overview predecessor')
+            if verified['crosswavePolicy']==TYPED_POLICY:
+                check(wave>=1358 and old['crosswavePhase']['format']=='rrgh-crosswave-batch-phase-v2' and
+                    verified.get('overviewPilotVerification',{}).get('allParentsIndependentlyRecomputed') is True,
+                    'Typed readers require an independently verified ordinary batch')
             if old['crosswavePhase']['format']=='rrgh-crosswave-pilot-phase-v1':
                 check(wave==CW_BATCH['baselineSequence'] and prior_plan_sha==CW_BATCH['baselinePlanSHA256'] and
                     verified['receiptRef']==CW_BATCH['verifiedPilotRecovery'] and verified['acceptedRasterTiles']==267476,

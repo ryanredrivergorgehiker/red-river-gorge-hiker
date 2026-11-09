@@ -32,7 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
-    'rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
+    'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
     'rrgh_completion_phase.py','rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
     'rrgh_required_inventory.py','rrgh_recovery_catalog_integration.py','rrgh_verified_tile_catalog.py','rrgh_recovery_only.py','rrgh_checkpoint_diagnostics.py','rrgh_checkpoint_salvage.py','rrgh_salvage_audit.py',
@@ -565,7 +565,7 @@ def audit_recovered(api,root):
             'Exact settled phase boundary required')
         auth={'recoveryReceipt':state['lastRecovered']['recoveryReceipt']}
     else:
-        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-04') and
+        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-04','2026-11-09') and
               all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
               'Exact owner-authorized recovered continuation missing')
     assert_no_other_producers(api)
