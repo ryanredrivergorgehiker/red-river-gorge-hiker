@@ -1,1 +1,17 @@
-{"action":"resume-recovered","source_sha":"5566a6885eadfad16a8548a58907b6a8805cfe55","authorizedBy":"ryanredrivergorgehiker","authorizedOn":"2026-11-09","requestID":"completion-crosswave-pilot-1356-to-1357-20261109","reason":"Proceed with the exact verified four-layer pilot; scheduled ChatGPT engineering remains disabled"}
+{
+  "action": "resume-recovered",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "date": "2026-11-09",
+  "source_sha": "2a0e8a2a99d7fe3979dc7e2e65c4979667112728",
+  "plan_sha256": "e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff",
+  "original_run": 42665121180,
+  "dispatch_id": "5ec533020655ead3ce84c8b2b0ae157c2855bf871c90b5511175489c971d0ea7",
+  "recovery_receipt": {
+    "bytes": 11398,
+    "generation": "1794245559746794",
+    "key": "engineering/map-production/plans/e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff/slots/00002/receipt.json",
+    "sha256": "52a4fc9b273c75b434b0312895965f84c80a581f54f3769a4ed01ad98b0e8e77"
+  },
+  "reviewed_commit": "15c0b12decf65a80d3bfe379cbcae7098f872dd7",
+  "purpose": "Advance from independently settled1357 to fresh bounded ordinary-child overview batches; no old allocation replay; scheduled ChatGPT task stays disabled"
+}
