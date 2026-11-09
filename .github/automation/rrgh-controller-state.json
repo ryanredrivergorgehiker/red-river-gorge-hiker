@@ -483,19 +483,26 @@
     }
   ],
   "crosswavePolicy": {
+    "acceptedReceiptKinds": [
+      "ordinary",
+      "partial-needs-typed-receipt",
+      "wave289-consumed-recovery"
+    ],
     "authorizedBy": "ryanredrivergorgehiker",
     "authorizedOn": "2026-11-09",
     "baselineAcceptedTiles": 267476,
     "baselinePlanSHA256": "e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff",
     "baselineSequence": 1357,
     "enabled": true,
-    "format": "rrgh-crosswave-batch-authority-v2",
+    "format": "rrgh-crosswave-typed-authority-v3",
     "jobSeconds": 60,
     "maxJobs": 128,
     "preserveAcceptedOutputs": true,
     "preserveConsumedAttempts": true,
     "receiptIndexSHA256": "1fea8db2f65861e50130856a152cec5862baee2a483ace4eef328a96930c4974",
+    "requireIndependentOrdinaryBatch": true,
     "requiredRasterTiles": 278278,
+    "typedPilotMaxJobs": 4,
     "verifiedPilotRecovery": {
       "bytes": 11398,
       "generation": "1794245559746794",
@@ -826,5 +833,71 @@
       "key": "engineering/map-production/plans/d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4/slots/00001/receipt.json",
       "sha256": "94f2ad8d683f93b7fa77ed097dd59992184c38ec81a00f12618a931949a04ea7"
     }
-  }
+  },
+  "crosswavePolicyHistory": [
+    {
+      "authorizedBy": "ryanredrivergorgehiker",
+      "authorizedOn": "2026-11-09",
+      "fromPolicy": {
+        "authorizedBy": "ryanredrivergorgehiker",
+        "authorizedOn": "2026-11-09",
+        "baselineAcceptedTiles": 267476,
+        "baselinePlanSHA256": "e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff",
+        "baselineSequence": 1357,
+        "enabled": true,
+        "format": "rrgh-crosswave-batch-authority-v2",
+        "jobSeconds": 60,
+        "maxJobs": 128,
+        "preserveAcceptedOutputs": true,
+        "preserveConsumedAttempts": true,
+        "receiptIndexSHA256": "1fea8db2f65861e50130856a152cec5862baee2a483ace4eef328a96930c4974",
+        "requiredRasterTiles": 278278,
+        "verifiedPilotRecovery": {
+          "bytes": 11398,
+          "generation": "1794245559746794",
+          "key": "engineering/map-production/plans/e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff/slots/00002/receipt.json",
+          "sha256": "52a4fc9b273c75b434b0312895965f84c80a581f54f3769a4ed01ad98b0e8e77"
+        }
+      },
+      "toPolicy": {
+        "acceptedReceiptKinds": [
+          "ordinary",
+          "partial-needs-typed-receipt",
+          "wave289-consumed-recovery"
+        ],
+        "authorizedBy": "ryanredrivergorgehiker",
+        "authorizedOn": "2026-11-09",
+        "baselineAcceptedTiles": 267476,
+        "baselinePlanSHA256": "e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff",
+        "baselineSequence": 1357,
+        "enabled": true,
+        "format": "rrgh-crosswave-typed-authority-v3",
+        "jobSeconds": 60,
+        "maxJobs": 128,
+        "preserveAcceptedOutputs": true,
+        "preserveConsumedAttempts": true,
+        "receiptIndexSHA256": "1fea8db2f65861e50130856a152cec5862baee2a483ace4eef328a96930c4974",
+        "requireIndependentOrdinaryBatch": true,
+        "requiredRasterTiles": 278278,
+        "typedPilotMaxJobs": 4,
+        "verifiedPilotRecovery": {
+          "bytes": 11398,
+          "generation": "1794245559746794",
+          "key": "engineering/map-production/plans/e7497a08e69b1e429d2cb4e61b3854ef3a07ff788b1284301007c5f9bd1173ff/slots/00002/receipt.json",
+          "sha256": "52a4fc9b273c75b434b0312895965f84c80a581f54f3769a4ed01ad98b0e8e77"
+        }
+      },
+      "preservedSequence": 1358,
+      "preservedProducerRunID": 42669263145,
+      "preservedSourceSHA": "e0551e17752606cc9baa8280f45ef6209d739362",
+      "preservedPlanSHA256": "d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4",
+      "reviewedPullRequest": 111,
+      "reviewedHeadSHA": "1209f7f593e974f2d91b8f6b8263366c9ccf9071",
+      "focusedQARunID": 42672820240,
+      "fullCIRunID": 42672826867,
+      "requiredNextGate": "Independent verification of the saved 108-parent wave1358; then four-parent typed-receipt pilot before larger typed batches",
+      "priorAcceptedHistoryUnchanged": true,
+      "priorConsumedAttemptsUnchanged": true
+    }
+  ]
 }
