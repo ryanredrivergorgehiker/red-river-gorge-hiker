@@ -1,10 +1,31 @@
 # RRGH completion checkpoint — 2026-11-09
 
-## Live resumption after GitHub mitigation
+## Latest accepted state — 14:33 Eastern
 
-This section supersedes the older halted/no-running-job snapshot below. GitHub reported mitigation at 13:43 Eastern. On Ryan’s explicit request, fresh checks found no active or queued runs, preserved source e0551e17752606cc9baa8280f45ef6209d739362 and halted original wave1358. Owner request ed439580c6f7f8b4919742a0680b082be52ffcd2 launched successfully as42682892232. Recovery-only42682954260 was admitted; independent verifier129382268706 is running. Original bounded-stage is skipped, so production was not replayed. No additional accepted tiles are claimed before its receipt passes the controller audit. Existing V3 successor gates remain configured.
+Recovery-only run42682954260 SUCCEEDED. The controller independently audited the saved wave1358 worker, accepted all108 outputs, and atomically published/dispatched wave1359. Accepted coverage is267,584/278,278 raster positions (96.16%);10,694 remain, comprising6,944 lower-zoom and3,750 native positions. Acceptance is supported by pixel/hash/package readback and independent parent recomputation, not the run color alone.
 
-Five source-mask diagnostics completed successfully in42682993035, job129382233656; exact evidence: docs/engineering/evidence/source-boundary-mask-42682993035.json, commit245a903b6104685f0098d312e533cd4be6f7f0b1. Leaf-off17537/25329 has all1,048,576 pixels. Terrain and leaf-off17585/25301 and17512/25339 have zero missing pixels inside the requested AOI; all missing pixels lie outside it. This establishes source-mask evidence only, adds zero accepted tiles, and does not waive full-tile/terrain-halo checks. Further boundary engineering must preserve original output geometry and genuine source pixels. Diagnostic use:160 official requests/216,488,216 received bytes; zero Cloud requests/map writes/replayed production attempts. ChatGPT scheduled engineering task was rechecked disabled, nextRun=null.
+- Original producer:42669263145; no production replay.
+- Verified1358 receipt: engineering/map-production/plans/d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4/slots/00002/receipt.json
+- Receipt generation1794252716916817;bytes7289;SHA256b48beee4097225bab37b9a174c995b3d17698c5628b919547005d198c684b680.
+- Successful new launch42682892232 came from owner request ed439580c6f7f8b4919742a0680b082be52ffcd2 after GitHub mitigation at13:43 Eastern.
+- Current source dbd95f51889f111acb380f20b60ea70ab41626e1; wave1359 plan92d70aa1ab96107a24adf767e0f9cf6e36b5de33c54c775724f8f10879649b9d.
+- Production1359 run42684455873; admit129387443524 passed and producer129387615946 started. The typed-reader pilot is limited to4 parents; larger typed batches require its independent acceptance. Do not count this pilot yet.
+- Fresh-read live controller/runs before acting; production progresses independently of this historical snapshot.
+- Accepted modeled campaign chargeUSD87.53614159849602580070495613;remaining authorityUSD37.46385840150397419929504387;modeled monthly storageUSD1.387356361716985702514648438;storedBytes41,379,515,288. These are campaign ledger models, not billing or OpenAI compute costs.
+- The recoveryCycleSeconds5810 includes the GitHub outage/wait; do not extrapolate it as steady-state throughput.
+- ChatGPT scheduled engineering task was rechecked disabled,nextRun=null. No task/schedule was enabled. Phone-ready package closure and physical iPhone acceptance remain outstanding.
+
+## Completed source-mask diagnostics
+
+Five probes completed successfully in42682993035,job129382233656. Exact immutable-source evidence: docs/engineering/evidence/source-boundary-mask-42682993035.json,commit245a903b6104685f0098d312e533cd4be6f7f0b1.
+
+- Leaf-off17537/25329: all1,048,576 pixels present, including the prior unknown64MiB diagnostic case.
+- Terrain17585/25301:473 missing pixels, all outside AOI; zero inside.
+- Leaf-off17585/25301:1,179 missing pixels, all outside AOI; zero inside.
+- Terrain17512/25339:166,980 missing pixels, all outside AOI; zero inside.
+- Leaf-off17512/25339:663,244 missing pixels, all outside AOI; zero inside.
+
+This is source-mask evidence only: zero accepted tiles, Cloud requests, map writes or replayed production attempts. Total160 official requests/216,488,216 received bytes. Preserve original output geometry and genuine source pixels; full-tile/terrain-halo guards are NOT waived by the inside-AOI results. Native second-attempt accounting, seed/boundary provenance and complete package delivery still require the engineering described below.
 
 ## Earlier checkpoint and recovery history
 
