@@ -1,0 +1,52 @@
+name: RRGH restore preserved original seed tiles
+on:
+  push:
+    branches: [backend/phase-3-nonprod]
+    paths: [operations/rrgh-r4-restoration-request.json]
+  pull_request:
+    paths: [.github/automation/r4/**, .github/workflows/rrgh-r4-restoration.yml]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-preserved-r4-restoration
+  cancel-in-progress: false
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test .github/automation/r4/restore.test.mjs
+      - run: node --input-type=module -e "import {codeDigest} from './.github/automation/r4/restore.mjs'; console.log('RESTORATION_CODE_DIGEST='+codeDigest())"
+  restore:
+    needs: contracts
+    if: github.event_name == 'push' && github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Restore only encrypted hash-pinned original bytes with create-only storage and full readback
+        run: node .github/automation/r4/restore.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
