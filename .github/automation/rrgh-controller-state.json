@@ -1548,7 +1548,7 @@
     "requiredRasterTiles": 278278,
     "sequence": 1452
   },
-  "controlDigest": "12593a2302a5a1af2221179ef636d0ea9c7ead8dc616e92fb4df7dde998948a7",
+  "controlDigest": "7a1c450f861c9666b55809d3ca600aaedb6f070b497bb73efeae6856c89144d4",
   "controllerUpgradeHistory": [
     {
       "authorizedBy": "ryanredrivergorgehiker",
@@ -1994,6 +1994,20 @@
       "preserveAcceptedHistory": true,
       "rollbackControllerRef": "lane20/rollback-before-final-overviews-20261110",
       "reason": "Complete exactly 691 remaining lower-zoom tiles after independently verified native completion; preserve accepted bytes, attempts and original budgets"
+    },
+    {
+      "authorizedBy": "ryanredrivergorgehiker",
+      "authorizedOn": "2026-11-10",
+      "fromDigest": "12593a2302a5a1af2221179ef636d0ea9c7ead8dc616e92fb4df7dde998948a7",
+      "toDigest": "7a1c450f861c9666b55809d3ca600aaedb6f070b497bb73efeae6856c89144d4",
+      "reviewPR": 122,
+      "reviewedCommit": "fcb538883aa23d14cd47821d667b4f32533b72a0",
+      "qaRunID": 42896924430,
+      "ciRunID": 42896924281,
+      "sequence": 1452,
+      "runID": 42890579438,
+      "preserveAcceptedHistory": true,
+      "reason": "Load read-only final phase metadata before Pillow installation; exact launch regression and full native/overview integration passed"
     }
   ],
   "crosswavePolicy": {
