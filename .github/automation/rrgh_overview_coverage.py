@@ -6,7 +6,6 @@ that omission geometrically; it never permits a missing child inside that grid.
 from functools import lru_cache
 import hashlib
 import math
-from PIL import Image
 
 BOUNDS=(-83.8,37.65,-83.4,37.95)
 MIN_ZOOM=10
@@ -35,6 +34,7 @@ def child_positions(z,x,y):
 
 @lru_cache(maxsize=2048)
 def alpha(z,x,y):
+    from PIL import Image
     require(all(type(v) is int for v in (z,x,y)) and 0<=x<2**z and 0<=y<2**z,'Invalid tile position')
     if not inside(z,x,y):return bytes(256*256)
     factor=2**(NATIVE_ZOOM-z);left,top,right,bottom=grid(NATIVE_ZOOM)

@@ -1,5 +1,11 @@
 name: RRGH final overview completion QA
 on:
+  pull_request:
+    paths:
+      - .github/automation/rrgh_overview_coverage.py
+      - .github/automation/rrgh_seed_children.py
+      - .github/automation/test_rrgh_final_metadata_import.py
+      - .github/workflows/rrgh-final-overview-qa.yml
   push:
     branches: [lane20/final-overview-completion-20261110]
 permissions:
@@ -15,6 +21,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Verify dependency-free phase metadata before installing image packages
+        run: |
+          python -S -m unittest discover -s .github/automation -p test_rrgh_final_metadata_import.py -v
+          python -c "import sys; sys.path.insert(0, '.github/automation'); import rrgh_dispatcher as d; print('CONTROL_DIGEST='+d.local_digest('.'))"
       - uses: actions/checkout@v4
         with:
           ref: 6d0d2363b2b66fc93412ac500208121a203c808f
