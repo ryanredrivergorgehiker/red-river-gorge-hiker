@@ -1,0 +1,8 @@
+{
+  "format": "rrgh-final-catalog-identity-check-v1",
+  "action": "verify-identity-only",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "projectId": "rrgh-nonproduction",
+  "codeSHA256": "6ba694443933964a35adbe6ce3b6bc48824f1fb1c2ddf955091d400cfb9dbf7d",
+  "requestSHA256": "556fbb4ab2da382f0000ddc6e183f331074e73141c1a5f1b0f1b707cbc6314c0"
+}
