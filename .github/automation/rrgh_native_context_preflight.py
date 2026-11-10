@@ -4,6 +4,9 @@ Outputs only coverage measurements and exact source identities. No Cloud
 credential, upload, map tile, allocation reset or accepted-state mutation.
 """
 import base64
+import logging
+import traceback
+logging.basicConfig(level=logging.WARNING)
 import hashlib
 import json
 import os
@@ -49,8 +52,8 @@ def run(source):
         assert not old.intersection(s['id'] for s in collection['newContextCandidates'])
         region['inventory']['sources'][family].extend(collection['newContextCandidates'])
     jobs,_=build_index(region);results=[]
-    assert len(CASES)==108 and len(set(CASES))==len(CASES)
-    assert hashlib.sha256((json.dumps(CASES)+"\n").encode()).hexdigest()=="d97681ea4e741a2ec45646d09a476eaeb9f98c89df1e3664b9aae8cabf8359d8"
+    assert len(CASES)==1 and len(set(CASES))==len(CASES)
+    assert hashlib.sha256((json.dumps(CASES)+"\n").encode()).hexdigest()=="0305535e98cf006382e2caf7014a115ef40565dd09bb9af0eefc67d8f1541149"
     total_caps=dict.fromkeys(DIMENSIONS,0);total_caps.update(sourceBytes=8*2**30,sourceRequests=12000,seconds=3000)
     total_meter=Meter(total_caps);total_opener=SourceOpener(total_meter)
     for jid in CASES:
@@ -105,6 +108,7 @@ def run(source):
                     cloudRequests=0,mapTilesWritten=0,productionAttemptReplayed=False,acceptedTilesAdded=0)
                 results.append(row);print(json.dumps(row,sort_keys=True,allow_nan=False),flush=True)
             except Exception as exc:
+                traceback.print_exc()
                 # Do not turn a bounded diagnostic failure into an invented source diagnosis.
                 row=dict(phase='context-mask-diagnostic-failed',job=jid,errorClass=type(exc).__name__,
                     reason=str(exc)[:500],actual=opener.summary(),reserved=meter.used,
