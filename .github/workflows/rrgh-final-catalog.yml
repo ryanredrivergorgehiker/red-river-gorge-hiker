@@ -44,9 +44,65 @@ jobs:
           --project demo-rrgh-final-map --only firestore
           "node .github/automation/catalog/rrgh-final-catalog-emulator.mjs"
 
-  activate:
+  admission:
     needs: contracts
     if: github.event_name == 'push' && github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      action: ${{ steps.request.outputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bind request to reviewed code and exact nonproduction action
+        id: request
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          import { canonicalSHA, requireValue } from './.github/automation/catalog/rrgh-final-catalog-contract.mjs';
+          import { codeDigest } from './.github/automation/catalog/rrgh-final-catalog-run.mjs';
+          const raw=readFileSync('operations/rrgh-final-catalog-request.json');
+          requireValue(raw.length<=16384,'Request bound exceeded');
+          const request=JSON.parse(raw),{requestSHA256,...body}=request;
+          requireValue(requestSHA256===canonicalSHA(body)&&request.codeSHA256===await codeDigest()&&
+            request.authorizedBy==='ryanredrivergorgehiker'&&request.projectId==='rrgh-nonproduction',
+            'Exact reviewed owner request required');
+          requireValue((request.action==='verify-identity-only'&&request.format==='rrgh-final-catalog-identity-check-v1')||
+            (request.action==='activate-and-verify'&&request.format==='rrgh-final-catalog-request-v1'),
+            'Unsupported catalog action');
+          appendFileSync(process.env.GITHUB_OUTPUT,'action='+request.action+'\n');
+          JS
+
+  identity-probe:
+    needs: admission
+    if: needs.admission.outputs.action == 'verify-identity-only'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Verify existing nonproduction federation without data access or writes
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Prove token minting succeeds without reading or changing project data
+        run: |
+          gcloud auth print-access-token > /dev/null
+          echo 'Existing nonproduction federation: PASS; data reads=0, data writes=0'
+
+  activate:
+    needs: admission
+    if: needs.admission.outputs.action == 'activate-and-verify'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
