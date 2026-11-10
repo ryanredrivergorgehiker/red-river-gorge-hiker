@@ -1,18 +1,11 @@
 {
-  "action": "resume-recovered",
+  "action": "inspect-halted",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-10",
-  "source_sha": "b705f50bb5bd71092e70410648b1d878641cf3fb",
-  "plan_sha256": "65a554a10624d49429332d0e5af78a851f409759c9c28a0c580558ee7ba84f95",
-  "original_run": 42890579438,
-  "dispatch_id": "fa1b89c71ba9769d0789361a321b33b1189bba3dae546841b64422604f5b3793",
-  "recovery_receipt": {
-    "bytes": 1494,
-    "generation": "1794340978187784",
-    "key": "engineering/map-production/plans/65a554a10624d49429332d0e5af78a851f409759c9c28a0c580558ee7ba84f95/slots/00002/receipt.json",
-    "sha256": "5f766443ad86327066b341aff6438e03ed15dc2aa4533219a3d135a7d187fe82"
-  },
-  "reviewed_commit": "fcb538883aa23d14cd47821d667b4f32533b72a0",
-  "purpose": "Resume the exact independently verified wave1452 checkpoint with the tested dependency-free metadata launcher; produce remaining 691 lower-zoom tiles without replaying native production",
-  "launch_fix_qa_run": 42896924430
+  "source_sha": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
+  "original_run": 42899104427,
+  "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
+  "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
+  "reviewed_commit": "00dcee5a5e8002fd5e5e130e50c0f65b8edf190b",
+  "purpose": "Inspect exact seed proof inventory and halted allocation without writes, source requests or retries"
 }
