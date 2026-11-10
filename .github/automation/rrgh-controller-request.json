@@ -12,6 +12,7 @@
     "key": "engineering/map-production/plans/65a554a10624d49429332d0e5af78a851f409759c9c28a0c580558ee7ba84f95/slots/00002/receipt.json",
     "sha256": "5f766443ad86327066b341aff6438e03ed15dc2aa4533219a3d135a7d187fe82"
   },
-  "reviewed_commit": "cd2e7a25dd9a0f535f3e96008375e878b3b21a64",
-  "purpose": "Start the final 691 lower-zoom tiles from the completed wave1452 receipts, preserving every accepted native output and original budget"
+  "reviewed_commit": "fcb538883aa23d14cd47821d667b4f32533b72a0",
+  "purpose": "Resume the exact independently verified wave1452 checkpoint with the tested dependency-free metadata launcher; produce remaining 691 lower-zoom tiles without replaying native production",
+  "launch_fix_qa_run": 42896924430
 }
