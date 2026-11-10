@@ -99,6 +99,7 @@ export async function markDeliveryVerified(db, meta, report, timestamp) {
       report.authoritySHA256 === value.authoritySHA256 && report.authenticatedIndexes === 3 &&
       report.authenticatedPackages === value.identities.length && report.fullyHashedSampleParts === 3 &&
       report.everyPackageIdentityAndRangeVerified === true && report.offlineLeaseVerified === true &&
+      report.currentStorageGenerationsVerified === true &&
       report.unauthenticatedDeliveryDenied === true && report.physicalIPhoneTestComplete === false,
       'Authenticated delivery validation is incomplete');
     const refs = value.identities.map(c => db.collection('packageCatalog').doc(c.packageId));

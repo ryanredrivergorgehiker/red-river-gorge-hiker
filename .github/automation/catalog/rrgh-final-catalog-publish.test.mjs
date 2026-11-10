@@ -63,6 +63,7 @@ test('release cannot be replayed or called phone-tested without evidence', async
   const report = { requestSHA256: f.meta.requestSHA256, authoritySHA256: f.request.authoritySHA256,
     authenticatedIndexes: 3, authenticatedPackages: 9, fullyHashedSampleParts: 3,
     everyPackageIdentityAndRangeVerified: true, offlineLeaseVerified: true,
+    currentStorageGenerationsVerified: true,
     unauthenticatedDeliveryDenied: true, physicalIPhoneTestComplete: false };
   assert.equal((await markDeliveryVerified(f.db, f.meta, report, 'later')).finalPackageDeliveryComplete, true);
   await assert.rejects(rollbackCatalogs(f.db, f.meta, 'stale-failure'));

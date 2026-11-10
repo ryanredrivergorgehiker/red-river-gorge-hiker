@@ -90,7 +90,7 @@ export async function main(mode) {
   // direct Firestore operations (including failed attempts, no refunds).
   const budget = new ReadBudget(mode === 'activate' ?
     { bytes: 16 * 1024 * 1024, requests: 225, storageRequests: 225, firestoreOperations: 0 } :
-    { bytes: 1008 * 1024 * 1024, requests: 775, storageRequests: 1775, firestoreOperations: 6200 });
+    { bytes: 1008 * 1024 * 1024, requests: 1000, storageRequests: 1775, firestoreOperations: 6200 });
   let token, tokenTime = 0;
   const reader = new ProtectedReader(budget, async () => {
     if (!token || Date.now() - tokenTime > 240000) {
@@ -130,7 +130,8 @@ export async function main(mode) {
     requireValue(session.localId === uid && typeof session.idToken === 'string', 'Synthetic sign-in failed');
     const { verifyOfflineLeaseToken } = await import(pathToFileURL(process.cwd() + '/backend/functions/src/offlineLease.js'));
     report = await verifyDelivery({ budget, document, request, functionUrl: process.env.RRGH_FUNCTION_URL,
-      idToken: session.idToken, uid, verifyLease: verifyOfflineLeaseToken });
+      idToken: session.idToken, uid, verifyLease: verifyOfflineLeaseToken,
+      verifyCurrentObject: candidate => reader.metadata(candidate) });
   } finally { if (createdUser) await cleanup(); }
   await owner();const result = await markDeliveryVerified(db, meta, report, Timestamp.now());
   console.log(JSON.stringify({ ...result, verification: report }));

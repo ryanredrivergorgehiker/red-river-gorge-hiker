@@ -4,8 +4,9 @@ import { IDS, requireValue, same, validateIndex } from './rrgh-final-catalog-con
 const RANGE = 8 * 1024 * 1024;
 const DOWNLOAD_URL = 'https://us-east5-rrgh-nonproduction.cloudfunctions.net/rrghPackageDownload';
 
-export async function verifyDelivery({ budget, document, request, functionUrl, idToken, uid, verifyLease }) {
+export async function verifyDelivery({ budget, document, request, functionUrl, idToken, uid, verifyLease, verifyCurrentObject }) {
   requireValue(new URL(functionUrl).protocol === 'https:', 'HTTPS account endpoint required');
+  requireValue(typeof verifyCurrentObject === 'function', 'Fresh current-generation verification required');
   async function api(operation, extra = {}) {
     const { bytes } = await budget.request(functionUrl, { method: 'POST', maximum: 131072,
       storageRequests: operation === 'authorizeProtectedPackage' ? 1 : 0,
@@ -34,6 +35,7 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
   }));
   let indexes = 0, fullParts = 0, authenticated = 0, denied = false;
   for (const candidate of document.catalogs) {
+    await verifyCurrentObject(candidate);
     const result = await api('authorizeProtectedPackage', { packageId: candidate.packageId });
     const p = result.package, delivery = result.delivery;
     requireValue(result.authorized === true && delivery?.ready === true && p?.packageId === candidate.packageId &&
@@ -76,6 +78,6 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
   return { format: 'rrgh-final-authenticated-delivery-v1', requestSHA256: request.requestSHA256,
     authoritySHA256: document.authoritySHA256, authenticatedIndexes: indexes,
     authenticatedPackages: authenticated, fullyHashedSampleParts: fullParts,
-    everyPackageIdentityAndRangeVerified: true, offlineLeaseVerified: true,
+    everyPackageIdentityAndRangeVerified: true, currentStorageGenerationsVerified: true, offlineLeaseVerified: true,
     unauthenticatedDeliveryDenied: denied, physicalIPhoneTestComplete: false, readBudget: budget.summary() };
 }

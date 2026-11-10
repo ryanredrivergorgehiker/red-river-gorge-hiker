@@ -50,6 +50,7 @@ function networkFixture(mutation = '') {
   };
   const budget = new ReadBudget({ bytes: 10485760, requests: 100 }, fetcher);
   const options = { budget, document: f.document, request: f.request, functionUrl: 'https://account.example.invalid',
+    verifyCurrentObject: async () => { if (mutation === 'current-generation') throw new Error('Current object changed'); },
     idToken: 'test-token', uid: 'test-user', verifyLease: () => ({ valid: mutation !== 'lease',
       claims: { trial: true, grants: ['base'], trialEndsAt: end, validUntil: end } }) };
   return { options, calls };
@@ -61,7 +62,7 @@ test('fresh authenticated verification checks all indexes, all parts and full la
   assert.equal(calls.filter(c => c.range).length, 12);
 });
 test('changed bytes, identity, public access, foreign endpoints and invalid leases stop delivery acceptance', async () => {
-  for (const change of ['hash', 'identity', 'public', 'foreign-url', 'descriptor', 'lease']) {
+  for (const change of ['hash', 'identity', 'public', 'foreign-url', 'descriptor', 'lease', 'current-generation']) {
     const { options } = networkFixture(change);await assert.rejects(verifyDelivery(options), undefined, change);
   }
 });
