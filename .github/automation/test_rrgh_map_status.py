@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import json
 import unittest
 from rrgh_map_status import evaluate, BRANCH
 
@@ -94,6 +96,63 @@ class MonitorTests(unittest.TestCase):
             elif fault=='raster':state['lastRecovered']['acceptedRasterTiles']-=1
             else:state['package']['lastVerified']['runID']+=1
             with self.subTest(fault=fault):self.assertFalse(evaluate(state,run,checks)['healthy'])
+
+    def final_delivery(self):
+        jobs = self.package_wait()
+        self.state['package']['authoritySHA256'] = 'a'*64
+        previous = self.state['package']['lastVerified']
+        request = dict(format='rrgh-final-catalog-request-v1', action='activate-and-verify',
+            authorizedBy='ryanredrivergorgehiker', projectId='rrgh-nonproduction',
+            bucket='rrgh-nonproduction-protected-packages', automaticRollback=True,
+            authoritySHA256='a'*64, packagePlanSHA256=previous['planSHA256'],
+            catalogCandidates=previous['catalogCandidates'], verifiedCheckpoint=previous['checkpoint'])
+        request['requestSHA256'] = hashlib.sha256((json.dumps(request, sort_keys=True, separators=(',', ':'))+'\n').encode()).hexdigest()
+        report = dict(format='rrgh-final-authenticated-delivery-v1', requestSHA256=request['requestSHA256'],
+            authoritySHA256='a'*64, authenticatedIndexes=3, authenticatedPackages=123, fullyHashedSampleParts=3,
+            everyPackageIdentityAndRangeVerified=True, currentStorageGenerationsVerified=True,
+            offlineLeaseVerified=True, unauthenticatedDeliveryDenied=True, physicalIPhoneTestComplete=False,
+            requiredDayHikesVerified=True, authenticatedDayHikes=[dict(routeID=r, packageID='route-'+r.lower(),
+                version='1', sha256='e'*64, byteCount=100) for r in ('RTE-0001', 'RTE-0002')])
+        self.state['finalDelivery'] = dict(format='rrgh-final-delivery-evidence-v1', finalPackageDeliveryComplete=True,
+            physicalIPhoneTestComplete=False, requestSHA256=request['requestSHA256'], runID=90000, headSHA='c'*40,
+            verification=report)
+        self.state['finalDeliveryReservation'] = dict(requestSHA256=request['requestSHA256'])
+        delivery = dict(request=request, run=dict(id=90000, head_sha='c'*40,
+            repository=dict(full_name='ryanredrivergorgehiker/red-river-gorge-hiker'), head_branch='backend/phase-3-nonprod',
+            path='.github/workflows/rrgh-final-catalog.yml', event='push', actor=dict(login='ryanredrivergorgehiker'),
+            run_attempt=1, status='completed', conclusion='success', html_url='https://github.com/example/90000'),
+            jobs=[dict(name=n,conclusion='success') for n in ('contracts','admission','activate','verify')] +
+                [dict(name='rollback',conclusion='skipped')])
+        return jobs, delivery
+
+    def test_verified_delivery_reports_ready_for_iphone_testing_without_claiming_device_test(self):
+        jobs, delivery = self.final_delivery()
+        report = evaluate(self.state, self.run, jobs, delivery)
+        self.assertTrue(report['healthy']); self.assertTrue(report['finalPackageDeliveryComplete'])
+        self.assertFalse(report['physicalIPhoneTestComplete']); self.assertEqual(report['remainingRasterTiles'], 0)
+
+    def test_final_delivery_cannot_hide_failed_stale_or_incomplete_evidence(self):
+        jobs, delivery = self.final_delivery()
+        for fault in ('failed-run','failed-verify','missing-job','duplicate-job','rollback','changed-request','wrong-run',
+                      'wrong-source','wrong-checkpoint','phone-claim','parts','missing-route','bad-route-sha','no-live-evidence'):
+            state = copy.deepcopy(self.state); proof = copy.deepcopy(delivery)
+            report = state['finalDelivery']['verification']
+            if fault == 'failed-run': proof['run']['conclusion'] = 'failure'
+            elif fault == 'failed-verify': proof['jobs'][3]['conclusion'] = 'failure'
+            elif fault == 'missing-job': proof['jobs'].pop(3)
+            elif fault == 'duplicate-job': proof['jobs'].append(copy.deepcopy(proof['jobs'][3]))
+            elif fault == 'rollback': proof['jobs'][-1]['conclusion'] = 'success'
+            elif fault == 'changed-request': proof['request']['automaticRollback'] = False
+            elif fault == 'wrong-run': proof['run']['id'] += 1
+            elif fault == 'wrong-source': proof['run']['head_sha'] = 'f'*40
+            elif fault == 'wrong-checkpoint': state['package']['lastVerified']['checkpoint'] = {'key':'wrong'}
+            elif fault == 'phone-claim': report['physicalIPhoneTestComplete'] = True
+            elif fault == 'parts': report['authenticatedPackages'] -= 1
+            elif fault == 'missing-route': report['authenticatedDayHikes'].pop()
+            elif fault == 'bad-route-sha': report['authenticatedDayHikes'][0]['sha256'] = 'wrong'
+            else: proof = None
+            with self.subTest(fault=fault):
+                self.assertFalse(evaluate(state, self.run, jobs, proof)['healthy'])
 
     def phase_wait(self):
         self.state.update(status='completion-waiting', sequence=1419, planSHA256='a'*64, sourceSHA='b'*40)
