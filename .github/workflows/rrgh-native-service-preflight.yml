@@ -1,0 +1,27 @@
+name: RRGH remaining native service preflight
+on:
+  push:
+    branches: [lane20/native-service-preflight-20261110]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  service-masks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 895c01953481b2b5825abee9a4c0681f37211eb4
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Check complete original service pixels without production attempts or Cloud access
+        run: python .github/automation/rrgh_native_service_preflight.py source-checkout
