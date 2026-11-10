@@ -1,0 +1,30 @@
+name: RRGH final package assembly QA
+on:
+  push:
+    branches: [lane20/final-package-assembly-20261110]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  PYTHONPATH: .github/automation:source/backend/scripts
+jobs:
+  verify-package-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 230f3c6097af85cb7e093b9a81a68c5cc3b9ff51
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Every actual historical acceptance type and original-zoom USGS position
+        run: python .github/automation/verify_rrgh_package_history.py source
+      - name: Reject missing positions, duplicates, substituted seeds and foreign checkpoints
+        run: python -m unittest discover -s .github/automation -p 'test_rrgh_package*.py' -v
