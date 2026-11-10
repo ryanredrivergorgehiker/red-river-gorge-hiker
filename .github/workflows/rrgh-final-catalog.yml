@@ -1,0 +1,208 @@
+name: RRGH final regional catalog delivery
+
+on:
+  push:
+    branches: [backend/phase-3-nonprod]
+    paths: [operations/rrgh-final-catalog-request.json]
+  pull_request:
+    paths:
+      - .github/automation/catalog/**
+      - .github/workflows/rrgh-final-catalog.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'push' && 'rrgh-backend-nonproduction' || format('rrgh-catalog-qa-{0}', github.ref) }}
+  cancel-in-progress: false
+
+env:
+  GCLOUD_PROJECT: rrgh-nonproduction
+  RRGH_DEPLOY_SERVICE_ACCOUNT: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify catalog ownership, atomic rollback and authenticated delivery contracts
+        run: node --test .github/automation/catalog/*.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install existing backend SDK for local Firestore transaction checks
+        run: npm install --prefix backend/functions --ignore-scripts --no-audit --no-fund
+      - name: Verify real Firestore transactions without Cloud credentials
+        run: >-
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --config .github/automation/catalog/firebase-test.json
+          --project demo-rrgh-final-map --only firestore
+          "node .github/automation/catalog/rrgh-final-catalog-emulator.mjs"
+
+  admission:
+    needs: contracts
+    if: github.event_name == 'push' && github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      action: ${{ steps.request.outputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bind request to reviewed code and exact nonproduction action
+        id: request
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          import { canonicalSHA, requireValue } from './.github/automation/catalog/rrgh-final-catalog-contract.mjs';
+          import { codeDigest } from './.github/automation/catalog/rrgh-final-catalog-run.mjs';
+          const raw=readFileSync('operations/rrgh-final-catalog-request.json');
+          requireValue(raw.length<=16384,'Request bound exceeded');
+          const request=JSON.parse(raw),{requestSHA256,...body}=request;
+          requireValue(requestSHA256===canonicalSHA(body)&&request.codeSHA256===await codeDigest()&&
+            request.authorizedBy==='ryanredrivergorgehiker'&&request.projectId==='rrgh-nonproduction',
+            'Exact reviewed owner request required');
+          requireValue((request.action==='verify-identity-only'&&request.format==='rrgh-final-catalog-identity-check-v1')||
+            (request.action==='activate-and-verify'&&request.format==='rrgh-final-catalog-request-v1'),
+            'Unsupported catalog action');
+          appendFileSync(process.env.GITHUB_OUTPUT,'action='+request.action+'\n');
+          JS
+
+  identity-probe:
+    needs: admission
+    if: needs.admission.outputs.action == 'verify-identity-only'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Verify existing nonproduction federation without data access or writes
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Prove token minting succeeds without reading or changing project data
+        run: |
+          gcloud auth print-access-token > /dev/null
+          echo 'Existing nonproduction federation: PASS; data reads=0, data writes=0'
+
+  activate:
+    needs: admission
+    if: needs.admission.outputs.action == 'activate-and-verify'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing nonproduction dependencies
+        run: npm install --prefix backend/functions --ignore-scripts --no-audit --no-fund
+      - name: Authenticate existing nonproduction identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Activate only the exact independently verified regional catalogs
+        run: node .github/automation/catalog/rrgh-final-catalog-run.mjs activate
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  verify:
+    needs: activate
+    if: needs.activate.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing nonproduction dependencies
+        run: npm install --prefix backend/functions --ignore-scripts --no-audit --no-fund
+      - name: Authenticate existing nonproduction identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Resolve existing account endpoint and native Firebase configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          ENDPOINT="$(gcloud functions describe rrghAccountApi --gen2 --region=us-east5 --project=rrgh-nonproduction --format='value(serviceConfig.uri)')"
+          test -n "$ENDPOINT"
+          echo "RRGH_FUNCTION_URL=$ENDPOINT" >> "$GITHUB_ENV"
+          npx --yes firebase-tools@15.30.2 apps:sdkconfig ios 1:843975209563:ios:68d59290136388c8f0857e --project rrgh-nonproduction --non-interactive > "$RUNNER_TEMP/rrgh-final-native.plist"
+          API_KEY="$(python3 -c 'import plistlib,os; p=plistlib.load(open(os.environ["RUNNER_TEMP"]+"/rrgh-final-native.plist","rb")); assert p["BUNDLE_ID"]=="com.redrivergorgehiker.ios"; assert p["PROJECT_ID"]=="rrgh-nonproduction"; assert p["GOOGLE_APP_ID"]=="1:843975209563:ios:68d59290136388c8f0857e"; print(p["API_KEY"],end="")')"
+          test -n "$API_KEY"
+          echo "::add-mask::$API_KEY"
+          echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
+          rm "$RUNNER_TEMP/rrgh-final-native.plist"
+      - name: Independently verify authenticated native delivery and offline lease
+        run: node .github/automation/catalog/rrgh-final-catalog-run.mjs verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  rollback:
+    needs: [activate, verify]
+    if: >-
+      always() && github.event_name == 'push' && github.actor == 'ryanredrivergorgehiker' &&
+      (needs.activate.result == 'failure' || needs.activate.result == 'cancelled' ||
+       needs.verify.result == 'failure' || needs.verify.result == 'cancelled')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing nonproduction dependencies
+        run: npm install --prefix backend/functions --ignore-scripts --no-audit --no-fund
+      - name: Authenticate existing nonproduction identity
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Restore only this release from durable catalog backups
+        run: node .github/automation/catalog/rrgh-final-catalog-run.mjs rollback
