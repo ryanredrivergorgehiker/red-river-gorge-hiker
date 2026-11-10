@@ -100,6 +100,14 @@ def prepare(root, verified):
               "/slots/00002/receipt.json", "Previous receipt key mismatch")
     check(verified["receiptSHA256"] == ref["sha256"], "Previous receipt hash mismatch")
 
+    # Stop after the exact pilot's independent settlement. No new producer
+    # allocation is permitted until its actual repair evidence is reviewed.
+    if old.get('nativeRepairPhase'):
+        from rrgh_native_repair import waiting_summary
+        summary=waiting_summary(old,region,verified)
+        (root/'RRGH-COMPLETION-WAIT.json').write_bytes(canonical(summary))
+        return summary
+
     checkpoint=verified.get('checkpointRecovery') is not None
     prior_checkpoint=old['campaign'].get('checkpointRecoveryQuarantines',[])
     check(isinstance(prior_checkpoint,list) and len(prior_checkpoint)==len(set(prior_checkpoint)), 'Checkpoint quarantine duplicated')
@@ -280,6 +288,13 @@ def prepare(root, verified):
     completion_phase=None
     crosswave_phase=None
     crosswave_history=None
+    native_repair_phase=None
+    if not picked and verified.get('nativeRepairPolicy') is not None:
+        from rrgh_native_repair import baseline,select as select_native_repair
+        from rrgh_crosswave_batch import advance_history
+        baseline(old,verified)
+        picked,native_repair_phase=select_native_repair(index,accepted,before_attempts,verified['nativeRepairPolicy'])
+        crosswave_history=advance_history(old,prior_region,verified)
     if not picked and verified.get('crosswavePolicy') is not None:
         from rrgh_crosswave_phase import POLICY as CW_POLICY,select as select_crosswave,waiting_summary as crosswave_wait
         from rrgh_crosswave_batch import POLICY as CW_BATCH,TYPED_POLICY,advance_history,select as select_batch
@@ -326,7 +341,8 @@ def prepare(root, verified):
           "jobs remain; do not replay attempted jobs or pad the wave. "
           "Next work requires reviewed source/layer coverage before a new wave.")
     check(len(jobs) <= 512 and len(jobs) == len(set(jobs)) and
-          not set(jobs) & (set(accepted)|excluded), "Job scope overlap")
+          not set(jobs) & set(accepted) and
+          (native_repair_phase is not None or not set(jobs)&excluded), "Job scope overlap")
     selected_counts = Counter(j["layer"] for j in picked if j["operation"]!="overview")
     check(set(selected_counts) <= set(limits) and
           all(0 < count <= limits[layer] for layer, count in selected_counts.items()),
@@ -415,6 +431,8 @@ def prepare(root, verified):
     plan["expiresAt"] = (datetime.now(timezone.utc) +
                          timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     plan['overviewPilot']=overview_pilot
+    if native_repair_phase:plan['nativeRepairPhase']=native_repair_phase
+    else:plan.pop('nativeRepairPhase',None)
     if crosswave_phase:plan['crosswavePhase']=crosswave_phase
     else:plan.pop('crosswavePhase',None)
     if completion_phase:plan['completionPhase']=completion_phase
