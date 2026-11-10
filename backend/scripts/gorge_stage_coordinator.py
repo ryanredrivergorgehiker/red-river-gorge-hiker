@@ -246,7 +246,11 @@ def verify_outputs(plan,region,records,root,prior_root=None):
             with Image.open(p) as im:
                 im.load()
                 if im.size!=(256,256):raise ValueError('Recovered image grid mismatch')
-                if im.mode=='RGBA' and im.getextrema()[3]!=(255,255):raise ValueError('Output has missing pixels')
+                if plan.get('finalOverviewPhase'):
+                    from rrgh_final_overviews import scope as final_scope
+                    from rrgh_overview_coverage import verify as verify_coverage
+                    final_scope(plan,region,jobs[job]);verify_coverage(im,z,x,y)
+                elif im.mode=='RGBA' and im.getextrema()[3]!=(255,255):raise ValueError('Output has missing pixels')
                 a=np.asarray(im.convert('RGB'))
                 if max(float(v.std()) for v in a.transpose(2,0,1))<.1:raise ValueError('Blank production tile')
                 images[(parts[1],z,x,y)]=a

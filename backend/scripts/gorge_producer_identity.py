@@ -68,11 +68,17 @@ def read_owner(env):
                   headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json',
                            'X-GitHub-Api-Version':'2022-11-28'})
     with build_opener(NoRedirect).open(req,timeout=25) as res:
-        raw = res.read(65537)
-    if len(raw) > 65536:
+        raw = res.read(1048577)
+    if len(raw) > 1048576:
         raise ValueError('Ownership record too large')
     obj = json.loads(raw)
-    return json.loads(base64.b64decode(obj['content']))
+    if (obj.get('encoding') != 'base64' or type(obj.get('size')) is not int
+            or not 0 < obj['size'] <= 524288 or not isinstance(obj.get('content'), str)):
+        raise ValueError('Invalid bounded ownership record envelope')
+    decoded = base64.b64decode(''.join(obj['content'].split()), validate=True)
+    if len(decoded) != obj['size']:
+        raise ValueError('Ownership content length differs from envelope')
+    return json.loads(decoded)
 
 
 def require_owner(plan, phase, env=None):
