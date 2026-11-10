@@ -53,6 +53,43 @@ class MonitorTests(unittest.TestCase):
         self.assertTrue(result['healthy'])
         self.assertEqual(result['acceptedJobs'], 13997)
 
+    def phase_wait(self):
+        self.state.update(status='completion-waiting', sequence=1419, planSHA256='a'*64, sourceSHA='b'*40)
+        ref = dict(key='engineering/map-production/plans/'+'a'*64+'/slots/00002/receipt.json',
+                   bytes=1491, generation='1794320163909534', sha256='c'*64)
+        previous = {k:self.state[k] for k in ('sequence','runID','dispatchID','planSHA256','sourceSHA')}
+        previous.update(acceptedJobs=33686, acceptedRasterTiles=273868, recoveryReceipt=ref)
+        self.state.update(lastRecovered=previous, checkpoint=ref, completionProgress=dict(
+            sequence=1419,planSHA256='a'*64,recoveryReceipt=ref,acceptedRasterTiles=273868,
+            requiredRasterTiles=278278,remainingRasterTiles=4410,fullRasterCoverageComplete=False))
+        self.run.update(status='completed',conclusion='success',display_title='RRGH production 1419 exact')
+        return [dict(name='independent-recovery',conclusion='success')]
+
+    def test_verified_phase_pause_reports_remaining_tiles_without_failure(self):
+        jobs=self.phase_wait();result=evaluate(self.state,self.run,jobs)
+        self.assertTrue(result['healthy']);self.assertTrue(result['intentionallyPaused'])
+        self.assertEqual(result['acceptedRasterTiles'],273868)
+        self.assertEqual(result['remainingRasterTiles'],4410)
+
+    def test_pause_cannot_hide_failure_or_mismatched_settlement(self):
+        jobs=self.phase_wait()
+        for fault in ('failed_run','failed_verifier','missing_verifier','duplicate_verifier',
+                      'old_receipt','old_sequence','wrong_remaining','unverified_count','wrong_source','wrong_title','disabled','no_run'):
+            state=copy.deepcopy(self.state);run=copy.deepcopy(self.run);checks=copy.deepcopy(jobs)
+            if fault=='failed_run':run['conclusion']='failure'
+            elif fault=='failed_verifier':checks[0]['conclusion']='failure'
+            elif fault=='missing_verifier':checks=[]
+            elif fault=='duplicate_verifier':checks+=copy.deepcopy(checks)
+            elif fault=='old_receipt':state['checkpoint']=dict(state['checkpoint'],generation='999')
+            elif fault=='old_sequence':state['completionProgress']['sequence']=1418
+            elif fault=='wrong_remaining':state['completionProgress']['remainingRasterTiles']=0
+            elif fault=='unverified_count':state['completionProgress']['acceptedRasterTiles']+=1
+            elif fault=='wrong_source':state['lastRecovered']['sourceSHA']='d'*40
+            elif fault=='wrong_title':run['display_title']='RRGH production 1418 exact'
+            elif fault=='disabled':state['enabled']=False
+            else:run=None
+            with self.subTest(fault=fault):self.assertFalse(evaluate(state,run,checks)['healthy'])
+
 
 if __name__ == '__main__':
     unittest.main()
