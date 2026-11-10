@@ -149,7 +149,13 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     root=Path(source_root);old=read_region(old_dir);new=read_region(new_dir)
     mode=audit.get('sourcePolicyMode','expanded')
     expected=migration(copy.deepcopy(old),mode,controller_root)
-    for key in ('inventory','inventorySHA256','legacyInventory','expandedSourceProduction'):
+    context_keys=()
+    if plan.get('nativeRepairPhase',{}).get('format')=='rrgh-native-repair-batch-phase-v2':
+        from rrgh_native_batch import POLICY
+        from rrgh_native_context import augment
+        require(audit.get('nativeRepairPolicy')==POLICY,'Exact native context repair authority required')
+        expected=augment(expected,controller_root);context_keys=('nativeInputContext',)
+    for key in ('inventory','inventorySHA256','legacyInventory','expandedSourceProduction')+context_keys:
         require(new[key]==expected[key], 'Published source expansion differs: '+key)
     require(new['boundsWGS84']==old['boundsWGS84'] and new['profiles']==old['profiles'],
             'Geographic scope or quality profiles changed')
@@ -177,6 +183,8 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
     if plan.get('nativeRepairPhase'):
         from rrgh_native_repair import validate_publication as validate_native_repair
+        if plan['nativeRepairPhase']['format']=='rrgh-native-repair-batch-phase-v2':
+            from rrgh_native_batch import validate_publication as validate_native_repair
         validate_native_repair(old_plan,old,plan,new,audit)
     if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
         from rrgh_crosswave_batch import validate_history,validate_funding
@@ -184,6 +192,10 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     batch=validate_batch(root,old_plan,plan,audit)
     require(not batch or not overviews,'Pair production cannot claim overview work')
     limits={k:(batch['targetJobs']//3 if batch else v) for k,v in LIMITS.items()}
+    native_repair=plan.get('nativeRepairPhase',{}).get('format')=='rrgh-native-repair-batch-phase-v2'
+    if native_repair:
+        from rrgh_native_batch import CAPS
+        limits=dict.fromkeys(CAPS,4)
     if completion:limits={'usgs-topo':plan['completionPhase']['authority']['maxJobs']}
     counts={layer:sum(j['layer']==layer for j in native) for layer in limits}
     require(all(n<=limits[layer] for layer,n in counts.items()) and sum(counts.values())==len(native),
@@ -203,5 +215,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
         wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     if batch_installed(root):
         for name in BATCH_MODULES:wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
+    if native_repair:
+        from rrgh_native_transport import validate as validate_transport
+        validate_transport(root)
+        wanted['gorge_guarded_worker.py']=sha((root/'backend/scripts/gorge_guarded_worker.py').read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 
