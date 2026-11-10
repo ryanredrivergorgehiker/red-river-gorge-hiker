@@ -53,6 +53,48 @@ class MonitorTests(unittest.TestCase):
         self.assertTrue(result['healthy'])
         self.assertEqual(result['acceptedJobs'], 13997)
 
+    def test_active_report_counts_remaining_from_latest_acceptance_not_old_phase(self):
+        self.state['completionProgress'] = dict(acceptedRasterTiles=100, remainingRasterTiles=278178)
+        self.assertEqual(evaluate(self.state, self.run, [])['remainingRasterTiles'], 278278-144088)
+
+    def test_package_handoff_is_healthy_without_claiming_delivery_or_new_parts(self):
+        self.state.update(status='package-ready', mode='package', runID=None,
+                          package=dict(operation=dict(kind='parts'), lastVerified=dict(verifiedParts=8, verifiedIndexes=0)))
+        report=evaluate(self.state,None,[])
+        self.assertTrue(report['healthy']);self.assertEqual(report['verifiedPackageParts'],8)
+        self.assertFalse(report['finalPackageDeliveryComplete'])
+
+    def package_wait(self):
+        jobs=self.phase_wait()
+        self.state.update(status='package-validation-waiting',mode='package',package=dict(
+            status='verified-awaiting-catalog',planSHA256='d'*64,verifiedCheckpoint={'key':'verified'},
+            lastVerified=dict(runID=self.state['runID'],planSHA256='d'*64,
+                packageBytesIndependentlyVerified=True,verifiedParts=120,verifiedIndexes=3,
+                checkpoint={'key':'verified'},catalogCandidates={'key':'candidate'})))
+        self.state['lastRecovered']['acceptedRasterTiles']=278278
+        self.state['completionProgress'].update(format='rrgh-raster-complete-package-wait-v1',
+            acceptedRasterTiles=278278,remainingRasterTiles=0,fullRasterCoverageComplete=True)
+        self.run['display_title']='RRGH package 1419 exact'
+        return [dict(name=n,conclusion='success') for n in ('package-stage','package-verify','package-advance')]
+
+    def test_verified_packages_wait_for_delivery_without_false_failure(self):
+        jobs=self.package_wait();report=evaluate(self.state,self.run,jobs)
+        self.assertTrue(report['healthy']);self.assertEqual(report['remainingRasterTiles'],0)
+        self.assertEqual(report['verifiedPackageParts'],120);self.assertFalse(report['finalPackageDeliveryComplete'])
+
+    def test_package_wait_cannot_hide_failed_verifier_or_unaccepted_bytes(self):
+        jobs=self.package_wait()
+        for fault in ('failed','missing','count','checkpoint','plan','raster','old-run'):
+            state=copy.deepcopy(self.state);run=copy.deepcopy(self.run);checks=copy.deepcopy(jobs)
+            if fault=='failed':checks[1]['conclusion']='failure'
+            elif fault=='missing':checks.pop()
+            elif fault=='count':state['package']['lastVerified']['verifiedIndexes']=2
+            elif fault=='checkpoint':state['package']['verifiedCheckpoint']={'key':'other'}
+            elif fault=='plan':state['package']['lastVerified']['planSHA256']='f'*64
+            elif fault=='raster':state['lastRecovered']['acceptedRasterTiles']-=1
+            else:state['package']['lastVerified']['runID']+=1
+            with self.subTest(fault=fault):self.assertFalse(evaluate(state,run,checks)['healthy'])
+
     def phase_wait(self):
         self.state.update(status='completion-waiting', sequence=1419, planSHA256='a'*64, sourceSHA='b'*40)
         ref = dict(key='engineering/map-production/plans/'+'a'*64+'/slots/00002/receipt.json',

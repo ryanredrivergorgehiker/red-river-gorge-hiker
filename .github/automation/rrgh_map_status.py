@@ -44,6 +44,16 @@ def evaluate(state, run, jobs):
                   acceptedJobs=previous.get('acceptedJobs'),
                   acceptedRasterTiles=previous.get('acceptedRasterTiles'),
                   receipt=previous.get('recoveryReceipt'), healthy=False)
+    accepted = previous.get('acceptedRasterTiles')
+    if type(accepted) is int and 0 <= accepted <= 278278:
+        report['remainingRasterTiles'] = 278278 - accepted
+    package = state.get('package', {})
+    if isinstance(package, dict) and state.get('mode') == 'package':
+        verified = package.get('lastVerified', {})
+        report.update(packageOperation=package.get('operation', {}).get('kind'),
+                      verifiedPackageParts=verified.get('verifiedParts', 0),
+                      verifiedPackageIndexes=verified.get('verifiedIndexes', 0),
+                      finalPackageDeliveryComplete=False, physicalIPhoneTestComplete=False)
     if run:
         report.update(run=run.get('html_url'), runStatus=run.get('status'),
                       conclusion=run.get('conclusion'),
@@ -64,15 +74,42 @@ def evaluate(state, run, jobs):
         report.update(healthy=True, intentionallyPaused=True,
                       remainingRasterTiles=state['completionProgress']['remainingRasterTiles'],
                       reason='Verified phase finished; production is intentionally paused for the remaining completion work')
+    elif state.get('status') == 'package-validation-waiting' and verified_package_wait(state, run, jobs):
+        report.update(healthy=True, intentionallyPaused=True, remainingRasterTiles=0,
+                      reason='All raster tiles and offline package bytes are verified; authenticated delivery validation is pending')
     elif run and run.get('status') == 'completed':
         report['reason'] = 'Current run ended but controller ownership has not advanced'
     elif state.get('status') in ('running', 'probing', 'publishing') and run:
         report.update(healthy=True, reason='Current controller run is active; only the last independently verified inventory is counted')
-    elif state.get('status') in ('ready', 'dispatching', 'recovery-ready', 'completion-ready') and not state.get('runID'):
+    elif state.get('status') in ('ready', 'dispatching', 'recovery-ready', 'completion-ready', 'package-ready') and not state.get('runID'):
         report.update(healthy=True, reason='Controller is handing off the exact next allocation; no new output is yet counted')
     else:
         report['reason'] = 'Controller is not in a recognized advancing state'
     return report
+
+
+def verified_package_wait(state, run, jobs):
+    package = state.get('package', {})
+    previous = package.get('lastVerified', {})
+    progress = state.get('completionProgress', {})
+    raster = state.get('lastRecovered', {})
+    if not all(isinstance(x, dict) for x in (package, previous, progress, raster)):
+        return False
+    return bool(run and run.get('status') == 'completed' and run.get('conclusion') == 'success' and
+        state.get('mode') == 'package' and run.get('display_title') ==
+        'RRGH package '+str(state.get('sequence'))+' '+str(state.get('dispatchID')) and
+        package.get('status') == 'verified-awaiting-catalog' and previous.get('runID') == state.get('runID') and
+        previous.get('planSHA256') == package.get('planSHA256') and
+        previous.get('packageBytesIndependentlyVerified') is True and previous.get('verifiedIndexes') == 3 and
+        isinstance(previous.get('verifiedParts'), int) and 3 <= previous['verifiedParts'] <= 192 and
+        isinstance(previous.get('catalogCandidates'), dict) and isinstance(previous.get('checkpoint'), dict) and
+        previous['checkpoint'] == package.get('verifiedCheckpoint') and
+        progress.get('format') == 'rrgh-raster-complete-package-wait-v1' and
+        progress.get('fullRasterCoverageComplete') is True and progress.get('acceptedRasterTiles') == 278278 and
+        progress.get('remainingRasterTiles') == 0 and raster.get('acceptedRasterTiles') == 278278 and
+        all(len([j for j in jobs if j.get('name') == name]) == 1 and
+            next(j for j in jobs if j.get('name') == name).get('conclusion') == 'success'
+            for name in ('package-stage', 'package-verify', 'package-advance')))
 
 
 def gh(path):
