@@ -2,17 +2,17 @@
   "action": "resume-recovered",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-10",
-  "source_sha": "895c01953481b2b5825abee9a4c0681f37211eb4",
-  "plan_sha256": "a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b",
-  "original_run": 42811852583,
-  "dispatch_id": "2a817478fa730785a3b243c339a371561ff887b61df5ff395264fbc7e9012d7d",
+  "source_sha": "230f3c6097af85cb7e093b9a81a68c5cc3b9ff51",
+  "plan_sha256": "943a8fc21d34ce6dda1492c1ad80c58e56d6aa61da6660ecc50d70296c90326d",
+  "original_run": 42831781398,
+  "dispatch_id": "df180da3465aea5138bab25a9245ef8dfd59572d7083e6e8d98343f8d94739f9",
   "recovery_receipt": {
-    "bytes": 3241,
-    "generation": "1794312166017060",
-    "key": "engineering/map-production/plans/a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b/slots/00002/receipt.json",
-    "sha256": "a5875a47b685e8c2d3eaec5ebf82b055cf6117336565bb88e442e5b5371f3a1f"
+    "bytes": 1491,
+    "generation": "1794320163909534",
+    "key": "engineering/map-production/plans/943a8fc21d34ce6dda1492c1ad80c58e56d6aa61da6660ecc50d70296c90326d/slots/00002/receipt.json",
+    "sha256": "54ee342bcf4205229ec1450cea5f0b2914a9b0763193c9e8bb227afb54b6e8bf"
   },
-  "reviewed_commit": "b048cce404ce4ed3831345301d0d997251db59e0",
-  "request_id": "native-repair1419-after-verified1418-20261110",
-  "purpose": "Owner-authorized completion: re-audit exact independently settled1418; publish fresh three-job attempt2 native repair pilot under reviewed source-mask evidence, original quality and budgets; preserve every old claim, receipt, attempt and accepted byte; hold after independent pilot verification"
+  "reviewed_commit": "6d0d2363b2b66fc93412ac500208121a203c808f",
+  "request_id": "native-final-attempt-batches-after-verified1419-20261110",
+  "purpose": "Owner-authorized completion: re-audit exact verified wave1419 and publish fresh source-mask-approved native repair batches; preserve accepted history, prior attempts, original geometry and budgets; independently verify every batch and stop at queue exhaustion for remaining overview/package work"
 }
