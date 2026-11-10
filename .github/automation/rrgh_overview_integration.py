@@ -57,6 +57,9 @@ def strip(code):
     return code
 
 
+PRIOR_MODULE_SHA256['rrgh_overview_pilot.py']=(*PRIOR_MODULE_SHA256.get('rrgh_overview_pilot.py',()),'6254ba3df69cbaa2f81646469dddb4cc3a661a60e803d7e54c01cd52fd908820')
+
+
 def augment(code):
     from rrgh_recovery_catalog_integration import augment_campaign
     code=augment_campaign(strip(code))
@@ -93,6 +96,10 @@ def pilot_job(job=None):
 
 
 def validate_previous(plan,region):
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overviews import validate_plan,POLICY
+        validate_plan(plan,region,POLICY)
+        return
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_phase import validate_plan,POLICY
         validate_plan(plan,region,plan['crosswavePhase']['authority'])
@@ -127,6 +134,9 @@ def select(picked,accepted,attempts,enabled):
 
 
 def validate_verification(proof):
+    if isinstance(proof,dict) and proof.get('format')=='rrgh-final-overview-verification-v1':
+        from rrgh_final_overviews import validate_verification as final
+        return final(proof)
     if proof is None:return None
     if isinstance(proof,dict) and proof.get('format')=='rrgh-crosswave-batch-verification-v2':
         from rrgh_crosswave_batch import validate_verification as batch
@@ -165,7 +175,12 @@ def validate_verification(proof):
 
 def validate_recovery(plan,audit):
     proof=validate_verification(audit.get('overviewPilotVerification'))
-    if bool(plan.get('overviewPilot') or plan.get('crosswavePhase'))!=bool(proof):raise ValueError('Overview recovery omitted or invented')
+    if bool(plan.get('overviewPilot') or plan.get('crosswavePhase') or plan.get('finalOverviewPhase'))!=bool(proof):raise ValueError('Overview recovery omitted or invented')
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overviews import digest,VERIFY
+        if proof['format']!=VERIFY or proof['phaseSHA256']!=digest(plan['finalOverviewPhase']) or proof['planSHA256']!=audit['planSHA256'] or [p['job'] for p in proof['parents']]!=plan['approvedJobIDs']:
+            raise ValueError('Final overview recovery belongs to another plan')
+        return
     if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
         from rrgh_crosswave_batch import digest
         if proof['phaseSHA256']!=digest(plan['crosswavePhase']) or proof['planSHA256']!=audit['planSHA256'] or [p['job'] for p in proof['parents']]!=plan['approvedJobIDs']:

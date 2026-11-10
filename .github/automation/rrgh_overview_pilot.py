@@ -18,6 +18,9 @@ def job_for(m):
 
 
 def validate_scope(plan,region,job):
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overview_runtime import scope as final
+        return final(plan,region,job)
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_runtime import scope as crosswave
         return crosswave(plan,region,job)
@@ -37,6 +40,9 @@ def validate_scope(plan,region,job):
 
 
 def read_dependencies(slot,plan,region,destination):
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overview_runtime import read_dependencies as final
+        return final(slot,plan,region,destination)
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_runtime import read_dependencies as crosswave
         return crosswave(slot,plan,region,destination)
@@ -106,6 +112,9 @@ def read_dependencies(slot,plan,region,destination):
 
 
 def attach_proof(plan,region,receipt,initial):
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overview_runtime import attach_proof as final
+        return final(plan,region,receipt,initial)
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_runtime import attach_proof as crosswave
         return crosswave(plan,region,receipt,initial)
@@ -122,6 +131,9 @@ def attach_proof(plan,region,receipt,initial):
 
 
 def verify(slot,plan,region,records,root,source_root):
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overview_runtime import verify as final
+        return final(slot,plan,region,records,root,source_root)
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_runtime import verify as crosswave
         return crosswave(slot,plan,region,records,root,source_root)

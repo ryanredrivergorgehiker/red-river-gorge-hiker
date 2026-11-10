@@ -179,7 +179,7 @@ def audit_run(run, jobs, receipt_lines, producer_lines=None, expected_dispatch=N
             checked_overview.get('format')=='rrgh-crosswave-verification-v1' and
             jobs_count==result.get('tiles')==4 and not partial and not pixel_gaps and
             result.get('sourceRequests')==0 and result.get('sourceBytesReceived')==0)
-        if isinstance(checked_overview,dict) and checked_overview.get('format')=='rrgh-crosswave-batch-verification-v2':
+        if isinstance(checked_overview,dict) and checked_overview.get('format') in ('rrgh-crosswave-batch-verification-v2','rrgh-final-overview-verification-v1'):
             from rrgh_crosswave_batch import adjacent_pairs
             require(jobs_count==result.get('tiles')==len(checked_overview['parents']) and
                 not partial and not pixel_gaps and result.get('sourceRequests')==0 and
