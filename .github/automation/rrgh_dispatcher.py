@@ -667,6 +667,11 @@ def candidate_entries(source_root,audit,state):
     catalog_tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+CATALOG_TARGET],
         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
     if not catalog_tracked:allowed.add(CATALOG_TARGET)
+    elif plan.get('finalOverviewPhase'):
+        from rrgh_recovery_catalog_integration import validate_transition
+        before=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+CATALOG_TARGET])
+        after=(root/CATALOG_TARGET).read_bytes();validate_transition(before,after)
+        if before!=after:allowed.add(CATALOG_TARGET)
     from rrgh_credential_integration import validate as validate_credentials, TARGET as CRED_TARGET, MODULE as CRED_MODULE
     old_credentials=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+CRED_TARGET],text=True)
     validate_credentials(root,old_credentials)

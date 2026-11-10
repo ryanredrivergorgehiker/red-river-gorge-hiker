@@ -40,6 +40,7 @@ jobs:
           python -m unittest discover -s .github/automation -p test_rrgh_overview_coverage.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_seed_children.py -v
           python -m unittest discover -s .github/automation -p test_rrgh_final_overview_render.py -v
+          python -m unittest discover -s .github/automation -p 'test_rrgh_*catalog*.py' -v
       - name: Historical controller and producer guards
         run: |
           python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v

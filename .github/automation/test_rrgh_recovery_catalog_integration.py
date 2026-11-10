@@ -16,6 +16,11 @@ SOURCE=Path(os.environ.get('RRGH_TEST_SOURCE','rrgh-expansion-source')).resolve(
 class IntegrationTests(unittest.TestCase):
     def test_only_exact_reviewed_campaign_changes_idempotently(self):
         original=(SOURCE/'backend/scripts/gorge_campaign.py').read_text()
+        # Current source fixtures already contain the independently reviewed
+        # overview and pair hooks. This test isolates the catalog addition.
+        from rrgh_overview_integration import strip as strip_overview
+        from rrgh_batch_integration import strip as strip_batch
+        original=strip_overview(strip_batch(original)).replace(i.HOOK,'')
         new=i.augment_campaign(original)
         self.assertEqual(i.augment_campaign(new),new)
         self.assertEqual(new.replace(i.HOOK,''),original)

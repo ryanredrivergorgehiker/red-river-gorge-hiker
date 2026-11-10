@@ -102,11 +102,17 @@ def catalog(plan,region,records,job_refs,qa,parts,root):
             with Image.open(io.BytesIO(raw)) as image:
                 image.load();require(image.size==(256,256),'Tile grid changed')
                 require(image.format==('JPEG' if extension=='jpg' else 'PNG'),'Tile encoding differs from path')
-                require(image.mode!='RGBA' or image.getextrema()[3]==(255,255),'Missing alpha pixels')
+                coverage=None
+                if plan.get('finalOverviewPhase'):
+                    from rrgh_final_overviews import scope as final_scope
+                    from rrgh_overview_coverage import verify as verify_coverage
+                    final_scope(plan,region,jobs[job]);coverage=verify_coverage(image,z,x,y)
+                else:require(image.mode!='RGBA' or image.getextrema()[3]==(255,255),'Missing alpha pixels')
                 require(max(ImageStat.Stat(image.convert('RGB')).stddev)>=0.1,'Blank recovered tile')
             tiles[key]=dict(tile=list(key),group=LAYERS[layer],path=path,bytes=len(raw),sha256=digest(raw),
                 job=job,jobReceipt=reference,checkpointObject=object_ref,checkpointOffset=member['offset'],
                 pixelReadbackVerified=True,package=None)
+            if coverage is not None:tiles[key]['coverage']=coverage
         require(received=={tuple(t) for t in jobs[job]['outputTiles']},'Recovered output geometry differs')
     require(qa['jobs']==len(seen_jobs) and qa['files']==len(tiles) and qa['bytes']==sum(t['bytes'] for t in tiles.values()),
             'Independent recovery totals disagree')

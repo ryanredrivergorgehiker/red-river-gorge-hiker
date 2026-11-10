@@ -12,6 +12,7 @@ ROOT=Path(__file__).resolve().parents[2]
 MODULE='rrgh_verified_tile_catalog.py'
 TARGET='backend/scripts/'+MODULE
 TEMPLATE='.github/automation/'+MODULE
+PRIOR_CATALOG_SHA256='6ca71de0a8c31d1cf50f8b2b0bf4e2a3c029797f3ab4059e1585e79f813385f1'
 BASE_CAMPAIGN_SHA='cc66b9506eff080026b8dbad29b7bb86d65cd81ecf6bafb105ea732e52c3e508'
 ANCHOR="        qa['sourceLedgerVerification']=states;qa['parts']=parts;qa['regionComplete']=False\n"
 HOOK='''        # Additive evidence for later overviews/packages; never replace raster QA.
@@ -44,8 +45,7 @@ def augment_campaign(code):
 def install(source_root,controller_root=ROOT):
     root=Path(source_root);template=(Path(controller_root)/TEMPLATE).read_bytes()
     target=root/TARGET
-    if target.exists() and target.read_bytes()!=template:
-        raise ValueError('Unreviewed catalog module predecessor')
+    if target.exists():validate_transition(target.read_bytes(),template)
     code=root/'backend/scripts/gorge_campaign.py'
     augmented=augment_campaign(code.read_text())
     target.write_bytes(template);code.write_text(augmented)
@@ -58,3 +58,9 @@ def validate(source_root,controller_root=ROOT):
     code=strip_batch((root/'backend/scripts/gorge_campaign.py').read_text())
     from rrgh_overview_integration import strip
     if strip(code)!=augment_campaign(code):raise ValueError('Catalog hook missing')
+
+
+def validate_transition(previous,current):
+    template=(ROOT/TEMPLATE).read_bytes()
+    if current!=template or (previous!=current and hashlib.sha256(previous).hexdigest()!=PRIOR_CATALOG_SHA256):
+        raise ValueError('Unreviewed catalog module predecessor or transition')

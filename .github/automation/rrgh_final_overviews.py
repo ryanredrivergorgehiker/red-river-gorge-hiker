@@ -283,6 +283,8 @@ def prepare(root,audit):
     if not selected:
         summary=waiting_summary(old,old_region,audit)
         (root/'RRGH-COMPLETION-WAIT.json').write_bytes(canonical(summary));return summary
+    from rrgh_recovery_catalog_integration import install as install_catalog
+    install_catalog(root)
     from rrgh_overview_integration import install as install_overview_hooks
     install_overview_hooks(root)
     region=augment(old_region);install(root)
@@ -304,7 +306,7 @@ def prepare(root,audit):
     plan['campaign'].update(sequence=old['campaign']['sequence']+1,previousRecovery=audit['receiptRef'],carry=audit['nextCarry'])
     plan['slots'][1]['attempts']=plan['limits']['attempts']=len(ids);fund(plan)
     region['jobs']=selected
-    for name in (*MODULES,COORDINATOR,'gorge_campaign.py','rrgh_overview_pilot.py'):
+    for name in (*MODULES,COORDINATOR,'gorge_campaign.py','rrgh_overview_pilot.py','rrgh_verified_tile_catalog.py'):
         region['engineHashes'][name]=hashlib.sha256((root/'backend/scripts'/name).read_bytes()).hexdigest()
     plan['regionPlanSHA256']=digest(region)
     from run_gorge_checkpoint_slot import code_snapshot
