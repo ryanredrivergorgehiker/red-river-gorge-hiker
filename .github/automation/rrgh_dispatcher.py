@@ -542,7 +542,7 @@ def inspect_halted(api,root):
     caller('launch');old,state=api.state();validate_state(state,root)
     guard(state.get('status')=='halted' and state.get('mode')=='produce','Only halted production may be inspected')
     auth=state.get('inspectionAuthorization',{})
-    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-10') and
           all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
           'Exact read-only inspection authorization missing')
     assert_no_other_producers(api)
@@ -948,3 +948,4 @@ if __name__=='__main__':
     try:main()
     except (Halt,ValueError,KeyError) as exc:
         print('CONTROLLER_STOP: '+str(exc),file=sys.stderr);raise SystemExit(2)
+
