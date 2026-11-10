@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fixture } from './rrgh-final-catalog-fixture.mjs';
 import { IDS, sha256 } from './rrgh-final-catalog-contract.mjs';
 import { ReadBudget } from './rrgh-final-catalog-read.mjs';
-import { verifyDelivery } from './rrgh-final-catalog-smoke.mjs';
+import { verifyDelivery, DAY_HIKES, validateDayHike } from './rrgh-final-catalog-smoke.mjs';
 
 function networkFixture(mutation = '') {
   const f = fixture(), data = new Map(), catalogs = f.document.catalogs;
@@ -20,6 +20,17 @@ function networkFixture(mutation = '') {
     c.sha256 = sha256(bytes);c.byteCount = bytes.length;
     Object.assign(c.offlineManifest, { sha256: c.sha256, byteCount: bytes.length });data.set(c.packageId, bytes);
   }
+  const routes = DAY_HIKES.map(routeID => {
+    const packageId = 'route-' + routeID.toLowerCase();
+    const geometry = { type: 'FeatureCollection', features: [{ type: 'Feature',
+      properties: { routeId: mutation === 'route-identity' ? 'RTE-9999' : routeID },
+      geometry: { type: 'LineString', coordinates: [[-83.6, 37.8], [-83.61, 37.81]] } }] };
+    if (mutation === 'route-missing') geometry.features = [];
+    const bytes = Buffer.from(JSON.stringify(geometry));data.set(packageId, bytes);
+    return { packageId, packageType: 'route_geojson', requiredEntitlement: 'base', version: '1',
+      sha256: sha256(bytes), byteCount: bytes.length, offlineManifest: null };
+  });
+  const allCatalogs = [...catalogs, ...routes];
   const calls = [], end = '2030-01-01T00:00:00Z';
   const fetcher = async (url, options) => {
     calls.push({ url, method: options.method, range: options.headers?.range });
@@ -30,7 +41,7 @@ function networkFixture(mutation = '') {
       if (operation === 'issueOfflineAccessLease') result = { issued: true,
         lease: { format: 'compact_jws_rs256_v1', algorithm: 'RS256', signedToken: 'fake', keyId: 'test' }, verificationKeys: [] };
       if (operation === 'authorizeProtectedPackage') {
-        const c = catalogs.find(c => c.packageId === packageId);
+        const c = allCatalogs.find(c => c.packageId === packageId);
         result = { authorized: true, package: { ...c }, delivery: { ready: true, method: 'capability_https', httpMethod: 'GET',
           authorizationScheme: 'Bearer', authorizationToken: 'synthetic-capability-token-prefix-' + packageId, expiresAt: end,
           url: 'https://us-east5-rrgh-nonproduction.cloudfunctions.net/rrghPackageDownload' } };
@@ -40,10 +51,10 @@ function networkFixture(mutation = '') {
       return Response.json({ result });
     }
     if (!options.headers?.authorization) return new Response('denied', { status: mutation === 'public' ? 200 : 401 });
-    const id = options.headers.authorization.slice(7 + 'synthetic-capability-token-prefix-'.length), c = catalogs.find(c => c.packageId === id);
+    const id = options.headers.authorization.slice(7 + 'synthetic-capability-token-prefix-'.length), c = allCatalogs.find(c => c.packageId === id);
     const [start, finish] = options.headers.range.slice(6).split('-').map(Number);
     const bytes = Buffer.from(data.get(id).subarray(start, finish + 1));
-    if (mutation === 'hash') bytes[0] ^= 1;
+    if (mutation === 'hash' || (mutation === 'route-hash' && id.startsWith('route-'))) bytes[0] ^= 1;
     return new Response(bytes, { status: 206, headers: {
       'content-range': `bytes ${start}-${finish}/${c.byteCount}`,
       'x-rrgh-package-id': mutation === 'identity' ? 'wrong' : id, 'x-rrgh-package-version': c.version } });
@@ -59,10 +70,21 @@ test('fresh authenticated verification checks all indexes, all parts and full la
   const { options, calls } = networkFixture();const result = await verifyDelivery(options);
   assert.equal(result.authenticatedIndexes, 3);assert.equal(result.authenticatedPackages, 9);
   assert.equal(result.fullyHashedSampleParts, 3);assert.equal(result.physicalIPhoneTestComplete, false);
-  assert.equal(calls.filter(c => c.range).length, 12);
+  assert.equal(calls.filter(c => c.range).length, 14);
+  assert.equal(result.requiredDayHikesVerified, true);
+  assert.deepEqual(result.authenticatedDayHikes.map(r => r.routeID), DAY_HIKES);
 });
 test('changed bytes, identity, public access, foreign endpoints and invalid leases stop delivery acceptance', async () => {
-  for (const change of ['hash', 'identity', 'public', 'foreign-url', 'descriptor', 'lease', 'current-generation']) {
+  for (const change of ['hash', 'identity', 'public', 'foreign-url', 'descriptor', 'lease', 'current-generation', 'route-identity', 'route-missing', 'route-hash']) {
     const { options } = networkFixture(change);await assert.rejects(verifyDelivery(options), undefined, change);
   }
+});
+
+test('Day Hike geometry rejects invalid native coordinates and route identity', () => {
+  const value = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { routeId: 'RTE-0001' },
+    geometry: { type: 'LineString', coordinates: [[-83, 37], [-84, 38]] } }] };
+  const bytes = () => Buffer.from(JSON.stringify(value));validateDayHike(bytes(), 'RTE-0001');
+  assert.throws(() => validateDayHike(bytes(), 'RTE-0002'));
+  value.features[0].geometry.coordinates[1][0] = 181;
+  assert.throws(() => validateDayHike(bytes(), 'RTE-0001'));
 });

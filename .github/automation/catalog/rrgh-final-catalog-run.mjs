@@ -136,7 +136,7 @@ export async function main(mode) {
   await owner();const result = await markDeliveryVerified(db, meta, report, Timestamp.now());
   console.log(JSON.stringify({ ...result, verification: report }));
   if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY,
-    'All 278,278 raster positions and all three authenticated regional bundles passed server-side validation.\n\n' +
+    'All 278,278 raster positions, all three authenticated regional bundles, and both required Day Hike downloads passed server-side validation.\n\n' +
     'Ready for physical iPhone testing; physical iPhone testing has not been performed.\n');
   return result;
 }
