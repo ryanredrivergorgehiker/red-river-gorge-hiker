@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from rrgh_package_authority import build, digest, require
-from rrgh_package_funding import POLICY, make, caps
+from rrgh_package_funding import POLICY, make, caps, DELIVERY_RESERVE, PACKAGE_STOP
 
 CHECKPOINT='rrgh-final-package-checkpoint-v1'
 
@@ -125,8 +125,9 @@ def budget_outlook(layout,carry):
     limits=add_usage(*allocations)
     charged=Decimal(carry['chargedUSD'])+cost(limits)
     stored=carry['storedBytes']+limits['storedBytes']
-    require(charged<=Decimal('123') and monthly(stored)<=Decimal('2'),
+    require(charged<=PACKAGE_STOP and monthly(stored)<=Decimal('2'),
             'Complete remaining packaging path exceeds original campaign budget')
     return dict(remainingWorstCaseUSD=str(cost(limits)),modeledTotalUSD=str(charged),
+        finalDeliveryReserveUSD=str(DELIVERY_RESERVE),modeledTotalIncludingDeliveryUSD=str(charged+DELIVERY_RESERVE),
         modeledStorageUSDPerMonth=str(monthly(stored)),invoiceReading=False,
         originalCeilingUSD='125.00',protectedReserveUSD='2.00')

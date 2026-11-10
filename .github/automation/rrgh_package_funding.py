@@ -8,9 +8,11 @@ POLICY=dict(format='rrgh-final-package-authority-v1',enabled=True,
     authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-10',
     requiredRasterTiles=278278,requiredAcceptedJobs=34750,sharedFiles=340,
     maxPartBytes=256000000,maxPartEntries=60000,maxPartsPerGroup=64,
-    sourceRequests=0,sourceBytes=0,preserveAcceptedOutputs=True,
+    sourceRequests=0,sourceBytes=0,finalDeliveryReserveUSD='0.75',preserveAcceptedOutputs=True,
     preserveConsumedAttempts=True,activateCatalogs=False)
 MIB=2**20
+DELIVERY_RESERVE=Decimal('0.75')
+PACKAGE_STOP=Decimal('123.00')-DELIVERY_RESERVE
 
 
 def allocation(stored,egress,writes,reads,seconds):
@@ -84,9 +86,9 @@ def make(source_plan, anchor, operation, carry, ordinal, previous, controller_di
             type(ordinal) is int and ordinal>=0,'Verified raster completion anchor required')
     slots=caps(operation);limits=add_usage(*slots)
     charge=cost(limits)
-    require(Decimal(carry['chargedUSD'])+charge<=Decimal('123.00') and
+    require(Decimal(carry['chargedUSD'])+charge<=PACKAGE_STOP and
             monthly(carry['storedBytes']+limits['storedBytes'])<=Decimal('2.00'),
-            'Package reservation exceeds original campaign or storage ceiling')
+            'Package reservation exceeds original campaign/storage ceiling or retained final delivery allowance')
     phase=dict(format='rrgh-final-package-phase-v1',authority=copy.deepcopy(POLICY),
         authoritySHA256=authority_sha,anchor=copy.deepcopy(anchor),operation=copy.deepcopy(operation),
         ordinal=ordinal,previousCheckpoint=copy.deepcopy(previous),controllerDigest=controller_digest)
@@ -120,7 +122,7 @@ def settle(plan, usage, complete):
             'Package assembly cannot produce new source tiles')
     retained=usage if complete else caps
     charged=str(Decimal(carry['chargedUSD'])+cost(retained));stored=carry['storedBytes']+retained['storedBytes']
-    require(Decimal(charged)<=Decimal('123') and monthly(stored)<=Decimal('2'),
+    require(Decimal(charged)<=PACKAGE_STOP and monthly(stored)<=Decimal('2'),
             'Package settlement exceeds original budget')
     return dict(format='rrgh-final-package-settlement-v1',planSHA256=digest(plan),
         ordinal=plan['finalPackagePhase']['ordinal'],originalAllocation=copy.deepcopy(caps),

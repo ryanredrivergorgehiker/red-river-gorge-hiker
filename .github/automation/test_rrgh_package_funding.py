@@ -48,6 +48,9 @@ class FundingTests(unittest.TestCase):
         for changed in (dict(self.operation,archiveBytes=256000001),dict(self.operation,files=60001),
                         dict(kind='inventory',start=0,stop=97,jobs=10)):
             with self.assertRaises(ValueError):caps(changed)
+    def test_package_work_cannot_consume_the_final_authenticated_delivery_allowance(self):
+        self.carry['chargedUSD']='122.25'
+        with self.assertRaisesRegex(ValueError,'final delivery allowance'):self.build()
     def test_batches_keep_each_part_bound_and_reduce_finite_job_count(self):
         p=dict(self.operation,partID='core-000',archiveBytes=50000000,contentBytes=48000000,files=1000)
         rows=[dict(p,partID=f'core-{i:03d}') for i in range(8)]
