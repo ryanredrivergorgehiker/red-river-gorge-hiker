@@ -10,6 +10,32 @@ BRANCH = 'lane20/offline-production-preflight-20261029'
 STATE = '.github/automation/rrgh-controller-state.json'
 
 
+def verified_phase_wait(state, run, jobs):
+    previous = state.get('lastRecovered', {})
+    progress = state.get('completionProgress', {})
+    if not isinstance(previous, dict) or not isinstance(progress, dict):
+        return False
+    ref = previous.get('recoveryReceipt')
+    accepted = previous.get('acceptedRasterTiles')
+    required = progress.get('requiredRasterTiles')
+    verifiers = [j for j in jobs if j.get('name') == 'independent-recovery']
+    return bool(run and run.get('status') == 'completed' and run.get('conclusion') == 'success' and
+                state.get('mode') == 'produce' and run.get('display_title') ==
+                'RRGH production '+str(state.get('sequence'))+' '+str(state.get('dispatchID')) and
+                len(verifiers) == 1 and verifiers[0].get('conclusion') == 'success' and
+                all(previous.get(k) is not None and previous.get(k) == state.get(k)
+                    for k in ('sequence', 'runID', 'dispatchID', 'planSHA256', 'sourceSHA')) and
+                isinstance(ref, dict) and ref.get('key') == 'engineering/map-production/plans/' +
+                str(state.get('planSHA256')) + '/slots/00002/receipt.json' and
+                ref == state.get('checkpoint') == progress.get('recoveryReceipt') and
+                progress.get('sequence') == state.get('sequence') and
+                progress.get('planSHA256') == state.get('planSHA256') and
+                type(accepted) is int and type(required) is int and required == 278278 and
+                0 <= accepted <= required and progress.get('acceptedRasterTiles') == accepted and
+                progress.get('remainingRasterTiles') == required - accepted and
+                progress.get('fullRasterCoverageComplete') is (accepted == required))
+
+
 def evaluate(state, run, jobs):
     previous = state.get('lastRecovered', {})
     report = dict(controllerStatus=state.get('status'), sequence=state.get('sequence'),
@@ -34,6 +60,10 @@ def evaluate(state, run, jobs):
         report['reason'] = 'Current run identity does not match controller ownership'
     elif run and run.get('conclusion') in ('failure', 'cancelled', 'timed_out', 'action_required'):
         report['reason'] = 'Current production/recovery run failed'
+    elif state.get('status') == 'completion-waiting' and verified_phase_wait(state, run, jobs):
+        report.update(healthy=True, intentionallyPaused=True,
+                      remainingRasterTiles=state['completionProgress']['remainingRasterTiles'],
+                      reason='Verified phase finished; production is intentionally paused for the remaining completion work')
     elif run and run.get('status') == 'completed':
         report['reason'] = 'Current run ended but controller ownership has not advanced'
     elif state.get('status') in ('running', 'probing', 'publishing') and run:
@@ -84,6 +114,8 @@ def main():
             out.write('[Current run]('+report['run']+')\n\n')
         out.write('Last independently verified: wave '+str(report['lastVerifiedSequence'])+
                   ', '+str(report['acceptedJobs'])+' jobs, '+str(report['acceptedRasterTiles'])+' raster tiles.\n')
+        if 'remainingRasterTiles' in report:
+            out.write('\nRemaining raster tiles: **'+str(report['remainingRasterTiles'])+'**.\n')
     if not report['healthy']:
         print('::error::RRGH_MAP_PRODUCER_STOPPED: '+report['reason'])
         raise SystemExit(1)
