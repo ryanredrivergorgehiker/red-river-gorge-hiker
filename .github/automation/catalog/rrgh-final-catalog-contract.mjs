@@ -71,8 +71,8 @@ export function validateOwner(state, request, run, jobs) {
     reserved.reservedUSD === '0.75' && money(reserved.chargedBeforeUSD) === money(p.carry.chargedUSD) &&
     money(reserved.chargedAfterUSD) === money(reserved.chargedBeforeUSD) + money('0.75') &&
     money(reserved.chargedAfterUSD) <= money('123') && reserved.refundable === false &&
-    reserved.maxReadBytes === 1073741824 && reserved.maxStorageRequests === 1000 &&
-    reserved.maxFirestoreOperations === 5000, 'Complete final delivery reservation missing or changed');
+    reserved.maxReadBytes === 1073741824 && reserved.maxStorageRequests === 2000 &&
+    reserved.maxFirestoreOperations === 10000, 'Complete final delivery reservation missing or changed');
   checkRef(request.catalogCandidates);checkRef(request.verifiedCheckpoint);
   return true;
 }

@@ -8,6 +8,8 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
   requireValue(new URL(functionUrl).protocol === 'https:', 'HTTPS account endpoint required');
   async function api(operation, extra = {}) {
     const { bytes } = await budget.request(functionUrl, { method: 'POST', maximum: 131072,
+      storageRequests: operation === 'authorizeProtectedPackage' ? 1 : 0,
+      firestoreOperations: operation === 'startBaseTrial' ? 20 : operation === 'authorizeProtectedPackage' ? 8 : 10,
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + idToken },
       body: JSON.stringify({ data: { operation, ...extra } }) });
     const body = JSON.parse(bytes.toString('utf8'));requireValue(body.result && !body.error, 'Authenticated account operation failed');
@@ -47,6 +49,7 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
     }
     async function range(start, end) {
       const { bytes, response } = await budget.request(delivery.url, { maximum: end - start + 1, expectedStatus: 206,
+        storageRequests: 2, firestoreOperations: 8,
         headers: { authorization: 'Bearer ' + delivery.authorizationToken, range: `bytes=${start}-${end}` } });
       requireValue(response.headers.get('content-range') === `bytes ${start}-${end}/${p.byteCount}` &&
         response.headers.get('x-rrgh-package-id') === p.packageId &&

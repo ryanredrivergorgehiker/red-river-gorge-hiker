@@ -63,7 +63,7 @@ function fixture() {
     finalDeliveryReservation: { format: 'rrgh-final-delivery-reservation-v1', authorizedBy: 'ryanredrivergorgehiker',
       requestSHA256: request.requestSHA256, sourceCarrySHA256: body.sourceCarrySHA256, reservedUSD: '0.75',
       chargedBeforeUSD: carry.chargedUSD, chargedAfterUSD: '99.873456789012345678901234', refundable: false,
-      maxReadBytes: 1073741824, maxStorageRequests: 1000, maxFirestoreOperations: 5000 } };
+      maxReadBytes: 1073741824, maxStorageRequests: 2000, maxFirestoreOperations: 10000 } };
   const run = { id: 123, status: 'completed', conclusion: 'success',
     repository: { full_name: 'ryanredrivergorgehiker/red-river-gorge-hiker' },
     head_branch: 'lane20/offline-production-preflight-20261029', run_attempt: 1, event: 'workflow_dispatch',

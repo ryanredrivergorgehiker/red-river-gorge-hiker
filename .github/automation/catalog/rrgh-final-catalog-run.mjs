@@ -84,9 +84,13 @@ export async function main(mode) {
   if (mode === 'activate') await claimDeliveryAllowance(db, meta, Timestamp.now());
   else await verifyDeliveryClaim(db, meta);
   // Separate fresh jobs have disjoint prepaid bounds; their sum is exactly
-  // the retained one-GiB / 1,000-request reservation, with no retry refunds.
-  const budget = new ReadBudget(mode === 'activate' ? { bytes: 16 * 1024 * 1024, requests: 225 } :
-    { bytes: 1008 * 1024 * 1024, requests: 775 });
+  // the retained one-GiB allowance. Proxy ranges count both GCS metadata and
+  // object reads, plus all eight backend document reads. The bounded catalog,
+  // backup, finalization, rollback and cleanup paths reserve another 3,800
+  // direct Firestore operations (including failed attempts, no refunds).
+  const budget = new ReadBudget(mode === 'activate' ?
+    { bytes: 16 * 1024 * 1024, requests: 225, storageRequests: 225, firestoreOperations: 0 } :
+    { bytes: 1008 * 1024 * 1024, requests: 775, storageRequests: 1775, firestoreOperations: 6200 });
   let token, tokenTime = 0;
   const reader = new ProtectedReader(budget, async () => {
     if (!token || Date.now() - tokenTime > 240000) {

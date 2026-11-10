@@ -23,7 +23,7 @@ env:
 jobs:
   contracts:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +31,18 @@ jobs:
           node-version: '22'
       - name: Verify catalog ownership, atomic rollback and authenticated delivery contracts
         run: node --test .github/automation/catalog/*.test.mjs
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install existing backend SDK for local Firestore transaction checks
+        run: npm install --prefix backend/functions --ignore-scripts --no-audit --no-fund
+      - name: Verify real Firestore transactions without Cloud credentials
+        run: >-
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --config .github/automation/catalog/firebase-test.json
+          --project demo-rrgh-final-map --only firestore
+          "node .github/automation/catalog/rrgh-final-catalog-emulator.mjs"
 
   activate:
     needs: contracts

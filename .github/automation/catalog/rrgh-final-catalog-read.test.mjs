@@ -33,3 +33,12 @@ test('private reads pin the exact generation and reject changed immutable bytes'
   assert.deepEqual(await reader.read(ref), bytes);corrupt = true;
   await assert.rejects(reader.read(ref), /differs/);
 });
+test('indirect proxy storage and document work is reserved before making the request', async () => {
+  let calls = 0;
+  const budget = new ReadBudget({ bytes: 100, requests: 5, storageRequests: 2, firestoreOperations: 8 }, async () => {
+    calls++;return new Response('ok');
+  });
+  await budget.request('https://example.invalid', { maximum: 2, storageRequests: 2, firestoreOperations: 8 });
+  await assert.rejects(budget.request('https://example.invalid', { maximum: 2, storageRequests: 1 }), /indirect/);
+  assert.equal(calls, 1);assert.equal(budget.firestoreOperations, 8);
+});
