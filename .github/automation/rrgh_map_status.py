@@ -1,7 +1,9 @@
 """Read the active controller, never infer health from the retired producer."""
 import base64
+import hashlib
 import json
 import os
+import re
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -36,7 +38,7 @@ def verified_phase_wait(state, run, jobs):
                 progress.get('fullRasterCoverageComplete') is (accepted == required))
 
 
-def evaluate(state, run, jobs):
+def evaluate(state, run, jobs, delivery=None):
     previous = state.get('lastRecovered', {})
     report = dict(controllerStatus=state.get('status'), sequence=state.get('sequence'),
                   mode=state.get('mode'), runID=state.get('runID'),
@@ -75,8 +77,17 @@ def evaluate(state, run, jobs):
                       remainingRasterTiles=state['completionProgress']['remainingRasterTiles'],
                       reason='Verified phase finished; production is intentionally paused for the remaining completion work')
     elif state.get('status') == 'package-validation-waiting' and verified_package_wait(state, run, jobs):
-        report.update(healthy=True, intentionallyPaused=True, remainingRasterTiles=0,
-                      reason='All raster tiles and offline package bytes are verified; authenticated delivery validation is pending')
+        if state.get('finalDelivery') is not None:
+            if verified_final_delivery(state, delivery):
+                report.update(healthy=True, intentionallyPaused=True, remainingRasterTiles=0,
+                              finalPackageDeliveryComplete=True, physicalIPhoneTestComplete=False,
+                              deliveryRun=delivery['run']['html_url'],
+                              reason='All tiles, regional packages and required Day Hike downloads are verified; ready for physical iPhone testing')
+            else:
+                report['reason'] = 'Final delivery evidence does not match successful authenticated verification'
+        else:
+            report.update(healthy=True, intentionallyPaused=True, remainingRasterTiles=0,
+                          reason='All raster tiles and offline package bytes are verified; authenticated delivery validation is pending')
     elif run and run.get('status') == 'completed':
         report['reason'] = 'Current run ended but controller ownership has not advanced'
     elif state.get('status') in ('running', 'probing', 'publishing') and run:
@@ -86,6 +97,50 @@ def evaluate(state, run, jobs):
     else:
         report['reason'] = 'Controller is not in a recognized advancing state'
     return report
+
+
+def verified_final_delivery(state, delivery):
+    try:
+        evidence = state['finalDelivery']; run = delivery['run']; jobs = delivery['jobs']; request = delivery['request']
+        package = state['package']; previous = package['lastVerified']; report = evidence['verification']
+        body = {k: v for k, v in request.items() if k != 'requestSHA256'}
+        request_sha = hashlib.sha256((json.dumps(body, sort_keys=True, separators=(',', ':'))+'\n').encode()).hexdigest()
+        return bool(evidence['format'] == 'rrgh-final-delivery-evidence-v1' and
+            evidence['finalPackageDeliveryComplete'] is True and evidence['physicalIPhoneTestComplete'] is False and
+            evidence['requestSHA256'] == request['requestSHA256'] == request_sha ==
+            state['finalDeliveryReservation']['requestSHA256'] and
+            request['format'] == 'rrgh-final-catalog-request-v1' and request['action'] == 'activate-and-verify' and
+            request['authorizedBy'] == 'ryanredrivergorgehiker' and request['projectId'] == 'rrgh-nonproduction' and
+            request['bucket'] == 'rrgh-nonproduction-protected-packages' and request['automaticRollback'] is True and
+            request['authoritySHA256'] == package['authoritySHA256'] and
+            request['packagePlanSHA256'] == previous['planSHA256'] and
+            request['catalogCandidates'] == previous['catalogCandidates'] and
+            request['verifiedCheckpoint'] == previous['checkpoint'] == package['verifiedCheckpoint'] and
+            run['id'] == evidence['runID'] and run['head_sha'] == evidence['headSHA'] and
+            re.fullmatch('[0-9a-f]{40}', evidence['headSHA']) and
+            run['repository']['full_name'] == REPO and run['head_branch'] == 'backend/phase-3-nonprod' and
+            run['path'] == '.github/workflows/rrgh-final-catalog.yml' and run['event'] == 'push' and
+            run['actor']['login'] == 'ryanredrivergorgehiker' and run['run_attempt'] == 1 and
+            run['status'] == 'completed' and run['conclusion'] == 'success' and
+            all(len([j for j in jobs if j.get('name') == name]) == 1 and
+                next(j for j in jobs if j.get('name') == name).get('conclusion') == 'success'
+                for name in ('contracts', 'admission', 'activate', 'verify')) and
+            len([j for j in jobs if j.get('name') == 'rollback']) == 1 and
+            next(j for j in jobs if j.get('name') == 'rollback').get('conclusion') == 'skipped' and
+            report['format'] == 'rrgh-final-authenticated-delivery-v1' and
+            report['requestSHA256'] == request_sha and report['authoritySHA256'] == package['authoritySHA256'] and
+            report['authenticatedIndexes'] == 3 and report['authenticatedPackages'] == previous['verifiedParts']+3 and
+            report['fullyHashedSampleParts'] == 3 and report['everyPackageIdentityAndRangeVerified'] is True and
+            report['currentStorageGenerationsVerified'] is True and report['offlineLeaseVerified'] is True and
+            report['unauthenticatedDeliveryDenied'] is True and report['physicalIPhoneTestComplete'] is False and
+            report['requiredDayHikesVerified'] is True and
+            [r['routeID'] for r in report['authenticatedDayHikes']] == ['RTE-0001', 'RTE-0002'] and
+            all(r['packageID'] == 'route-'+r['routeID'].lower() and
+                isinstance(r['version'], str) and len(r['version']) > 0 and
+                re.fullmatch('[0-9a-f]{64}', r['sha256']) and type(r['byteCount']) is int and
+                0 < r['byteCount'] <= 8388608 for r in report['authenticatedDayHikes']))
+    except (KeyError, TypeError, ValueError, StopIteration):
+        return False
 
 
 def verified_package_wait(state, run, jobs):
@@ -136,12 +191,23 @@ def main():
         data = gh('actions/runs/'+str(rid)+'/jobs?per_page=100') if rid else {'total_count': 0, 'jobs': []}
         if data['total_count'] != len(data['jobs']):
             raise ValueError('Incomplete current-run job inventory')
+        delivery = None
+        if state.get('finalDelivery') is not None:
+            evidence = state['finalDelivery']; delivery_run = gh('actions/runs/'+str(evidence['runID']))
+            delivery_jobs = gh('actions/runs/'+str(evidence['runID'])+'/jobs?per_page=100')
+            if delivery_jobs['total_count'] != len(delivery_jobs['jobs']):
+                raise ValueError('Incomplete final-delivery job inventory')
+            request_blob = gh('contents/operations/rrgh-final-catalog-request.json?ref='+quote(delivery_run['head_sha'], safe=''))
+            raw = base64.b64decode(''.join(request_blob['content'].splitlines()), validate=True)
+            if len(raw) > 16384:
+                raise ValueError('Final delivery request exceeds bounded owner request')
+            delivery = dict(run=delivery_run, jobs=delivery_jobs['jobs'], request=json.loads(raw))
         after, _ = read_state()
         if sha == after:
             break
     else:
         raise ValueError('Controller changed during both snapshots; no stable health claim')
-    report = evaluate(state, run, data['jobs'])
+    report = evaluate(state, run, data['jobs'], delivery)
     print(json.dumps(report, sort_keys=True))
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
         out.write('### Red River Gorge Hiker production\n\n')
@@ -153,6 +219,8 @@ def main():
                   ', '+str(report['acceptedJobs'])+' jobs, '+str(report['acceptedRasterTiles'])+' raster tiles.\n')
         if 'remainingRasterTiles' in report:
             out.write('\nRemaining raster tiles: **'+str(report['remainingRasterTiles'])+'**.\n')
+        if report.get('finalPackageDeliveryComplete') is True:
+            out.write('\n[Authenticated delivery verification]('+report['deliveryRun']+')\n\nPhysical iPhone testing: **pending**.\n')
     if not report['healthy']:
         print('::error::RRGH_MAP_PRODUCER_STOPPED: '+report['reason'])
         raise SystemExit(1)
