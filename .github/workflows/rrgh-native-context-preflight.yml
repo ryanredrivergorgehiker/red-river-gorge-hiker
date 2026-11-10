@@ -1,0 +1,27 @@
+name: RRGH remaining native context preflight
+on:
+  push:
+    branches: [lane20/native-context-preflight-20261110]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  native-context-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 895c01953481b2b5825abee9a4c0681f37211eb4
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify exact remaining native masks with genuine adjacent official imagery
+        run: PYTHONPATH=.github/automation python .github/automation/rrgh_native_context_preflight.py source-checkout .github/automation/fixtures/native-context-candidates-20261110.json "$RUNNER_TEMP/native-context-results.json"
