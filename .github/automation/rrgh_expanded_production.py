@@ -177,6 +177,8 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
     if plan.get('nativeRepairPhase'):
         from rrgh_native_repair import validate_publication as validate_native_repair
+        if plan['nativeRepairPhase']['format']=='rrgh-native-repair-batch-phase-v2':
+            from rrgh_native_batch import validate_publication as validate_native_repair
         validate_native_repair(old_plan,old,plan,new,audit)
     if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
         from rrgh_crosswave_batch import validate_history,validate_funding

@@ -33,6 +33,7 @@ LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_native_repair.py',
+    'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
     'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
     'rrgh_completion_phase.py','rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
@@ -435,7 +436,7 @@ def audit_state(api,root,state,allow_failed_controller=False):
         authorize_crosswave(state['crosswavePolicy']);report['crosswavePolicy']=state['crosswavePolicy']
     report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
     if state.get('nativeRepairPolicy') is not None:
-        from rrgh_native_repair import authorized as authorize_native_repair
+        from rrgh_native_batch import authorized as authorize_native_repair
         authorize_native_repair(state['nativeRepairPolicy']);report['nativeRepairPolicy']=state['nativeRepairPolicy']
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
@@ -561,7 +562,7 @@ def audit_recovered(api,root):
     auth=state.get('recoveredResumeAuthorization',{})
     if phase_resume:
         if state.get('nativeRepairPolicy') is not None:
-            from rrgh_native_repair import authorized as authorize_native_repair
+            from rrgh_native_batch import authorized as authorize_native_repair
             authorize_native_repair(state['nativeRepairPolicy'])
             CW_POLICY=state['nativeRepairPolicy']
             guard(state['lastRecovered']['recoveryReceipt']==CW_POLICY['baselineRecovery'],
@@ -750,6 +751,8 @@ def settle_completion_wait(api,root,source_root,old,state,audit):
         from rrgh_crosswave_phase import waiting_summary
     if plan.get('nativeRepairPhase'):
         from rrgh_native_repair import waiting_summary
+        if plan['nativeRepairPhase']['format']=='rrgh-native-repair-batch-phase-v2':
+            from rrgh_native_batch import waiting_summary
     expected=waiting_summary(plan,read_region(folder),audit)
     guard(json.loads((source_root/'RRGH-COMPLETION-WAIT.json').read_bytes())==expected,
           'Phase boundary settlement differs')

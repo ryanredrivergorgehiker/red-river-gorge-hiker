@@ -103,6 +103,9 @@ def prepare(root, verified):
     # Stop after the exact pilot's independent settlement. No new producer
     # allocation is permitted until its actual repair evidence is reviewed.
     if old.get('nativeRepairPhase'):
+        from rrgh_native_batch import POLICY as NATIVE_BATCH_POLICY,prepare as prepare_native_batch
+        if verified.get('nativeRepairPolicy')==NATIVE_BATCH_POLICY:
+            return prepare_native_batch(root,verified)
         from rrgh_native_repair import waiting_summary
         summary=waiting_summary(old,region,verified)
         (root/'RRGH-COMPLETION-WAIT.json').write_bytes(canonical(summary))
