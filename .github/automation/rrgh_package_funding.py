@@ -2,7 +2,7 @@
 import copy
 from decimal import Decimal
 
-from rrgh_package_authority import digest, require
+from rrgh_package_authority import digest, require, required_jobs
 
 POLICY=dict(format='rrgh-final-package-authority-v1',enabled=True,
     authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-10',
@@ -24,7 +24,7 @@ def allocation(stored,egress,writes,reads,seconds):
 def caps(operation):
     """Each cap includes claims, receipts, metadata response bounds and headroom."""
     kind=operation['kind']
-    overhead=2*MIB
+    overhead=8*MIB
     if kind=='inventory':
         jobs=operation['jobs'];waves=operation['stop']-operation['start']
         require(type(jobs) is int and 0<jobs<=34750 and 0<waves<=96,'Invalid metadata allocation')
@@ -52,6 +52,18 @@ def caps(operation):
         return [allocation(size+2*MIB,content+upload['egressBytes']+descriptor+overhead,
                            upload['classARequests']+8,files+12,2400),
                 allocation(2*MIB,size+descriptor+overhead,8,16,1200)]
+    if kind=='parts':
+        from gorge_campaign_budget import add_usage
+        rows=operation['parts']
+        require(1<=len(rows)<=8 and len({p['partID'] for p in rows})==len(rows) and
+                sum(p['archiveBytes'] for p in rows)<=512*MIB and
+                sum(p['files'] for p in rows)<=60000 and all(p['kind']=='part' for p in rows),
+                'Package batch exceeds bounded bytes, entries or part count')
+        individual=[caps(p) for p in rows]
+        totals=[add_usage(*(p[index] for p in individual)) for index in (0,1)]
+        # The whole batch shares one finite runtime, not eight sequential hours.
+        for value in totals:value['seconds']=2400
+        return totals
     if kind=='indexes':
         require(operation['groups']==3 and 3<=operation['parts']<=192,'Complete three-group release required')
         return [allocation(8*MIB,16*MIB,32,24,600),allocation(4*MIB,16*MIB,16,24,600)]
@@ -64,6 +76,9 @@ def make(source_plan, anchor, operation, carry, ordinal, previous, controller_di
     from gorge_checkpoint import validate_plan
     require(anchor['planSHA256']==digest(source_plan) and
             anchor['sequence']==source_plan['campaign']['sequence'] and
+            source_plan.get('finalOverviewPhase',{}).get('format')=='rrgh-final-overview-phase-v1' and
+            len(source_plan['completedJobIDs']+source_plan['approvedJobIDs'])==34750 and
+            set(source_plan['completedJobIDs']+source_plan['approvedJobIDs'])==required_jobs() and
             carry['priorCompletedJobs']==34750 and carry['priorRasterTiles']==278278 and
             carry['priorSunlightAssets']==320 and
             type(ordinal) is int and ordinal>=0,'Verified raster completion anchor required')

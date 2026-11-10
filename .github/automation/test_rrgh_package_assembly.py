@@ -13,6 +13,7 @@ from gorge_checkpoint import Meter, DIMENSIONS, digest as raw_digest
 from build_gorge_map_bundles import part_size
 from rrgh_package_assembly import recover_part, native_entry
 from rrgh_package_authority import geometry
+from rrgh_package_readback import verify_part
 
 
 class ReadSlot:
@@ -50,6 +51,29 @@ def fixture():
 
 
 class AssemblyTests(unittest.TestCase):
+    def test_fresh_remote_readback_binds_delivery_identity_and_all_members(self):
+        inventory,part,slot=fixture()
+        with tempfile.TemporaryDirectory() as temp:
+            built=recover_part(slot,inventory,part,Path(temp)/'build')
+            raw=Path(built['path']).read_bytes();meta=built['part']
+            ref=dict(key='engineering/map-production/plans/'+'d'*64+'/slots/00000/packs/'+meta['sha256'],
+                     generation='456',bytes=len(raw),sha256=meta['sha256'])
+            delivery={'rrgh-sha256':meta['sha256'],'rrgh-package-id':meta['packageID'],'rrgh-version':meta['version']}
+            remote=ReadSlot({(ref['key'],ref['generation']):raw})
+            response=dict(bucket='rrgh-nonproduction-protected-packages',name=ref['key'],generation='456',
+                          size=str(len(raw)),metadata=delivery)
+            remote.store=SimpleNamespace(_request=lambda *a:(json.dumps(response).encode(),{},200))
+            verified=verify_part(remote,ref,meta,part,Path(temp)/'readback')
+            self.assertTrue(verified['fullRemoteSHA256ReadbackVerified'])
+            self.assertEqual(verified['rasterTiles'],5)
+            response['metadata']['rrgh-version']='wrong'
+            with self.assertRaisesRegex(ValueError,'metadata'):
+                verify_part(remote,ref,meta,part,Path(temp)/'wrong-identity')
+            response['metadata']['rrgh-version']=meta['version']
+            remote.objects[(ref['key'],ref['generation'])]=b'!'+raw[1:]
+            with self.assertRaisesRegex(ValueError,'hash'):
+                verify_part(remote,ref,meta,part,Path(temp)/'wrong-bytes')
+
     def test_unchanged_bytes_and_native_archive_roundtrip(self):
         inventory,part,slot=fixture()
         with tempfile.TemporaryDirectory() as temp:

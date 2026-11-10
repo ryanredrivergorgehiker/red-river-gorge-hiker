@@ -27,3 +27,9 @@ print(json.dumps(dict(verified=True,actualAcceptedBaseline=1419,acceptedJobs=len
     acceptedRasterTiles=273868,restoredUSGSJobs=1770,usgsAcceptanceWaves=len(usgs),
     usgsAuthoritySHA256=digest(usgs),remainingRasterTiles=4410,
     sourceRequests=0,cloudReads=0,cloudWrites=0,productionAcceptanceChanged=False),sort_keys=True))
+if '--emit-usgs-authority' in sys.argv:
+    import base64,zlib
+    from rrgh_package_authority import canonical
+    print(json.dumps(dict(format='rrgh-read-only-usgs-history-evidence-v1',
+        sha256=digest(usgs),zlibBase64=base64.b64encode(zlib.compress(canonical(usgs),9)).decode(),
+        cloudReads=0,cloudWrites=0),sort_keys=True))

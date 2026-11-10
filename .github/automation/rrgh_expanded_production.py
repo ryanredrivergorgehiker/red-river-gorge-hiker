@@ -223,8 +223,8 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
         validate_transport(root)
         wanted['gorge_guarded_worker.py']=sha((root/'backend/scripts/gorge_guarded_worker.py').read_bytes())
     if plan.get('finalOverviewPhase'):
-        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR
+        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR,IDENTITY
         validate_final_modules(root)
-        for name in (*MODULES,COORDINATOR):wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
+        for name in (*MODULES,COORDINATOR,IDENTITY):wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 
