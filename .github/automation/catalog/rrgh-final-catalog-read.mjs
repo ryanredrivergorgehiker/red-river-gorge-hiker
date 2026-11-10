@@ -54,7 +54,9 @@ export class ProtectedReader {
     const ref = { key: candidate.objectName, generation: candidate.objectGeneration,
       bytes: candidate.byteCount, sha256: candidate.sha256 };checkRef(ref, 256000000);
     const url = `https://storage.googleapis.com/storage/v1/b/${BUCKET}/o/${encodeURIComponent(ref.key)}` +
-      `?generation=${ref.generation}&fields=name,bucket,generation,size,metadata,contentType`;
+      '?fields=name,bucket,generation,size,metadata,contentType';
+    // The existing backend opens the current object at this immutable path.
+    // Checking only an older generation could miss a changed current object.
     const { bytes } = await this.budget.request(url, { maximum: 16384, storageRequests: 1,
       headers: { authorization: 'Bearer ' + await this.token() } });
     const value = JSON.parse(bytes.toString('utf8'));

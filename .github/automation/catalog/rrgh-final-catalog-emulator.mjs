@@ -35,6 +35,7 @@ try {
   const report = { requestSHA256: newer.requestSHA256, authoritySHA256: f.request.authoritySHA256,
     authenticatedIndexes: 3, authenticatedPackages: f.document.catalogs.length, fullyHashedSampleParts: 3,
     everyPackageIdentityAndRangeVerified: true, offlineLeaseVerified: true,
+    currentStorageGenerationsVerified: true,
     unauthenticatedDeliveryDenied: true, physicalIPhoneTestComplete: false };
   assert.equal((await markDeliveryVerified(db, newer, report, Timestamp.now())).finalPackageDeliveryComplete, true);
   await assert.rejects(rollbackCatalogs(db, newer, Timestamp.now()));

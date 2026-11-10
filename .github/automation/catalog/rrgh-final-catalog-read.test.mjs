@@ -42,3 +42,17 @@ test('indirect proxy storage and document work is reserved before making the req
   await assert.rejects(budget.request('https://example.invalid', { maximum: 2, storageRequests: 1 }), /indirect/);
   assert.equal(calls, 1);assert.equal(budget.firestoreOperations, 8);
 });
+test('delivery rejects a changed current generation even when the old object still exists', async () => {
+  const sha = 'a'.repeat(64), candidate = { objectName: 'engineering/map-production/plans/' +
+    'b'.repeat(64) + '/slots/00000/packs/' + sha, objectGeneration: '123',
+    byteCount: 1000, sha256: sha, packageId: 'gorge-core-' + sha, version: sha.slice(0, 24) };
+  let generation = '123';
+  const budget = new ReadBudget({ bytes: 65536, requests: 3 }, async url => {
+    assert.equal(new URL(url).searchParams.has('generation'), false);
+    return Response.json({ name: candidate.objectName, bucket: BUCKET, size: '1000', generation,
+      metadata: { 'rrgh-sha256': sha, 'rrgh-package-id': candidate.packageId, 'rrgh-version': candidate.version } });
+  });
+  const reader = new ProtectedReader(budget, async () => 'secret');
+  assert.equal(await reader.metadata(candidate), true);generation = '124';
+  await assert.rejects(reader.metadata(candidate), /differs/);
+});
