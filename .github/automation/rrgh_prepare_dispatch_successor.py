@@ -102,6 +102,9 @@ def prepare(root, verified):
 
     # Stop after the exact pilot's independent settlement. No new producer
     # allocation is permitted until its actual repair evidence is reviewed.
+    if verified.get('finalOverviewPolicy') is not None and (old.get('nativeRepairPhase') or old.get('finalOverviewPhase')):
+        from rrgh_final_overviews import prepare as prepare_final_overviews
+        return prepare_final_overviews(root,verified)
     if old.get('nativeRepairPhase'):
         from rrgh_native_batch import POLICY as NATIVE_BATCH_POLICY,prepare as prepare_native_batch
         if verified.get('nativeRepairPolicy')==NATIVE_BATCH_POLICY:

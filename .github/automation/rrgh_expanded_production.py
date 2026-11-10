@@ -150,7 +150,7 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     mode=audit.get('sourcePolicyMode','expanded')
     expected=migration(copy.deepcopy(old),mode,controller_root)
     context_keys=()
-    if plan.get('nativeRepairPhase',{}).get('format')=='rrgh-native-repair-batch-phase-v2':
+    if plan.get('nativeRepairPhase',{}).get('format')=='rrgh-native-repair-batch-phase-v2' or plan.get('finalOverviewPhase'):
         from rrgh_native_batch import POLICY
         from rrgh_native_context import augment
         require(audit.get('nativeRepairPolicy')==POLICY,'Exact native context repair authority required')
@@ -175,12 +175,15 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_phase import validate_plan as validate_crosswave
         validate_crosswave(plan,new,audit.get('crosswavePolicy'))
-    require(not overviews or plan.get('crosswavePhase') or (audit.get('overviewPilotEnabled') is True and len(overviews)==1 and
+    require(not overviews or plan.get('crosswavePhase') or plan.get('finalOverviewPhase') or (audit.get('overviewPilotEnabled') is True and len(overviews)==1 and
         overviews==[pilot_job(overviews[0]['id'])] and
         plan.get('overviewPilot')==pilot_manifest(overviews[0]['id']) and len(new['jobs'])<=12), 'Unreviewed overview allocation')
-    require(bool(overviews)==bool(plan.get('overviewPilot') or plan.get('crosswavePhase')), 'Unused overview authority')
+    require(bool(overviews)==bool(plan.get('overviewPilot') or plan.get('crosswavePhase') or plan.get('finalOverviewPhase')), 'Unused overview authority')
     from rrgh_batch_integration import validate as validate_batch, installed as batch_installed, MODULES as BATCH_MODULES
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overviews import validate_publication as validate_final
+        validate_final(old_plan,old,plan,new,audit)
     if plan.get('nativeRepairPhase'):
         from rrgh_native_repair import validate_publication as validate_native_repair
         if plan['nativeRepairPhase']['format']=='rrgh-native-repair-batch-phase-v2':
@@ -219,5 +222,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
         from rrgh_native_transport import validate as validate_transport
         validate_transport(root)
         wanted['gorge_guarded_worker.py']=sha((root/'backend/scripts/gorge_guarded_worker.py').read_bytes())
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR
+        validate_final_modules(root)
+        for name in (*MODULES,COORDINATOR):wanted[name]=sha((root/'backend/scripts'/name).read_bytes())
     require(new['engineHashes']==wanted, 'Unexpected engine mutation')
 

@@ -1,0 +1,49 @@
+name: RRGH final overview completion QA
+on:
+  push:
+    branches: [lane20/final-overview-completion-20261110]
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  RRGH_TEST_SOURCE: final-source
+jobs:
+  complete-overview-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 6d0d2363b2b66fc93412ac500208121a203c808f
+          path: native-controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 230f3c6097af85cb7e093b9a81a68c5cc3b9ff51
+          path: native-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r native-source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Reproduce reviewed native queue fixture without production writes
+        run: |
+          python native-controller/.github/automation/verify_rrgh_native_batch_roundtrip.py native-source
+          git -C native-source worktree add --detach ../final-source HEAD
+      - name: All691 parents through exact dependency publication and raster-complete package hold
+        run: python .github/automation/verify_rrgh_final_overview_roundtrip.py final-source native-source/RRGH-COMPLETION-WAIT.json
+      - name: Actual renderer edge pixels and explicit accepted-seed proofs
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_overview_coverage.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_seed_children.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_final_overview_render.py -v
+      - name: Historical controller and producer guards
+        run: |
+          python -m unittest discover -s .github/automation -p test_rrgh_handoff.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_published_successor.py -v
+          python -m unittest discover -s .github/automation -p test_rrgh_completion_throughput.py -v
+          cd final-source/backend/scripts
+          python -m unittest test_gorge_checkpoint test_gorge_source_gap_guard -v

@@ -34,6 +34,9 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_native_repair.py',
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
+    'rrgh_final_overviews.py','rrgh_final_dependencies.py','rrgh_final_overview_runtime.py',
+    'rrgh_final_overview_render.py','rrgh_overview_coverage.py','rrgh_seed_children.py',
+    'rrgh_final_integration.py','source-templates/gorge_stage_coordinator.py',
     'rrgh_native_context.py','fixtures/native-context-metadata-20261110.json',
     'rrgh_native_transport.py','source-templates/gorge_guarded_worker.py',
     'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
@@ -437,6 +440,10 @@ def audit_state(api,root,state,allow_failed_controller=False):
         from rrgh_crosswave_phase import authorized as authorize_crosswave
         authorize_crosswave(state['crosswavePolicy']);report['crosswavePolicy']=state['crosswavePolicy']
     report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
+    if state.get('finalOverviewPolicy') is not None:
+        from rrgh_final_overviews import POLICY as FINAL_POLICY
+        guard(state['finalOverviewPolicy']==FINAL_POLICY,'Unreviewed final overview authority')
+        report['finalOverviewPolicy']=state['finalOverviewPolicy']
     if state.get('nativeRepairPolicy') is not None:
         from rrgh_native_batch import authorized as authorize_native_repair
         authorize_native_repair(state['nativeRepairPolicy']);report['nativeRepairPolicy']=state['nativeRepairPolicy']
@@ -563,7 +570,17 @@ def audit_recovered(api,root):
           'Only an independently recovered production allocation can advance')
     auth=state.get('recoveredResumeAuthorization',{})
     if phase_resume:
-        if state.get('nativeRepairPolicy') is not None:
+        if state.get('finalOverviewPolicy') is not None:
+            from rrgh_final_overviews import POLICY as FINAL_POLICY
+            boundary=state.get('finalOverviewResume',{})
+            guard(state['finalOverviewPolicy']==FINAL_POLICY and
+                boundary.get('authorizedBy')=='ryanredrivergorgehiker' and
+                all(boundary.get(k)==state.get(k) for k in ('sequence','runID','planSHA256','sourceSHA','dispatchID')) and
+                boundary.get('recoveryReceipt')==state['lastRecovered']['recoveryReceipt'] and
+                state['lastRecovered']['acceptedRasterTiles']==277587,
+                'Exact completed native boundary required for final overview enrollment')
+            CW_POLICY=dict(baselineSequence=state['sequence'],baselinePlanSHA256=state['planSHA256'],baselineAcceptedTiles=277587)
+        elif state.get('nativeRepairPolicy') is not None:
             from rrgh_native_batch import authorized as authorize_native_repair
             authorize_native_repair(state['nativeRepairPolicy'])
             CW_POLICY=state['nativeRepairPolicy']
@@ -690,6 +707,16 @@ def candidate_entries(source_root,audit,state):
         before=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+TRANSPORT])
         validate_transport(root,before)
         if (root/TRANSPORT).read_bytes()!=before:allowed.add(TRANSPORT)
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR
+        before=subprocess.check_output(['git','-C',str(root),'show','HEAD:backend/scripts/'+COORDINATOR])
+        validate_final_modules(root,before)
+        if before!=(root/'backend/scripts'/COORDINATOR).read_bytes():allowed.add('backend/scripts/'+COORDINATOR)
+        for name in MODULES:
+            target='backend/scripts/'+name
+            tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+            if not tracked:allowed.add(target)
+            else:guard(subprocess.check_output(['git','-C',str(root),'show','HEAD:'+target])==(root/target).read_bytes(),'Installed final helper changed')
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
     guard(set(changed)==allowed,'Unexpected files in source publication')
     allowance=json.loads((new_dir/'ALLOWANCE.json').read_bytes())['cloudStorageAllowance']
@@ -756,6 +783,8 @@ def settle_completion_wait(api,root,source_root,old,state,audit):
           'Phase boundary plan changed')
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_phase import waiting_summary
+    if plan.get('finalOverviewPhase'):
+        from rrgh_final_overviews import waiting_summary
     if plan.get('nativeRepairPhase'):
         from rrgh_native_repair import waiting_summary
         if plan['nativeRepairPhase']['format']=='rrgh-native-repair-batch-phase-v2':
