@@ -1,0 +1,17 @@
+{
+  "format": "rrgh-r4-restoration-request-v1",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-10",
+  "codeSHA256": "57032a2e353476a8f941c28b44394dcd379ce63d375bf765e9d2002dd8814cc8",
+  "packSHA256": "fcdd9ba6ac9f8b61f032b28ee28aac7bcb48bf045932fcefc9f1130b7a9bbaed",
+  "indexSHA256": "278272b57c24bd01ecd9efe7503bcfb77455173d84ffb209bee2f8828aa0a394",
+  "archiveSHA256": "38f6bcb6337f8f087851d1ebbaafa5dd810a346b04c84f6fdffe892240c07290",
+  "reservedUSD": "0.05",
+  "jobs": 12,
+  "rasterTiles": 172,
+  "bytes": 4845866,
+  "preserveOriginalBytes": true,
+  "sourceRequests": 0,
+  "rasterJobsExecuted": 0,
+  "requestSHA256": "6580001895321a27248eea481fb299f13a84d8a4c7c97875f1eabc55464ea79d"
+}
