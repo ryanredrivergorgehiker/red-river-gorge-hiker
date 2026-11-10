@@ -1,20 +1,18 @@
 {
-  "action": "recover-unstarted",
+  "action": "resume-recovered",
   "authorizedBy": "ryanredrivergorgehiker",
-  "date": "2026-11-09",
-  "source_sha": "e0551e17752606cc9baa8280f45ef6209d739362",
-  "plan_sha256": "d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4",
-  "original_run": 42669263145,
-  "dispatch_id": "a89729737b5a1001365d1b90575c3a14000658fd07c2b45a08eac0b32ae6e0eb",
-  "producer_receipt": {
-    "bytes": 857,
-    "generation": "1794247693485558",
-    "key": "engineering/map-production/plans/d78942ef9eafbd3eeaf08f57392dce9cda356213d45e1c3c2b0bd3351d2a10b4/slots/00001/receipt.json",
-    "sha256": "94f2ad8d683f93b7fa77ed097dd59992184c38ec81a00f12618a931949a04ea7"
+  "date": "2026-11-10",
+  "source_sha": "895c01953481b2b5825abee9a4c0681f37211eb4",
+  "plan_sha256": "a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b",
+  "original_run": 42811852583,
+  "dispatch_id": "2a817478fa730785a3b243c339a371561ff887b61df5ff395264fbc7e9012d7d",
+  "recovery_receipt": {
+    "bytes": 3241,
+    "generation": "1794312166017060",
+    "key": "engineering/map-production/plans/a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b/slots/00002/receipt.json",
+    "sha256": "a5875a47b685e8c2d3eaec5ebf82b055cf6117336565bb88e442e5b5371f3a1f"
   },
-  "reviewed_commit": "1209f7f593e974f2d91b8f6b8263366c9ccf9071",
-  "purpose": "Owner requested resume after GitHub mitigation: independently verify exact saved wave1358 outputs; no production replay; preserve prior zero-job dispatch evidence and all consumed allocations",
-  "unstarted_recovery_run": 42672888093,
-  "request_id": "resume1358-after-github-mitigation-20261109-1843",
-  "previous_launch_run": 42673314408
+  "reviewed_commit": "b048cce404ce4ed3831345301d0d997251db59e0",
+  "request_id": "native-repair1419-after-verified1418-20261110",
+  "purpose": "Owner-authorized completion: re-audit exact independently settled1418; publish fresh three-job attempt2 native repair pilot under reviewed source-mask evidence, original quality and budgets; preserve every old claim, receipt, attempt and accepted byte; hold after independent pilot verification"
 }
