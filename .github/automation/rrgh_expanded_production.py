@@ -175,6 +175,9 @@ def validate_publication(source_root, old_dir, new_dir, plan, audit, controller_
     require(bool(overviews)==bool(plan.get('overviewPilot') or plan.get('crosswavePhase')), 'Unused overview authority')
     from rrgh_batch_integration import validate as validate_batch, installed as batch_installed, MODULES as BATCH_MODULES
     old_plan=json.loads((Path(old_dir)/'PLAN.json').read_bytes())
+    if plan.get('nativeRepairPhase'):
+        from rrgh_native_repair import validate_publication as validate_native_repair
+        validate_native_repair(old_plan,old,plan,new,audit)
     if plan.get('crosswavePhase',{}).get('format')=='rrgh-crosswave-batch-phase-v2':
         from rrgh_crosswave_batch import validate_history,validate_funding
         validate_history(old_plan,old,plan,audit);validate_funding(old_plan,plan)

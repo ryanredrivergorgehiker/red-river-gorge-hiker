@@ -32,6 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
+    'rrgh_native_repair.py',
     'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
     'rrgh_completion_phase.py','rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
@@ -433,6 +434,9 @@ def audit_state(api,root,state,allow_failed_controller=False):
         from rrgh_crosswave_phase import authorized as authorize_crosswave
         authorize_crosswave(state['crosswavePolicy']);report['crosswavePolicy']=state['crosswavePolicy']
     report['batchPilotEnabled']=state.get('batchPilotEnabled') is True
+    if state.get('nativeRepairPolicy') is not None:
+        from rrgh_native_repair import authorized as authorize_native_repair
+        authorize_native_repair(state['nativeRepairPolicy']);report['nativeRepairPolicy']=state['nativeRepairPolicy']
     if recovery_execution is not None:report['recoveryRunID']=state['runID']
     return report
 
@@ -556,16 +560,23 @@ def audit_recovered(api,root):
           'Only an independently recovered production allocation can advance')
     auth=state.get('recoveredResumeAuthorization',{})
     if phase_resume:
-        from rrgh_crosswave_phase import authorized as authorize_crosswave,POLICY as CW_POLICY
-        authorize_crosswave(state.get('crosswavePolicy'))
-        CW_POLICY=state['crosswavePolicy']
+        if state.get('nativeRepairPolicy') is not None:
+            from rrgh_native_repair import authorized as authorize_native_repair
+            authorize_native_repair(state['nativeRepairPolicy'])
+            CW_POLICY=state['nativeRepairPolicy']
+            guard(state['lastRecovered']['recoveryReceipt']==CW_POLICY['baselineRecovery'],
+                'Exact independently verified native repair baseline receipt required')
+        else:
+            from rrgh_crosswave_phase import authorized as authorize_crosswave
+            authorize_crosswave(state.get('crosswavePolicy'))
+            CW_POLICY=state['crosswavePolicy']
         guard(state['sequence']==CW_POLICY['baselineSequence'] and state['planSHA256']==CW_POLICY['baselinePlanSHA256'] and
             state['lastRecovered']['acceptedRasterTiles']==CW_POLICY['baselineAcceptedTiles'] and
             all(state['lastRecovered'].get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
             'Exact settled phase boundary required')
         auth={'recoveryReceipt':state['lastRecovered']['recoveryReceipt']}
     else:
-        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-04','2026-11-09') and
+        guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-03','2026-11-04','2026-11-09','2026-11-10') and
               all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
               'Exact owner-authorized recovered continuation missing')
     assert_no_other_producers(api)
@@ -605,7 +616,8 @@ def candidate_entries(source_root,audit,state):
     jobs=plan['approvedJobIDs']
     guard(0<len(jobs)<=512 and len(set(jobs))==len(jobs) and
           not set(jobs)&set(plan['completedJobIDs']) and
-          all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs),'Replayed or malformed successor jobs')
+          (plan.get('nativeRepairPhase') is not None or all(plan['priorAttemptCounts'].get(j,0)==0 for j in jobs)),
+          'Replayed or malformed successor jobs')
     guard(len(plan['completedJobIDs'])==len(set(plan['completedJobIDs']))==audit['acceptedJobs'],'Accepted inventory mismatch')
     previous_quarantine=prior['campaign'].get('checkpointRecoveryQuarantines',[])
     if audit.get('checkpointRecovery'):
@@ -736,6 +748,8 @@ def settle_completion_wait(api,root,source_root,old,state,audit):
           'Phase boundary plan changed')
     if plan.get('crosswavePhase'):
         from rrgh_crosswave_phase import waiting_summary
+    if plan.get('nativeRepairPhase'):
+        from rrgh_native_repair import waiting_summary
     expected=waiting_summary(plan,read_region(folder),audit)
     guard(json.loads((source_root/'RRGH-COMPLETION-WAIT.json').read_bytes())==expected,
           'Phase boundary settlement differs')
