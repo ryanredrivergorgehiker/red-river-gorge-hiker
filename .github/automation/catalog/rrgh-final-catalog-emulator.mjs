@@ -35,7 +35,9 @@ try {
   const report = { requestSHA256: newer.requestSHA256, authoritySHA256: f.request.authoritySHA256,
     authenticatedIndexes: 3, authenticatedPackages: f.document.catalogs.length, fullyHashedSampleParts: 3,
     everyPackageIdentityAndRangeVerified: true, offlineLeaseVerified: true,
-    currentStorageGenerationsVerified: true,
+    currentStorageGenerationsVerified: true, requiredDayHikesVerified: true,
+    authenticatedDayHikes: ['RTE-0001', 'RTE-0002'].map(routeID => ({ routeID,
+      packageID: 'route-' + routeID.toLowerCase(), version: '1', sha256: 'a'.repeat(64), byteCount: 100 })),
     unauthenticatedDeliveryDenied: true, physicalIPhoneTestComplete: false };
   assert.equal((await markDeliveryVerified(db, newer, report, Timestamp.now())).finalPackageDeliveryComplete, true);
   await assert.rejects(rollbackCatalogs(db, newer, Timestamp.now()));

@@ -1,4 +1,5 @@
 import { activeCatalog, requireValue, same } from './rrgh-final-catalog-contract.mjs';
+import { DAY_HIKES } from './rrgh-final-catalog-smoke.mjs';
 
 function releaseRef(db, id) {
   requireValue(/^[a-f0-9]{16}-[1-9][0-9]*$/.test(id), 'Invalid final map release identity');
@@ -100,6 +101,11 @@ export async function markDeliveryVerified(db, meta, report, timestamp) {
       report.authenticatedPackages === value.identities.length && report.fullyHashedSampleParts === 3 &&
       report.everyPackageIdentityAndRangeVerified === true && report.offlineLeaseVerified === true &&
       report.currentStorageGenerationsVerified === true &&
+      report.requiredDayHikesVerified === true && Array.isArray(report.authenticatedDayHikes) &&
+      same(report.authenticatedDayHikes.map(r => r.routeID), DAY_HIKES) &&
+      report.authenticatedDayHikes.every(r => r.packageID === 'route-' + r.routeID.toLowerCase() &&
+        typeof r.version === 'string' && r.version.length > 0 && /^[0-9a-f]{64}$/.test(r.sha256) &&
+        Number.isSafeInteger(r.byteCount) && r.byteCount > 0 && r.byteCount <= 8 * 1024 * 1024) &&
       report.unauthenticatedDeliveryDenied === true && report.physicalIPhoneTestComplete === false,
       'Authenticated delivery validation is incomplete');
     const refs = value.identities.map(c => db.collection('packageCatalog').doc(c.packageId));

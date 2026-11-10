@@ -3,6 +3,45 @@ import { IDS, requireValue, same, validateIndex } from './rrgh-final-catalog-con
 
 const RANGE = 8 * 1024 * 1024;
 const DOWNLOAD_URL = 'https://us-east5-rrgh-nonproduction.cloudfunctions.net/rrghPackageDownload';
+export const DAY_HIKES = ['RTE-0001', 'RTE-0002'];
+
+// Match the native RouteGeoJSONDecoder contract used by offline setup.
+export function validateDayHike(bytes, routeID) {
+  const value = JSON.parse(bytes.toString('utf8'));
+  requireValue(value.type === 'FeatureCollection' && Array.isArray(value.features), 'Invalid Day Hike collection');
+  const coordinate = raw => requireValue(Array.isArray(raw) && raw.length >= 2 &&
+    typeof raw[0] === 'number' && Number.isFinite(raw[0]) && Math.abs(raw[0]) <= 180 &&
+    typeof raw[1] === 'number' && Number.isFinite(raw[1]) && Math.abs(raw[1]) <= 90, 'Invalid Day Hike coordinate');
+  let route;
+  for (const feature of value.features) {
+    const geometry = feature?.geometry, properties = feature?.properties;
+    if (!geometry || !properties) continue;
+    if (geometry.type === 'LineString') {
+      requireValue(properties.routeId === routeID && Array.isArray(geometry.coordinates), 'Day Hike route identity differs');
+      geometry.coordinates.forEach(coordinate);route = geometry.coordinates;
+    } else if (geometry.type === 'Point' && properties.routeId === routeID &&
+      typeof properties.waypointId === 'string' && typeof properties.name === 'string') coordinate(geometry.coordinates);
+  }
+  requireValue(route?.length > 1, 'Day Hike route line is missing');
+}
+
+function checkCapability(delivery) {
+  requireValue(delivery?.ready === true && delivery.method === 'capability_https' && delivery.httpMethod === 'GET' &&
+    delivery.authorizationScheme === 'Bearer' && delivery.url === DOWNLOAD_URL &&
+    typeof delivery.authorizationToken === 'string' && delivery.authorizationToken.length >= 32 &&
+    Date.parse(delivery.expiresAt) > Date.now(), 'Protected delivery capability is invalid');
+}
+
+async function readRange(budget, delivery, p, start, end) {
+  const { bytes, response } = await budget.request(delivery.url, { maximum: end - start + 1, expectedStatus: 206,
+    storageRequests: 2, firestoreOperations: 8,
+    headers: { authorization: 'Bearer ' + delivery.authorizationToken, range: `bytes=${start}-${end}` } });
+  requireValue(response.headers.get('content-range') === `bytes ${start}-${end}/${p.byteCount}` &&
+    response.headers.get('x-rrgh-package-id') === p.packageId &&
+    response.headers.get('x-rrgh-package-version') === p.version && bytes.length === end - start + 1,
+    'Authenticated package range or identity header differs');
+  return bytes;
+}
 
 export async function verifyDelivery({ budget, document, request, functionUrl, idToken, uid, verifyLease, verifyCurrentObject }) {
   requireValue(new URL(functionUrl).protocol === 'https:', 'HTTPS account endpoint required');
@@ -42,22 +81,12 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
       p.version === candidate.version && p.sha256 === candidate.sha256 && p.byteCount === candidate.byteCount &&
       p.packageType === 'offline_base' && p.requiredEntitlement === 'base' &&
       same(p.offlineManifest, candidate.offlineManifest), 'Authenticated package descriptor differs from verified catalog');
-    requireValue(delivery.method === 'capability_https' && delivery.httpMethod === 'GET' &&
-      delivery.authorizationScheme === 'Bearer' && delivery.url === DOWNLOAD_URL &&
-      typeof delivery.authorizationToken === 'string' && delivery.authorizationToken.length >= 32 &&
-      Date.parse(delivery.expiresAt) > Date.now(), 'Protected delivery capability is invalid');
+    checkCapability(delivery);
     if (!denied) {
       await budget.request(delivery.url, { maximum: 16384, expectedStatus: 401 });denied = true;
     }
     async function range(start, end) {
-      const { bytes, response } = await budget.request(delivery.url, { maximum: end - start + 1, expectedStatus: 206,
-        storageRequests: 2, firestoreOperations: 8,
-        headers: { authorization: 'Bearer ' + delivery.authorizationToken, range: `bytes=${start}-${end}` } });
-      requireValue(response.headers.get('content-range') === `bytes ${start}-${end}/${p.byteCount}` &&
-        response.headers.get('x-rrgh-package-id') === p.packageId &&
-        response.headers.get('x-rrgh-package-version') === p.version && bytes.length === end - start + 1,
-        'Authenticated package range or identity header differs');
-      return bytes;
+      return readRange(budget, delivery, p, start, end);
     }
     const isIndex = Object.values(IDS).includes(p.packageId);
     if (isIndex || samples.has(p.packageId)) {
@@ -75,9 +104,25 @@ export async function verifyDelivery({ budget, document, request, functionUrl, i
     }
     authenticated++;
   }
+  const authenticatedDayHikes = [];
+  for (const routeID of DAY_HIKES) {
+    const packageID = 'route-' + routeID.toLowerCase();
+    const result = await api('authorizeProtectedPackage', { packageId: packageID });
+    const p = result.package, delivery = result.delivery;
+    requireValue(result.authorized === true && p?.packageId === packageID && p.packageType === 'route_geojson' &&
+      p.requiredEntitlement === 'base' && p.offlineManifest == null && typeof p.version === 'string' && p.version.length > 0 &&
+      /^[0-9a-f]{64}$/.test(p.sha256) && Number.isSafeInteger(p.byteCount) && p.byteCount > 0 && p.byteCount <= RANGE,
+      'Required Day Hike descriptor is invalid or unavailable');
+    checkCapability(delivery);
+    const bytes = await readRange(budget, delivery, p, 0, p.byteCount - 1);
+    requireValue(createHash('sha256').update(bytes).digest('hex') === p.sha256, 'Day Hike download SHA-256 mismatch');
+    validateDayHike(bytes, routeID);
+    authenticatedDayHikes.push({ routeID, packageID, version: p.version, sha256: p.sha256, byteCount: p.byteCount });
+  }
   return { format: 'rrgh-final-authenticated-delivery-v1', requestSHA256: request.requestSHA256,
     authoritySHA256: document.authoritySHA256, authenticatedIndexes: indexes,
     authenticatedPackages: authenticated, fullyHashedSampleParts: fullParts,
     everyPackageIdentityAndRangeVerified: true, currentStorageGenerationsVerified: true, offlineLeaseVerified: true,
+    requiredDayHikesVerified: true, authenticatedDayHikes,
     unauthenticatedDeliveryDenied: denied, physicalIPhoneTestComplete: false, readBudget: budget.summary() };
 }
