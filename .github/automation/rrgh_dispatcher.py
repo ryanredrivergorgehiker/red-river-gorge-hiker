@@ -34,6 +34,8 @@ LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_native_repair.py',
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
+    'rrgh_native_context.py','fixtures/native-context-metadata-20261110.json',
+    'rrgh_native_transport.py','source-templates/gorge_guarded_worker.py',
     'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
     'rrgh_completion_phase.py','rrgh_dispatcher.py','rrgh_dispatch_audit.py','rrgh_handoff.py','rrgh_prepare_dispatch_successor.py',
     'rrgh_campaign_budget_v2.py','rrgh_expanded_production.py','rrgh_source_window_intake.py',
@@ -683,6 +685,11 @@ def candidate_entries(source_root,audit,state):
                       'Installed batch module changed')
     before_engine=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+ENGINE])
     if (root/ENGINE).read_bytes()!=before_engine:allowed.add(ENGINE)
+    if plan.get('nativeRepairPhase',{}).get('format')=='rrgh-native-repair-batch-phase-v2':
+        from rrgh_native_transport import TARGET as TRANSPORT, validate as validate_transport
+        before=subprocess.check_output(['git','-C',str(root),'show','HEAD:'+TRANSPORT])
+        validate_transport(root,before)
+        if (root/TRANSPORT).read_bytes()!=before:allowed.add(TRANSPORT)
     changed=subprocess.check_output(['git','-C',str(root),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
     guard(set(changed)==allowed,'Unexpected files in source publication')
     allowance=json.loads((new_dir/'ALLOWANCE.json').read_bytes())['cloudStorageAllowance']

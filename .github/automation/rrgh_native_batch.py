@@ -10,17 +10,20 @@ import re
 import sys
 import zlib
 import rrgh_native_repair as pilot
+import rrgh_native_context as context
 
 BASELINE='943a8fc21d34ce6dda1492c1ad80c58e56d6aa61da6660ecc50d70296c90326d'
 RECEIPT=dict(key='engineering/map-production/plans/'+BASELINE+'/slots/00002/receipt.json',
     bytes=1491,generation='1794320163909534',sha256='54ee342bcf4205229ec1450cea5f0b2914a9b0763193c9e8bb227afb54b6e8bf')
-MASK_SHA='5046a006e35d0e8db2e7a7b64e17614bd54ab535b8e7a9665ed3064957f6e71f'
+MASK_SHA='5d057d172b4de609bdf34cd7529ffb596385cf8be10f31b5edf492ea8c4e01e5'
 FORMAT='rrgh-native-repair-batch-phase-v2'
 POLICY=dict(format='rrgh-native-repair-batch-authority-v2',enabled=True,
     authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-10',
     baselineSequence=1419,baselinePlanSHA256=BASELINE,baselineAcceptedTiles=273868,
     baselineAcceptedJobs=33686,baselineRecovery=RECEIPT,requiredRasterTiles=278278,
-    maskManifestSHA256=MASK_SHA,maxJobs=12,maxJobsPerFamily=4,maxGlobalAttempts=2,
+    maskManifestSHA256=MASK_SHA,officialContextMetadataSHA256=context.SHA,
+    plannedNativeJobs=373,plannedNativeTiles=3719,
+    maxJobs=12,maxJobsPerFamily=4,maxGlobalAttempts=2,
     preserveAcceptedOutputs=True,preserveConsumedAttempts=True)
 BASE_COMPLETED='cf078294288cfb8219c167851d8b1e2a76782facd4a6d330c9a4089cb64a8c1b'
 BASE_ATTEMPTS='4a92c0298c9e8edb164899f6ab388aa1ec807c5528b38f48d93f27f2d85591bd'
@@ -29,7 +32,9 @@ BASE_OVERVIEWS='c90693f7c335d0fe916c7e561fec1a15447aaee4c5f797c5f601e3a237bf9414
 BASE_RECIPE='d0695e32c23e5016a9818d682de1d443f6475f9c29ea2423204b6212ad55352f'
 CAPS={'hiking':dict(seconds=600,sourceBytes=67108864,sourceRequests=150),
     'terrain':dict(seconds=600,sourceBytes=134217728,sourceRequests=200),
-    'leaf-off':dict(seconds=600,sourceBytes=536870912,sourceRequests=750)}
+    'leaf-off':dict(seconds=600,sourceBytes=536870912,sourceRequests=750),
+    'leaf-on':dict(seconds=600,sourceBytes=134217728,sourceRequests=49),
+    'usgs-topo':dict(seconds=600,sourceBytes=1048576,sourceRequests=1)}
 canonical=lambda v:(json.dumps(v,sort_keys=True,separators=(',',':'),allow_nan=False)+'\n').encode()
 digest=lambda v:hashlib.sha256(canonical(v)).hexdigest()
 require=pilot.require
@@ -45,15 +50,25 @@ def masks():
     require(hashlib.sha256(raw).hexdigest()==MASK_SHA,'Native source-mask evidence changed')
     value=json.loads(raw)
     require(value['format']=='rrgh-native-repair-verified-masks-v1' and value['sourcePlanSHA256']==pilot.BASELINE and
-        0<len(value['jobs'])<=232 and len({j['id'] for j in value['jobs']})==len(value['jobs']),
+        value['sourceSHA']=='895c01953481b2b5825abee9a4c0681f37211eb4' and
+        len(value['jobs'])==373 and len({j['id'] for j in value['jobs']})==len(value['jobs']),
         'Native repair evidence inventory changed')
     for j in value['jobs']:
-        proof=j['maskEvidence'];side=514 if j['layer']=='terrain' else 512 if j['layer']=='hiking' else 1024
+        proof=j['maskEvidence'];side={'terrain':514,'hiking':512,'leaf-on':1024,'leaf-off':1024,'usgs-topo':256}.get(j['layer'])
         require(j['layer'] in CAPS and proof['allPixelsPresent'] is True and proof['missingPixels']==0 and
             proof['width']==proof['height']==side and proof['validPixels']==side*side and
             proof['job']==j['id'] and proof['mapTilesWritten']==0 and proof['acceptedTilesAdded']==0 and
             proof['productionAttemptReplayed'] is False and proof['cloudRequests']==0,
             'Unverified or incomplete source mask cannot authorize a final attempt')
+        cap=CAPS[j['layer']]
+        require(0<proof['actual']['operations']<=cap['sourceRequests'] and
+            0<proof['actual']['receivedBodyBytes']<=cap['sourceBytes'] and
+            proof['reserved']['sourceRequests']<=cap['sourceRequests'] and
+            proof['reserved']['sourceBytes']<=cap['sourceBytes'] and
+            0<proof['seconds']<=cap['seconds'] and
+            all(proof['reserved'].get(k,0)==0 for k in
+                ('attempts','classARequests','classBRequests','egressBytes','storedBytes')),
+            'Source mask preflight exceeded the original bounded read allowance')
     return value['jobs']
 
 
@@ -62,6 +77,7 @@ def jobs(index):
     for row in masks():
         require(digest(index[row['id']])==row['jobSHA256'],'Verified native source selection changed')
         result.append(index[row['id']])
+    require(sum(len(j['outputTiles']) for j in result)==3719,'Frozen native repair tile count changed')
     return result
 
 
@@ -73,6 +89,7 @@ def select(index,accepted,attempts):
         if jid in accepted or attempts[jid]==2:continue
         if counts[layer]>=4:continue
         picked.append(job);counts[layer]+=1
+        if len(picked)==12:break
     return picked
 
 
@@ -80,8 +97,9 @@ def history_ledger(plan,index):
     history=plan.get('nativeRepairHistory',[])
     completed=list(plan['completedJobIDs']);attempts=dict(plan['priorAttemptCounts'])
     seen=set();tiles=0;valid=set(pilot.JOBS)|{j['id'] for j in masks()}
-    require(valid<=set(plan['campaign']['sourcePixelGapQuarantines']),
-        'Only inspected original pixel-gap quarantines belong in this repair queue')
+    require(valid<=set(plan['priorAttemptCounts']) and
+        all(plan['priorAttemptCounts'][j] in (1,2) for j in valid),
+        'Only inspected previously consumed native positions belong in this repair queue')
     for row in history:
         allocated=row['attemptedJobIDs'];accepted=row['acceptedJobIDs'];failed=row['pixelGapJobIDs']
         require(len(allocated)==len(set(allocated)) and len(accepted)==len(set(accepted)) and len(failed)==len(set(failed)) and
@@ -135,6 +153,7 @@ def validate_plan(plan,region,authority):
     require(authority==POLICY and plan.get('nativeRepairPhase')==dict(format=FORMAT,authority=POLICY,attemptNumber=2),
         'Exact finite native repair batch authority required')
     from rrgh_expanded_production import build_index
+    context.validate(region)
     index,_=build_index(region);history=history_ledger(plan,index)
     require(history and plan['campaign']['sequence']==1420+len(history)-1 and
         plan['campaign']['previousRecovery']==history[-1]['recoveryReceipt'], 'Native predecessor lost')
@@ -143,6 +162,8 @@ def validate_plan(plan,region,authority):
     require(selected and region['jobs']==selected and plan['approvedJobIDs']==ids and plan['slotJobs']=={'1':ids} and
         not any(plan.get(k) for k in ('crosswavePhase','completionPhase','overviewPilot','resumableBatch')) and
         plan['jobPolicies']=={j['id']:CAPS[j['layer']] for j in selected},'Native batch selection changed')
+    require(all(sum(plan['jobPolicies'][j][dimension] for j in ids)<=plan['slots'][1][dimension]
+        for dimension in ('seconds','sourceBytes','sourceRequests')),'Native batch exceeds the unchanged slot envelope')
 
 
 def advance(old,region,audit):
@@ -195,12 +216,18 @@ def validate_publication(old,old_region,plan,region,audit):
 def waiting_summary(plan,region,audit):
     accepted,attempts,history,index=advance(plan,region,audit)
     require(not select(index,accepted,attempts),'Verified native repair jobs still remain eligible')
+    accepted_set=set(accepted)
+    native_remaining=sum(len(job['outputTiles']) for jid,job in index.items() if jid not in accepted_set)
+    remaining=278278-audit['acceptedRasterTiles']
+    require(0<=native_remaining<=remaining,'Native versus lower-zoom remainder disagrees')
     return dict(format='rrgh-native-repair-batch-wait-v2',phase='source-mask-verified-native-repairs',
         sequence=audit['wave'],planSHA256=audit['planSHA256'],recoveryReceipt=audit['receiptRef'],
         acceptedRasterTiles=audit['acceptedRasterTiles'],requiredRasterTiles=278278,
-        remainingRasterTiles=278278-audit['acceptedRasterTiles'],fullRasterCoverageComplete=False,
+        remainingRasterTiles=remaining,remainingNativeRasterTiles=native_remaining,
+        remainingLowerZoomRasterTiles=remaining-native_remaining,fullRasterCoverageComplete=False,
         nativeRepairSettlements=history,originalQuarantineHistoryPreserved=True,
-        nextPhase='boundary-sources-consumed-checkpoints-and-remaining-overviews')
+        nextPhase='unresolved-native-positions-and-remaining-overviews' if native_remaining else
+            'remaining-overviews-and-final-package-validation')
 
 
 def prepare(root,audit):
@@ -209,6 +236,9 @@ def prepare(root,audit):
     from rrgh_expanded_production import read_region
     folder,old,code=config(root);region=read_region(folder)
     accepted,attempts,history,index=advance(old,region,audit)
+    region=context.augment(region)
+    from rrgh_expanded_production import build_index
+    index,_=build_index(region)
     picked=select(index,accepted,attempts)
     if not picked:
         summary=waiting_summary(old,region,audit)
@@ -219,6 +249,8 @@ def prepare(root,audit):
     new_pin="CONFIG=SOURCE.parent/'config/"+next_folder.name+"'"
     require(code.count(old_pin)==1,'Native source CONFIG pin changed')
     code_path=root/'backend/scripts/gorge_campaign.py';code_path.write_text(code.replace(old_pin,new_pin))
+    from rrgh_native_transport import install as install_transport
+    install_transport(root)
     plan=copy.deepcopy(old);ids=[j['id'] for j in picked]
     plan.update(completedJobIDs=accepted,priorAttemptCounts=attempts,approvedJobIDs=ids,slotJobs={'1':ids},
         nativeRepairHistory=history,nativeRepairPhase=dict(format=FORMAT,authority=POLICY,attemptNumber=2),
@@ -227,6 +259,7 @@ def prepare(root,audit):
     plan['campaign'].update(sequence=old['campaign']['sequence']+1,previousRecovery=audit['receiptRef'],carry=audit['nextCarry'])
     plan['slots'][1]['attempts']=plan['limits']['attempts']=len(ids)
     region['jobs']=picked;region['engineHashes']['gorge_campaign.py']=hashlib.sha256(code_path.read_bytes()).hexdigest()
+    region['engineHashes']['gorge_guarded_worker.py']=hashlib.sha256((root/'backend/scripts/gorge_guarded_worker.py').read_bytes()).hexdigest()
     plan['regionPlanSHA256']=digest(region)
     from run_gorge_checkpoint_slot import code_snapshot
     plan['sourceSnapshotSHA256']=code_snapshot(root/'backend/scripts')

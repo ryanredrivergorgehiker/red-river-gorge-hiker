@@ -1,5 +1,6 @@
 """Actual1419 settlement -> mask-approved final attempts -> safe settled hold."""
 import base64,copy,json,os,subprocess,sys,tempfile,zlib
+from decimal import Decimal
 from pathlib import Path
 import rrgh_dispatcher as d
 import rrgh_native_batch as b
@@ -39,6 +40,13 @@ def settlement(a,plan,sha,region,fail_last=False):
         bytes=2000,generation=str(90000+x['wave']),sha256='a'*64)
     x['receiptSHA256']='a'*64
     x['nextCarry']['priorCompletedJobs']=x['acceptedJobs'];x['nextCarry']['priorRasterTiles']=x['acceptedRasterTiles']
+    # Charge the whole finite allocation in this fixture, even on hypothetical
+    # failure, and use the maximum permitted bytes for every accepted tile.
+    # This verifies the queue's cumulative budget rather than resetting carry.
+    sys.path.insert(0,str(source/'backend/scripts'))
+    from gorge_campaign_budget import cost
+    x['nextCarry']['chargedUSD']=str(Decimal(plan['campaign']['carry']['chargedUSD'])+cost(plan['limits']))
+    x['nextCarry']['storedBytes']=plan['campaign']['carry']['storedBytes']+tiles*512*1024
     return x
 
 seen=set();waves=0;mutation_cases=0;initial_count=len(b.masks())
@@ -51,16 +59,18 @@ while True:
     assert plan['campaign']['sourcePixelGapQuarantines']==original['campaign']['sourcePixelGapQuarantines']
     b.validate_plan(plan,region,b.POLICY)
     if waves==0:
-        for fault in ('attempt_reset','attempt_three','history_attempt','historical_ledger','quarantine','accepted_drop','history_receipt','mask_source','budget'):
+        for fault in ('attempt_reset','attempt_three','history_attempt','historical_ledger','quarantine','accepted_drop','history_receipt','mask_source','budget','context_source','context_extent'):
             bad=copy.deepcopy(plan);r=copy.deepcopy(region)
             if fault=='attempt_reset':bad['priorAttemptCounts'][ids[0]]=0
             elif fault=='attempt_three':bad['priorAttemptCounts'][ids[0]]=2
             elif fault=='history_attempt':bad['priorAttemptCounts'][b.pilot.JOBS[0]]=1
             elif fault=='historical_ledger':bad['priorAttemptCounts'].pop(next(iter(original['priorAttemptCounts'])))
-            elif fault=='quarantine':bad['campaign']['sourcePixelGapQuarantines'].remove(ids[0])
+            elif fault=='quarantine':bad['campaign']['sourcePixelGapQuarantines'].remove(b.pilot.JOBS[0])
             elif fault=='accepted_drop':bad['completedJobIDs'].pop(0)
             elif fault=='history_receipt':bad['nativeRepairHistory'][0]['recoveryReceipt']['generation']='999'
             elif fault=='mask_source':r['jobs'][0]['sourceIDs'].reverse()
+            elif fault=='context_source':r['inventory']['sources']['dem'][-1]['url']+='?unapproved=1'
+            elif fault=='context_extent':r['nativeInputContext']['outputBoundsWGS84'][0]-=.01
             else:bad['slots'][1]['sourceBytes']+=1
             try:b.validate_publication(original,read_region(original_dir),bad,r,audit)
             except ValueError:mutation_cases+=1
@@ -75,13 +85,22 @@ while True:
     subprocess.run(['git','-C',str(source),'-c','user.name=Offline QA','-c','user.email=offline-qa@example.invalid','commit','-qm','SYNTHETIC native repair batch fixture'],check=True)
     audit=settlement(audit,plan,sha,region);seen.update(ids);waves+=1
     assert waves<=60
+    if '--first-only' in sys.argv:
+        print(json.dumps(dict(smokeVerified=True,syntheticWaves=1,jobs=ids,
+            unsafeMutationsRejected=mutation_cases,liveProduction=False)))
+        raise SystemExit(0)
 summary=json.loads((source/'RRGH-COMPLETION-WAIT.json').read_bytes())
 assert summary['nativeRepairSettlements'][0]['planSHA256']==b.BASELINE
 assert len(seen)==initial_count and summary['acceptedRasterTiles']==audit['acceptedRasterTiles']
+if initial_count==373:
+    assert summary['remainingNativeRasterTiles']==0 and summary['remainingLowerZoomRasterTiles']==691
+    assert summary['acceptedRasterTiles']==277587
 assert (original_dir/'PLAN.json').read_bytes()==original_bytes
 changed=subprocess.check_output(['git','-C',str(source),'ls-files','--modified','--others','--exclude-standard'],text=True).splitlines()
 assert changed==['RRGH-COMPLETION-WAIT.json'],changed
 print(json.dumps(dict(verified='actual1419 through finite mask-verified native queue and settled hold',
     verifiedMaskJobs=initial_count,syntheticWaves=waves,unsafeMutationsRejected=mutation_cases,
     preservedAcceptedHistory=True,preservedBothAttempts=True,neverThirdAttempt=True,
-    unchangedHistoricalQuarantines=True,unchangedResourceCeilings=True,liveProduction=False)))
+    unchangedHistoricalQuarantines=True,unchangedResourceCeilings=True,
+    fullAllocationChargeUSD=audit['nextCarry']['chargedUSD'],
+    maximumAcceptedStoredBytes=audit['nextCarry']['storedBytes'],liveProduction=False)))
