@@ -15,6 +15,7 @@ import sys
 import time
 from urllib.request import build_opener
 from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
 
 from gorge_checkpoint import Meter, NoRedirect, canonical, digest, integer, relative_path, pack_delta
 
@@ -60,21 +61,28 @@ class SourceOpener:
         elif host=='basemap.nationalmap.gov' and p.path.startswith('/arcgis/rest/services/USGSTopo/MapServer'):
             maximum=500_001 if '/tile/' in p.path else 1_000_001
         else:raise ValueError('Unapproved source endpoint')
-        reservation={'sourceRequests':1,'sourceBytes':maximum}
-        # Optional coordinator cache-growth suballocation. Reserve before HTTP,
-        # including metadata slack; never refund short responses or failed I/O.
-        if self.meter.caps['storedBytes']:
-            reservation['storedBytes']=maximum+8192
-        self.meter.reserve(**reservation)
-        entry={'method':request.get_method(),'reservedResponseBytes':maximum,
-               'receivedBodyBytes':0,'status':None}
-        self.entries.append(entry)
-        try:
-            response=self.opener(request,timeout=min(timeout or 45,45));entry['status']=response.status
-            return LimitedResponse(response,maximum,entry)
-        except Exception as error:
-            entry['status']=getattr(error,'code',None)
-            raise
+        # A transient HTTP failure may be retried once inside this same
+        # already-claimed job, only after reserving the complete second request.
+        # No failed request is refunded and no old job/slot is replayed.
+        for transport_attempt in range(2):
+            reservation={'sourceRequests':1,'sourceBytes':maximum}
+            if self.meter.caps['storedBytes']:
+                reservation['storedBytes']=maximum+8192
+            self.meter.reserve(**reservation)
+            entry={'method':request.get_method(),'reservedResponseBytes':maximum,
+                   'receivedBodyBytes':0,'status':None}
+            self.entries.append(entry)
+            try:
+                response=self.opener(request,timeout=min(timeout or 45,45));entry['status']=response.status
+                return LimitedResponse(response,maximum,entry)
+            except Exception as error:
+                entry['status']=getattr(error,'code',None)
+                transient=(isinstance(error,HTTPError) and error.code in (500,502,503,504))
+                if (transport_attempt or not transient or request.get_method() not in ('GET','HEAD')
+                    or time.monotonic()+1>=self.meter.deadline):
+                    raise
+                time.sleep(1)
+
 
 
 def run_job(slot, plan_path, job_id, root, cog_cache, service_cache, source_caps, seconds, growth_cap=None):
