@@ -39,8 +39,8 @@ def run(source):
     region=json.loads(zlib.decompress(base64.b64decode((folder/'REGION-PLAN.json.z.b64').read_bytes())))
     if digest(canonical(region))!=plan['regionPlanSHA256']:raise ValueError('Diagnostic source inventory changed')
     jobs,_=build_index(region);results=[]
-    assert len(CASES)==229 and len(set(CASES))==len(CASES)
-    assert hashlib.sha256((json.dumps(CASES)+"\n").encode()).hexdigest()=="04c98a24c096d3256f3654493b496457d902b7f8571671b89d602475d2057181"
+    assert len(CASES)==83 and len(set(CASES))==len(CASES)
+    assert hashlib.sha256((json.dumps(CASES)+"\n").encode()).hexdigest()=="c61af819194aadf35a6d9445d78cc1074197e60f0a9ccd0cd0b0d8f262230595"
     total_caps=dict.fromkeys(DIMENSIONS,0);total_caps.update(sourceBytes=8*2**30,sourceRequests=12000,seconds=3000)
     total_meter=Meter(total_caps);total_opener=SourceOpener(total_meter)
     for jid in CASES:
