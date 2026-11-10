@@ -36,7 +36,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
     'rrgh_final_overviews.py','rrgh_final_dependencies.py','rrgh_final_overview_runtime.py',
     'rrgh_final_overview_render.py','rrgh_overview_coverage.py','rrgh_seed_children.py',
-    'rrgh_final_integration.py','source-templates/gorge_stage_coordinator.py',
+    'rrgh_final_integration.py','source-templates/gorge_stage_coordinator.py','source-templates/gorge_producer_identity.py',
     'rrgh_native_context.py','fixtures/native-context-metadata-20261110.json',
     'rrgh_native_transport.py','source-templates/gorge_guarded_worker.py',
     'rrgh_typed_child_receipts.py','rrgh_crosswave_batch.py','fixtures/completion-receipt-index.json.z.b64','rrgh_crosswave_phase.py','rrgh_crosswave_runtime.py','rrgh_crosswave_dependencies.py','crosswave-pilot-bindings.json',
@@ -713,10 +713,12 @@ def candidate_entries(source_root,audit,state):
         validate_transport(root,before)
         if (root/TRANSPORT).read_bytes()!=before:allowed.add(TRANSPORT)
     if plan.get('finalOverviewPhase'):
-        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR
+        from rrgh_final_integration import validate as validate_final_modules,MODULES,COORDINATOR,IDENTITY
         before=subprocess.check_output(['git','-C',str(root),'show','HEAD:backend/scripts/'+COORDINATOR])
-        validate_final_modules(root,before)
+        before_identity=subprocess.check_output(['git','-C',str(root),'show','HEAD:backend/scripts/'+IDENTITY])
+        validate_final_modules(root,before,before_identity)
         if before!=(root/'backend/scripts'/COORDINATOR).read_bytes():allowed.add('backend/scripts/'+COORDINATOR)
+        if before_identity!=(root/'backend/scripts'/IDENTITY).read_bytes():allowed.add('backend/scripts/'+IDENTITY)
         for name in MODULES:
             target='backend/scripts/'+name
             tracked=subprocess.run(['git','-C',str(root),'cat-file','-e','HEAD:'+target],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0

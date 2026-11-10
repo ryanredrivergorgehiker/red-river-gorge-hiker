@@ -276,7 +276,7 @@ def prepare(root,audit):
     from rrgh_dispatcher import config
     from rrgh_expanded_production import read_region
     from rrgh_native_context import augment
-    from rrgh_final_integration import install,MODULES,COORDINATOR
+    from rrgh_final_integration import install,MODULES,COORDINATOR,IDENTITY
     folder,old,code=config(root);old_region=read_region(folder)
     accepted,attempts,native_history,history=advance(old,old_region,audit)
     selected,phase=select(accepted,attempts,old['crosswaveHistory'],native_history,history)
@@ -306,7 +306,7 @@ def prepare(root,audit):
     plan['campaign'].update(sequence=old['campaign']['sequence']+1,previousRecovery=audit['receiptRef'],carry=audit['nextCarry'])
     plan['slots'][1]['attempts']=plan['limits']['attempts']=len(ids);fund(plan)
     region['jobs']=selected
-    for name in (*MODULES,COORDINATOR,'gorge_campaign.py','rrgh_overview_pilot.py','rrgh_verified_tile_catalog.py'):
+    for name in (*MODULES,COORDINATOR,IDENTITY,'gorge_campaign.py','rrgh_overview_pilot.py','rrgh_verified_tile_catalog.py'):
         region['engineHashes'][name]=hashlib.sha256((root/'backend/scripts'/name).read_bytes()).hexdigest()
     plan['regionPlanSHA256']=digest(region)
     from run_gorge_checkpoint_slot import code_snapshot

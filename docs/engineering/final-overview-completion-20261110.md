@@ -13,3 +13,12 @@ Local synthetic integration completed all691 parents in nine batches, ending at2
 Activation requires a successful current native queue settlement, exact state/receipt enrollment, passing QA and a live independently verified four-parent pilot. The final raster hold explicitly leaves `finalPackageDeliveryComplete:false`: consolidated phone-package sizing, complete delivery verification and physical iPhone acceptance remain required. The ChatGPT scheduled engineering task stays disabled.
 
 The verified tile/package catalog now applies the same scoped coverage rule, so valid boundary outputs retain their independently checked package membership instead of losing optional catalog evidence. Its exact prior module hash is pinned for the first transition. Two encoded-tile/archive tests verify valid edge membership and reject a rehashed, repackaged interior hole. All56 catalog regressions pass; the historical catalog-hook fixture first strips the separately reviewed overview/pair hooks before checking the isolated catalog addition. The updated source publication smoke test still rejects all nine unsafe mutations.
+# Bounded ownership history
+
+The fully retained native and final-overview verification summaries exceed the
+old64KiB GitHub Contents response limit. The final-phase source transition now
+installs one exact reviewed ownership reader allowing a1MiB API envelope and
+512KiB decoded state, with explicit base64, declared-size and decoded-length
+checks. Repository, workflow, actor, branch, run, dispatch and plan checks are
+unchanged. Oversized or malformed state still fails closed. The native queue
+continues on its existing source until the final-phase transition.
