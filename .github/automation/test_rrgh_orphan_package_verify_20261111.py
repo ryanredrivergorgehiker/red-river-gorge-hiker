@@ -134,6 +134,26 @@ class BoundaryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Accepted raster/queued package cursor'):
                 fix.preflight(API(),Path('.'))
 
+    def test_verifier_rejects_invalid_preflight_before_importing_cloud_modules(self):
+        # Regression: the 21:50Z restricted verifier failed immediately because
+        # it imported gorge_checkpoint before source_context registered
+        # source-checkout/backend/scripts. No Cloud slot must be opened before
+        # owner preflight and source validation have been completed.
+        class NoCloudAPI:pass
+        with patch.object(fix,'preflight',side_effect=ValueError('EARLY_PRECHECK')),\
+             patch.object(fix,'source_plan_and_funding',
+                          side_effect=AssertionError('Unexpected source or Cloud path')):
+            with self.assertRaisesRegex(ValueError,'EARLY_PRECHECK'):
+                fix.verify_only(NoCloudAPI(),Path('.'),Path('source-checkout'))
+
+    def test_source_context_precedes_gorge_module_imports(self):
+        import inspect
+        source=inspect.getsource(fix.verify_only)
+        self.assertLess(source.index('source_plan_and_funding(source,state)'),
+                        source.index('from gorge_checkpoint import'))
+        self.assertLess(source.index('old_sha,state,_=preflight(api,root)'),
+                        source.index('source_plan_and_funding(source,state)'))
+
     def test_one_time_owner_CAS_converts_only_exact_reviewed_code_digest(self):
         state,request=fixtures()
         prior=copy.deepcopy(state)
