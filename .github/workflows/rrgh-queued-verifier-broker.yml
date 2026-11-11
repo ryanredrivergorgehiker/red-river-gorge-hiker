@@ -1,0 +1,56 @@
+name: RRGH owner-authorized queued verifier dispatch broker
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/automation/rrgh-queued-verifier-dispatch-request.json]
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: rrgh-queued-package-verifier-broker
+  cancel-in-progress: false
+jobs:
+  authorize:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Authenticate exact stranded run and dispatch existing Cloud bot identity once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'.github/automation')
+          from rrgh_dispatcher import GitHub,REPO,WORKER
+          from rrgh_orphan_package_verify_20261111 import preflight,ORIGINAL_RUN,STATE_BLOB
+          assert os.environ['GITHUB_WORKFLOW_REF']==REPO+'/.github/workflows/rrgh-queued-verifier-broker.yml@refs/heads/'+WORKER
+          assert os.environ['GITHUB_EVENT_NAME']=='push' and os.environ['GITHUB_ACTOR']=='ryanredrivergorgehiker'
+          assert os.environ['GITHUB_RUN_ATTEMPT']=='1'
+          req=json.loads(Path('.github/automation/rrgh-queued-verifier-dispatch-request.json').read_text())
+          assert req==dict(format='rrgh-owner-queued-verifier-dispatch-v1',
+              action='dispatch-existing-bot-identity-once',
+              authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
+              failedOwnerPushRun=43103471623,
+              originalRunID=ORIGINAL_RUN,
+              priorStateBlobSHA=STATE_BLOB,
+              noCloudWritesInBroker=True,
+              noSourceRegeneration=True,noRestaging=True,
+              catalogActivation=False)
+          api=GitHub(os.environ['GH_TOKEN'])
+          preflight(api,Path('.'))
+          # One POST, no automatic retry. If response is lost, stop for
+          # inspection instead of risking a second verification claim.
+          api.call('POST','actions/workflows/rrgh-final-package-queued-verify.yml/dispatches',
+              {'ref':WORKER})
+          print('Controller-dispatched bot verifier requested once; no Cloud work in broker')
+          PY
