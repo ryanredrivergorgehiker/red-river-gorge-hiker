@@ -7,6 +7,6 @@
   "original_run": 42899104427,
   "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
   "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
-  "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
-  "purpose": "Verify corrected historical seed reader against live preserved records and pixels before exact fresh wave1454"
+  "reviewed_commit": "ac5503651b0370445f5def18c0017429b04eff70",
+  "purpose": "Complete live seed pixel preflight with the corrected shared inspection meter"
 }
