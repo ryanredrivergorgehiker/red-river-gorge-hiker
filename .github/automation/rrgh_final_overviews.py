@@ -234,6 +234,10 @@ def validate_history(plan,region):
     index,_=build_index(region);history_ledger(base,index)
     require(set(index)<=set(completed),'Native coverage is incomplete')
     prior=[];sequence=base['nativeRepairHistory'][-1]['sequence']
+    if plan.get('seedBootstrapRecovery') is not None:
+        from rrgh_seed_bootstrap_recovery import MARKER
+        require(plan['seedBootstrapRecovery']==MARKER and sequence==1452,'Unreviewed skipped bootstrap allocation')
+        sequence+=1
     for row in final_history:
         selected,phase=select(completed,attempts,plan['crosswaveHistory'],plan['nativeRepairHistory'],prior)
         require(row['sequence']==sequence+1 and row['acceptedJobIDs']==[j['id'] for j in selected] and
