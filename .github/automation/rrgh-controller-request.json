@@ -2,10 +2,11 @@
   "action": "inspect-halted",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-10",
+  "continuedOn": "2026-11-11",
   "source_sha": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
   "original_run": 42899104427,
   "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
   "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
-  "reviewed_commit": "00dcee5a5e8002fd5e5e130e50c0f65b8edf190b",
-  "purpose": "Inspect exact seed proof inventory and halted allocation without writes, source requests or retries"
+  "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
+  "purpose": "Verify corrected historical seed reader against live preserved records and pixels before exact fresh wave1454"
 }

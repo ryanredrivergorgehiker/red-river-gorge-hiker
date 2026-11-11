@@ -1548,7 +1548,7 @@
     "requiredRasterTiles": 278278,
     "sequence": 1452
   },
-  "controlDigest": "7b64910083e902d364d96049360344b8a4d34b4d7608934f0cf1873a9f854709",
+  "controlDigest": "f2af633a25273c010e957bdc904849b83d63480352437a128f42c1919f086bbc",
   "controllerUpgradeHistory": [
     {
       "authorizedBy": "ryanredrivergorgehiker",
@@ -2022,6 +2022,31 @@
       "runID": 42899104427,
       "sequence": 1453,
       "toDigest": "7b64910083e902d364d96049360344b8a4d34b4d7608934f0cf1873a9f854709"
+    },
+    {
+      "authorizedBy": "ryanredrivergorgehiker",
+      "authorizedOn": "2026-11-10",
+      "continuedOn": "2026-11-11",
+      "fromDigest": "7b64910083e902d364d96049360344b8a4d34b4d7608934f0cf1873a9f854709",
+      "toDigest": "f2af633a25273c010e957bdc904849b83d63480352437a128f42c1919f086bbc",
+      "preserveAcceptedHistory": true,
+      "reviewPRs": [
+        125,
+        126
+      ],
+      "reviewedCommit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
+      "qaRunIDs": [
+        42943585209,
+        42943585260,
+        42944803483
+      ],
+      "ciRunIDs": [
+        42943585190,
+        42944803422
+      ],
+      "sequence": 1453,
+      "runID": 42899104427,
+      "reason": "Correct verified historical seed reader and exact fresh-allocation recovery; stop at zero remaining raster positions"
     }
   ],
   "crosswavePolicy": {
@@ -2530,5 +2555,25 @@
     "maxWriteBytes": 4918025,
     "sourceRequests": 0,
     "rasterJobsExecuted": 0
+  },
+  "inspectionAuthorization": {
+    "authorizedBy": "ryanredrivergorgehiker",
+    "authorizedOn": "2026-11-10",
+    "runID": 42899104427,
+    "planSHA256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
+    "sourceSHA": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
+    "dispatchID": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682"
+  },
+  "seedReaderPreflightReservation": {
+    "authorizedBy": "ryanredrivergorgehiker",
+    "authorizedOn": "2026-11-10",
+    "reservedUSD": "0.03",
+    "refundable": false,
+    "includeInNextCarry": true,
+    "maxReadRequests": 64,
+    "maxReadBytes": 8388608,
+    "cloudWrites": 0,
+    "sourceRunID": 42899104427,
+    "purpose": "Read back corrected seed inventory and one pixel-verified example per historical provenance kind"
   }
 }
