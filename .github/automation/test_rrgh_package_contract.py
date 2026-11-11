@@ -147,4 +147,128 @@ class AuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):reports([line,line],'final-package-verify')
 
 
+class CompletedRasterDigestCutoverTests(unittest.TestCase):
+    def fixtures(self):
+        from rrgh_package_controller import (
+            PRE_PACKAGE_DIGEST, ACCEPTED_RASTER_SOURCE, ACCEPTED_PLAN, ACCEPTED_RECEIPT)
+        receipt=dict(key='engineering/map-production/plans/'+ACCEPTED_PLAN+'/slots/00002/receipt.json',
+                     bytes=2235,generation='1794403195257733',sha256=ACCEPTED_RECEIPT)
+        state=dict(format='rrgh-controller-state-v1',owner='autonomous-v1',epoch=1,
+                   enabled=True,status='completion-waiting',mode='produce',sequence=1462,
+                   runID=43027688867,sourceSHA=ACCEPTED_RASTER_SOURCE,planSHA256=ACCEPTED_PLAN,
+                   controlDigest=PRE_PACKAGE_DIGEST,checkpoint=receipt,
+                   completionProgress=dict(format='rrgh-raster-complete-package-wait-v1',
+                       fullRasterCoverageComplete=True,acceptedRasterTiles=278278,
+                       remainingRasterTiles=0,finalPackageDeliveryComplete=False,
+                       sequence=1462,recoveryReceipt=copy.deepcopy(receipt)),
+                   lastRecovered=dict(runID=43027688867,acceptedRasterTiles=278278,
+                       acceptedJobs=34750,recoveryReceipt=copy.deepcopy(receipt)))
+        after='f'*64
+        request=dict(action='package-start',authorizedBy='ryanredrivergorgehiker',
+            date='2026-11-11',source_sha=ACCEPTED_RASTER_SOURCE,sourcePlanSHA256=ACCEPTED_PLAN,
+            rasterCompletionRun=43027688867,acceptedRasterPositions=278278,acceptedJobs=34750,
+            packageIntegrationPR=116,packageIntegrationCommit='e93eaa8a66db7ff5a0565c72d20aa9e5065b8d89',
+            restrictions=dict(sourceRegeneration=False,acceptedOutputsImmutable=True,
+                consumedAttemptsImmutable=True,originalCampaignCeilingUSD='125.00',
+                finalDeliveryReserveUSD='0.75',authorizedCatalogActivation=False,
+                physicalIPhoneAcceptance=False),
+            controllerCodeTransition=dict(format='rrgh-reviewed-package-code-transition-v1',
+                authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
+                fromDigest=PRE_PACKAGE_DIGEST,toDigest=after,
+                acceptedReceiptSHA256=ACCEPTED_RECEIPT,acceptedRunID=43027688867,
+                preserveAcceptedHistory=True,sourceRequests=0,catalogActivation=False,
+                scope='completed-raster-to-source-free-packaging'))
+        return state,request,after
+
+    def test_one_time_owner_pinned_fingerprint_accepts_exact_completed_raster_checkpoint(self):
+        from rrgh_package_controller import authorize_completed_package_cutover
+        s,r,after=self.fixtures()
+        proof=authorize_completed_package_cutover(s,r,after)
+        self.assertEqual(proof['fromDigest'],s['controlDigest'])
+        self.assertEqual(proof['toDigest'],after)
+        self.assertEqual(proof['acceptedRasterTiles'],278278)
+        self.assertEqual(proof['sourceWrites'],0)
+        self.assertFalse(proof['catalogActivation'])
+        self.assertNotIn('package',s)  # pure preflight does not alter source state
+        self.assertEqual(s['status'],'completion-waiting')
+
+    def test_forged_code_receipt_owner_budget_source_or_status_rejected(self):
+        from rrgh_package_controller import authorize_completed_package_cutover
+        state,request,after=self.fixtures()
+        for key,value in [
+            ('state_status','dispatching'),('state_controlDigest','a'*64),
+            ('state_acceptedRasterTiles',277587),('state_remainingRasterTiles',1),
+            ('state_runID',43027688866),('state_enabled',False),
+            ('state_sourceSHA','a'*40),('state_planSHA256','a'*64),
+            ('receiptSHA','a'*64),('receiptGeneration','999'),
+            ('lastReceipt','invalid'),('lastAcceptedJobs',34749),
+            ('requestOwner','other'),('requestDate','2026-11-10'),
+            ('requestAction','resume-seed-bootstrap'),('requestSource','a'*40),
+            ('requestAcceptedJobs',34749),('requestSourceRegeneration',True),
+            ('requestCatalogActivation',True),('requestReserve','0'),
+            ('transitionFromDigest','1'*64),('transitionToDigest','0'*64),
+            ('transitionScope','unrestricted'),('transitionSourceRequests',1),
+            ('transitionOwner','other'),('priorPackage',True),
+            ('priorCutover',True),('pendingUpgrade',True),
+        ]:
+            s=copy.deepcopy(state);r=copy.deepcopy(request)
+            if key=='state_status':s['status']=value
+            elif key=='state_controlDigest':s['controlDigest']=value
+            elif key=='state_acceptedRasterTiles':s['completionProgress']['acceptedRasterTiles']=value
+            elif key=='state_remainingRasterTiles':s['completionProgress']['remainingRasterTiles']=value
+            elif key=='state_runID':s['runID']=value
+            elif key=='state_enabled':s['enabled']=value
+            elif key=='state_sourceSHA':s['sourceSHA']=value
+            elif key=='state_planSHA256':s['planSHA256']=value
+            elif key=='receiptSHA':s['checkpoint']['sha256']=value
+            elif key=='receiptGeneration':s['checkpoint']['generation']=value
+            elif key=='lastReceipt':s['lastRecovered']['recoveryReceipt']=value
+            elif key=='lastAcceptedJobs':s['lastRecovered']['acceptedJobs']=value
+            elif key=='requestOwner':r['authorizedBy']=value
+            elif key=='requestDate':r['date']=value
+            elif key=='requestAction':r['action']=value
+            elif key=='requestSource':r['source_sha']=value
+            elif key=='requestAcceptedJobs':r['acceptedJobs']=value
+            elif key=='requestSourceRegeneration':r['restrictions']['sourceRegeneration']=value
+            elif key=='requestCatalogActivation':r['restrictions']['authorizedCatalogActivation']=value
+            elif key=='requestReserve':r['restrictions']['finalDeliveryReserveUSD']=value
+            elif key=='transitionFromDigest':r['controllerCodeTransition']['fromDigest']=value
+            elif key=='transitionToDigest':r['controllerCodeTransition']['toDigest']=value
+            elif key=='transitionScope':r['controllerCodeTransition']['scope']=value
+            elif key=='transitionSourceRequests':r['controllerCodeTransition']['sourceRequests']=value
+            elif key=='transitionOwner':r['controllerCodeTransition']['authorizedBy']=value
+            elif key=='priorPackage':s['package']={}
+            elif key=='priorCutover':s['controllerUpgradeHistory']=[dict(kind='completed-raster-package-cutover')]
+            elif key=='pendingUpgrade':s['pendingControllerUpgrade']={'toDigest':after}
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                authorize_completed_package_cutover(s,r,after)
+
+    def test_general_controller_validation_still_refuses_changed_unreviewed_code(self):
+        from rrgh_dispatcher import validate_state,Halt
+        state,_,after=self.fixtures()
+        with patch('rrgh_dispatcher.local_digest',return_value=after):
+            with self.assertRaisesRegex(Halt,'Reviewed controller code changed'):
+                validate_state(state,Path('.'))
+            promoted=copy.deepcopy(state);promoted['controlDigest']=after
+            validate_state(promoted,Path('.'))
+
+    def test_missing_transition_fails_before_cloud_allocation_or_state_mutation(self):
+        from rrgh_package_controller import enroll
+        state,request,after=self.fixtures()
+        request.pop('controllerCodeTransition')
+        class UnchangedController:
+            called=False
+            def state(self):return 'original-content-sha',copy.deepcopy(state)
+            def cas(self,*args):
+                self.called=True
+                raise AssertionError('Must never write state on bad authorization')
+        fake=UnchangedController()
+        with tempfile.TemporaryDirectory() as tmp,patch('rrgh_dispatcher.local_digest',return_value=after):
+            path=Path(tmp)/'.github/automation';path.mkdir(parents=True)
+            (path/'rrgh-controller-request.json').write_text(json.dumps(request))
+            with self.assertRaises(ValueError):
+                enroll(fake,Path(tmp),Path(tmp))
+        self.assertFalse(fake.called)
+
+
 if __name__=='__main__':unittest.main()
