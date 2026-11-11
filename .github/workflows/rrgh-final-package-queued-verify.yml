@@ -1,8 +1,6 @@
 name: RRGH one-time queued package verifier
 on:
-  push:
-    branches: [lane20/offline-production-preflight-20261029]
-    paths: [.github/automation/rrgh-queued-verify-request.json]
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -12,7 +10,7 @@ jobs:
   orphan-verify:
     if: >-
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
-      github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+      github.actor == 'github-actions[bot]' && github.run_attempt == 1
     runs-on: ubuntu-latest
     timeout-minutes: 55
     permissions:
