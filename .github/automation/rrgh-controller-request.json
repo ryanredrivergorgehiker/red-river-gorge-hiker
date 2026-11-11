@@ -18,7 +18,7 @@
     "authorizedCatalogActivation": false,
     "physicalIPhoneAcceptance": false
   },
-  "purpose": "Complete source-free package inventory, authenticated immutable multipart assembly and independent readback only; stop before catalog activation. Owner instructed controlled final delivery integration in project chat.",
+  "purpose": "Unique owner-controlled retry AFTER original source-only package enrollment failed code-fingerprint gate. PR128 exact-head package QA and CI passed; preserve immutable 278278 raster outputs, no source requests, no catalog activation, Cloud campaign caps and signed-lease delivery gate.",
   "previousRequest": {
     "action": "resume-seed-bootstrap",
     "authorizedBy": "ryanredrivergorgehiker",
@@ -31,5 +31,21 @@
     "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
     "inspection_fix_commit": "ac5503651b0370445f5def18c0017429b04eff70",
     "purpose": "Complete remaining691 raster positions through tested fresh wave1454 and stop at278278 independently verified tiles"
+  },
+  "failedFirstEnrollmentRun": 43038094365,
+  "packageDigestFixPR": 128,
+  "packageDigestFixMergeCommit": "254371b7666307d3117b6257274b19a208c340b7",
+  "controllerCodeTransition": {
+    "format": "rrgh-reviewed-package-code-transition-v1",
+    "authorizedBy": "ryanredrivergorgehiker",
+    "authorizedOn": "2026-11-11",
+    "fromDigest": "eac8c2859961fe6d084d6744a4c0bedd9becb585632550fc9ea543090fd82680",
+    "toDigest": "45a286bbe0f1d5681d51a651f9a832cb93889da82723efed4c261fde9a033c69",
+    "acceptedReceiptSHA256": "b8a7228562a082e8ca36cdd4d3a83d5fcb9c093a02772168a915106686fbe945",
+    "acceptedRunID": 43027688867,
+    "preserveAcceptedHistory": true,
+    "sourceRequests": 0,
+    "catalogActivation": false,
+    "scope": "completed-raster-to-source-free-packaging"
   }
 }
