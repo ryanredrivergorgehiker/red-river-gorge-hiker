@@ -83,21 +83,105 @@ def source_context(source,state):
     return plan,contract.authority(source,plan,state)
 
 
+
+# This exception is deliberately scoped to the completed 1462 raster checkpoint.
+# A source-only package merge changes CODE_FILES, but must not silently update
+# the durable producer fingerprint or permit a new raster production claim.
+PRE_PACKAGE_DIGEST = 'eac8c2859961fe6d084d6744a4c0bedd9becb585632550fc9ea543090fd82680'
+ACCEPTED_RASTER_SOURCE = 'd17d0e335ac47e1f6d116e149992cc02d6e4a827'
+ACCEPTED_PLAN = 'a161d6d494b0c737734de937a90c11fc1bb9aac6a0d93ab57bac7304ba75c891'
+ACCEPTED_RECEIPT = 'b8a7228562a082e8ca36cdd4d3a83d5fcb9c093a02772168a915106686fbe945'
+
+
+def authorize_completed_package_cutover(state, request, current_digest):
+    """Pure, one-time owner/receipt-pinned code transition: never a general digest bypass."""
+    from rrgh_package_authority import require
+    progress = state.get('completionProgress') or {}
+    last = state.get('lastRecovered') or {}
+    receipt = state.get('checkpoint') or {}
+    require(state.get('format') == 'rrgh-controller-state-v1' and state.get('owner') == 'autonomous-v1'
+            and state.get('epoch') == 1 and state.get('enabled') is True
+            and state.get('status') == 'completion-waiting' and state.get('mode') == 'produce'
+            and state.get('sequence') == 1462 and state.get('runID') == 43027688867
+            and state.get('sourceSHA') == ACCEPTED_RASTER_SOURCE
+            and state.get('planSHA256') == ACCEPTED_PLAN
+            and state.get('controlDigest') == PRE_PACKAGE_DIGEST
+            and current_digest != PRE_PACKAGE_DIGEST and len(current_digest) == 64
+            and 'package' not in state and not state.get('pendingControllerUpgrade')
+            and not any(x.get('kind') == 'completed-raster-package-cutover'
+                        for x in state.get('controllerUpgradeHistory', [])),
+            'Not the immutable, unused completed-raster package code boundary')
+    require(progress.get('format') == 'rrgh-raster-complete-package-wait-v1'
+            and progress.get('fullRasterCoverageComplete') is True
+            and progress.get('acceptedRasterTiles') == 278278
+            and progress.get('remainingRasterTiles') == 0
+            and progress.get('finalPackageDeliveryComplete') is False
+            and progress.get('sequence') == 1462
+            and progress.get('recoveryReceipt') == receipt
+            and receipt.get('sha256') == ACCEPTED_RECEIPT
+            and receipt.get('generation') == '1794403195257733'
+            and last.get('recoveryReceipt') == receipt
+            and last.get('runID') == 43027688867
+            and last.get('acceptedRasterTiles') == 278278
+            and last.get('acceptedJobs') == 34750,
+            'Independent raster checkpoint or accepted inventory changed')
+    require(request.get('action') == 'package-start'
+            and request.get('authorizedBy') == 'ryanredrivergorgehiker'
+            and request.get('date') == '2026-11-11'
+            and request.get('source_sha') == ACCEPTED_RASTER_SOURCE
+            and request.get('sourcePlanSHA256') == ACCEPTED_PLAN
+            and request.get('rasterCompletionRun') == 43027688867
+            and request.get('acceptedRasterPositions') == 278278
+            and request.get('acceptedJobs') == 34750
+            and request.get('packageIntegrationPR') == 116
+            and request.get('packageIntegrationCommit')
+                == 'e93eaa8a66db7ff5a0565c72d20aa9e5065b8d89'
+            and request.get('restrictions') == dict(
+                sourceRegeneration=False, acceptedOutputsImmutable=True,
+                consumedAttemptsImmutable=True, originalCampaignCeilingUSD='125.00',
+                finalDeliveryReserveUSD='0.75', authorizedCatalogActivation=False,
+                physicalIPhoneAcceptance=False),
+            'Exact owner package-start approval or no-replay boundary changed')
+    authorization = request.get('controllerCodeTransition')
+    expected = dict(format='rrgh-reviewed-package-code-transition-v1',
+                    authorizedBy='ryanredrivergorgehiker', authorizedOn='2026-11-11',
+                    fromDigest=PRE_PACKAGE_DIGEST, toDigest=current_digest,
+                    acceptedReceiptSHA256=ACCEPTED_RECEIPT, acceptedRunID=43027688867,
+                    preserveAcceptedHistory=True, sourceRequests=0,
+                    catalogActivation=False, scope='completed-raster-to-source-free-packaging')
+    require(authorization == expected,
+            'Reviewed exact code fingerprint authorization absent or stale')
+    return dict(kind='completed-raster-package-cutover',
+                authorizedBy='ryanredrivergorgehiker', authorizedOn='2026-11-11',
+                fromDigest=PRE_PACKAGE_DIGEST, toDigest=current_digest,
+                acceptedRunID=43027688867, acceptedRasterTiles=278278,
+                acceptedReceiptSHA256=ACCEPTED_RECEIPT,
+                sourceSHA=ACCEPTED_RASTER_SOURCE, planSHA256=ACCEPTED_PLAN,
+                sourceWrites=0, producerReplays=0, catalogActivation=False)
+
+
 def enroll(api,root,source):
-    from rrgh_dispatcher import validate_state,audit_state,assert_no_other_producers,dispatch
-    old,state=api.state();validate_state(state,root)
-    require(state['enabled'] is True and state['status']=='completion-waiting' and
-        state['mode']=='produce' and 'package' not in state,'Only exact raster completion can enroll packages')
+    from rrgh_dispatcher import validate_state,audit_state,assert_no_other_producers,dispatch,local_digest
+    old,prior=api.state()
+    request=json.loads((Path(root)/'.github/automation/rrgh-controller-request.json').read_bytes())
+    transition=authorize_completed_package_cutover(prior,request,local_digest(root))
+    state=copy.deepcopy(prior)
+    state['controlDigest']=transition['toDigest']
+    validate_state(state,root)  # The general validator still rejects every other change.
     assert_no_other_producers(api)
-    source_plan,auth=source_context(source,state)
-    audit=audit_state(api,root,state)
+    source_plan,auth=source_context(source,prior)
+    audit=audit_state(api,root,prior)
     require(audit['acceptedRasterTiles']==278278 and audit['acceptedJobs']==34750 and
-        audit['receiptRef']==state['checkpoint'] and audit['nextCarry']['priorRasterTiles']==278278,
+        audit['receiptRef']==prior['checkpoint'] and audit['nextCarry']['priorRasterTiles']==278278,
         'Raster completion independent audit changed')
     cursor,_,_=contract.allocate(source_plan,state,auth,contract.inventory_operation(auth,0),
                                 audit['nextCarry'],0,None)
+    state.setdefault('controllerUpgradeHistory',[]).append(transition)
     state.update(package=cursor,status='package-ready',runID=None,dispatchID=None)
-    old=api.cas(old,state,'enroll bounded source-free final package assembly')
+    validate_state(state,root)
+    # ONE atomic conditional write records the reviewed digest and new package claim.
+    # If this fails, no durable code upgrade or package allocation is published.
+    old=api.cas(old,state,'owner-reviewed package fingerprint and source-free enrollment')
     return dispatch(api,root,old,state,'package')
 
 
