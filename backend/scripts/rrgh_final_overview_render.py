@@ -40,12 +40,16 @@ def render(region,job,children,child_root,destination,source_root):
         require(len(raw)==child['bytes'] and digest(raw)==child['sha256'],'Child bytes changed')
         immutable=ref(child['checkpointObject'])
         if child.get('seedAcceptanceProof'):
-            from rrgh_seed_children import AUTHORITY,AUTHORITY_SHA
+            from rrgh_seed_children import AUTHORITY,AUTHORITY_SHA,HISTORICAL
             seed=child['seedAcceptanceProof']
             require(seed['format']=='rrgh-accepted-seed-child-v1' and seed['authoritySHA256']==AUTHORITY_SHA and
-                child['job'] in AUTHORITY['jobs'] and seed['kind'] in ('original-accepted-seed','second-stage-accepted-seed'),
+                child['job'] in AUTHORITY['jobs'] and seed['kind'] in ('original-accepted-seed','restored-original-accepted-seed','first-stage-accepted-seed','second-stage-accepted-seed'),
                 'Unreviewed seed pixel authority')
-            require(seed['acceptanceReceipt']==AUTHORITY['history']['acceptedBootstrap' if seed['kind']=='original-accepted-seed' else 'secondRecovery'],
+            acceptance={'original-accepted-seed':AUTHORITY['history']['acceptedBootstrap'],
+                'restored-original-accepted-seed':AUTHORITY['history']['acceptedBootstrap'],
+                'first-stage-accepted-seed':HISTORICAL['finalRecovery'],
+                'second-stage-accepted-seed':AUTHORITY['history']['secondRecovery']}
+            require(seed['acceptanceReceipt']==acceptance[seed['kind']],
                 'Seed acceptance receipt changed')
             ref(seed['originalProof'])
         else:ref(child['jobReceipt'])
