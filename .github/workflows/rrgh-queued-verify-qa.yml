@@ -37,6 +37,6 @@ jobs:
           from rrgh_dispatcher import local_digest
           actual=local_digest('.')
           expected='45a286bbe0f1d5681d51a651f9a832cb93889da82723efed4c261fde9a033c69'
-          assert actual!=expected,'Restricted workflow must have a distinct reviewed fingerprint'
-          print('NEW_RESTRICTED_WIF_DIGEST='+actual)
+          assert actual=='ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8',(actual,expected)
+          print('REVIEWED_RESTRICTED_WIF_DIGEST='+actual)
           PY
