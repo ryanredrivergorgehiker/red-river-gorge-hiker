@@ -1,13 +1,14 @@
 name: RRGH queued package verification recovery QA
 on:
   push:
-    branches: [lane20/queued-verify-recovery-20261111]
+    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111]
   pull_request:
     branches: [lane20/offline-production-preflight-20261029]
     paths:
       - .github/automation/rrgh_orphan_package_verify_20261111.py
       - .github/automation/test_rrgh_orphan_package_verify_20261111.py
       - .github/workflows/rrgh-final-package-queued-verify.yml
+      - .github/workflows/rrgh-queued-verifier-broker.yml
       - .github/workflows/rrgh-queued-verify-qa.yml
 permissions:
   contents: read
