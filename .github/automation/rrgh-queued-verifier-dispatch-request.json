@@ -1,0 +1,13 @@
+{
+  "format": "rrgh-owner-queued-verifier-dispatch-v1",
+  "action": "dispatch-existing-bot-identity-once",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-11",
+  "failedOwnerPushRun": 43103471623,
+  "originalRunID": 43091451308,
+  "priorStateBlobSHA": "6ca979be03da246609f51832e305991de08b681b",
+  "noCloudWritesInBroker": true,
+  "noSourceRegeneration": true,
+  "noRestaging": true,
+  "catalogActivation": false
+}
