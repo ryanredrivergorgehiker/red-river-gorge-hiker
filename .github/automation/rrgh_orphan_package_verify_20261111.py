@@ -175,6 +175,13 @@ def source_plan_and_funding(source,state):
 
 
 def verify_only(api,root,source):
+    # Check immutable GitHub ownership first. source_context (inside funding)
+    # verifies the exact source SHA and registers source/backend/scripts in
+    # sys.path BEFORE importing any gorge_* native modules. An import failure
+    # must never claim/consume the reserved Cloud verifier slot.
+    old_sha,state,_=preflight(api,root)
+    plan,evidence,authority=source_plan_and_funding(source,state)
+
     from rrgh_package_authority import digest
     from rrgh_package_runtime import prior,verify,read_layout,MIB
     import rrgh_package_records as records
@@ -186,8 +193,6 @@ def verify_only(api,root,source):
     from gorge_campaign_budget import add_usage
     from gorge_campaign import emit
 
-    old_sha,state,_=preflight(api,root)
-    plan,evidence,authority=source_plan_and_funding(source,state)
     opener=CountedOpener()
     storage=GCS(plan,evidence,token,opener)
     # Slot 1 is CREATE-ONLY. Collision halts; it cannot overwrite any prior claim.
