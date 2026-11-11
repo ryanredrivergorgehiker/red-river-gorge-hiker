@@ -1,0 +1,31 @@
+name: RRGH exact seed bootstrap recovery QA
+on:
+  pull_request:
+    paths:
+      - .github/automation/rrgh_seed_resume.py
+      - .github/automation/rrgh_seed_bootstrap_recovery.py
+      - .github/automation/verify_rrgh_seed_resume_roundtrip.py
+      - .github/workflows/rrgh-seed-resume-qa.yml
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  complete-recovery-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: c0685c5eb6a2be25ef7f294426a3d6346825551f
+          path: failed-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r failed-source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Exact failed-source transition through all691 parents and zero-remaining stop
+        run: python .github/automation/verify_rrgh_seed_resume_roundtrip.py failed-source

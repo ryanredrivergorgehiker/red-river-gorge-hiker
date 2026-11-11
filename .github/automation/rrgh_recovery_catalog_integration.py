@@ -34,8 +34,9 @@ def augment_campaign(code):
     from rrgh_batch_integration import strip as strip_batch
     code=strip(strip_batch(code))
     original=code.replace(HOOK,'')
+    from rrgh_seed_bootstrap_recovery import strip_predecessor_patch
     normalized,count=re.subn(r"CONFIG=SOURCE.parent/'config/gorge-campaign-wave-\d{3,9}-\d{8}'",
-        "CONFIG=SOURCE.parent/'config/REVIEWED-CAMPAIGN'",original)
+        "CONFIG=SOURCE.parent/'config/REVIEWED-CAMPAIGN'",strip_predecessor_patch(original))
     if count!=1 or hashlib.sha256(normalized.encode()).hexdigest()!=BASE_CAMPAIGN_SHA:
         raise ValueError('Unreviewed campaign code; optional catalog patch refused')
     if original.count(ANCHOR)!=1 or code not in (original,original.replace(ANCHOR,ANCHOR+HOOK)):

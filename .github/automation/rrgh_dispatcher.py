@@ -32,6 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
+    'rrgh_seed_resume.py','rrgh_seed_bootstrap_recovery.py',
     'rrgh_native_repair.py',
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
     'rrgh_final_overviews.py','rrgh_final_dependencies.py','rrgh_final_overview_runtime.py',
