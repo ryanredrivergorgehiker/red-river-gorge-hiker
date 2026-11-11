@@ -125,7 +125,7 @@ jobs:
       - name: Inspect only exact known checkpoint objects without Cloud writes
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python .github/automation/rrgh_checkpoint_diagnostics.py source-checkout
+        run: RRGH_SEED_READER_PREFLIGHT=1 python .github/automation/rrgh_checkpoint_diagnostics.py source-checkout
   finish-inspection:
     needs: [admit, checkpoint-inspection]
     if: always() && inputs.mode == 'inspect' && needs.admit.result == 'success'
