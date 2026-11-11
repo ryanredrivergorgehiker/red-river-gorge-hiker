@@ -4,7 +4,7 @@ on:
     branches: [lane20/offline-production-preflight-20261029]
     paths: [.github/automation/rrgh-queued-verifier-dispatch-request.json]
 permissions:
-  contents: read
+  contents: write
   actions: write
 concurrency:
   group: rrgh-queued-package-verifier-broker
@@ -32,25 +32,30 @@ jobs:
           from pathlib import Path
           sys.path.insert(0,'.github/automation')
           from rrgh_dispatcher import GitHub,REPO,WORKER
-          from rrgh_orphan_package_verify_20261111 import preflight,ORIGINAL_RUN,STATE_BLOB
+          from rrgh_orphan_package_verify_20261111 import (
+              prepare_code_upgrade,ORIGINAL_RUN,STATE_BLOB,CONTROL,NEW_CONTROL,
+              SOURCE,RASTER_PLAN,DISPATCH)
           assert os.environ['GITHUB_WORKFLOW_REF']==REPO+'/.github/workflows/rrgh-queued-verifier-broker.yml@refs/heads/'+WORKER
           assert os.environ['GITHUB_EVENT_NAME']=='push' and os.environ['GITHUB_ACTOR']=='ryanredrivergorgehiker'
           assert os.environ['GITHUB_RUN_ATTEMPT']=='1'
           req=json.loads(Path('.github/automation/rrgh-queued-verifier-dispatch-request.json').read_text())
-          assert req==dict(format='rrgh-owner-queued-verifier-dispatch-v1',
-              action='dispatch-existing-bot-identity-once',
+          assert req==dict(format='rrgh-owner-queued-verifier-dispatch-v2',
+              action='authorize-reviewed-existing-WIF-workflow-once',
               authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
-              failedOwnerPushRun=43103471623,
-              originalRunID=ORIGINAL_RUN,
-              priorStateBlobSHA=STATE_BLOB,
-              noCloudWritesInBroker=True,
-              noSourceRegeneration=True,noRestaging=True,
-              catalogActivation=False)
+              failedOwnerPushRun=43103471623,failedStandaloneBotRun=43104702142,
+              originalRunID=ORIGINAL_RUN,priorStateBlobSHA=STATE_BLOB,
+              previousControlDigest=CONTROL,newControlDigest=NEW_CONTROL,
+              noCloudWritesInBroker=True,noSourceRegeneration=True,
+              noRestaging=True,catalogActivation=False)
           api=GitHub(os.environ['GH_TOKEN'])
-          preflight(api,Path('.'))
-          # One POST, no automatic retry. If response is lost, stop for
-          # inspection instead of risking a second verification claim.
-          api.call('POST','actions/workflows/rrgh-final-package-queued-verify.yml/dispatches',
-              {'ref':WORKER})
-          print('Controller-dispatched bot verifier requested once; no Cloud work in broker')
+          prepare_code_upgrade(api,Path('.'))
+          # Exactly one controller-dispatched run through the ORIGINAL, already
+          # trusted WIF workflow. Its ordinary admission is disabled for this
+          # mode, and only the orphan-verify jobs can execute.
+          api.call('POST','actions/workflows/offline-map-restricted-dispatch.yml/dispatches',{
+              'ref':WORKER,'inputs':{
+                  'mode':'orphan-verify','source_sha':SOURCE,
+                  'plan_sha256':RASTER_PLAN,'sequence':'1462',
+                  'dispatch_id':DISPATCH}})
+          print('Reviewed controller fingerprint CAS committed; one trusted verify-only dispatch requested')
           PY
