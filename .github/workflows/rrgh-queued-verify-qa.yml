@@ -1,7 +1,7 @@
 name: RRGH queued package verification recovery QA
 on:
   push:
-    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111]
+    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111, lane20/queued-verify-import-fix-20261111]
   pull_request:
     branches: [lane20/offline-production-preflight-20261029]
     paths:
@@ -29,6 +29,20 @@ jobs:
         run: |
           python -m py_compile .github/automation/rrgh_orphan_package_verify_20261111.py .github/automation/test_rrgh_orphan_package_verify_20261111.py
           python -m unittest discover -s .github/automation -p 'test_rrgh_orphan_package_verify_20261111.py' -v
+      - name: Broker syntax and bounded pre-slot retry proof
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('.github/workflows/rrgh-queued-verifier-broker.yml').read_text()
+          snippet=text.split("python - <<'PY'",1)[1].split('\n          PY',1)[0]
+          code='\n'.join(line[10:] if line.startswith('          ') else line for line in snippet.splitlines())
+          compile(code,'exact-owner-broker.py','exec')
+          assert 'prepare_code_upgrade(api' not in code
+          assert "ModuleNotFoundError: No module named 'gorge_checkpoint'" in code
+          assert "correctedSourcePR=132" in code
+          assert "actions/workflows/offline-map-restricted-dispatch.yml/dispatches" in code
+          print('Owner-only broker code compiles and cannot repeat code cutover')
+          PY
       - name: Original controller fingerprint must be completely unchanged
         run: |
           python - <<'PY'
