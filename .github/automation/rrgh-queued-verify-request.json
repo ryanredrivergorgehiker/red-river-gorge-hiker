@@ -1,0 +1,23 @@
+{
+  "format": "rrgh-queued-verify-v1",
+  "action": "verify-only-not-restage",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-11",
+  "previousRunID": 43091451308,
+  "stageJobID": 130769440727,
+  "unfinishedVerifyJobID": 130782410459,
+  "packagePlanSHA256": "84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb",
+  "sourceSHA": "d17d0e335ac47e1f6d116e149992cc02d6e4a827",
+  "priorStateBlobSHA": "6ca979be03da246609f51832e305991de08b681b",
+  "stageReceipt": {
+    "bytes": 2023,
+    "generation": "1794428738795953",
+    "key": "engineering/map-production/plans/84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb/slots/00000/receipt.json",
+    "sha256": "5420c670014f8439036237dd437ba959b4afe3eb0d29759571f4877a8e981925"
+  },
+  "noSourceReadsOrWrites": true,
+  "noArchiveRestaging": true,
+  "noCatalogActivation": true,
+  "newVerifierSlot": 1,
+  "independentReadbackRequired": true
+}
