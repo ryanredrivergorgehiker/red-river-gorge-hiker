@@ -7,12 +7,19 @@ on:
       - .github/workflows/rrgh-seed-inspection-qa.yml
 permissions:
   contents: read
+env:
+  RRGH_TEST_SOURCE: test-source
 jobs:
   bounded-read-only-inspection:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: c0685c5eb6a2be25ef7f294426a3d6346825551f
+          path: test-source
+          persist-credentials: false
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'

@@ -9,6 +9,27 @@ def canonical(v):return (json.dumps(v,sort_keys=True,separators=(',',':'))+'\n')
 def digest(v):return hashlib.sha256(v).hexdigest()
 
 class InspectionTests(unittest.TestCase):
+    def test_real_selective_recovery_uses_shared_inspection_meter(self):
+        import importlib.util
+        source=Path(os.environ['RRGH_TEST_SOURCE'])/'backend/scripts/gorge_checkpoint.py'
+        spec=importlib.util.spec_from_file_location('inspection_real_checkpoint',source)
+        checkpoint=importlib.util.module_from_spec(spec);sys.modules[spec.name]=checkpoint;spec.loader.exec_module(checkpoint)
+        data=b'preserved tile bytes';calls=[]
+        store=types.SimpleNamespace(read=lambda ref,start,length:(calls.append((start,length)) or data[start:start+length]))
+        ref=checkpoint.Ref(key='engineering/map-production/preserved.pack',generation='1',bytes=len(data),sha256=digest(data))
+        manifest=[dict(ref=vars(ref),members=[dict(path='tiles/example.png',offset=0,bytes=len(data),sha256=digest(data))])]
+        slot=subject.ReadOnlySlot(store,dict(bytes=100,requests=3),2,40)
+        with tempfile.TemporaryDirectory() as root:
+            destination=Path(root)/'selected'
+            result=checkpoint.recover_members(slot,manifest,['tiles/example.png'],destination)
+            self.assertEqual((destination/'tiles/example.png').read_bytes(),data)
+            self.assertEqual(result['files'],1)
+            self.assertEqual(slot.meter.used,dict(egressBytes=40+len(data),classBRequests=3))
+            with self.assertRaisesRegex(ValueError,'remaining egress'):
+                checkpoint.recover_members(slot,manifest,['tiles/example.png'],Path(root)/'again')
+            with self.assertRaisesRegex(ValueError,'inspection budget'):slot.get(ref)
+        self.assertEqual(calls,[(0,len(data))])
+
     def run_inspection(self,corrupt=None):
         plan={'bucket':'rrgh-nonproduction-protected-packages','approvedJobIDs':[], 'campaign':{'sequence':1453},'finalOverviewPhase':{'enabled':True}}
         proof={'format':'rrgh-stage-input-proof-v1','acceptedBase':{},'priorReceipts':[{'job':'saved'}], 'checkpointRefs':[], 'files':[{'kind':'prior','path':'receipts/saved.json'},{'kind':'shared','path':'not-disclosed'}]}

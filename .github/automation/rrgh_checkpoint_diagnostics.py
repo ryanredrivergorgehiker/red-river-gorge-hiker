@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 from rrgh_seed_children import inventory as seed_inventory, read as seed_read, AUTHORITY as SEED_AUTHORITY
 from urllib.error import HTTPError
 from urllib.parse import quote
@@ -17,6 +18,24 @@ from urllib.request import Request,build_opener,HTTPRedirectHandler
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
+
+class ReadOnlySlot:
+    """Expose the existing selective-recovery meter without any write methods."""
+    def __init__(self,store,limits,requests,total):
+        self.store=store
+        self.meter=SimpleNamespace(
+            caps=dict(egressBytes=limits['bytes'],classBRequests=limits['requests']),
+            used=dict(egressBytes=total,classBRequests=requests))
+    def get(self,ref,start=0,length=None,expected_sha256=None):
+        length=ref.bytes if length is None else length
+        used=self.meter.used;caps=self.meter.caps
+        if used['classBRequests']+1>caps['classBRequests'] or used['egressBytes']+length>caps['egressBytes']:
+            raise ValueError('Seed preflight exceeds inspection budget')
+        used['classBRequests']+=1
+        raw=self.store.read(ref,start,length);used['egressBytes']+=len(raw)
+        if expected_sha256 and hashlib.sha256(raw).hexdigest()!=expected_sha256:
+            raise ValueError('Seed preflight member changed')
+        return raw
 
 def credential():
     # Refreshing credentials is read-only. No failed storage request is replayed.
@@ -101,22 +120,14 @@ def inspect(source_root):
         from tempfile import TemporaryDirectory
         _,evidence,_=configuration()
         store=GCS(plan,evidence,lambda:access)
-        class ReadOnlySlot:
-            def get(self,ref,start=0,length=None,expected_sha256=None):
-                nonlocal requests,total
-                length=ref.bytes if length is None else length
-                requests+=1
-                if requests>limits['requests'] or total+length>limits['bytes']:raise ValueError('Seed preflight exceeds inspection budget')
-                raw=store.read(ref,start,length);total+=len(raw)
-                if expected_sha256 and hashlib.sha256(raw).hexdigest()!=expected_sha256:raise ValueError('Seed preflight member changed')
-                return raw
-        reader=ReadOnlySlot();cache={};inventory=seed_inventory(reader,SEED_AUTHORITY,cache)
+        reader=ReadOnlySlot(store,limits,requests,total);cache={};inventory=seed_inventory(reader,SEED_AUTHORITY,cache)
         samples=[]
         with TemporaryDirectory() as folder:
             for kind in sorted({r['kind'] for r in inventory.values()}):
                 jid=next(j for j,r in inventory.items() if r['kind']==kind)
                 proof=seed_read(reader,SEED_AUTHORITY,jid,Path(folder)/jid,cache)
                 samples.append(dict(job=jid,kind=kind,sha256=proof['sha256'],pixelsVerified=True))
+        requests=reader.meter.used['classBRequests'];total=reader.meter.used['egressBytes']
         preflight=dict(status='verified',jobs=len(inventory),rasterTiles=sum(len(r['outputs']) for r in inventory.values()),
             samples=samples,cloudWrites=0,rasterJobsExecuted=0)
     return dict(phase='checkpoint-inspection',planSHA256=sha,sequence=plan['campaign']['sequence'],
