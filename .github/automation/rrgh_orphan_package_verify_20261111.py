@@ -36,8 +36,8 @@ def require(ok,message):
 def identity(env):
     from rrgh_dispatcher import REPO,WORKER
     expected={'GITHUB_REPOSITORY':REPO,'GITHUB_REF':'refs/heads/'+WORKER,
-        'GITHUB_RUN_ATTEMPT':'1','GITHUB_EVENT_NAME':'push',
-        'GITHUB_ACTOR':'ryanredrivergorgehiker',
+        'GITHUB_RUN_ATTEMPT':'1','GITHUB_EVENT_NAME':'workflow_dispatch',
+        'GITHUB_ACTOR':'github-actions[bot]',
         'GITHUB_WORKFLOW_REF':REPO+'/'+WORKFLOW+'@refs/heads/'+WORKER,
         'GITHUB_REPOSITORY_ID':'1325611891',
         'GITHUB_REPOSITORY_OWNER_ID':'313924954'}
