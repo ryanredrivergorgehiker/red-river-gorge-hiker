@@ -78,9 +78,9 @@ def source_key(source):
 def read_bounds(p):
     children_count=sum(len(v) for v in p['dependencies'].values())
     seed='seed:'+SEED_SHA in p['sources'];waves=len(p['sources'])-int(seed);jobs=len(p['jobs'])
-    # Accepted seed inventory uses4 pinned base records and12 job records once
+    # Accepted seed inventory uses7 pinned base records and24 job records once
     # per slot; 4MiB bounds their known exact sizes with room for JSON framing.
-    requests=3*waves+2*children_count+(16 if seed else 0)
+    requests=3*waves+2*children_count+(31 if seed else 0)
     bytes_bound=waves*(16*1024+16*1024+256*1024)+children_count*(64*1024+512*1024)+(4*2**20 if seed else 0)
     return dict(dependencyRequests=requests,dependencyBytes=bytes_bound,
         bootstrapRequests=requests+96,recoveryRequests=requests+2*jobs+64,
@@ -234,6 +234,10 @@ def validate_history(plan,region):
     index,_=build_index(region);history_ledger(base,index)
     require(set(index)<=set(completed),'Native coverage is incomplete')
     prior=[];sequence=base['nativeRepairHistory'][-1]['sequence']
+    if plan.get('seedBootstrapRecovery') is not None:
+        from rrgh_seed_bootstrap_recovery import MARKER
+        require(plan['seedBootstrapRecovery']==MARKER and sequence==1452,'Unreviewed skipped bootstrap allocation')
+        sequence+=1
     for row in final_history:
         selected,phase=select(completed,attempts,plan['crosswaveHistory'],plan['nativeRepairHistory'],prior)
         require(row['sequence']==sequence+1 and row['acceptedJobIDs']==[j['id'] for j in selected] and

@@ -31,9 +31,9 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted','package-start')
+          assert action in ('launch','resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted','resume-seed-bootstrap','package-start')
           source=request.get('source_sha','')
-          if action in ('resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','complete-halted'):
+          if action in ('resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','complete-halted','resume-seed-bootstrap'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and (state['status']=='halted' or
@@ -132,3 +132,29 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -r package-source/backend/scripts/requirements-gorge-benchmark.txt
           python .github/automation/rrgh_package_controller.py enroll package-source
+      - name: Audit exact failed bootstrap and successful real-record preflight
+        if: steps.request.outputs.action == 'resume-seed-bootstrap'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_seed_resume.py audit --audit "$RUNNER_TEMP/seed-resume.json"
+      - uses: actions/checkout@v4
+        if: steps.request.outputs.action == 'resume-seed-bootstrap'
+        with:
+          ref: ${{ steps.request.outputs.source }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: steps.request.outputs.action == 'resume-seed-bootstrap'
+        with:
+          python-version: '3.12'
+      - name: Prepare exact fresh allocation without source-process credentials
+        if: steps.request.outputs.action == 'resume-seed-bootstrap'
+        run: |
+          python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+          python .github/automation/rrgh_seed_resume.py prepare --source source-checkout --audit "$RUNNER_TEMP/seed-resume.json"
+          python source-checkout/backend/scripts/gorge_campaign.py --phase plan
+      - name: Reaudit, publish, and launch verified-input final raster production
+        if: steps.request.outputs.action == 'resume-seed-bootstrap'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_seed_resume.py publish --source source-checkout --audit "$RUNNER_TEMP/seed-resume.json"

@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MODULES=('rrgh_overview_coverage.py','rrgh_seed_children.py','rrgh_final_overviews.py',
+MODULES=('rrgh_seed_bootstrap_recovery.py','rrgh_overview_coverage.py','rrgh_seed_children.py','rrgh_final_overviews.py',
     'rrgh_final_dependencies.py','rrgh_final_overview_render.py','rrgh_final_overview_runtime.py')
 COORDINATOR='gorge_stage_coordinator.py'
 ORIGINAL='8fde5081ac604de9d6ab65b44fbd37f5c2ffa66bde8de32b8b805d6da107bac7'

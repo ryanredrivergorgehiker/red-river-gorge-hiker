@@ -1,0 +1,33 @@
+name: RRGH seed metadata inspection QA
+on:
+  pull_request:
+    paths:
+      - .github/automation/rrgh_checkpoint_diagnostics.py
+      - .github/automation/test_rrgh_seed_inspection.py
+      - .github/workflows/rrgh-seed-inspection-qa.yml
+permissions:
+  contents: read
+env:
+  RRGH_TEST_SOURCE: test-source
+jobs:
+  bounded-read-only-inspection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: c0685c5eb6a2be25ef7f294426a3d6346825551f
+          path: test-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s .github/automation -p test_rrgh_seed_inspection.py -v
+      - run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0,'.github/automation')
+          import rrgh_dispatcher as d
+          print('CONTROL_DIGEST='+d.local_digest('.'))
+          PY

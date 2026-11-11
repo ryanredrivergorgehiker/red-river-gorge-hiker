@@ -32,6 +32,7 @@ ORIGINAL='.github/workflows/offline-map-producer-access.yml'
 LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
+    'rrgh_seed_resume.py','rrgh_seed_bootstrap_recovery.py',
     'rrgh_package_authority.py','rrgh_package_inventory.py','rrgh_package_assembly.py',
     'rrgh_package_ingress.py','rrgh_package_readback.py','rrgh_package_funding.py',
     'rrgh_package_contract.py','rrgh_package_records.py','rrgh_package_provenance.py',
@@ -546,7 +547,7 @@ def inspect_halted(api,root):
     caller('launch');old,state=api.state();validate_state(state,root)
     guard(state.get('status')=='halted' and state.get('mode')=='produce','Only halted production may be inspected')
     auth=state.get('inspectionAuthorization',{})
-    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn')=='2026-11-02' and
+    guard(auth.get('authorizedBy')=='ryanredrivergorgehiker' and auth.get('authorizedOn') in ('2026-11-02','2026-11-10') and
           all(auth.get(k)==state.get(k) for k in ('runID','planSHA256','sourceSHA','dispatchID')),
           'Exact read-only inspection authorization missing')
     assert_no_other_producers(api)
@@ -955,3 +956,4 @@ if __name__=='__main__':
     try:main()
     except (Halt,ValueError,KeyError) as exc:
         print('CONTROLLER_STOP: '+str(exc),file=sys.stderr);raise SystemExit(2)
+

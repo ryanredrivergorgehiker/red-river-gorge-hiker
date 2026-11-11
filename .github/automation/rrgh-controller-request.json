@@ -1,18 +1,13 @@
 {
-  "action": "resume-recovered",
+  "action": "resume-seed-bootstrap",
   "authorizedBy": "ryanredrivergorgehiker",
-  "date": "2026-11-10",
-  "source_sha": "895c01953481b2b5825abee9a4c0681f37211eb4",
-  "plan_sha256": "a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b",
-  "original_run": 42811852583,
-  "dispatch_id": "2a817478fa730785a3b243c339a371561ff887b61df5ff395264fbc7e9012d7d",
-  "recovery_receipt": {
-    "bytes": 3241,
-    "generation": "1794312166017060",
-    "key": "engineering/map-production/plans/a9924758e5178a70dc62d9abcc3d00e0f7921906e963bf3f62a1bb1e9bdc899b/slots/00002/receipt.json",
-    "sha256": "a5875a47b685e8c2d3eaec5ebf82b055cf6117336565bb88e442e5b5371f3a1f"
-  },
-  "reviewed_commit": "b048cce404ce4ed3831345301d0d997251db59e0",
-  "request_id": "native-repair1419-after-verified1418-20261110",
-  "purpose": "Owner-authorized completion: re-audit exact independently settled1418; publish fresh three-job attempt2 native repair pilot under reviewed source-mask evidence, original quality and budgets; preserve every old claim, receipt, attempt and accepted byte; hold after independent pilot verification"
+  "date": "2026-11-11",
+  "source_sha": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
+  "original_run": 42899104427,
+  "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
+  "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
+  "inspection_run": 43014810944,
+  "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
+  "inspection_fix_commit": "ac5503651b0370445f5def18c0017429b04eff70",
+  "purpose": "Complete remaining691 raster positions through tested fresh wave1454 and stop at278278 independently verified tiles"
 }
