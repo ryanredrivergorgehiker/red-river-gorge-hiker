@@ -1,13 +1,35 @@
 {
-  "action": "resume-seed-bootstrap",
+  "action": "package-start",
   "authorizedBy": "ryanredrivergorgehiker",
   "date": "2026-11-11",
-  "source_sha": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
-  "original_run": 42899104427,
-  "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
-  "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
-  "inspection_run": 43014810944,
-  "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
-  "inspection_fix_commit": "ac5503651b0370445f5def18c0017429b04eff70",
-  "purpose": "Complete remaining691 raster positions through tested fresh wave1454 and stop at278278 independently verified tiles"
+  "source_sha": "d17d0e335ac47e1f6d116e149992cc02d6e4a827",
+  "sourcePlanSHA256": "a161d6d494b0c737734de937a90c11fc1bb9aac6a0d93ab57bac7304ba75c891",
+  "rasterCompletionRun": 43027688867,
+  "acceptedRasterPositions": 278278,
+  "acceptedJobs": 34750,
+  "packageIntegrationPR": 116,
+  "packageIntegrationCommit": "e93eaa8a66db7ff5a0565c72d20aa9e5065b8d89",
+  "restrictions": {
+    "sourceRegeneration": false,
+    "acceptedOutputsImmutable": true,
+    "consumedAttemptsImmutable": true,
+    "originalCampaignCeilingUSD": "125.00",
+    "finalDeliveryReserveUSD": "0.75",
+    "authorizedCatalogActivation": false,
+    "physicalIPhoneAcceptance": false
+  },
+  "purpose": "Complete source-free package inventory, authenticated immutable multipart assembly and independent readback only; stop before catalog activation. Owner instructed controlled final delivery integration in project chat.",
+  "previousRequest": {
+    "action": "resume-seed-bootstrap",
+    "authorizedBy": "ryanredrivergorgehiker",
+    "date": "2026-11-11",
+    "source_sha": "c0685c5eb6a2be25ef7f294426a3d6346825551f",
+    "original_run": 42899104427,
+    "plan_sha256": "fb654b24e8c7a8e4dbcfd7cccfe082603acb9b59284770c34564df2a8994e537",
+    "dispatch_id": "066d01134fe367a33a39cc430bdfd6d99209381149bd8c5e497259c9f9136682",
+    "inspection_run": 43014810944,
+    "reviewed_commit": "9361f3646de5e9f732d7eb116dbab5da9e0fc423",
+    "inspection_fix_commit": "ac5503651b0370445f5def18c0017429b04eff70",
+    "purpose": "Complete remaining691 raster positions through tested fresh wave1454 and stop at278278 independently verified tiles"
+  }
 }
