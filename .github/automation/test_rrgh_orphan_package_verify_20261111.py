@@ -80,13 +80,13 @@ class BoundaryTests(unittest.TestCase):
     def test_workflow_actor_and_rerun_attempt_both_fail_closed(self):
         from rrgh_dispatcher import REPO,WORKER
         e=dict(GITHUB_REPOSITORY=REPO,GITHUB_REF='refs/heads/'+WORKER,
-            GITHUB_RUN_ATTEMPT='1',GITHUB_EVENT_NAME='push',GITHUB_ACTOR='ryanredrivergorgehiker',
+            GITHUB_RUN_ATTEMPT='1',GITHUB_EVENT_NAME='workflow_dispatch',GITHUB_ACTOR='github-actions[bot]',
             GITHUB_WORKFLOW_REF=REPO+'/'+fix.WORKFLOW+'@refs/heads/'+WORKER,
             GITHUB_REPOSITORY_ID='1325611891',
             GITHUB_REPOSITORY_OWNER_ID='313924954',GITHUB_RUN_ID='500')
         fix.identity(e)
-        for key,bad in [('GITHUB_RUN_ATTEMPT','2'),('GITHUB_ACTOR','github-actions[bot]'),
-            ('GITHUB_EVENT_NAME','workflow_dispatch'),('GITHUB_REF','refs/heads/main'),
+        for key,bad in [('GITHUB_RUN_ATTEMPT','2'),('GITHUB_ACTOR','ryanredrivergorgehiker'),
+            ('GITHUB_EVENT_NAME','push'),('GITHUB_REF','refs/heads/main'),
             ('GITHUB_WORKFLOW_REF','unreviewed.yml'),('GITHUB_RUN_ID','bad')]:
             altered=dict(e,**{key:bad})
             with self.subTest(key=key),self.assertRaises(ValueError):fix.identity(altered)
