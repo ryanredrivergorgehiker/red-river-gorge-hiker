@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'package' && 'package' || inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || inputs.mode == 'checkpoints' && 'checkpoints' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'orphan-verify' && 'queued-package-verification' || inputs.mode == 'package' && 'package' || inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || inputs.mode == 'checkpoints' && 'checkpoints' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce, recover, inspect, salvage, complete, checkpoints, package]
+        options: [probe, produce, recover, inspect, salvage, complete, checkpoints, package, orphan-verify]
         required: true
       source_sha:
         type: string
@@ -35,7 +35,7 @@ jobs:
       github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
       github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
       github.event_name == 'workflow_dispatch' &&
-      github.actor == 'github-actions[bot]' && github.run_attempt == 1
+      github.actor == 'github-actions[bot]' && github.run_attempt == 1 && inputs.mode != 'orphan-verify'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -556,6 +556,74 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_package_controller.py recover source-checkout
+  orphan-verify:
+    if: >-
+      inputs.mode == 'orphan-verify' &&
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029' &&
+      github.actor == 'github-actions[bot]' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Independently verify original stranded package bytes using only slot 1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_orphan_package_verify_20261111.py verify source-checkout
+  orphan-reconcile:
+    needs: orphan-verify
+    if: >-
+      inputs.mode == 'orphan-verify' &&
+      needs.orphan-verify.result == 'success' &&
+      github.actor == 'github-actions[bot]' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: CAS-advance only after genuine independent hashes and package receipt acceptance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_orphan_package_verify_20261111.py reconcile source-checkout
+
   resume-handoff:
     needs: [admit, bounded-stage, independent-recovery, independent-checkpoints, advance, retain-failure]
     if: >-

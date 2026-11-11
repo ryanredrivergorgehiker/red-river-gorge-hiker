@@ -21,11 +21,12 @@ RASTER_PLAN='a161d6d494b0c737734de937a90c11fc1bb9aac6a0d93ab57bac7304ba75c891'
 PACKAGE_PLAN='84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb'
 DISPATCH='f66aaf8623842a4cda678ecd2568db540fd915c0736d3770e9e14d454852b56f'
 CONTROL='45a286bbe0f1d5681d51a651f9a832cb93889da82723efed4c261fde9a033c69'
+NEW_CONTROL='ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8'
 STAGE_RECEIPT=dict(
     bytes=2023,generation='1794428738795953',
     key='engineering/map-production/plans/'+PACKAGE_PLAN+'/slots/00000/receipt.json',
     sha256='5420c670014f8439036237dd437ba959b4afe3eb0d29759571f4877a8e981925')
-WORKFLOW='.github/workflows/rrgh-final-package-queued-verify.yml'
+WORKFLOW='.github/workflows/offline-map-restricted-dispatch.yml'
 REQUEST='.github/automation/rrgh-queued-verify-request.json'
 
 
@@ -46,8 +47,17 @@ def identity(env):
     require(str(env.get('GITHUB_RUN_ID','')).isdigit(),'Recovery run identity absent')
 
 
+def accepted_upgrade():
+    return dict(format='rrgh-queued-verify-existing-wif-cutover-v1',
+        authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
+        previousControlDigest=CONTROL,newControlDigest=NEW_CONTROL,
+        priorStateBlobSHA=STATE_BLOB,originalRunID=ORIGINAL_RUN,
+        sourceSHA=SOURCE,packagePlanSHA256=PACKAGE_PLAN,
+        preserveAcceptedOutputs=True,sourceRequests=0,
+        noArchiveRestaging=True,catalogActivation=False)
+
+
 def exact_state(state, request):
-    from rrgh_dispatcher import local_digest
     p=state.get('package') or {}
     progress=state.get('completionProgress') or {}
     require(state.get('format')=='rrgh-controller-state-v1' and
@@ -56,7 +66,8 @@ def exact_state(state, request):
         state.get('mode')=='package' and state.get('runID')==ORIGINAL_RUN and
         state.get('sequence')==1462 and state.get('dispatchID')==DISPATCH and
         state.get('sourceSHA')==SOURCE and state.get('planSHA256')==RASTER_PLAN and
-        state.get('controlDigest')==CONTROL and
+        state.get('controlDigest')==NEW_CONTROL and
+        state.get('packageOrphanWorkflowUpgrade')==accepted_upgrade() and
         progress.get('acceptedRasterTiles')==278278 and
         progress.get('remainingRasterTiles')==0 and
         progress.get('finalPackageDeliveryComplete') is False and
@@ -113,20 +124,46 @@ def preflight(api,root):
     from rrgh_dispatcher import validate_state,assert_no_other_producers
     original_sha,state=api.state()
     request=json.loads((Path(root)/REQUEST).read_text())
-    require(original_sha==STATE_BLOB,'Live controller blob changed since owner review')
     exact_state(state,request)
     validate_state(state,root)
     original=original_jobs(api,state)
-    assert_no_other_producers(api)
+    assert_no_other_producers(api,int(os.environ['GITHUB_RUN_ID']))
     return original_sha,state,original
+
+
+def prepare_code_upgrade(api,root):
+    """Single owner-approved CAS from reviewed old digest to reviewed WIF path.
+
+    No cloud objects or package bytes are touched here; the existing package
+    allocation remains bound to its ORIGINAL fingerprint until readback.
+    """
+    from rrgh_dispatcher import validate_state,local_digest,assert_no_other_producers
+    old,state=api.state()
+    require(old==STATE_BLOB and state.get('controlDigest')==CONTROL,
+            'Original completed-staging controller identity already changed')
+    request=json.loads((Path(root)/REQUEST).read_text())
+    upgraded=copy.deepcopy(state)
+    upgraded['controlDigest']=NEW_CONTROL
+    upgraded['packageOrphanWorkflowUpgrade']=accepted_upgrade()
+    exact_state(upgraded,request)
+    require(local_digest(root)==NEW_CONTROL,'Reviewed existing WIF workflow digest changed')
+    validate_state(upgraded,root)
+    original_jobs(api,state)
+    assert_no_other_producers(api)
+    return api.cas(old,upgraded,'one-time reviewed existing-WIF verifier path; no Cloud work')
 
 
 def source_plan_and_funding(source,state):
     from rrgh_package_controller import source_context
     from rrgh_package_contract import funding
     from rrgh_package_authority import digest
-    sp,authority=source_context(source,state)
-    plan,evidence=funding(sp,state,authority)
+    # The already-staged ordinal-18 plan was funded under the prior trusted
+    # workflow digest. Reconstruct that immutable plan only; successor plans
+    # use the newly reviewed digest after receipt-bound reconciliation.
+    legacy_state=copy.deepcopy(state)
+    legacy_state['controlDigest']=CONTROL
+    sp,authority=source_context(source,legacy_state)
+    plan,evidence=funding(sp,legacy_state,authority)
     require(digest(plan)==PACKAGE_PLAN and
         plan['finalPackagePhase']['ordinal']==18 and
         plan['finalPackagePhase']['operation']==state['package']['operation'] and
@@ -264,7 +301,7 @@ def reconcile(api,root,source):
     state.update(package=cursor,status='package-ready',runID=None,dispatchID=None)
     validate_state(state,root)
     old=api.cas(state_sha,state,'verified orphan package without restaging; advance exact successor')
-    return dispatch(api,root,old,state,'package',allowed_run=ORIGINAL_RUN)
+    return dispatch(api,root,old,state,'package',allowed_run=int(os.environ['GITHUB_RUN_ID']))
 
 
 def source_plan_and_funding_input(source,state):
