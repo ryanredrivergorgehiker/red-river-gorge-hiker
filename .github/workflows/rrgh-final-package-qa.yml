@@ -1,7 +1,7 @@
 name: RRGH final package assembly QA
 on:
   push:
-    branches: [lane20/final-package-assembly-20261110]
+    branches: [lane20/final-package-assembly-20261110, lane20/package-cutover-digest-20261111]
 permissions:
   contents: read
 env:
@@ -25,6 +25,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Print exact source-only controller fingerprint for reviewed cutover
+        run: python -c 'from rrgh_dispatcher import local_digest; print("RRGH_PACKAGE_CODE_DIGEST=" + local_digest("."))'
       - name: Every actual historical acceptance type and original-zoom USGS position
         run: python .github/automation/verify_rrgh_package_history.py source --emit-usgs-authority
       - name: Reject missing positions, duplicates, substituted seeds and foreign checkpoints
