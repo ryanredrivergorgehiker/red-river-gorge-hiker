@@ -5,7 +5,7 @@ from PIL import Image
 from rrgh_final_overview_render import render
 from rrgh_overview_coverage import alpha,child_positions,verify
 from rrgh_verified_tile_catalog import digest
-from rrgh_seed_children import AUTHORITY,AUTHORITY_SHA
+from rrgh_seed_children import AUTHORITY,AUTHORITY_SHA,HISTORICAL
 
 class FinalRenderTests(unittest.TestCase):
     def setUp(self):
@@ -54,6 +54,15 @@ class FinalRenderTests(unittest.TestCase):
         case=self.case(15,8772,12661,'leaf-on',seed=True)
         self.assertTrue(all('jobReceipt' not in c for c in case[2]))
         self.assertEqual(len(self.run_case(case)['dependencies']),4)
+    def test_restored_and_first_stage_seed_proofs_render(self):
+        for kind,acceptance in [('restored-original-accepted-seed',AUTHORITY['history']['acceptedBootstrap']),
+                                ('first-stage-accepted-seed',HISTORICAL['finalRecovery'])]:
+            with self.subTest(kind=kind):
+                case=self.case(15,8772,12661,'leaf-on',seed=True)
+                for child in case[2]:child['seedAcceptanceProof'].update(kind=kind,acceptanceReceipt=acceptance)
+                region,job,children=case
+                result=render(region,job,children,self.root/'children',self.root/kind,self.source)
+                self.assertEqual(len(result['dependencies']),4)
     def test_missing_required_child_and_extra_exterior_child_rejected(self):
         region,job,children=self.case(14,4378,6322)
         with self.assertRaises(ValueError):self.run_case((region,job,children[:-1]))

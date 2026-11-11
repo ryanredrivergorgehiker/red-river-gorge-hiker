@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from rrgh_seed_children import inventory as seed_inventory, read as seed_read, AUTHORITY as SEED_AUTHORITY
 from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request,build_opener,HTTPRedirectHandler
@@ -94,8 +95,32 @@ def inspect(source_root):
             if pin['name']=='proof':obj=seed_proof_summary(obj)
         elif obj.get('planSHA256')!=sha:raise ValueError('Inspection object belongs to another plan')
         rows.append(dict(key=key,exists=True,ref=dict(key=key,generation=generation,bytes=size,sha256=hashlib.sha256(raw).hexdigest()),record=obj))
+    preflight=None
+    if plan.get('finalOverviewPhase') and os.environ.get('RRGH_SEED_READER_PREFLIGHT')=='1':
+        from gorge_checkpoint import GCS
+        from tempfile import TemporaryDirectory
+        _,evidence,_=configuration()
+        store=GCS(plan,evidence,lambda:access)
+        class ReadOnlySlot:
+            def get(self,ref,start=0,length=None,expected_sha256=None):
+                nonlocal requests,total
+                length=ref.bytes if length is None else length
+                requests+=1
+                if requests>limits['requests'] or total+length>limits['bytes']:raise ValueError('Seed preflight exceeds inspection budget')
+                raw=store.read(ref,start,length);total+=len(raw)
+                if expected_sha256 and hashlib.sha256(raw).hexdigest()!=expected_sha256:raise ValueError('Seed preflight member changed')
+                return raw
+        reader=ReadOnlySlot();cache={};inventory=seed_inventory(reader,SEED_AUTHORITY,cache)
+        samples=[]
+        with TemporaryDirectory() as folder:
+            for kind in sorted({r['kind'] for r in inventory.values()}):
+                jid=next(j for j,r in inventory.items() if r['kind']==kind)
+                proof=seed_read(reader,SEED_AUTHORITY,jid,Path(folder)/jid,cache)
+                samples.append(dict(job=jid,kind=kind,sha256=proof['sha256'],pixelsVerified=True))
+        preflight=dict(status='verified',jobs=len(inventory),rasterTiles=sum(len(r['outputs']) for r in inventory.values()),
+            samples=samples,cloudWrites=0,rasterJobsExecuted=0)
     return dict(phase='checkpoint-inspection',planSHA256=sha,sequence=plan['campaign']['sequence'],
-        cloudWrites=0,sourceRequests=0,readResponseBytes=total,readRequests=requests,objects=rows,productionAccepted=False)
+        cloudWrites=0,sourceRequests=0,readResponseBytes=total,readRequests=requests,objects=rows,productionAccepted=False,seedReaderPreflight=preflight)
 
 if __name__=='__main__':print(json.dumps(inspect(Path(sys.argv[1])),sort_keys=True))
 

@@ -14,9 +14,13 @@ def digest(value):return hashlib.sha256(canonical(value)).hexdigest()
 def require(ok,message):
     if not ok:raise ValueError(message)
 
-def validate_metadata(initial,proof,worker,recovered,records):
-    h=AUTHORITY['history'];first=h['acceptedBootstrap']['key'].split('/')[3];second=h['secondRecovery']['key'].split('/')[3]
-    require(initial['planSHA256']==first and initial['slot']==0 and
+HISTORICAL={'finalQA': {'bytes': 4780, 'generation': '1793330375899481', 'key': 'engineering/map-production/plans/94fe8e3708520332bd154ed5d759926ea60cea9b0b5d672ebab7d8152f4ba534/slots/00001/indexes/cdd62df681c6f290a93d6c0ba3e1439582909432f667f093f6e091a0acd5f0b4', 'sha256': 'cdd62df681c6f290a93d6c0ba3e1439582909432f667f093f6e091a0acd5f0b4'}, 'finalRecovery': {'bytes': 1849, 'generation': '1793330377762909', 'key': 'engineering/map-production/plans/94fe8e3708520332bd154ed5d759926ea60cea9b0b5d672ebab7d8152f4ba534/slots/00001/receipt.json', 'sha256': '736aa163445b697f82d485d070ec5aae90be3b0aaa4a82eac1aac404b6f596fa'}, 'restoredIndex': {'key': 'engineering/map-production/restorations/r4/fcdd9ba6ac9f8b61f032b28ee28aac7bcb48bf045932fcefc9f1130b7a9bbaed/preserved-jobs.json', 'generation': '1794345399715111', 'bytes': 68063, 'sha256': '278272b57c24bd01ecd9efe7503bcfb77455173d84ffb209bee2f8828aa0a394'}, 'restoredPack': {'key': 'engineering/map-production/restorations/r4/fcdd9ba6ac9f8b61f032b28ee28aac7bcb48bf045932fcefc9f1130b7a9bbaed/preserved-tiles.pack', 'generation': '1794345398952698', 'bytes': 4845866, 'sha256': 'fcdd9ba6ac9f8b61f032b28ee28aac7bcb48bf045932fcefc9f1130b7a9bbaed'}}
+ARCHIVE_SHA='38f6bcb6337f8f087851d1ebbaafa5dd810a346b04c84f6fdffe892240c07290'
+
+def validate_metadata(initial,proof,worker,recovered,records,first,qa,first_records,restored):
+    h=AUTHORITY['history'];original=h['acceptedBootstrap']['key'].split('/')[3]
+    second=h['secondRecovery']['key'].split('/')[3];completion=HISTORICAL['finalRecovery']['key'].split('/')[3]
+    require(initial['planSHA256']==original and initial['slot']==0 and
         initial['result']['inputProofValidated'] is True and initial['result']['proofRef']==h['proof'] and
         initial['result']['acceptedBase']==proof['acceptedBase'] and
         proof['format']=='rrgh-stage-input-proof-v1','Original accepted seed proof changed')
@@ -29,40 +33,69 @@ def validate_metadata(initial,proof,worker,recovered,records):
         recovered['result']['production']['priorJobsPreserved']==32 and
         recovered['result']['production']['priorRasterTilesPreserved']==320,
         'Second-stage seed independent verification changed')
-    prior=proof['priorReceipts'];refs=worker['result']['completedJobReceipts']
-    require(len(prior)==32 and len(refs)==len(records)==12,'Seed job inventory changed')
+    require(first['planSHA256']==completion and first['slot']==1 and
+        first['result']['qaRef']==HISTORICAL['finalQA'] and
+        all(first['result'][k]==qa[k] for k in qa) and
+        qa['status']=='all-twelve-jobs-verified' and qa['jobs']==12 and qa['tiles']==108 and
+        qa['allPreviousCachesAndJobsPreserved'] is True and qa['childrenGenerationPinned'] is True,
+        'First-stage seed independent verification changed')
+    require(restored['format']=='rrgh-preserved-r4-restoration-v1' and
+        restored['archiveSHA256']==ARCHIVE_SHA and restored['jobCount']==12 and
+        restored['rasterTiles']==172 and restored['bytes']==HISTORICAL['restoredPack']['bytes'],
+        'Restored original archive identity changed')
     lookup={(e['kind'],e['path']):e for e in proof['files']}
     require(len(lookup)==len(proof['files']),'Duplicate seed input proof member')
-    rows={};tiles=0
-    for receipt in prior:
+    rows={}
+    def add(receipt,outputs,kind,acceptance,reference):
         jid=receipt['job']
-        require(jid not in rows and receipt['validated'] is True and re.fullmatch('[0-9a-f]{64}',receipt['recipeSHA256']),
-            'Invalid original seed receipt')
+        require(jid not in rows and receipt['validated'] is True and
+            re.fullmatch('[0-9a-f]{64}',receipt['recipeSHA256']) and outputs,
+            'Invalid or duplicate accepted seed receipt')
+        require(len({o['output']['path'] for o in outputs})==len(outputs),'Duplicate seed output')
+        rows[jid]=dict(kind=kind,receipt=receipt,acceptance=acceptance,proof=reference,outputs=outputs)
+    for receipt in proof['priorReceipts']:
         outputs=[]
         for out in receipt['outputs']:
             member=lookup.get(('prior',out['path']))
             require(member and all(member[k]==out[k] for k in ('bytes','sha256')),'Original seed output proof changed')
-            ref=proof['checkpointRefs'][member['checkpointIndex']]
-            outputs.append(dict(output=out,member=member,object=ref))
-        tiles+=len(outputs);rows[jid]=dict(kind='original-accepted-seed',receipt=receipt,
-            acceptance=h['acceptedBootstrap'],proof=h['proof'],outputs=outputs)
-    require(tiles==320,'Original seed tile inventory changed')
-    second_tiles=0
-    for reference,row in zip(refs,records,strict=True):
-        receipt=row['result']['originalReceipt'];jid=receipt['job']
-        require(jid not in rows and row['job']==jid and row['planSHA256']==second and row['slot']==1 and
-            reference['key']=='engineering/map-production/plans/'+second+'/slots/00001/jobs/'+jid+'.json' and
-            receipt['validated'] is True and re.fullmatch('[0-9a-f]{64}',receipt['recipeSHA256']),
-            'Second-stage seed checkpoint identity changed')
+            outputs.append(dict(output=out,member=member,object=proof['checkpointRefs'][member['checkpointIndex']]))
+        add(receipt,outputs,'original-accepted-seed',h['acceptedBootstrap'],h['proof'])
+    require(len(rows)==8 and sum(len(r['outputs']) for r in rows.values())==40,'Original dependency subset changed')
+    cursor=0;count=0
+    for item in restored['jobs']:
+        receipt=item['originalReceipt'];jid=item['job']
+        require(jid==receipt['job'] and re.fullmatch(r'(leaf-on|leaf-off|usgs-topo)-16-(17544|17545)-(25322|25323)',jid),
+            'Restored original job identity changed')
         outputs=[]
-        for out in receipt['outputs']:
-            matches=[(pack,member) for pack in row['result']['outputPacks'] for member in pack['members'] if member['path']==out['path']]
-            require(len(matches)==1,'Ambiguous second-stage seed output')
-            pack,member=matches[0];require(all(member[k]==out[k] for k in ('bytes','sha256')),'Second-stage seed output member differs')
-            outputs.append(dict(output=out,member=member,object=pack['ref']))
-        second_tiles+=len(outputs);rows[jid]=dict(kind='second-stage-accepted-seed',receipt=receipt,
-            acceptance=h['secondRecovery'],proof=reference,outputs=outputs)
-    require(second_tiles==116 and set(rows)==set(AUTHORITY['jobs']) and len(rows)==44,
+        for member,out in zip(item['members'],receipt['outputs'],strict=True):
+            require(all(member[k]==out[k] for k in ('path','bytes','sha256')) and member['offset']==cursor and
+                type(out['bytes']) is int and 0<out['bytes']<=512*1024,'Restored member differs from original receipt')
+            cursor+=out['bytes'];count+=1
+            outputs.append(dict(output=out,member=member,object=HISTORICAL['restoredPack']))
+        add(receipt,outputs,'restored-original-accepted-seed',h['acceptedBootstrap'],HISTORICAL['restoredIndex'])
+    require(len(rows)==20 and count==172 and cursor==HISTORICAL['restoredPack']['bytes'],'Restored archive inventory changed')
+    def add_stage(refs,records,kind,acceptance,tiles,stage):
+        require(len(refs)==len(records)==12 and len({r['key'] for r in refs})==12,'Seed stage receipt count changed')
+        count=0
+        for reference,row in zip(refs,records,strict=True):
+            receipt=row['result']['originalReceipt'];jid=receipt['job']
+            expected_plan,expected_slot=(completion,0) if stage=='first' and jid=='terrain-15-8772-12661' else (original,1) if stage=='first' else (second,1)
+            prefix='engineering/map-production/plans/'+expected_plan+'/slots/'+str(expected_slot).zfill(5)+'/'
+            require(row['job']==jid and row['planSHA256']==expected_plan and row['slot']==expected_slot and
+                reference['key']==prefix+'jobs/'+jid+'.json','Seed checkpoint identity changed')
+            outputs=[]
+            for out in receipt['outputs']:
+                matches=[(pack,member) for pack in row['result']['outputPacks'] for member in pack['members'] if member['path']==out['path']]
+                require(len(matches)==1,'Ambiguous seed output')
+                pack,member=matches[0]
+                require(all(member[k]==out[k] for k in ('bytes','sha256')) and pack['ref']['key'].startswith(prefix+'outputs/'),
+                    'Seed output member or namespace differs')
+                outputs.append(dict(output=out,member=member,object=pack['ref']))
+            count+=len(outputs);add(receipt,outputs,kind,acceptance,reference)
+        require(count==tiles,'Seed stage raster inventory changed')
+    add_stage(qa['completedJobReceipts'],first_records,'first-stage-accepted-seed',HISTORICAL['finalRecovery'],108,'first')
+    add_stage(worker['result']['completedJobReceipts'],records,'second-stage-accepted-seed',h['secondRecovery'],116,'second')
+    require(set(rows)==set(AUTHORITY['jobs']) and len(rows)==44 and sum(len(r['outputs']) for r in rows.values())==436,
         'Accepted seed union differs from the immutable44 jobs')
     return rows
 
@@ -70,12 +103,19 @@ def inventory(slot,authority,cache):
     require(authority==AUTHORITY and digest(authority)==AUTHORITY_SHA,'Exact accepted seed authority required')
     if AUTHORITY_SHA in cache:return cache[AUTHORITY_SHA]
     from gorge_second_stage import record
+    from gorge_checkpoint import Ref
     h=authority['history']
     initial=record(slot,h['acceptedBootstrap']);proof=record(slot,h['proof'],'rrgh-stage-input-proof-v1')
     worker=record(slot,h['secondWorker']);recovered=record(slot,h['secondRecovery'])
-    require(len(worker['result']['completedJobReceipts'])==12,'Bounded second-stage seed records required')
-    records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in worker['result']['completedJobReceipts']]
-    rows=validate_metadata(initial,proof,worker,recovered,records);cache[AUTHORITY_SHA]=rows;return rows
+    first=record(slot,HISTORICAL['finalRecovery'])
+    qa=json.loads(slot.get(Ref(**HISTORICAL['finalQA'])))
+    restored=json.loads(slot.get(Ref(**HISTORICAL['restoredIndex'])))
+    refs=worker['result']['completedJobReceipts'];first_refs=qa['completedJobReceipts']
+    require(len(refs)==len(first_refs)==12,'Bounded historical seed records required')
+    records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in refs]
+    first_records=[record(slot,r,'rrgh-checkpoint-job-v1') for r in first_refs]
+    rows=validate_metadata(initial,proof,worker,recovered,records,first,qa,first_records,restored)
+    cache[AUTHORITY_SHA]=rows;return rows
 
 def read(slot,authority,jid,destination,cache):
     from PIL import Image

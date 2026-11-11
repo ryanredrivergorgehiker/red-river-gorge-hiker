@@ -78,9 +78,9 @@ def source_key(source):
 def read_bounds(p):
     children_count=sum(len(v) for v in p['dependencies'].values())
     seed='seed:'+SEED_SHA in p['sources'];waves=len(p['sources'])-int(seed);jobs=len(p['jobs'])
-    # Accepted seed inventory uses4 pinned base records and12 job records once
+    # Accepted seed inventory uses7 pinned base records and24 job records once
     # per slot; 4MiB bounds their known exact sizes with room for JSON framing.
-    requests=3*waves+2*children_count+(16 if seed else 0)
+    requests=3*waves+2*children_count+(31 if seed else 0)
     bytes_bound=waves*(16*1024+16*1024+256*1024)+children_count*(64*1024+512*1024)+(4*2**20 if seed else 0)
     return dict(dependencyRequests=requests,dependencyBytes=bytes_bound,
         bootstrapRequests=requests+96,recoveryRequests=requests+2*jobs+64,
