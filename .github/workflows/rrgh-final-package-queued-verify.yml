@@ -1,0 +1,77 @@
+name: RRGH one-time queued package verifier
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/automation/rrgh-queued-verify-request.json]
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-map-producer-auth-preflight
+  cancel-in-progress: false
+jobs:
+  orphan-verify:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Prove terminal runner-queue failure and independently verify original immutable parts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_orphan_package_verify_20261111.py verify source-checkout
+  orphan-reconcile:
+    needs: orphan-verify
+    if: github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' && needs.orphan-verify.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Cross-check independent receipts, CAS accepted state, and advance without restaging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_orphan_package_verify_20261111.py reconcile source-checkout
