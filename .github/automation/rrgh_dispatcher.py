@@ -33,6 +33,10 @@ LEGACY_PLANNER='.github/workflows/rrgh-push-successor-planning.yml'
 LEGACY_SUPERVISOR='lane20/unattended-supervisor-20261031'
 CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_seed_resume.py','rrgh_seed_bootstrap_recovery.py',
+    'rrgh_package_authority.py','rrgh_package_inventory.py','rrgh_package_assembly.py',
+    'rrgh_package_ingress.py','rrgh_package_readback.py','rrgh_package_funding.py',
+    'rrgh_package_contract.py','rrgh_package_records.py','rrgh_package_provenance.py',
+    'rrgh_package_indexes.py','rrgh_package_runtime.py','rrgh_package_controller.py',
     'rrgh_native_repair.py',
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
     'rrgh_final_overviews.py','rrgh_final_dependencies.py','rrgh_final_overview_runtime.py',
@@ -242,7 +246,7 @@ def dispatch(api,root,state_sha,state,mode,allowed_run=None):
     validate_state(state,root)
     guard(state.get('enabled') is True,'Controller paused')
     guard(state['status'] in (('awaiting-auth','auth-required','ready') if mode=='probe' else
-          ('checkpoint-recovery-ready',) if mode=='checkpoints' else ('completion-ready',) if mode=='complete' else ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
+          ('package-ready',) if mode=='package' else ('checkpoint-recovery-ready',) if mode=='checkpoints' else ('completion-ready',) if mode=='complete' else ('salvage-ready',) if mode=='salvage' else ('recovery-ready',) if mode=='recover' else ('inspection-ready',) if mode=='inspect' else ('ready',)),
           'Allocation already claimed, running or unresolved')
     if mode=='probe' and state['status']=='ready':
         previous=state.get('lastRecovered',{})
@@ -888,6 +892,9 @@ def probe_source(source_root,state):
 
 def retain_failure(api,root,run_id,dispatch_id):
     old,state=api.state();validate_state(state,root)
+    package=state.get('package',{}).get('lastVerified',{})
+    if package.get('runID')==run_id and state.get('runID')!=run_id:
+        return {'status':'PACKAGE_SUCCESSOR_PRESERVED','runID':run_id,'stateChanged':False}
     previous=state.get('lastRecovered',{})
     if (previous.get('runID')==run_id and previous.get('dispatchID')==dispatch_id and
             previous.get('sequence')==state['sequence']-1 and

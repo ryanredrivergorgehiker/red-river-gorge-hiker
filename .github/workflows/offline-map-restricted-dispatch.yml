@@ -1,11 +1,11 @@
 name: RRGH automated restricted map producer
-run-name: RRGH ${{ inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || inputs.mode == 'checkpoints' && 'checkpoints' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
+run-name: RRGH ${{ inputs.mode == 'package' && 'package' || inputs.mode == 'produce' && 'production' || inputs.mode == 'recover' && 'recovery' || inputs.mode == 'inspect' && 'inspection' || inputs.mode == 'salvage' && 'salvage' || inputs.mode == 'complete' && 'completion' || inputs.mode == 'checkpoints' && 'checkpoints' || 'probe' }} ${{ inputs.sequence }} ${{ inputs.dispatch_id }}
 on:
   workflow_dispatch:
     inputs:
       mode:
         type: choice
-        options: [probe, produce, recover, inspect, salvage, complete, checkpoints]
+        options: [probe, produce, recover, inspect, salvage, complete, checkpoints, package]
         required: true
       source_sha:
         type: string
@@ -410,11 +410,108 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py publish --source source-checkout --audit "${{ runner.temp }}/recovery.json"
+  package-stage:
+    needs: admit
+    if: inputs.mode == 'package'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Assemble one exact funded operation from accepted immutable bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_package_runtime.py source-checkout stage
+  package-verify:
+    needs: [admit, package-stage]
+    if: inputs.mode == 'package' && needs.package-stage.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/rrgh-map-production/providers/github-map-build
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Independently read back and verify every newly packaged member
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_package_runtime.py source-checkout verify
+  package-advance:
+    needs: [admit, package-stage, package-verify]
+    if: inputs.mode == 'package' && needs.package-verify.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify both independent job receipts and allocate the exact successor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_package_controller.py finish source-checkout
   retain-failure:
-    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, independent-completion, independent-checkpoints, advance]
+    needs: [admit, authentication-probe, activate, bounded-stage, independent-recovery, independent-salvage, independent-completion, independent-checkpoints, advance, package-stage, package-verify, package-advance]
     if: >-
       always() && needs.admit.result == 'success' &&
-      (needs.authentication-probe.result == 'failure' || needs.activate.result == 'failure' ||
+      (needs.package-stage.result == 'failure' || needs.package-verify.result == 'failure' || needs.package-advance.result == 'failure' ||
+       needs.authentication-probe.result == 'failure' || needs.activate.result == 'failure' ||
        needs.bounded-stage.result == 'failure' || needs.independent-recovery.result == 'failure' ||
        needs.independent-checkpoints.result == 'failure' || needs.independent-salvage.result == 'failure' || needs.independent-completion.result == 'failure' || needs.advance.result == 'failure')
     runs-on: ubuntu-latest
@@ -431,6 +528,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py failed
+  package-recover:
+    needs: [admit, package-stage, package-verify, package-advance, retain-failure]
+    if: >-
+      always() && inputs.mode == 'package' && needs.admit.result == 'success' &&
+      needs.retain-failure.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          path: source-checkout
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Reconcile verified handoff or fund a bounded fresh transport recovery
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python .github/automation/rrgh_package_controller.py recover source-checkout
   resume-handoff:
     needs: [admit, bounded-stage, independent-recovery, independent-checkpoints, advance, retain-failure]
     if: >-

@@ -31,13 +31,17 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('.github/automation/rrgh-controller-request.json').read_bytes())
           action=request.get('action','launch')
-          assert action in ('launch','resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted','resume-seed-bootstrap')
+          assert action in ('launch','resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','resume-unclaimed','complete-halted','resume-seed-bootstrap','package-start')
           source=request.get('source_sha','')
           if action in ('resume-recovered','resume-published','recover-checkpoints','recover-unstarted','inspect-halted','salvage-halted','complete-halted','resume-seed-bootstrap'):
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
               assert source==state['sourceSHA'] and (state['status']=='halted' or
                   (action=='resume-recovered' and state['status']=='completion-waiting' and state.get('crosswavePolicy')))
+          if action=='package-start':
+              state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
+              assert re.fullmatch('[0-9a-f]{40}',source) and source==state['sourceSHA']
+              assert state['status']=='completion-waiting' and state['completionProgress']['fullRasterCoverageComplete'] is True
           if action=='resume-unclaimed':
               assert re.fullmatch('[0-9a-f]{40}',source)
               state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_bytes())
@@ -111,6 +115,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_dispatcher.py publish-recovered --source source-checkout --audit "$RUNNER_TEMP/recovery.json"
+      - uses: actions/checkout@v4
+        if: steps.request.outputs.action == 'package-start'
+        with:
+          ref: ${{ steps.request.outputs.source }}
+          path: package-source
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        if: steps.request.outputs.action == 'package-start'
+        with:
+          python-version: '3.12'
+      - name: Enroll exact verified raster completion into bounded source-free packages
+        if: steps.request.outputs.action == 'package-start'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install --disable-pip-version-check -r package-source/backend/scripts/requirements-gorge-benchmark.txt
+          python .github/automation/rrgh_package_controller.py enroll package-source
       - name: Audit exact failed bootstrap and successful real-record preflight
         if: steps.request.outputs.action == 'resume-seed-bootstrap'
         env:
