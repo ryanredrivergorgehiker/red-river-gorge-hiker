@@ -14,7 +14,8 @@ def fixtures():
     s=dict(format='rrgh-controller-state-v1',owner='autonomous-v1',epoch=1,
         enabled=True,status='running',mode='package',runID=fix.ORIGINAL_RUN,
         sequence=1462,dispatchID=fix.DISPATCH,sourceSHA=fix.SOURCE,
-        planSHA256=fix.RASTER_PLAN,controlDigest=fix.CONTROL,
+        planSHA256=fix.RASTER_PLAN,controlDigest=fix.NEW_CONTROL,
+        packageOrphanWorkflowUpgrade=fix.accepted_upgrade(),
         completionProgress=dict(acceptedRasterTiles=278278,remainingRasterTiles=0,
             finalPackageDeliveryComplete=False),
         package=dict(ordinal=18,planSHA256=fix.PACKAGE_PLAN,retryCount=1,
@@ -51,7 +52,9 @@ class BoundaryTests(unittest.TestCase):
             ('run',lambda a,b:a.update(runID=1)),
             ('plan',lambda a,b:a['package'].update(planSHA256='a'*64)),
             ('source',lambda a,b:a.update(sourceSHA='a'*40)),
-            ('digest',lambda a,b:a.update(controlDigest='b'*64)),
+            ('digest',lambda a,b:a.update(controlDigest=fix.CONTROL)),
+            ('upgrade',lambda a,b:a['packageOrphanWorkflowUpgrade'].update(authorizedBy='attacker')),
+            ('upgradeReceipt',lambda a,b:a['packageOrphanWorkflowUpgrade'].update(packagePlanSHA256='0'*64)),
             ('currentOrdinal',lambda a,b:a['package'].update(ordinal=19)),
             ('priorOrdinal',lambda a,b:a['package']['lastVerified'].update(ordinal=17)),
             ('doubleClaim',lambda a,b:a['package'].update(retryCount=2)),
@@ -122,14 +125,42 @@ class BoundaryTests(unittest.TestCase):
             change(a,b)
             with self.assertRaises(ValueError):fix.original_jobs(Fake(a,b),s)
 
-    def test_no_cloud_work_when_state_blob_changed(self):
+    def test_unreviewed_transition_cannot_reach_cloud_slot(self):
         state,request=fixtures()
+        state['packageOrphanWorkflowUpgrade']['previousControlDigest']='0'*64
         class API:
             def state(self):return 'f'*40,state
-        with patch('builtins.open',create=True):
-            with patch.object(Path,'read_text',return_value=__import__('json').dumps(request)):
-                with self.assertRaises(ValueError):
-                    fix.preflight(API(),Path('.'))
+        with patch.object(Path,'read_text',return_value=__import__('json').dumps(request)):
+            with self.assertRaisesRegex(ValueError,'Accepted raster/queued package cursor'):
+                fix.preflight(API(),Path('.'))
+
+    def test_one_time_owner_CAS_converts_only_exact_reviewed_code_digest(self):
+        state,request=fixtures()
+        prior=copy.deepcopy(state)
+        prior.pop('packageOrphanWorkflowUpgrade')
+        prior['controlDigest']=fix.CONTROL
+        class API:
+            calls=[]
+            def state(self):return fix.STATE_BLOB,copy.deepcopy(prior)
+            def cas(self,old,value,message):
+                self.calls.append((old,copy.deepcopy(value),message))
+                return 'next-state-blob'
+        api=API()
+        with patch.object(Path,'read_text',return_value=__import__('json').dumps(request)),\
+             patch('rrgh_dispatcher.local_digest',return_value=fix.NEW_CONTROL),\
+             patch('rrgh_dispatcher.validate_state'),\
+             patch('rrgh_dispatcher.assert_no_other_producers'),\
+             patch.object(fix,'original_jobs',return_value=()):
+            out=fix.prepare_code_upgrade(api,Path('.'))
+        self.assertEqual(out,'next-state-blob')
+        self.assertEqual(len(api.calls),1)
+        old,value,_=api.calls[0]
+        self.assertEqual(old,fix.STATE_BLOB)
+        self.assertEqual(value['packageOrphanWorkflowUpgrade'],fix.accepted_upgrade())
+        self.assertEqual(value['controlDigest'],fix.NEW_CONTROL)
+        self.assertEqual(value['package']['ordinal'],18)
+        self.assertEqual(value['completionProgress']['acceptedRasterTiles'],278278)
+        self.assertEqual(prior['controlDigest'],fix.CONTROL)
 
 
 if __name__=='__main__':unittest.main()
