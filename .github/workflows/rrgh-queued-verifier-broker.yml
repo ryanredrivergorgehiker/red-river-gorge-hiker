@@ -33,29 +33,52 @@ jobs:
           sys.path.insert(0,'.github/automation')
           from rrgh_dispatcher import GitHub,REPO,WORKER
           from rrgh_orphan_package_verify_20261111 import (
-              prepare_code_upgrade,ORIGINAL_RUN,STATE_BLOB,CONTROL,NEW_CONTROL,
+              preflight,ORIGINAL_RUN,STATE_BLOB,CONTROL,NEW_CONTROL,
               SOURCE,RASTER_PLAN,DISPATCH)
+          from rrgh_dispatch_audit import gh
           assert os.environ['GITHUB_WORKFLOW_REF']==REPO+'/.github/workflows/rrgh-queued-verifier-broker.yml@refs/heads/'+WORKER
           assert os.environ['GITHUB_EVENT_NAME']=='push' and os.environ['GITHUB_ACTOR']=='ryanredrivergorgehiker'
           assert os.environ['GITHUB_RUN_ATTEMPT']=='1'
           req=json.loads(Path('.github/automation/rrgh-queued-verifier-dispatch-request.json').read_text())
-          assert req==dict(format='rrgh-owner-queued-verifier-dispatch-v2',
-              action='authorize-reviewed-existing-WIF-workflow-once',
+          assert req==dict(
+              format='rrgh-owner-queued-verifier-dispatch-v3',
+              action='retry-one-unclaimed-import-failed-verifier-once',
               authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
-              failedOwnerPushRun=43103471623,failedStandaloneBotRun=43104702142,
-              originalRunID=ORIGINAL_RUN,priorStateBlobSHA=STATE_BLOB,
+              originalRunID=ORIGINAL_RUN,
+              previousBotVerifierRun=43106389852,
+              previousBotVerifierJob=130810724786,
+              previousBotRunSHA='9c20bb01b80969be590f47c3255c49fd0bc65b3b',
+              correctedSourcePR=132,
+              currentStateBlobSHA='90e5cad8cdb8048a24d30f847af5c848dab7cdbb',
               previousControlDigest=CONTROL,newControlDigest=NEW_CONTROL,
               noCloudWritesInBroker=True,noSourceRegeneration=True,
               noRestaging=True,catalogActivation=False)
           api=GitHub(os.environ['GH_TOKEN'])
-          prepare_code_upgrade(api,Path('.'))
-          # Exactly one controller-dispatched run through the ORIGINAL, already
-          # trusted WIF workflow. Its ordinary admission is disabled for this
-          # mode, and only the orphan-verify jobs can execute.
+          current_sha,state,_=preflight(api,Path('.'))
+          assert current_sha==req['currentStateBlobSHA']
+          # This prior run is provably PRE-CLOUD-SLOT: the import failed before
+          # the first Slot(...) expression. No old verify slot is replayed.
+          failed=api.call('GET','actions/runs/43106389852')
+          assert failed.get('id')==43106389852 and failed.get('status')=='completed'
+          assert failed.get('conclusion')=='failure' and failed.get('run_attempt')==1
+          assert failed.get('head_sha')==req['previousBotRunSHA']
+          assert failed.get('path')=='.github/workflows/offline-map-restricted-dispatch.yml'
+          assert failed.get('actor',{}).get('login')=='github-actions[bot]'
+          jobs=api.call('GET','actions/runs/43106389852/jobs?per_page=100')
+          assert jobs['total_count']==len(jobs['jobs'])<=100
+          active=[j for j in jobs['jobs'] if j.get('conclusion')!='skipped']
+          assert len(active)==1 and active[0]['name']=='orphan-verify'
+          assert active[0]['id']==130810724786
+          assert active[0]['status']=='completed' and active[0]['conclusion']=='failure'
+          evidence=gh('actions/jobs/130810724786/logs',api.token,raw=True)
+          assert "ModuleNotFoundError: No module named 'gorge_checkpoint'" in evidence
+          assert 'final-package-verify' not in evidence and 'GCS HTTP ' not in evidence
+          # Exact original map worker identity, after owner-only preflight.
+          # No CAS, no raster jobs, no package stage, no automatic retry.
           api.call('POST','actions/workflows/offline-map-restricted-dispatch.yml/dispatches',{
               'ref':WORKER,'inputs':{
                   'mode':'orphan-verify','source_sha':SOURCE,
                   'plan_sha256':RASTER_PLAN,'sequence':'1462',
                   'dispatch_id':DISPATCH}})
-          print('Reviewed controller fingerprint CAS committed; one trusted verify-only dispatch requested')
+          print('One independent verify-only run dispatched after proven pre-slot import failure')
           PY
