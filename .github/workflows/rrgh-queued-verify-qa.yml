@@ -1,7 +1,7 @@
 name: RRGH queued package verification recovery QA
 on:
   push:
-    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111, lane20/queued-verify-import-fix-20261111]
+    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111, lane20/queued-verify-import-fix-20261111, lane20/verify-eight-part-cap-fix-20261111]
   pull_request:
     branches: [lane20/offline-production-preflight-20261029]
     paths:
@@ -42,6 +42,34 @@ jobs:
           assert "correctedSourcePR=132" in code
           assert "actions/workflows/offline-map-restricted-dispatch.yml/dispatches" in code
           print('Owner-only broker code compiles and cannot repeat code cutover')
+          PY
+      - name: Check out exact accepted raster source for read-only package-plan rehearsal
+        uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source-checkout
+          persist-credentials: false
+      - name: Install the already-pinned native source dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Reconstruct EXACT funded ordinal-18 verification plan without Cloud
+        run: |
+          python - <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'.github/automation')
+          from rrgh_orphan_package_verify_20261111 import source_plan_and_funding,PACKAGE_PLAN,CONTROL,NEW_CONTROL
+          from rrgh_package_authority import digest
+          state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_text())
+          assert state['controlDigest']==NEW_CONTROL
+          plan,evidence,authority=source_plan_and_funding(Path('source-checkout'),state)
+          assert digest(plan)==PACKAGE_PLAN
+          assert plan['finalPackagePhase']['controllerDigest']==CONTROL
+          assert plan['finalPackagePhase']['operation']==state['package']['operation']
+          assert len(plan['finalPackagePhase']['operation']['parts'])==8
+          assert plan['slots'][1]['storedBytes']==16*2**20
+          assert plan['slots'][1]['sourceRequests']==0 and plan['slots'][1]['sourceBytes']==0
+          assert plan['campaign']['ceilingUSD']=='125.00'
+          print('EXACT FUNDED 8-PART READBACK PLAN VERIFIED WITHOUT CLOUD OR SLOT CLAIM')
           PY
       - name: Original controller fingerprint must be completely unchanged
         run: |
