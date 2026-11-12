@@ -1,0 +1,42 @@
+{
+  "format": "rrgh-verified-eight-part-reconcile-v1",
+  "action": "accept-existing-verified-parts-no-dispatch",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-11",
+  "originalStageRunID": 43091451308,
+  "stageJobID": 130769440727,
+  "verifiedRunID": 43138598788,
+  "verifiedJobID": 130919828018,
+  "failedReconcileJobID": 130920484364,
+  "verifiedRunHeadSHA": "5c970e01405a5c421f1018a3dc580523d41ad4bd",
+  "previousStateBlobSHA": "90e5cad8cdb8048a24d30f847af5c848dab7cdbb",
+  "sourceSHA": "d17d0e335ac47e1f6d116e149992cc02d6e4a827",
+  "packagePlanSHA256": "84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb",
+  "controllerDigest": "ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8",
+  "stageReceipt": {
+    "bytes": 2023,
+    "generation": "1794428738795953",
+    "key": "engineering/map-production/plans/84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb/slots/00000/receipt.json",
+    "sha256": "5420c670014f8439036237dd437ba959b4afe3eb0d29759571f4877a8e981925"
+  },
+  "verifiedReceipt": {
+    "bytes": 1503,
+    "generation": "1794449049070634",
+    "key": "engineering/map-production/plans/84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb/slots/00001/receipt.json",
+    "sha256": "a1558fab5d7383487d7734f51dc406172e3261cd540bd8a00c7933dc19c4459c"
+  },
+  "verifiedCheckpoint": {
+    "bytes": 3850,
+    "generation": "1794449048219048",
+    "key": "engineering/map-production/plans/84105fa536ac50fdaeeef5e57d5286d4b557f77a291ff81c72c8423e16f728cb/slots/00001/indexes/3e29db75b2131a8ce05fe240cec5af1a437f0890af62c0fc4f17ab8cd09fd139",
+    "sha256": "3e29db75b2131a8ce05fe240cec5af1a437f0890af62c0fc4f17ab8cd09fd139"
+  },
+  "acceptedParts": 8,
+  "noCloudCredentials": true,
+  "noCloudRequests": true,
+  "noRasterGeneration": true,
+  "noArchiveRestaging": true,
+  "noVerifierSlotReplay": true,
+  "noNextPackageDispatch": true,
+  "noCatalogActivation": true
+}
