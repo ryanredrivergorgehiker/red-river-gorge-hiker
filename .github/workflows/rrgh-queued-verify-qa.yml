@@ -1,7 +1,7 @@
 name: RRGH queued package verification recovery QA
 on:
   push:
-    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111, lane20/queued-verify-import-fix-20261111, lane20/verify-eight-part-cap-fix-20261111]
+    branches: [lane20/queued-verify-recovery-20261111, lane20/queued-verify-trusted-dispatch-20261111, lane20/verify-in-existing-wif-workflow-20261111, lane20/queued-verify-import-fix-20261111, lane20/verify-eight-part-cap-fix-20261111, lane20/verify-capguard-broker-20261111]
   pull_request:
     branches: [lane20/offline-production-preflight-20261029]
     paths:
@@ -38,8 +38,13 @@ jobs:
           code='\n'.join(line[10:] if line.startswith('          ') else line for line in snippet.splitlines())
           compile(code,'exact-owner-broker.py','exec')
           assert 'prepare_code_upgrade(api' not in code
-          assert "ModuleNotFoundError: No module named 'gorge_checkpoint'" in code
-          assert "correctedSourcePR=132" in code
+          assert "ValueError: Existing unconsumed verification slot changed or is not source-free" in code
+          assert "correctedSourcePR=133" in code
+          assert "previousBotVerifierRun=43107815564" in code
+          assert "previousBotVerifierJob=130815661471" in code
+          assert "previousBotRunSHA='b89d05dde34afcf8c3f8c4788486e48d155d3195'" in code
+          assert "retry-one-unclaimed-capguard-failed-verifier-once" in code
+          assert "noRestaging=True" in code
           assert "actions/workflows/offline-map-restricted-dispatch.yml/dispatches" in code
           print('Owner-only broker code compiles and cannot repeat code cutover')
           PY
