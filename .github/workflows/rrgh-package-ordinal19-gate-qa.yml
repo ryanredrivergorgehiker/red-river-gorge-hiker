@@ -1,0 +1,90 @@
+name: RRGH ordinal19 source-only owner gate QA
+on:
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/workflows/rrgh-package-ordinal19-resume.yml
+      - .github/workflows/rrgh-package-ordinal19-gate-qa.yml
+  push:
+    branches: [lane20/ordinal19-guarded-resume-20261112]
+    paths:
+      - .github/workflows/rrgh-package-ordinal19-resume.yml
+      - .github/workflows/rrgh-package-ordinal19-gate-qa.yml
+permissions:
+  contents: read
+jobs:
+  source-only-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: package-source
+          persist-credentials: false
+      - name: Install pinned read-only planning and YAML validation dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r package-source/backend/scripts/requirements-gorge-benchmark.txt
+          python -m pip install --disable-pip-version-check 'pyyaml==6.0.2'
+      - name: Compile gate, check owner path and reconstruct immutable funded package
+        run: |
+          python - <<'PY'
+          import ast, json, sys
+          from pathlib import Path
+          import yaml
+          workflow = yaml.safe_load(Path('.github/workflows/rrgh-package-ordinal19-resume.yml').read_text())
+          assert workflow['permissions'] == {'contents':'write','actions':'write'}
+          assert len(workflow['jobs']) == 1
+          steps = workflow['jobs']['resume']['steps']
+          assert len(steps) == 5
+          script = steps[-1]['run']
+          assert script.startswith("python - <<'PY'\n") and script.endswith("\nPY\n")
+          source = script[len("python - <<'PY'\n"):-len("\nPY\n")]
+          ast.parse(source, filename='ordinal19-owner-gate.py')
+          assert "'GITHUB_ACTOR') == 'ryanredrivergorgehiker'" in source
+          assert 'gh-actions-auth' not in source
+          assert 'dispatch(api, Path(' in source
+          assert 'sourceRequests' in source and 'PACKAGE_STOP' in source
+          assert 'google-github-actions/auth' not in str(workflow)
+          assert 'id-token' not in str(workflow)
+          sys.path.insert(0,str(Path('.github/automation').resolve()))
+          from rrgh_dispatcher import local_digest,validate_state
+          from rrgh_package_controller import source_context
+          import rrgh_package_contract as contract
+          from rrgh_package_funding import PACKAGE_STOP,DELIVERY_RESERVE
+          state=json.loads(Path('.github/automation/rrgh-controller-state.json').read_text())
+          validate_state(state,Path('.'))
+          assert local_digest(Path('.'))==state['controlDigest']
+          assert state['status']=='package-ready' and state['mode']=='package'
+          assert state['package']['ordinal']==19 and state['package']['lastVerified']['verifiedParts']==8
+          assert state['package']['lastVerified']['verifiedIndexes']==0
+          assert [p['partID'] for p in state['package']['operation']['parts']]==[
+            f'core-{n:03d}' for n in range(8,16)]
+          source_plan,authority=source_context('package-source',state)
+          from gorge_campaign_budget import cost,monthly
+          plan,evidence=contract.funding(source_plan,state,authority)
+          carry=state['package']['carry']
+          assert plan['finalPackagePhase']['operation']==state['package']['operation']
+          assert plan['limits']['sourceRequests']==plan['limits']['sourceBytes']==0
+          from decimal import Decimal
+          charge=cost(plan['limits'])
+          assert Decimal(carry['chargedUSD'])+charge<=PACKAGE_STOP
+          assert monthly(carry['storedBytes']+plan['limits']['storedBytes'])<=Decimal('2')
+          assert DELIVERY_RESERVE==Decimal('0.75')
+          print(json.dumps(dict(checked='ordinal19-full-source-funded-plan',
+            originalPartCount=state['package']['lastVerified']['verifiedParts'],
+            nextParts=[p['partID'] for p in state['package']['operation']['parts']],
+            nextMaximumFundingUSD=str(charge),
+            cumulativeModeledUSD=str(Decimal(carry['chargedUSD'])+charge),
+            hardStopUSD='125.00',protectedDeliveryReserveUSD=str(DELIVERY_RESERVE),
+            sourceRequests=0,credentialAccess=False),sort_keys=True))
+          PY
