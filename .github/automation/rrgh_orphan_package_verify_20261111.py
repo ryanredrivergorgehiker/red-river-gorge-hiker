@@ -164,13 +164,21 @@ def source_plan_and_funding(source,state):
     legacy_state['controlDigest']=CONTROL
     sp,authority=source_context(source,legacy_state)
     plan,evidence=funding(sp,legacy_state,authority)
+    from rrgh_package_funding import caps
+    # One funded verifier slot covers ALL eight parts in this operation. Its
+    # originally approved reservation is 8 x 2 MiB, not one part's 2 MiB.
+    # Compare the full slot envelope to the existing immutable contract, not
+    # an invented one-part cap that rejects the original accepted plan.
+    original_slots=caps(state['package']['operation'])
     require(digest(plan)==PACKAGE_PLAN and
         plan['finalPackagePhase']['ordinal']==18 and
         plan['finalPackagePhase']['operation']==state['package']['operation'] and
         plan['finalPackagePhase']['controllerDigest']==CONTROL and
+        plan['slots']==original_slots and len(original_slots)==2 and
+        len(state['package']['operation']['parts'])==8 and
         plan['slots'][1]['sourceRequests']==0 and plan['slots'][1]['sourceBytes']==0 and
-        plan['slots'][1]['storedBytes']<=2*2**20+16384,
-        'Existing unconsumed verification slot changed or is not source-free')
+        plan['slots'][1]['storedBytes']==8*2*2**20,
+        'Existing eight-part unconsumed verification allocation changed')
     return plan,evidence,authority
 
 
