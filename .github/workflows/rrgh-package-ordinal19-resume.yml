@@ -1,0 +1,133 @@
+name: RRGH owner-only ordinal19 package continuation
+run-name: RRGH owner-reviewed ordinal19 source-free packaging
+on:
+  push:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths: [.github/automation/rrgh-package-ordinal19-owner-request.json]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: rrgh-package-ordinal19-owner-once
+  cancel-in-progress: false
+jobs:
+  resume:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.actor == 'ryanredrivergorgehiker' &&
+      github.run_attempt == 1 &&
+      github.ref == 'refs/heads/lane20/offline-production-preflight-20261029'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: package-source
+          persist-credentials: false
+      - name: Install pinned accepted-source analysis dependencies (no Cloud credentials)
+        run: python -m pip install --disable-pip-version-check -r package-source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Reconstruct exact ordinal19 funding and dispatch once by controller CAS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, re, sys
+          from datetime import datetime, timezone
+          from decimal import Decimal
+          from pathlib import Path
+          sys.path.insert(0, str(Path('.github/automation').resolve()))
+          from rrgh_dispatcher import GitHub, dispatch, guard, validate_state
+          from rrgh_package_controller import source_context
+          import rrgh_package_contract as contract
+          from rrgh_package_funding import DELIVERY_RESERVE, PACKAGE_STOP
+
+          guard(os.environ.get('GITHUB_REPOSITORY') == 'ryanredrivergorgehiker/red-river-gorge-hiker' and
+                os.environ.get('GITHUB_REF') == 'refs/heads/lane20/offline-production-preflight-20261029' and
+                os.environ.get('GITHUB_EVENT_NAME') == 'push' and
+                os.environ.get('GITHUB_ACTOR') == 'ryanredrivergorgehiker' and
+                os.environ.get('GITHUB_RUN_ATTEMPT') == '1' and
+                os.environ.get('GITHUB_WORKFLOW_REF') ==
+                'ryanredrivergorgehiker/red-river-gorge-hiker/.github/workflows/rrgh-package-ordinal19-resume.yml@refs/heads/lane20/offline-production-preflight-20261029',
+                'Only unique owner-authenticated ordinal19 workflow is allowed')
+          request = json.loads(Path('.github/automation/rrgh-package-ordinal19-owner-request.json').read_bytes())
+          expected = dict(
+              format='rrgh-owner-ordinal19-package-resume-v1',
+              action='resume-existing-package-ordinal19',
+              authorizedBy='ryanredrivergorgehiker',
+              authorizedOn='2026-11-12',
+              controllerStateBlobSHA='646b853a6bd9470786bc485f192e24bbaa8c9162',
+              controllerDigest='ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8',
+              sourceSHA='d17d0e335ac47e1f6d116e149992cc02d6e4a827',
+              sourcePlanSHA256='a161d6d494b0c737734de937a90c11fc1bb9aac6a0d93ab57bac7304ba75c891',
+              packageOrdinal=19,
+              packagePlanSHA256='54ab942be5911744cec47e7786bd627aac728db814ca6be8bb7b7798ff473fa3',
+              previousVerifiedReceiptSHA256='a1558fab5d7383487d7734f51dc406172e3261cd540bd8a00c7933dc19c4459c',
+              previousVerifiedCheckpointSHA256='3e29db75b2131a8ce05fe240cec5af1a437f0890af62c0fc4f17ab8cd09fd139',
+              nextPartIDs=['core-%03d' % n for n in range(8,16)],
+              limits=dict(sourceRegeneration=False, archiveRestagingOfAcceptedParts=False,
+                  acceptedOutputsImmutable=True, consumedAttemptsImmutable=True,
+                  originalCampaignCeilingUSD='125.00', protectedDeliveryReserveUSD='0.75',
+                  catalogActivation=False, iOSRelease=False, physicalIPhoneAcceptance=False))
+          guard(request == expected, 'Owner authorization is missing, broad, stale or altered')
+          api = GitHub(os.environ['GH_TOKEN'])
+          old, state = api.state()
+          guard(old == request['controllerStateBlobSHA'], 'Live controller moved; no replay or dispatch')
+          validate_state(state, Path('.'))
+          cursor = state.get('package', {})
+          previous = cursor.get('lastVerified', {})
+          progress = state.get('completionProgress', {})
+          guard(state.get('enabled') is True and state.get('status') == 'package-ready' and
+                state.get('mode') == 'package' and
+                state.get('runID') is None and state.get('dispatchID') is None and
+                state.get('sequence') == 1462 and
+                state.get('controlDigest') == request['controllerDigest'] and
+                state.get('sourceSHA') == request['sourceSHA'] and
+                state.get('planSHA256') == request['sourcePlanSHA256'] and
+                progress.get('acceptedRasterTiles') == 278278 and
+                progress.get('remainingRasterTiles') == 0 and
+                progress.get('finalPackageDeliveryComplete') is False and
+                cursor.get('status') == 'ready' and cursor.get('retryCount') == 0 and
+                cursor.get('ordinal') == 19 and
+                cursor.get('planSHA256') == request['packagePlanSHA256'] and
+                cursor.get('authority', {}).get('sourceRequests') == 0 and
+                cursor.get('authority', {}).get('sourceBytes') == 0 and
+                cursor.get('authority', {}).get('activateCatalogs') is False and
+                previous.get('ordinal') == 18 and previous.get('crossRunVerified') is True and
+                previous.get('verifiedParts') == 8 and previous.get('verifiedIndexes') == 0 and
+                previous.get('receiptRef', {}).get('sha256') == request['previousVerifiedReceiptSHA256'] and
+                previous.get('checkpoint', {}).get('sha256') == request['previousVerifiedCheckpointSHA256'] and
+                cursor.get('previousCheckpoint') == previous.get('checkpoint') and
+                cursor.get('operation', {}).get('kind') == 'parts' and
+                [p.get('partID') for p in cursor['operation']['parts']] == request['nextPartIDs'] and
+                len(cursor.get('retainedFailures', [])) == 1,
+                'Exact accepted eight-part recovery or allocated successor changed')
+          expires = datetime.fromisoformat(cursor['expiresAt'].replace('Z','+00:00'))
+          guard(expires > datetime.now(timezone.utc), 'Original funded allocation expired')
+          source_plan, auth = source_context('package-source', state)
+          from gorge_campaign_budget import cost, monthly
+          plan, evidence = contract.funding(source_plan, state, auth)
+          guard(plan['finalPackagePhase']['ordinal'] == 19 and
+                plan['finalPackagePhase']['operation'] == cursor['operation'] and
+                plan['finalPackagePhase']['controllerDigest'] == state['controlDigest'] and
+                plan['finalPackagePhase']['authoritySHA256'] == cursor['authoritySHA256'] and
+                plan['limits']['sourceRequests'] == plan['limits']['sourceBytes'] == 0 and
+                Decimal(cursor['carry']['chargedUSD']) + cost(plan['limits']) <= PACKAGE_STOP and
+                monthly(cursor['carry']['storedBytes']+plan['limits']['storedBytes']) <= Decimal('2') and
+                DELIVERY_RESERVE == Decimal('0.75') and
+                evidence['github']['stopAtLimitVerified'] is True and
+                evidence['github']['hardCeilingUSD'] == 350,
+                'Original exact source-free funded plan or hard spending stop changed')
+          print('ORDINAL19_PREFLIGHT_OK: immutable 8 prior parts, exact next 8 parts, protected budget and no source regeneration')
+          outcome = dispatch(api, Path('.'), old, state, 'package')
+          print(json.dumps(outcome, sort_keys=True))
+          PY
