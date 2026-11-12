@@ -41,14 +41,14 @@ jobs:
           assert os.environ['GITHUB_RUN_ATTEMPT']=='1'
           req=json.loads(Path('.github/automation/rrgh-queued-verifier-dispatch-request.json').read_text())
           assert req==dict(
-              format='rrgh-owner-queued-verifier-dispatch-v3',
-              action='retry-one-unclaimed-import-failed-verifier-once',
+              format='rrgh-owner-queued-verifier-dispatch-v4',
+              action='retry-one-unclaimed-capguard-failed-verifier-once',
               authorizedBy='ryanredrivergorgehiker',authorizedOn='2026-11-11',
               originalRunID=ORIGINAL_RUN,
-              previousBotVerifierRun=43106389852,
-              previousBotVerifierJob=130810724786,
-              previousBotRunSHA='9c20bb01b80969be590f47c3255c49fd0bc65b3b',
-              correctedSourcePR=132,
+              previousBotVerifierRun=43107815564,
+              previousBotVerifierJob=130815661471,
+              previousBotRunSHA='b89d05dde34afcf8c3f8c4788486e48d155d3195',
+              correctedSourcePR=133,
               currentStateBlobSHA='90e5cad8cdb8048a24d30f847af5c848dab7cdbb',
               previousControlDigest=CONTROL,newControlDigest=NEW_CONTROL,
               noCloudWritesInBroker=True,noSourceRegeneration=True,
@@ -56,22 +56,22 @@ jobs:
           api=GitHub(os.environ['GH_TOKEN'])
           current_sha,state,_=preflight(api,Path('.'))
           assert current_sha==req['currentStateBlobSHA']
-          # This prior run is provably PRE-CLOUD-SLOT: the import failed before
-          # the first Slot(...) expression. No old verify slot is replayed.
-          failed=api.call('GET','actions/runs/43106389852')
-          assert failed.get('id')==43106389852 and failed.get('status')=='completed'
+          # This prior run is provably PRE-CLOUD-SLOT: funding validation failed before
+          # the first GCS(...) and Slot(...) expressions. No old verify slot is replayed.
+          failed=api.call('GET','actions/runs/43107815564')
+          assert failed.get('id')==43107815564 and failed.get('status')=='completed'
           assert failed.get('conclusion')=='failure' and failed.get('run_attempt')==1
           assert failed.get('head_sha')==req['previousBotRunSHA']
           assert failed.get('path')=='.github/workflows/offline-map-restricted-dispatch.yml'
           assert failed.get('actor',{}).get('login')=='github-actions[bot]'
-          jobs=api.call('GET','actions/runs/43106389852/jobs?per_page=100')
+          jobs=api.call('GET','actions/runs/43107815564/jobs?per_page=100')
           assert jobs['total_count']==len(jobs['jobs'])<=100
           active=[j for j in jobs['jobs'] if j.get('conclusion')!='skipped']
           assert len(active)==1 and active[0]['name']=='orphan-verify'
-          assert active[0]['id']==130810724786
+          assert active[0]['id']==130815661471
           assert active[0]['status']=='completed' and active[0]['conclusion']=='failure'
-          evidence=gh('actions/jobs/130810724786/logs',api.token,raw=True)
-          assert "ModuleNotFoundError: No module named 'gorge_checkpoint'" in evidence
+          evidence=gh('actions/jobs/130815661471/logs',api.token,raw=True)
+          assert 'ValueError: Existing unconsumed verification slot changed or is not source-free' in evidence
           assert 'final-package-verify' not in evidence and 'GCS HTTP ' not in evidence
           # Exact original map worker identity, after owner-only preflight.
           # No CAS, no raster jobs, no package stage, no automatic retry.
@@ -80,5 +80,5 @@ jobs:
                   'mode':'orphan-verify','source_sha':SOURCE,
                   'plan_sha256':RASTER_PLAN,'sequence':'1462',
                   'dispatch_id':DISPATCH}})
-          print('One independent verify-only run dispatched after proven pre-slot import failure')
+          print('One independent verify-only run dispatched after proven pre-slot funding guard failure')
           PY
