@@ -50,8 +50,6 @@ jobs:
           from rrgh_package_controller import source_context
           import rrgh_package_contract as contract
           from rrgh_package_funding import DELIVERY_RESERVE, PACKAGE_STOP
-          from gorge_checkpoint import DIMENSIONS
-          from gorge_campaign_budget import cost, monthly
 
           guard(os.environ.get('GITHUB_REPOSITORY') == 'ryanredrivergorgehiker/red-river-gorge-hiker' and
                 os.environ.get('GITHUB_REF') == 'refs/heads/lane20/offline-production-preflight-20261029' and
@@ -116,6 +114,7 @@ jobs:
           expires = datetime.fromisoformat(cursor['expiresAt'].replace('Z','+00:00'))
           guard(expires > datetime.now(timezone.utc), 'Original funded allocation expired')
           source_plan, auth = source_context('package-source', state)
+          from gorge_campaign_budget import cost, monthly
           plan, evidence = contract.funding(source_plan, state, auth)
           guard(plan['finalPackagePhase']['ordinal'] == 19 and
                 plan['finalPackagePhase']['operation'] == cursor['operation'] and
