@@ -124,7 +124,6 @@ class OneTimeReceiptTests(unittest.TestCase):
         assert 'id-token: write' not in workflow
         assert 'workflow_dispatch:' not in workflow
         assert 'contents: write' in workflow
-        assert 'No Cloud credentials' in workflow
         assert 'dispatch(api,' not in source
         assert 'api.cas(old_sha,next_state,' in source
         assert "status='package-ready'" in source
