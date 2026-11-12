@@ -6,6 +6,7 @@ verifier slot replay or successor dispatch. Checks exact historical stage and
 verifier jobs, source plan, immutable receipt IDs, and CAS-protected controller.
 """
 import copy
+from decimal import Decimal
 import json
 import os
 from pathlib import Path
@@ -162,8 +163,7 @@ def run(api,source,root=Path('.')):
         [p['partID'] for p in result['nextOperation']['parts']]==
             ['core-%03d'%i for i in range(8,16)] and
         result['settlement']['nextCarry']['priorRasterTiles']==278278 and
-        result['settlement']['nextCarry']['chargedUSD']<'125.00' and
-        result['settlement']['nextCarry']['chargedUSD']!='0',
+        Decimal('0')<Decimal(result['settlement']['nextCarry']['chargedUSD'])<=Decimal('124.25'),
         'Independent receipt, next operation, cost or raster carry incorrect')
 
     # Purely construct the exact successor; there is NO Cloud slot and NO
