@@ -1,0 +1,35 @@
+{
+  "format": "rrgh-owner-ordinal19-package-resume-v1",
+  "action": "resume-existing-package-ordinal19",
+  "authorizedBy": "ryanredrivergorgehiker",
+  "authorizedOn": "2026-11-12",
+  "controllerStateBlobSHA": "646b853a6bd9470786bc485f192e24bbaa8c9162",
+  "controllerDigest": "ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8",
+  "sourceSHA": "d17d0e335ac47e1f6d116e149992cc02d6e4a827",
+  "sourcePlanSHA256": "a161d6d494b0c737734de937a90c11fc1bb9aac6a0d93ab57bac7304ba75c891",
+  "packageOrdinal": 19,
+  "packagePlanSHA256": "54ab942be5911744cec47e7786bd627aac728db814ca6be8bb7b7798ff473fa3",
+  "previousVerifiedReceiptSHA256": "a1558fab5d7383487d7734f51dc406172e3261cd540bd8a00c7933dc19c4459c",
+  "previousVerifiedCheckpointSHA256": "3e29db75b2131a8ce05fe240cec5af1a437f0890af62c0fc4f17ab8cd09fd139",
+  "nextPartIDs": [
+    "core-008",
+    "core-009",
+    "core-010",
+    "core-011",
+    "core-012",
+    "core-013",
+    "core-014",
+    "core-015"
+  ],
+  "limits": {
+    "sourceRegeneration": false,
+    "archiveRestagingOfAcceptedParts": false,
+    "acceptedOutputsImmutable": true,
+    "consumedAttemptsImmutable": true,
+    "originalCampaignCeilingUSD": "125.00",
+    "protectedDeliveryReserveUSD": "0.75",
+    "catalogActivation": false,
+    "iOSRelease": false,
+    "physicalIPhoneAcceptance": false
+  }
+}
