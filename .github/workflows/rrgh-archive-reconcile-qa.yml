@@ -1,0 +1,78 @@
+name: RRGH verified eight-part receipt-only reconcile QA
+on:
+  push:
+    branches: [lane20/reconcile-eight-verified-parts-20261111]
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_archive_receipt_reconcile_20261111.py
+      - .github/automation/test_rrgh_archive_receipt_reconcile_20261111.py
+      - .github/workflows/rrgh-archive-reconcile-only.yml
+      - .github/workflows/rrgh-archive-reconcile-qa.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  read-only-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compile, adversarial jobs and receipt validation, no Cloud import
+        run: |
+          python -m py_compile .github/automation/rrgh_archive_receipt_reconcile_20261111.py .github/automation/test_rrgh_archive_receipt_reconcile_20261111.py
+          python -m unittest discover -s .github/automation -p 'test_rrgh_archive_receipt_reconcile_20261111.py' -v
+      - name: Check out accepted native source solely to reconstruct the old plan
+        uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source-checkout
+          persist-credentials: false
+      - name: Install immutable, pinned analysis dependencies
+        run: python -m pip install --disable-pip-version-check -r source-checkout/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Audit original stage and independent verified receipts without Cloud or state writes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os,sys,copy
+          from pathlib import Path
+          sys.path.insert(0,'.github/automation')
+          from rrgh_dispatcher import GitHub,validate_state
+          from rrgh_dispatch_audit import gh
+          from rrgh_orphan_package_verify_20261111 import original_jobs,source_plan_and_funding,ORIGINAL_RUN,STAGE_JOB
+          from rrgh_archive_receipt_reconcile_20261111 import (
+              VERIFIER_RUN,VERIFIER_JOB,FAILED_RECONCILE_JOB,
+              STATE_BLOB,VERIFY_RECEIPT,VERIFY_CHECKPOINT,
+              verify_job_identity,verified_report)
+          from rrgh_package_controller import audit_run
+          from rrgh_package_authority import digest
+          api=GitHub(os.environ['GH_TOKEN'])
+          live_sha,state=api.state()
+          assert live_sha==STATE_BLOB
+          validate_state(state,Path('.'))
+          plan,evidence,auth=source_plan_and_funding(Path('source-checkout'),state)
+          original,admit,stage,orphan=original_jobs(api,state)
+          r=api.call('GET','actions/runs/'+str(VERIFIER_RUN))
+          res=api.call('GET','actions/runs/'+str(VERIFIER_RUN)+'/jobs?per_page=100')
+          assert res['total_count']==len(res['jobs'])<=100
+          verifier,failed=verify_job_identity(r,res['jobs'])
+          stage_lines=gh('actions/jobs/'+str(STAGE_JOB)+'/logs',api.token,raw=True).splitlines()
+          verify_lines=gh('actions/jobs/'+str(VERIFIER_JOB)+'/logs',api.token,raw=True).splitlines()
+          verified_report(verify_lines)
+          synthetic=[copy.deepcopy(admit),copy.deepcopy(stage),
+                     dict(name='package-verify',status='completed',conclusion='success')]
+          result=audit_run(state,plan,original,synthetic,stage_lines,verify_lines)
+          assert result['verifiedParts']==8 and result['verifiedIndexes']==0
+          assert result['receiptRef']==VERIFY_RECEIPT and result['checkpoint']==VERIFY_CHECKPOINT
+          assert result['settlement']['nextCarry']['priorRasterTiles']==278278
+          assert [p['partID'] for p in result['nextOperation']['parts']]==[
+              'core-%03d'%i for i in range(8,16)]
+          print('ORIGINAL_RECEIPT_INDEPENDENTLY_AUDITED_8_PARTS; zero Cloud, CAS or dispatch')
+          PY
