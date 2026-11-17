@@ -29,7 +29,7 @@ AUTH_FORMAT = 'rrgh-owner-one-time-halted-package-authorization-v1'
 
 
 def git_blob(raw):
-    return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\\0' + raw).hexdigest()
+    return hashlib.sha1(b'blob ' + str(len(raw)).encode() + bytes([0]) + raw).hexdigest()
 
 
 def utc(value):
