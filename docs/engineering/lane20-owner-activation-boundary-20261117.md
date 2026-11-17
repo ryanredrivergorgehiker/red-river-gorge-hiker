@@ -27,3 +27,37 @@ Before any write, the existing protected code fingerprint MUST equal PR140's rev
 New isolated workflow has only `contents: read`, no GitHub write, no Google Cloud credentials, no OIDC, no owner approval file and no production entrypoint execution. Security tests cover identity spoofing, multi-file/multi-commit push, stale checkout, wrong workflow, duplicate JSON, missing approval, no privileged token, CAS conflict, finite original budget and dispatch-failure no replay. Prior PR143's source-only CAS and full historical budget tests are re-run.
 
 **No merge to public main, no activation/owner consent, no worker dispatch, no Cloud expense, no original raster/receipt rewrite, no iOS source or hike data change, and no customer delivery claim in this PR.**
+
+## 2026-11-17 — exact authenticated Contents API push compatibility correction (NO CLOUD)
+
+Owner gave explicit bounded recovery authorization; the exact 36-field consent
+file was committed as the sole file at commit `36c50dd3261e0e359c842b1b84a08ad8fc7d3b03`,
+Git blob `e0f293481349e8c25ba8e8dc2d3c4fc835ab6ea7`, by connected
+authenticated login `ryanredrivergorgehiker`. Real Actions run `44160670337`
+confirmed `event=push`, both actor and triggering actor the owner and first
+attempt. The pre-token event admission stopped with
+`Consent push also altered code, history or another file`, due to requiring
+the two webhook file-list arrays to match exactly. Independent GitHub commit
+API and the actual tree confirm the commit changed **only** the consent file.
+The privileged CAS/dispatch step was **skipped**, controller old blob `24e3468d`
+and accepted archives remained untouched; no Cloud job or GCS expense.
+
+The correction keeps strict exact GitHub owner + triggering owner, reviewed
+workflow ref, branch, event, attempt1, unforced owner push, event sender,
+exact event after-SHA/before-parent binding, exactly one head commit/parent
+and immutable **on-disk `git diff-tree` with just the consent JSON**.
+It removes redundant dependency on advisory `commits[].added/modified`
+and `head_commit.added/modified` arrays, which may be omitted or incomplete
+for Contents API commits. The authoritative checked-out Git tree remains the
+file-scope proof. Tests now explicitly simulate missing webhook file arrays
+while rejecting a mismatched SHA, multiple commits, wrong owner or any extra
+actual changed file. No new identity capability, Cloud permission, IAM,
+retry allowance, spending cap or source change.
+
+The owner approval includes the Git blob SHA of this runner; therefore the
+original approval **MUST NOT** be reused unchanged. After source-only CI,
+merge only this reviewer to the non-main worker, re-pin the exact new runner
+Git blob, then publish a **new** owner-account, single-file consent update,
+inside the existing 24-hour window and with the same expiry-bound plan hash.
+Do not click the failed workflow's Re-run. If any protected state or funding
+changed or approval expired, rederive a wholly new plan and authorization.
