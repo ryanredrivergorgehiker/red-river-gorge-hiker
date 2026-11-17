@@ -40,6 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           python .github/automation/test_rrgh_fresh_oidc_token_candidate_20261117.py -v
+          python .github/automation/test_rrgh_wif_lifecycle_20261116.py -v
           python -m py_compile .github/automation/rrgh_fresh_oidc_token_candidate_20261117.py
 # This workflow explicitly has NO id-token:write, Cloud WIF credentials,
 # Google SDK, dispatch permission, GCS writes, or production activation.
