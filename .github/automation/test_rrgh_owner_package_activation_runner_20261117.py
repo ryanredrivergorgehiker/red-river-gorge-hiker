@@ -46,8 +46,10 @@ class OwnerEventNegativeTests(unittest.TestCase):
 
     def test_owner_single_consent_commit_only(self):
         self.happy()
-        self.assertFalse((ROOT / run.APPROVAL).exists(),
-                         'No actual owner consent should be created by engineering')
+        # The previously authorized owner consent may now exist in the
+        # worker checkout; this test is never allowed to create or change it.
+        self.assertIsNone(run.provenance(dict(ENV), deepcopy(EVENT),
+                                         HEAD, PARENT, [run.APPROVAL]))
 
     def test_identity_ref_and_workflow_provenance_required(self):
         for key, value in [('GITHUB_REPOSITORY', 'other/repo'),
@@ -71,17 +73,35 @@ class OwnerEventNegativeTests(unittest.TestCase):
                 event=deepcopy(EVENT);event[key]=value
                 with self.assertRaises(ValueError):self.happy(event=event)
 
-    def test_multi_commit_or_extra_file_or_merge_rejected(self):
-        for scenario in ('two-commits','two-files','remove-file','bad-head-id'):
+    def test_multi_commit_or_extra_real_git_file_or_merge_rejected(self):
+        for scenario in ('two-commits', 'bad-head-id'):
             event=deepcopy(EVENT)
-            if scenario=='two-commits':event['commits'].append(deepcopy(event['commits'][0]))
-            elif scenario=='two-files':event['commits'][0]['modified'].append('.github/automation/rrgh_dispatcher.py')
-            elif scenario=='remove-file':event['commits'][0]['removed'].append('secret.txt')
-            elif scenario=='bad-head-id':event['head_commit']['id']='0'*40
+            if scenario=='two-commits':
+                event['commits'].append(deepcopy(event['commits'][0]))
+            elif scenario=='bad-head-id':
+                event['head_commit']['id']='0'*40
             with self.subTest(scenario=scenario), self.assertRaises(ValueError):
                 self.happy(event=event)
+        for changed in ([run.APPROVAL,'.github/automation/rrgh_dispatcher.py'],
+                        ['.github/automation/rrgh_dispatcher.py'],
+                        []):
+            with self.subTest(changed=changed), self.assertRaisesRegex(
+                    ValueError,'Git tree shows more than the consent'):
+                self.happy(changed=changed)
+
+    def test_optional_push_path_arrays_do_not_override_real_git_tree(self):
+        event=deepcopy(EVENT)
+        for record in (event['commits'][0],event['head_commit']):
+            # Some GitHub Contents API push events omit these advisory arrays.
+            for field in ('added','modified','removed'):
+                record.pop(field,None)
+        self.happy(event=event)
+        event['head_commit'].update(added=[],modified=[],removed=[])
+        self.happy(event=event)
+        # Even if the event path summary is incomplete, the true checked-out
+        # one-parent Git diff remains strictly one approved file.
         with self.assertRaises(ValueError):
-            self.happy(changed=[run.APPROVAL,'.github/automation/rrgh_dispatcher.py'])
+            self.happy(event=event,changed=[run.APPROVAL,'secret.txt'])
 
     def test_approval_parser_rejects_duplicate_json_or_nonfinite(self):
         for raw in (b'{"action":"yes","action":"no"}',b'{"k":NaN}',b'{"k":Infinity}'):
@@ -136,7 +156,11 @@ class OwnerEventNegativeTests(unittest.TestCase):
         self.assertNotIn('id-token: write',workflow)
         self.assertNotIn('google-github-actions/auth',workflow)
         self.assertNotIn('gcloud',workflow)
-        self.assertFalse((ROOT / run.APPROVAL).exists())
+        # Owner consent is now deliberately present on the working branch.
+        # The runner can only read, never create, that authorization.
+        runner=(ROOT/'.github/automation/rrgh_owner_package_activation_runner_20261117.py').read_text()
+        self.assertNotIn('write_text(',runner)
+        self.assertNotIn('write_bytes(',runner)
         self.assertNotIn(run.WORKFLOW, d.CODE_FILES)
         self.assertNotIn('rrgh_owner_package_activation_runner_20261117.py',d.CODE_FILES)
 

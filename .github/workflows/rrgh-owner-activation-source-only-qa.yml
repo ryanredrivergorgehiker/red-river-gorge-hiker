@@ -51,9 +51,15 @@ jobs:
         run: |
           python .github/automation/test_rrgh_owner_package_activation_runner_20261117.py -v
           python .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py -v
-      - name: Preserve original source/receipt and full 122-part funding proof
+      - name: Validate merged PR140 credential import and halt rejection without live credentials
         run: |
-          python .github/automation/test_rrgh_halted_package_transition_review_20261117.py -v
-          python .github/automation/test_rrgh_full_package_historical_budget_20261117.py -v
+          python .github/automation/test_rrgh_package_wif_cutover_preflight_20261117.py -v
+          python -m unittest test_rrgh_fresh_oidc_token_candidate_20261117.RenewalTests -v
+      - name: Verify original full 122-part budgeting and independent verifier anchor
+        run: |
+          python -m unittest \
+            test_rrgh_full_package_historical_budget_20261117.HistoricalFullFundingProof.test_layout_and_independent_receipt_are_exact_and_source_pinned \
+            test_rrgh_full_package_historical_budget_20261117.HistoricalFullFundingProof.test_conservative_whole_layout_122_parts_including_three_indexes_under_original_caps \
+            test_rrgh_full_package_historical_budget_20261117.HistoricalFullFundingProof.test_failures_storage_guard_must_remain_enabled -v
 # NEVER grant id-token, contents:write, actions:write, GH_TOKEN, Cloud SDK,
 # invoke the live activation workflow, change GitHub state or publish archives.
