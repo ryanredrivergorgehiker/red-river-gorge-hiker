@@ -1,0 +1,46 @@
+name: RRGH proposed fresh-OIDC WIF supplier — source-only QA
+on:
+  push:
+    branches: [lane20/wif-fresh-oidc-source-20261117]
+    paths:
+      - .github/automation/rrgh_fresh_oidc_token_candidate_20261117.py
+      - .github/automation/test_rrgh_fresh_oidc_token_candidate_20261117.py
+      - .github/workflows/rrgh-wif-fresh-oidc-candidate-qa.yml
+      - docs/engineering/lane20-fresh-oidc-design-20261117.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_fresh_oidc_token_candidate_20261117.py
+      - .github/automation/test_rrgh_fresh_oidc_token_candidate_20261117.py
+      - .github/workflows/rrgh-wif-fresh-oidc-candidate-qa.yml
+      - docs/engineering/lane20-fresh-oidc-design-20261117.md
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-fresh-oidc-proposal-source-only
+  cancel-in-progress: false
+jobs:
+  mocked-oidc-sts-regression:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Test only mocked GitHub OIDC/Google STS and preserved controller
+        run: |
+          set -euo pipefail
+          python .github/automation/test_rrgh_fresh_oidc_token_candidate_20261117.py -v
+          python .github/automation/test_rrgh_wif_lifecycle_20261116.py -v
+          python -m py_compile .github/automation/rrgh_fresh_oidc_token_candidate_20261117.py
+# This workflow explicitly has NO id-token:write, Cloud WIF credentials,
+# Google SDK, dispatch permission, GCS writes, or production activation.
