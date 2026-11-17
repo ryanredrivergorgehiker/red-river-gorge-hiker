@@ -46,7 +46,7 @@
   "appRelease": false,
   "activationHelperGitBlobSHA": "0348ef6c4930809c9a4b1c50ac9a7aaae620e996",
   "activationWorkflowGitBlobSHA": "8d7cf9e44129da37dae81c59f0aee526ccf6a808",
-  "activationRunnerGitBlobSHA": "75a8c38a585cc464b75656361972a19a6d368586",
+  "activationRunnerGitBlobSHA": "e7891a53de19e5ed1b152da4ccc4a4169b67ab52",
   "authorizedAt": "2026-11-17T19:15:00Z",
   "expiresAt": "2026-11-18T18:45:00Z"
 }
