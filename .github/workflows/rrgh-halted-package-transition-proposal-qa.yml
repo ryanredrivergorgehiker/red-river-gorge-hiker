@@ -1,0 +1,49 @@
+name: Lane20 halted owner cutover proposal — source only (NO Cloud)
+on:
+  push:
+    branches: [lane20/halted-owner-transition-review-20261117]
+    paths:
+      - .github/automation/rrgh_halted_package_transition_review_20261117.py
+      - .github/automation/test_rrgh_halted_package_transition_review_20261117.py
+      - .github/workflows/rrgh-halted-package-transition-proposal-qa.yml
+      - docs/engineering/lane20-halted-controller-owner-transition-20261117.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_halted_package_transition_review_20261117.py
+      - .github/automation/test_rrgh_halted_package_transition_review_20261117.py
+      - .github/workflows/rrgh-halted-package-transition-proposal-qa.yml
+      - docs/engineering/lane20-halted-controller-owner-transition-20261117.md
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-halted-owner-transition-in-memory-review-only
+  cancel-in-progress: false
+jobs:
+  mock-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: '.github/automation:source/backend/scripts'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source
+          persist-credentials: false
+      - name: Install frozen benchmark dependencies, NO Cloud SDK or WIF
+        run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify exact accepted history, proposed ordinal27 and no-Cloud guard
+        run: python .github/automation/test_rrgh_halted_package_transition_review_20261117.py -v
+      - name: Repeat current full historical 122-part budget proof
+        run: python .github/automation/test_rrgh_full_package_historical_budget_20261117.py -v
+# Source-only; NEVER grant id-token, actions:write, contents:write, GH_TOKEN,
+# Google WIF credentials, GCS, owner state CAS, producer or package dispatch.
