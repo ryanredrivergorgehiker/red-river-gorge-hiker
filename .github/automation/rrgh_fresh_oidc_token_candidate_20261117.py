@@ -69,15 +69,19 @@ def _context(environ):
         raise _Rejected('reviewed workflow identity absent')
     runner_token = environ.get('ACTIONS_ID_TOKEN_REQUEST_TOKEN', '')
     runner_url = environ.get('ACTIONS_ID_TOKEN_REQUEST_URL', '')
-    if (not isinstance(runner_token,str) or not 20 <= len(runner_token) <= 8192
+    if (not isinstance(runner_token,str) or not _BEARER.fullmatch(runner_token)
             or not isinstance(runner_url,str) or len(runner_url)>4096
-            or not runner_url):
+            or not runner_url or any(c in runner_url for c in ('\\r','\\n','\\t'))):
         raise _Rejected('GitHub OIDC permission absent')
-    p = urlsplit(runner_url)
-    host = (p.hostname or '').lower()
+    try:
+        p = urlsplit(runner_url)
+        host = (p.hostname or '').lower()
+        port = p.port
+    except ValueError:
+        raise _Rejected('Malformed GitHub OIDC endpoint') from None
     if (p.scheme != 'https' or (host != 'actions.githubusercontent.com' and
             not host.endswith('.actions.githubusercontent.com')) or
-            p.username is not None or p.password is not None or p.port not in (None,443)
+            p.username is not None or p.password is not None or port not in (None,443)
             or p.fragment or not p.path or '\\' in runner_url):
         raise _Rejected('Untrusted GitHub OIDC endpoint')
     args = parse_qsl(p.query, keep_blank_values=True)
@@ -89,6 +93,8 @@ def _context(environ):
 
 def _read_json(request, phase):
     """Bounded HTTPS JSON only; never print bodies, URLs or exception details."""
+    if phase not in ('github','google-sts'):
+        raise _Rejected('Unreviewed identity exchange phase')
     try:
         with _OPEN(request, timeout=25) as response:
             if response.status != 200 or response.geturl() != request.full_url:
