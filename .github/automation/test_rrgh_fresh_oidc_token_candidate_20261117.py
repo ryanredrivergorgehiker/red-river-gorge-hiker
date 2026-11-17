@@ -106,6 +106,18 @@ class RenewalTests(unittest.TestCase):
                     self.assertEqual(opener.call_count,6)
         self.assertTrue(all(c.kwargs.get('timeout')==25 for c in opener.call_args_list))
 
+    def test_simulated_55_minute_job_renews_fresh_oidc_without_reusing_old_bearer(self):
+        with patch.dict(v2.os.environ,CTX,clear=True):
+            with patch.object(v2.time,'monotonic',return_value=0.0) as clock:
+                with patch.object(v2,'_OPEN',side_effect=success_open) as opener:
+                    for minute in range(56):
+                        clock.return_value=minute*60.0
+                        self.assertEqual(v2.token(),ACCESS)
+                    # Initial request plus 27 renewals, each with separate GitHub
+                    # OIDC assertion AND STS exchange. No real time/network used.
+                    self.assertEqual(opener.call_count,56)
+                    self.assertEqual(v2._UNTIL,3360.0)
+
     def test_rejections_without_oidc_env_do_not_contact_any_endpoint(self):
         for missing in CTX:
             with self.subTest(missing=missing):
@@ -139,6 +151,8 @@ class RenewalTests(unittest.TestCase):
             'https://pipelines.actions.githubusercontent.com/idtoken?audience=override',
             'https://user@pipelines.actions.githubusercontent.com/idtoken',
             'https://pipelines.actions.githubusercontent.com:1234/idtoken',
+            'https://pipelines.actions.githubusercontent.com:bogus/idtoken',
+            'https://pipelines.actions.githubusercontent.com/idtoken\\nHost: evil.invalid',
             'https://pipelines.actions.githubusercontent.com/idtoken#fragment',
             'https://pipelines.actions.githubusercontent.com/idtoken?api-version=2.0&api-version=2.1',
         ):
