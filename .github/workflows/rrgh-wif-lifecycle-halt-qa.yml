@@ -1,0 +1,45 @@
+name: RRGH WIF lifecycle halted-controller QA (no Cloud)
+on:
+  push:
+    branches:
+      - lane20/wif-lifecycle-diagnostics-20261116
+      - lane20/offline-production-preflight-20261029
+    paths:
+      - .github/workflows/rrgh-wif-lifecycle-halt-qa.yml
+      - .github/automation/test_rrgh_wif_lifecycle_20261116.py
+      - docs/engineering/lane20-wif-lifecycle-halt-review-20261116.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/workflows/rrgh-wif-lifecycle-halt-qa.yml
+      - .github/automation/test_rrgh_wif_lifecycle_20261116.py
+      - docs/engineering/lane20-wif-lifecycle-halt-review-20261116.md
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-wif-halted-controller-source-only
+  cancel-in-progress: false
+jobs:
+  offline-credential-regression:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Validate offline-only WIF renewal boundaries and halted controller digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/automation/test_rrgh_wif_lifecycle_20261116.py -v
+# No id-token:write, Google credentials, GCS, source regeneration, archive writes,
+# package dispatch, Cloud reauthorization, or iOS release.
