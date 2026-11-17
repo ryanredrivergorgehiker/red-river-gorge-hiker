@@ -1,0 +1,92 @@
+{
+  "format": "rrgh-historical-verified-layout-budget-anchor-v1",
+  "scope": "GitHub-only recorded evidence; not a Cloud credential or license for dispatch",
+  "sourceSha": "d17d0e335ac47e1f6d116e149992cc02d6e4a827",
+  "stage": {
+    "runID": 43089742588,
+    "jobID": 130763515272,
+    "phase": "final-package-stage",
+    "kind": "layout",
+    "product": {
+      "parts": 122,
+      "metadataSHA256": "4ab453e99f36c823fda0c1bc7dfc6de752ec8fbeb269a9eec8382f4e41f6e8a8",
+      "object": {
+        "bytes": 13219,
+        "generation": "1794426287427172",
+        "key": "engineering/map-production/plans/4fb2365c1775855f0b056b5ab98083887ff424fff87bd9c94e727b93fdbf9d67/slots/00000/indexes/e9ba4e8b61bc5b2523e964711e8b2d9337ba7e810b47c363baa9fd2d741a5304",
+        "sha256": "e9ba4e8b61bc5b2523e964711e8b2d9337ba7e810b47c363baa9fd2d741a5304"
+      },
+      "budgetOutlook": {
+        "remainingWorstCaseUSD": "7.002964074742573499679565428",
+        "modeledTotalUSD": "102.0801798223397970199584962",
+        "modeledStorageUSDPerMonth": "1.741435576893389225006103516",
+        "modeledTotalIncludingDeliveryUSD": "102.8301798223397970199584962",
+        "originalCeilingUSD": "125.00",
+        "protectedReserveUSD": "2.00",
+        "finalDeliveryReserveUSD": "0.75",
+        "invoiceReading": false
+      }
+    }
+  },
+  "independentVerifier": {
+    "runID": 43089742588,
+    "jobID": 130764452361,
+    "phase": "final-package-verify",
+    "status": "verified",
+    "kind": "layout",
+    "ordinal": 16,
+    "verifiedParts": 0,
+    "verifiedIndexes": 0,
+    "sourceRequests": 0,
+    "sourceBytes": 0,
+    "packagePlanSHA256": "4fb2365c1775855f0b056b5ab98083887ff424fff87bd9c94e727b93fdbf9d67",
+    "receiptRef": {
+      "bytes": 1324,
+      "generation": "1794426425245843",
+      "key": "engineering/map-production/plans/4fb2365c1775855f0b056b5ab98083887ff424fff87bd9c94e727b93fdbf9d67/slots/00001/receipt.json",
+      "sha256": "653ecbf5e5c8ee4c53dbacc4e511d37bb8b5b7e025e7230fabf5f13721856ba2"
+    },
+    "checkpoint": {
+      "bytes": 2239,
+      "generation": "1794426424358126",
+      "key": "engineering/map-production/plans/4fb2365c1775855f0b056b5ab98083887ff424fff87bd9c94e727b93fdbf9d67/slots/00001/indexes/a19e36cf638c1cd1d9901fabd3cdf15c5a69f4217c3cc25124d0eaf8278bbbbd",
+      "sha256": "a19e36cf638c1cd1d9901fabd3cdf15c5a69f4217c3cc25124d0eaf8278bbbbd"
+    },
+    "settlement": {
+      "independentReadbackComplete": true,
+      "invoiceReading": false,
+      "observedUsageStoredBytes": 33419643,
+      "nextCarry": {
+        "chargedUSD": "95.09946906735096573829650888",
+        "storedBytes": 43836942245
+      }
+    }
+  },
+  "current": {
+    "controllerBlobSHA": "24e3468dd67d96d541a383a2db93f585c9464b02",
+    "controllerDigest": "ab8c5bc19ef079cdd36df45c13240aad17fa526ba5214e55e32a4bbdb63a32a8",
+    "status": "halted",
+    "ordinal": 26,
+    "runID": 43290954679,
+    "verifiedParts": 32,
+    "verifiedIndexes": 0,
+    "lastIndependentRun": 43271422615,
+    "lastIndependentReceiptSHA256": "1c54e40b0b8e50b5e030ebebf10b2384872664699ade365ecadeb2495e60e4f8",
+    "carry": {
+      "chargedUSD": "98.07584213409313559532165537",
+      "storedBytes": 47342383951
+    },
+    "retainedFailures": 5,
+    "rasterPositions": 278278,
+    "expiredAt": "2026-11-14T19:30:55Z"
+  },
+  "constraints": {
+    "cloudCeilingUSD": "125.00",
+    "packageStopUSD": "122.25",
+    "protectedFinalDeliveryReserveUSD": "0.75",
+    "monthlyStorageCeilingUSD": "2.00",
+    "packageReplaysForbidden": true,
+    "cloudDispatchAuthorized": false,
+    "modelIsInvoice": false
+  }
+}
