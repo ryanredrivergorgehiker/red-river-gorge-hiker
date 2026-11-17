@@ -36,7 +36,7 @@ def evidence():
 
 def state():
     raw=(ROOT/dispatcher.STATE).read_bytes()
-    sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\\0'+raw).hexdigest()
+    sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
     assert sha==evidence()['current']['controllerBlobSHA'], 'Live controller moved'
     return json.loads(raw)
 
