@@ -74,10 +74,11 @@ def provenance(environ, event, checkout_head, checkout_parent, changed_paths):
           and commits[0].get('id') == head
           and event.get('head_commit', {}).get('id') == head,
           'Only one actual owner consent commit is allowed')
-    for record in (commits[0], event['head_commit']):
-        changes = record.get('added', []) + record.get('modified', [])
-        guard(changes == [APPROVAL] and record.get('removed', []) == [],
-              'Consent push also altered code, history or another file')
+    # GitHub's push payload file arrays are advisory and can be absent or
+    # incomplete for Contents API commits. Do not use those arrays as a
+    # security boundary. Exact GitHub event SHA+parent and the *checked-out*
+    # immutable Git tree establish precisely what changed, without trusting
+    # webhook path lists or an unverified commit message.
     guard(changed_paths == [APPROVAL], 'Git tree shows more than the consent file')
     guard(Path(APPROVAL).is_file(), 'Exact owner approval file not present')
 
