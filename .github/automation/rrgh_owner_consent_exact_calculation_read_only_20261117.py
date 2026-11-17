@@ -11,8 +11,8 @@ import hashlib
 import json
 from pathlib import Path
 import sys
-sys.path.insert(0,'.github/automation')
 sys.path.insert(0,'accepted-source/backend/scripts')
+sys.path.insert(0,'.github/automation')  # production runner import precedence
 
 import rrgh_dispatcher as dispatcher
 import rrgh_package_contract as contract
