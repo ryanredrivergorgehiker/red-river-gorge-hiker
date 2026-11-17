@@ -27,7 +27,7 @@ PRIOR_RECEIPT='1c54e40b0b8e50b5e030ebebf10b2384872664699ade365ecadeb2495e60e4f8'
 PROPOSED_MODULE='.github/automation/rrgh_fresh_oidc_token_candidate_20261117.py'
 
 def blob_sha(raw):
-    return hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\\0'+raw).hexdigest()
+    return hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
 
 def live_state():
     data=(ROOT/dispatcher.STATE).read_bytes()
