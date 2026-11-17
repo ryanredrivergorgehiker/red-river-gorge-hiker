@@ -1,0 +1,56 @@
+name: Lane20 protected package WIF cutover preflight — source only
+on:
+  push:
+    branches: [lane20/wif-package-integration-review-20261117]
+    paths:
+      - .github/automation/rrgh_package_runtime.py
+      - .github/automation/rrgh_dispatcher.py
+      - .github/automation/test_rrgh_package_wif_cutover_preflight_20261117.py
+      - .github/workflows/rrgh-wif-package-integration-qa.yml
+      - docs/engineering/lane20-wif-package-cutover-review-20261117.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_package_runtime.py
+      - .github/automation/rrgh_dispatcher.py
+      - .github/automation/test_rrgh_package_wif_cutover_preflight_20261117.py
+      - .github/workflows/rrgh-wif-package-integration-qa.yml
+      - docs/engineering/lane20-wif-package-cutover-review-20261117.md
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-wif-protected-cutover-source-qa
+  cancel-in-progress: false
+jobs:
+  review:
+    if: >-
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: '.github/automation:source/backend/scripts'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source
+          persist-credentials: false
+      - name: Install pinned source-only test dependencies
+        run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Verify exact halted state and proposed fingerprint rejection, no networking
+        run: python .github/automation/test_rrgh_package_wif_cutover_preflight_20261117.py -v
+      - name: Repeat all renewable OIDC identity denial/transport mock tests
+        run: python -m unittest test_rrgh_fresh_oidc_token_candidate_20261117.RenewalTests -v
+      - name: Verify original raster credential helper remains unchanged
+        run: python -m unittest test_rrgh_wif_lifecycle_20261116.CredentialLifetimeTests -v
+# No id-token:write, GH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, Cloud APIs,
+# subprocess dispatch, controller update, package execution, raster or catalog.

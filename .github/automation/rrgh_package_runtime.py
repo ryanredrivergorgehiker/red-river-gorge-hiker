@@ -163,7 +163,8 @@ def run(source_root,phase):
     from gorge_stage_coordinator import private_root,CountedOpener
     from gorge_campaign_budget import add_usage
     from rrgh_package_funding import settle
-    from rrgh_wif_credentials import token
+    # Guarded, reviewed candidate; controller digest must cover the supplier.
+    from rrgh_fresh_oidc_token_candidate_20261117 import token
     from gorge_campaign import emit
     _,source_plan,_=config(source)
     require_owner(source_plan,'produce')
