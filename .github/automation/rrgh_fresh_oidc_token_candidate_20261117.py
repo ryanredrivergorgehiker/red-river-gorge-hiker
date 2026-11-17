@@ -71,7 +71,7 @@ def _context(environ):
     runner_url = environ.get('ACTIONS_ID_TOKEN_REQUEST_URL', '')
     if (not isinstance(runner_token,str) or not _BEARER.fullmatch(runner_token)
             or not isinstance(runner_url,str) or len(runner_url)>4096
-            or not runner_url or any(c in runner_url for c in ('\\r','\\n','\\t'))):
+            or not runner_url or any(c in runner_url for c in ('\r','\n','\t'))):
         raise _Rejected('GitHub OIDC permission absent')
     try:
         p = urlsplit(runner_url)
