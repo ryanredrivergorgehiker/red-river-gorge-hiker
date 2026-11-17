@@ -1,10 +1,10 @@
 # Lane 20 — owner-authenticated single-file activation gate
 
-**November 17, 2026. PRIVATE SOURCE REVIEW. No live authorization, no Cloud access.**
+**November 17, 2026. SOURCE REVIEW ON NON-MAIN LANE20 BRANCH OF A PUBLIC REPOSITORY. No live authorization, no Cloud access.**
 
 ## Correct trigger architecture
 
-GitHub's `workflow_dispatch` requires the workflow file to exist on the repository default branch (public website `main`). Moving the private production controller there is out of scope. Instead, the new workflow `.github/workflows/rrgh-owner-package-recovery-activation.yml` uses **only a push to the existing private Lane20 working branch** that adds or modifies **exactly one owner-authorized consent file** `.github/automation/rrgh-package-owner-approval-20261117.json`. The workflow remains inert until this exact owner consent exists; this PR does **not** create that file.
+GitHub's `workflow_dispatch` requires the workflow file to exist on the repository default branch (public website `main`). Moving the private production controller there is out of scope. Instead, the new workflow `.github/workflows/rrgh-owner-package-recovery-activation.yml` uses **only a push to the existing non-main Lane20 working branch** that adds or modifies **exactly one owner-authorized consent file** `.github/automation/rrgh-package-owner-approval-20261117.json`. The workflow remains inert until this exact owner consent exists; this PR does **not** create that file.
 
 The job requires GitHub-reported repository, full branch, workflow ref, actor and triggering actor equal to the established owner, first attempt only, single non-forced non-deletion commit, event sender identity, exact `before` parent and `after` commit hashes, and actual on-disk `git diff-tree` showing ONLY the consent JSON. The checkout fetches two commits for parent verification. An ordinary PR, bot push, manual rerun, main-branch push, stale SHA, ambiguous multi-commit push, or unrelated code change is denied before a token is passed.
 
