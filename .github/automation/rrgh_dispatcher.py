@@ -37,6 +37,7 @@ CODE_FILES=['.github/automation/'+x for x in (
     'rrgh_package_ingress.py','rrgh_package_readback.py','rrgh_package_funding.py',
     'rrgh_package_contract.py','rrgh_package_records.py','rrgh_package_provenance.py',
     'rrgh_package_indexes.py','rrgh_package_runtime.py','rrgh_package_controller.py',
+    'rrgh_fresh_oidc_token_candidate_20261117.py',
     'rrgh_native_repair.py',
     'rrgh_native_batch.py','fixtures/native-repair-verified-masks-20261110.json',
     'rrgh_final_overviews.py','rrgh_final_dependencies.py','rrgh_final_overview_runtime.py',
