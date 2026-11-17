@@ -1,0 +1,59 @@
+name: Lane20 owner push activation — offline security QA (NO Cloud)
+on:
+  push:
+    branches: [lane20/owner-activation-review-20261117]
+    paths:
+      - .github/automation/rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/rrgh_owner_package_activation_runner_20261117.py
+      - .github/automation/test_rrgh_owner_package_activation_runner_20261117.py
+      - .github/workflows/rrgh-owner-package-recovery-activation.yml
+      - .github/workflows/rrgh-owner-activation-source-only-qa.yml
+      - docs/engineering/lane20-owner-activation-boundary-20261117.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/rrgh_owner_package_activation_runner_20261117.py
+      - .github/automation/test_rrgh_owner_package_activation_runner_20261117.py
+      - .github/workflows/rrgh-owner-package-recovery-activation.yml
+      - .github/workflows/rrgh-owner-activation-source-only-qa.yml
+      - docs/engineering/lane20-owner-activation-boundary-20261117.md
+permissions:
+  contents: read
+concurrency:
+  group: lane20-one-time-owner-activation-review-only
+  cancel-in-progress: false
+jobs:
+  offline-security-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: '.github/automation:source/backend/scripts'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source
+          persist-credentials: false
+      - name: Install frozen historical planning dependencies; no WIF or Cloud SDK
+        run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Reject bad owner push, missing consent, stale code, CAS replay
+        run: |
+          python .github/automation/test_rrgh_owner_package_activation_runner_20261117.py -v
+          python .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py -v
+      - name: Preserve original source/receipt and full 122-part funding proof
+        run: |
+          python .github/automation/test_rrgh_halted_package_transition_review_20261117.py -v
+          python .github/automation/test_rrgh_full_package_historical_budget_20261117.py -v
+# NEVER grant id-token, contents:write, actions:write, GH_TOKEN, Cloud SDK,
+# invoke the live activation workflow, change GitHub state or publish archives.

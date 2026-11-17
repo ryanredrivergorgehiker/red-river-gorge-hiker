@@ -19,8 +19,10 @@ import rrgh_halted_package_cas_dispatch_20261117 as once
 
 CONTEXT = {
     'repository': d.REPO, 'ref': 'refs/heads/' + d.WORKER,
-    'event': 'workflow_dispatch', 'actor': once.OWNER,
+    'event': 'push', 'actor': once.OWNER,
     'triggeringActor': once.OWNER, 'runAttempt': 1,
+    'workflowRef': d.REPO + '/.github/workflows/' +
+        'rrgh-owner-package-recovery-activation.yml@refs/heads/' + d.WORKER,
 }
 NOW = datetime(2026, 11, 17, 17, tzinfo=timezone.utc)
 REPORT = {
@@ -84,6 +86,12 @@ class OneTimeCASReview(unittest.TestCase):
             'finalDeliveryReserveUSD': '0.75', 'sourceRequests': 0,
             'preserveHistory': True, 'oneNewCloudDispatch': True,
             'catalogActivation': False, 'appRelease': False,
+            'activationHelperGitBlobSHA': once.git_blob((ROOT /
+                '.github/automation/rrgh_halted_package_cas_dispatch_20261117.py').read_bytes()),
+            'activationWorkflowGitBlobSHA': once.git_blob((ROOT /
+                '.github/workflows/rrgh-owner-package-recovery-activation.yml').read_bytes()),
+            'activationRunnerGitBlobSHA': once.git_blob((ROOT /
+                '.github/automation/rrgh_owner_package_activation_runner_20261117.py').read_bytes()),
             'authorizedAt': '2026-11-17T16:00:00Z',
             'expiresAt': '2026-11-18T10:00:00Z',
         }
@@ -125,8 +133,8 @@ class OneTimeCASReview(unittest.TestCase):
 
     def test_authenticated_owner_and_first_attempt_required(self):
         for change in ({'actor':'github-actions[bot]'}, {'runAttempt':2},
-                       {'ref':'refs/heads/main'}, {'event':'push'},
-                       {'triggeringActor':'someone-else'}):
+                       {'ref':'refs/heads/main'}, {'event':'workflow_dispatch'},
+                       {'triggeringActor':'someone-else'}, {'workflowRef':'wrong'}):
             with self.subTest(change=change):
                 with self.assertRaisesRegex(ValueError, 'owner execution'):
                     once.preflight(self.api, ROOT, ROOT/'source', self.request,

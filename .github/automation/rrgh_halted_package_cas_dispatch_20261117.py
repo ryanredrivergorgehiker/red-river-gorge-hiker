@@ -46,10 +46,12 @@ def require_owner_context(context):
     require(context == {
         'repository': dispatcher.REPO,
         'ref': 'refs/heads/' + dispatcher.WORKER,
-        'event': 'workflow_dispatch',
+        'event': 'push',
         'actor': OWNER,
         'triggeringActor': OWNER,
         'runAttempt': 1,
+        'workflowRef': dispatcher.REPO + '/.github/workflows/' +
+                       'rrgh-owner-package-recovery-activation.yml@refs/heads/' + dispatcher.WORKER,
     }, 'Authenticated one-time owner execution context missing')
 
 
@@ -85,7 +87,7 @@ def exact_halt(old, old_sha, root):
     return p, prior
 
 
-def verify_authorization(request, old, prior, new_plan_hash, reserve, report, now):
+def verify_authorization(request, old, prior, new_plan_hash, reserve, report, now, root):
     require(type(request) is dict, 'Owner approval object missing')
     expected = {
         'format': AUTH_FORMAT,
@@ -119,6 +121,12 @@ def verify_authorization(request, old, prior, new_plan_hash, reserve, report, no
         'oneNewCloudDispatch': True,
         'catalogActivation': False,
         'appRelease': False,
+        'activationHelperGitBlobSHA': git_blob((Path(root) /
+            '.github/automation/rrgh_halted_package_cas_dispatch_20261117.py').read_bytes()),
+        'activationWorkflowGitBlobSHA': git_blob((Path(root) /
+            '.github/workflows/rrgh-owner-package-recovery-activation.yml').read_bytes()),
+        'activationRunnerGitBlobSHA': git_blob((Path(root) /
+            '.github/automation/rrgh_owner_package_activation_runner_20261117.py').read_bytes()),
     }
     require(set(request) == set(expected) | {'authorizedAt', 'expiresAt'},
             'Owner approval fields incomplete or unreviewed')
@@ -195,7 +203,7 @@ def preflight(api, root, source, request, context, now=None):
     require(Decimal(p['carry']['chargedUSD']) + reserve <= Decimal('122.25')
             and monthly(p['carry']['storedBytes'] + plan['limits']['storedBytes']) <= Decimal('2'),
             'Next bounded source-free allocation exceeds original limits')
-    verify_authorization(request, old, prior, contract.digest(plan), reserve, report, now)
+    verify_authorization(request, old, prior, contract.digest(plan), reserve, report, now, root)
     ready.setdefault('controllerUpgradeHistory', []).append({
         'kind': 'owner-once-halted-package-ordinal27',
         'authorizedBy': OWNER, 'authorizedAt': request['authorizedAt'],
