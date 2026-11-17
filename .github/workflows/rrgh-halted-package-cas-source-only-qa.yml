@@ -1,0 +1,51 @@
+name: Lane20 one-time halted package CAS — offline negative QA only
+on:
+  push:
+    branches: [lane20/halted-package-cas-review-20261117]
+    paths:
+      - .github/automation/rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/workflows/rrgh-halted-package-cas-source-only-qa.yml
+      - docs/engineering/lane20-one-time-halted-package-cas-20261117.md
+  pull_request:
+    branches: [lane20/offline-production-preflight-20261029]
+    paths:
+      - .github/automation/rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py
+      - .github/workflows/rrgh-halted-package-cas-source-only-qa.yml
+      - docs/engineering/lane20-one-time-halted-package-cas-20261117.md
+permissions:
+  contents: read
+concurrency:
+  group: rrgh-one-time-halted-package-cas-offline-qa
+  cancel-in-progress: false
+jobs:
+  no-cloud-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: '.github/automation:source/backend/scripts'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/checkout@v4
+        with:
+          ref: d17d0e335ac47e1f6d116e149992cc02d6e4a827
+          path: source
+          persist-credentials: false
+      - name: Install frozen local benchmark dependencies, never Cloud SDK
+        run: python -m pip install --disable-pip-version-check -r source/backend/scripts/requirements-gorge-benchmark.txt
+      - name: Test negative gates and one-time mocked CAS dispatch only
+        run: python .github/automation/test_rrgh_halted_package_cas_dispatch_20261117.py -v
+      - name: Retest exact live-old controller proposal and historical budget
+        run: |
+          python .github/automation/test_rrgh_halted_package_transition_review_20261117.py -v
+          python .github/automation/test_rrgh_full_package_historical_budget_20261117.py -v
+# No credentials, no id-token, no actions:write, no contents:write, no Cloud.
+# This workflow does NOT invoke execute() with a real API and cannot transition.
