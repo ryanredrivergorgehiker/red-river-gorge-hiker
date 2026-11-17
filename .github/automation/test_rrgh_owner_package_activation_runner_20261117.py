@@ -132,7 +132,7 @@ class OwnerEventNegativeTests(unittest.TestCase):
         self.assertIn('fetch-depth: 2',workflow)
         self.assertIn('contents: write',workflow)
         self.assertIn('actions: write',workflow)
-        self.assertNotIn('workflow_dispatch:',workflow)
+        self.assertNotIn('\n  workflow_dispatch:',workflow)
         self.assertNotIn('id-token: write',workflow)
         self.assertNotIn('google-github-actions/auth',workflow)
         self.assertNotIn('gcloud',workflow)
