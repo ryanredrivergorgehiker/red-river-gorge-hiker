@@ -51,7 +51,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python .github/automation/rrgh_owner_package_activation_runner_20261117.py --execute
 # Not workflow_dispatch: that would require publishing a new activation workflow
-# on the public website default branch. This private-branch workflow is inert
+# on the public website default branch. This non-main workflow is inert
 # until a separately authorized, exactly pinned approval JSON file is added by
 # the actual GitHub owner as the sole changed file in one new push commit.
 # NO id-token:write, NO Google Cloud credentials, NO re-run and NO auto-retry.
