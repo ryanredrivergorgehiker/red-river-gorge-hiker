@@ -51,6 +51,6 @@ jobs:
       - name: Repeat all renewable OIDC identity denial/transport mock tests
         run: python -m unittest test_rrgh_fresh_oidc_token_candidate_20261117.RenewalTests -v
       - name: Verify original raster credential helper remains unchanged
-        run: python .github/automation/test_rrgh_wif_lifecycle_20261116.py -v
+        run: python -m unittest test_rrgh_wif_lifecycle_20261116.CredentialLifetimeTests -v
 # No id-token:write, GH_TOKEN, GOOGLE_APPLICATION_CREDENTIALS, Cloud APIs,
 # subprocess dispatch, controller update, package execution, raster or catalog.
