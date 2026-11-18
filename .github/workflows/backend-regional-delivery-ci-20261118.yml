@@ -1,0 +1,43 @@
+name: Lane20 regional generation-pinned delivery CI
+on:
+  push:
+    branches: [backend/regional-core-function-integration-20261118]
+    paths:
+      - backend/functions/src/delivery.js
+      - backend/functions/src/index.js
+      - backend/functions/test/delivery.unit.test.js
+      - .github/workflows/backend-regional-delivery-ci-20261118.yml
+
+permissions:
+  contents: read
+
+jobs:
+  regional-function-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify exact protected-download and callable syntax
+        run: |
+          node --check backend/functions/src/delivery.js
+          node --check backend/functions/src/index.js
+          node --check backend/functions/test/delivery.unit.test.js
+          node backend/scripts/phase3-readiness.mjs
+      - name: Install existing backend dependencies
+        run: npm install --prefix backend/functions --no-audit --no-fund
+      - name: Run existing Firebase emulator security and contract tests
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --project demo-rrgh-entitlements
+          --only auth,firestore,functions,storage
+          "npm --prefix functions test"
