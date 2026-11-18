@@ -75,8 +75,8 @@ class SyntheticClient:
     def record(self, ref):
         self.calls += 2  # Synthetic count only; NO real external reads
         payload = json.dumps(self.documents[ref["key"]]).encode()
-        if ref["key"].endswith("receipt"):
-            return payload
+        # Every protected record may use the authenticated compressed format,
+        # including independently verified terminal receipts.
         return MAGIC + zlib.compress(payload, 9)
     def candidate_objects(self, candidates):
         self.calls += len(candidates["catalogs"])
@@ -92,6 +92,16 @@ class CandidateRemoteContractTests(unittest.TestCase):
         self.assertEqual(result["cloudMetadataAndMediaRequests"], 131)
         self.assertIs(result["catalogActivated"], False)
         self.assertEqual(result["archivalPartBodiesRedownloaded"], 0)
+
+    def test_real_receipt_encoding_is_compressed_and_decodes_before_reconciliation(self):
+        state, candidates, checkpoint, receipt = private_fixture()
+        client = SyntheticClient(state, candidates, checkpoint, receipt)
+        raw = client.record(state["package"]["lastVerified"]["receiptRef"])
+        self.assertTrue(raw.startswith(MAGIC))
+        decoded = decode_private_record(raw)
+        self.assertEqual(decoded["format"], "rrgh-slot-receipt-v1")
+        self.assertEqual(decoded["result"]["verifiedParts"], 122)
+        reconcile_verified_receipts(state, candidates, checkpoint, decoded)
 
     def test_rejects_broken_accepted_part_provenance(self):
         state, candidates, checkpoint, receipt = private_fixture()
