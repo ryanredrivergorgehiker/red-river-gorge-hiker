@@ -20,6 +20,7 @@ import zlib
 from pathlib import Path
 
 from preflight_verified_regional_catalog_20261118 import validate
+from prepare_inactive_regional_catalog_staging_20261118 import staging_plan
 
 BUCKET = "rrgh-nonproduction-protected-packages"
 MAGIC = b"RRGH-CHECKPOINT-Z1\n"
@@ -180,7 +181,7 @@ def reconcile_verified_receipts(controller, candidates, checkpoint, receipt):
     require(len(visited) == 125, "Checkpoint/candidate coverage not exact")
 
 
-def audit(controller, client):
+def audit(controller, client, private_staging_output=None):
     package = controller.get("package", {})
     authority = package.get("authority", {})
     require(controller.get("status") == "package-validation-waiting" and
@@ -197,6 +198,17 @@ def audit(controller, client):
     reconcile_verified_receipts(controller, candidate, checkpoint, receipt)
     client.candidate_objects(candidate)
     require(client.calls == 131, "Unexpected number of authenticated GCS reads")
+    if private_staging_output is not None:
+        # Only after all 131 authenticated immutable checks; never expose
+        # private object paths through CI artifacts, logs, or source control.
+        plan = staging_plan(controller, candidate)
+        destination = Path(private_staging_output).expanduser().resolve()
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(destination, flags, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(plan, stream, sort_keys=True, separators=(",", ":"))
+        require(destination.stat().st_mode & 0o777 == 0o600,
+                "Private staging plan was not restricted to mode 0600")
     return {
         "status": "READ_ONLY_PINNED_GCS_METADATA_VERIFIED",
         "candidateBytesHashGeneration": True,
@@ -219,10 +231,12 @@ def audit(controller, client):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--controller", type=Path, required=True)
+    parser.add_argument("--private-staging-output", type=Path, default=None)
     args = parser.parse_args()
     controller = json.loads(args.controller.read_text())
     token = os.environ.get("RRGH_GCS_READONLY_TOKEN", "")
-    result = audit(controller, ReadOnlyGCS(token))
+    result = audit(controller, ReadOnlyGCS(token),
+                   private_staging_output=args.private_staging_output)
     print(json.dumps(result, sort_keys=True))
 
 
