@@ -32,7 +32,7 @@ jobs:
   deploy-and-verify:
     # A one-time READ-ONLY audit merge must never redeploy any backend functions,
     # rebuild Gorge Base, upload packages or mutate a Firestore catalog.
-    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message, '[regional-readonly-verification]') || startsWith(github.event.head_commit.message, '[regional-inactive-stage]') || startsWith(github.event.head_commit.message, '[regional-functions-deploy]'))) }}
+    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message, '[regional-readonly-verification]') || startsWith(github.event.head_commit.message, '[regional-inactive-stage]') || startsWith(github.event.head_commit.message, '[regional-functions-deploy]') || startsWith(github.event.head_commit.message, '[regional-nonprod-activate]'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -550,3 +550,156 @@ jobs:
             test "$state" = "ACTIVE"
             echo "FUNCTION_DEPLOYED_ACTIVE=$f"
           done
+
+
+  regional-core-nonprod-activate-and-smoke:
+    # Authenticated readback, exact staged-document activation and bounded live
+    # smoke under existing nonproduction WIF identity. No producer/deploy job.
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/backend/phase-3-nonprod' &&
+      github.run_attempt == 1 &&
+      startsWith(github.event.head_commit.message, '[regional-nonprod-activate]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 274364a5b0b67000dcdd45b03b777c96d6cb315a
+          path: protected-controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 2299e457008b9b74ba98308001586f1ff4978895
+          path: verifier-source
+          persist-credentials: false
+      - name: Exact authority guard and source-only negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C protected-controller hash-object .github/automation/rrgh-controller-state.json)" = "04bd859c55d981cbacdc259ea59ba8d4ae12e459"
+          test "$(git -C verifier-source rev-parse HEAD)" = "2299e457008b9b74ba98308001586f1ff4978895"
+          cd verifier-source
+          for pattern in test_activate_regional_catalog_nonprod_20261118.py test_verify_remote_regional_candidate_readonly_20261118.py test_insert_inactive_regional_catalog_nonprod_20261118.py; do
+            python3 -m unittest discover -s backend/scripts -p "$pattern" -q
+          done
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bounded native JavaScript smoke syntax check
+        run: node --check backend/scripts/nonprod-regional-core-smoke.mjs
+      - name: Existing exact nonproduction WIF identity
+        id: regional-auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+          token_format: access_token
+          access_token_lifetime: 600s
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+      - name: Fresh 131-read independent immutable object re-attestation
+        shell: bash
+        env:
+          RRGH_GCS_READONLY_TOKEN: ${{ steps.regional-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          umask 077
+          python3 verifier-source/backend/scripts/verify_remote_regional_candidate_readonly_20261118.py \
+            --controller protected-controller/.github/automation/rrgh-controller-state.json \
+            --private-staging-output "$RUNNER_TEMP/rrgh-activation-private.json"
+          test "$(stat -c '%a' "$RUNNER_TEMP/rrgh-activation-private.json")" = 600
+      - name: Atomic 125-document nonproduction-only activation and readback
+        shell: bash
+        env:
+          RRGH_GOOGLE_ACCESS_TOKEN: ${{ steps.regional-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          python3 verifier-source/backend/scripts/activate_regional_catalog_nonprod_20261118.py \
+            --private-stage-plan "$RUNNER_TEMP/rrgh-activation-private.json"
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Resolve existing Functions and exact Firebase test config
+        shell: bash
+        run: |
+          set -euo pipefail
+          for fn in rrghAccountApi rrghPackageDownload; do
+            test "$(gcloud functions describe "$fn" --gen2 --region=us-east5 --project=rrgh-nonproduction --format='value(state)')" = ACTIVE
+          done
+          URL="$(gcloud functions describe rrghAccountApi --gen2 --region=us-east5 --project=rrgh-nonproduction --format='value(serviceConfig.uri)')"
+          test -n "$URL"
+          echo "RRGH_FUNCTION_URL=$URL" >> "$GITHUB_ENV"
+          npx --yes firebase-tools@15.30.2 apps:sdkconfig ios \
+            '1:843975209563:ios:68d59290136388c8f0857e' \
+            --project rrgh-nonproduction --non-interactive > "$RUNNER_TEMP/rrgh-firebase-config.plist"
+          API_KEY="$(python3 -c 'import plistlib,sys;p=plistlib.load(open(sys.argv[1],"rb"));assert p["BUNDLE_ID"]=="com.redrivergorgehiker.ios" and p["PROJECT_ID"]=="rrgh-nonproduction" and p["GOOGLE_APP_ID"]=="1:843975209563:ios:68d59290136388c8f0857e";print(p["API_KEY"],end="")' "$RUNNER_TEMP/rrgh-firebase-config.plist")"
+          test -n "$API_KEY"
+          echo "::add-mask::$API_KEY"
+          echo "FIREBASE_API_KEY=$API_KEY" >> "$GITHUB_ENV"
+      - name: Install existing Admin SDK dependencies without deployment
+        run: npm install --prefix backend/functions --no-audit --no-fund --ignore-scripts
+      - name: Verify REAL signed Base UID and 3 indexes + bounded original parts
+        run: node backend/scripts/nonprod-regional-core-smoke.mjs
+      - name: Failure safety rollback to private staged state (no object changes)
+        if: failure()
+        shell: bash
+        env:
+          RRGH_GOOGLE_ACCESS_TOKEN: ${{ steps.regional-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          P="$RUNNER_TEMP/rrgh-activation-private.json"
+          if [ ! -f "$P" ] || [ -z "$RRGH_GOOGLE_ACCESS_TOKEN" ]; then
+            echo "NO_AUTHENTICATED_PRIVATE_PLAN_TO_ROLL_BACK"
+            exit 0
+          fi
+          export RRGH_PRIVATE_PLAN="$P"
+          cd verifier-source/backend/scripts
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          from activate_regional_catalog_nonprod_20261118 import fetch_all,build_transition,commit_once
+          plan=json.loads(Path(os.environ["RRGH_PRIVATE_PLAN"]).read_text())
+          token=os.environ["RRGH_GOOGLE_ACCESS_TOKEN"]
+          try:
+              fetch_all(plan,token,expected_active=False)
+              print("NONPROD_CATALOG_ALREADY_STAGED")
+          except Exception:
+              locks=fetch_all(plan,token,expected_active=True)
+              commit_once(build_transition(plan,locks,activate=False),token)
+              fetch_all(plan,token,expected_active=False)
+              print("NONPROD_CATALOG_ROLLED_BACK_TO_INACTIVE")
+          PY
+      - name: Delete transient confidential artifacts
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/rrgh-activation-private.json"
+          rm -f "$RUNNER_TEMP/rrgh-firebase-config.plist"
+      - name: Publish actual regional authenticated delivery outcome
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULT: ${{ job.status }}
+        run: |
+          if [ "$JOB_RESULT" = success ]; then
+            STATE=success
+            DESCRIPTION="125 active and original indexes + archive ranges passed Base/UID smoke"
+          else
+            STATE=failure
+            DESCRIPTION="Regional activation/probe failed; inspect readback and rollback"
+          fi
+          gh api --method POST "/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state="$STATE" -f context="rrgh/regional-core-nonprod-live" \
+            -f description="$DESCRIPTION"
