@@ -192,7 +192,7 @@ def audit(controller, client):
     # Read immutable records only, in this exact order. Do not read archives.
     candidate = decode_private_record(client.record(verified["catalogCandidates"]))
     checkpoint = decode_private_record(client.record(verified["checkpoint"]))
-    receipt = json.loads(client.record(verified["receiptRef"]))
+    receipt = decode_private_record(client.record(verified["receiptRef"]))
     outcome = validate(controller, candidate)
     reconcile_verified_receipts(controller, candidate, checkpoint, receipt)
     client.candidate_objects(candidate)
