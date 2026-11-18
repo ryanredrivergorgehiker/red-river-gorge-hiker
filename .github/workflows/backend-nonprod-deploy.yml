@@ -30,6 +30,9 @@ env:
 
 jobs:
   deploy-and-verify:
+    # A one-time READ-ONLY audit merge must never redeploy any backend functions,
+    # rebuild Gorge Base, upload packages or mutate a Firestore catalog.
+    if: ${{ !(github.event_name == 'push' && startsWith(github.event.head_commit.message, '[regional-readonly-verification]')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -325,3 +328,72 @@ jobs:
             -f state="$STATE" \
             -f context="rrgh/backend-nonprod-deploy" \
             -f description="$DESCRIPTION"
+
+  regional-core-readonly-verification:
+    # Reuse the EXACT pre-existing trusted nonproduction workflow and WIF
+    # identity. This is NOT the rejected standalone production-provider workflow.
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/backend/phase-3-nonprod' &&
+      github.run_attempt == 1 &&
+      startsWith(github.event.head_commit.message, '[regional-readonly-verification]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout pinned original protected controller (NO producer)
+        uses: actions/checkout@v4
+        with:
+          ref: 274364a5b0b67000dcdd45b03b777c96d6cb315a
+          path: protected-controller
+          persist-credentials: false
+
+      - name: Checkout exact previously tested PR148 verification helper (NO writes)
+        uses: actions/checkout@v4
+        with:
+          ref: 288171cb85604ffc6033795354090bef528ff40f
+          path: verifier-source
+          persist-credentials: false
+
+      - name: Verify immutable source identities and source-only negative tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C protected-controller hash-object .github/automation/rrgh-controller-state.json)" = "04bd859c55d981cbacdc259ea59ba8d4ae12e459"
+          test "$(git -C verifier-source rev-parse HEAD)" = "288171cb85604ffc6033795354090bef528ff40f"
+          python3 -m py_compile verifier-source/backend/scripts/verify_remote_regional_candidate_readonly_20261118.py
+          cd verifier-source
+          python3 -m unittest discover -s backend/scripts -p 'test_verify_remote_regional_candidate_readonly_20261118.py' -v
+          cd ..
+
+      - name: Authenticate via existing restricted nonproduction GitHub identity
+        id: audited-auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: false
+          export_environment_variables: false
+          token_format: access_token
+          access_token_lifetime: 600s
+          access_token_scopes: https://www.googleapis.com/auth/devstorage.read_only
+
+      - name: Independently attest 3 immutable record bodies and 125 original metadata objects
+        shell: bash
+        env:
+          RRGH_GCS_READONLY_TOKEN: ${{ steps.audited-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$RRGH_GCS_READONLY_TOKEN"
+          python3 verifier-source/backend/scripts/verify_remote_regional_candidate_readonly_20261118.py \
+            --controller protected-controller/.github/automation/rrgh-controller-state.json
+
+      - name: Preserve read-only audit outcome without credentials or object names
+        if: always()
+        shell: bash
+        run: |
+          echo "AUDIT_FINISHED_NO_GCS_WRITES_NO_FIRESTORE_WRITES_NO_ARCHIVES_FETCHED"
