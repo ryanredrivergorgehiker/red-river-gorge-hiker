@@ -1,5 +1,7 @@
 import copy
 import json
+import tempfile
+from pathlib import Path
 import unittest
 import zlib
 
@@ -102,6 +104,23 @@ class CandidateRemoteContractTests(unittest.TestCase):
         self.assertEqual(decoded["format"], "rrgh-slot-receipt-v1")
         self.assertEqual(decoded["result"]["verifiedParts"], 122)
         reconcile_verified_receipts(state, candidates, checkpoint, decoded)
+
+    def test_private_staging_artifact_requires_full_audit_and_is_mode_0600(self):
+        state, candidates, checkpoint, receipt = private_fixture()
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "inert-stage-plan.json"
+            client = SyntheticClient(state, candidates, checkpoint, receipt)
+            result = audit(state, client, private_staging_output=path)
+            self.assertEqual(result["cloudMetadataAndMediaRequests"], 131)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            payload = json.loads(path.read_text())
+            self.assertEqual(len(payload["entries"]), 125)
+            self.assertFalse(payload["nonproductionCatalogActivation"])
+            self.assertTrue(all(entry["data"]["active"] is False
+                                for entry in payload["entries"]))
+            with self.assertRaises(FileExistsError):
+                audit(state, SyntheticClient(state,candidates,checkpoint,receipt),
+                      private_staging_output=path)
 
     def test_rejects_broken_accepted_part_provenance(self):
         state, candidates, checkpoint, receipt = private_fixture()
