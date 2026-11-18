@@ -168,7 +168,15 @@ export const rrghPackageDownload = onRequest(
       packageData.version !== capability.packageVersion ||
       packageData.requiredEntitlement !== capability.requiredEntitlement ||
       packageData.storageBucket !== capability.storageBucket ||
-      packageData.objectName !== capability.objectName
+      packageData.objectName !== capability.objectName ||
+      // A renewed regional object must invalidate the old capability even
+      // when its human-facing version or storage object name is unchanged.
+      String(packageData.objectGeneration ?? "") !==
+        String(capability.objectGeneration ?? "") ||
+      (capability.packageSha256 != null &&
+        packageData.sha256 !== capability.packageSha256) ||
+      (capability.packageByteCount != null &&
+        Number(packageData.byteCount) !== capability.packageByteCount)
     ) {
       packageError(res, 409, "package_version_superseded");
       return;
