@@ -28,3 +28,16 @@ This does not access Cloud, charge usage, alter customer records or authorize a 
 
 Issue: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/issues/147
 iOS dependency: https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker-ios/pull/188
+
+
+## Additional private catalog staging-plan preparation (same source-only PR)
+`backend/scripts/prepare_inactive_regional_catalog_staging_20261118.py` consumes the exact immutable controller JSON and independently downloaded/decoded candidate JSON; it calls the strict 125-entry preflight, sorts and explicitly allowlists all 125 package fields, then prepares a *private* Firestore `packageCatalog` document plan with `active=false`, `contentReady=false`, `lifecycle=staged`, and `deliveryState=not_ready` on every row. It preserves `objectGeneration` strictly as a canonical string. It writes only a new user-specified local file with restrictive permission mode 0600 and refuses to overwrite an existing plan. It does **not** import Firebase Admin, connect to Firestore, touch GCS, activate delivery, sign indexes or change protected source bytes.
+
+Keep the generated 125-document plan **outside GitHub, public CI artifacts, Google Drive public links and chat text** because it contains private Cloud Storage object paths. A local source-only command, *after* genuine authenticated private candidate readback, is:
+```bash
+python3 backend/scripts/prepare_inactive_regional_catalog_staging_20261118.py \
+  --controller <VERIFIED_PRIVATE_CONTROLLER_JSON> \
+  --decoded-candidates <INDEPENDENTLY_VERIFIED_DECODED_CANDIDATES_JSON> \
+  --private-output <NEW_RESTRICTED_LOCAL_FILENAME.json>
+```
+Added unit fixtures exercise staging flags, 125 unique IDs, no source mutation and four rejected incomplete/drifted inputs. **No actual native test execution or remote record readback is claimed by a source commit.** Any future Firestore staging or activation must be distinct, reviewed, authenticated and conservatively budgeted, preserving versioned rollback and UID/lease/part reauthorization.
