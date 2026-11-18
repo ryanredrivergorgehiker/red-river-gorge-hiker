@@ -41,3 +41,24 @@ python3 backend/scripts/prepare_inactive_regional_catalog_staging_20261118.py \
   --private-output <NEW_RESTRICTED_LOCAL_FILENAME.json>
 ```
 Added unit fixtures exercise staging flags, 125 unique IDs, no source mutation and four rejected incomplete/drifted inputs. **No actual native test execution or remote record readback is claimed by a source commit.** Any future Firestore staging or activation must be distinct, reviewed, authenticated and conservatively budgeted, preserving versioned rollback and UID/lease/part reauthorization.
+
+
+## Owner-authenticated remote readback route — live gate (2026-11-18)
+
+The existing nonproduction Google Cloud WIF provider and deploy identity were reused **without any IAM change** in one bounded, owner-triggered read-only GitHub Actions job (run [44374080321](https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker/actions/runs/44374080321)). The unchanged protected controller blob and 4 synthetic remote-contract tests PASSED locally. The WIF step FAILED `unauthorized_client` due to the provider's existing attribute condition, **before the first GCS GET**. Remote readback did not run. Do not retry this standalone workflow, broaden the provider condition, use the producer's restricted identity, or reactivate retired package jobs. Prior autonomous-controller history likewise records standalone WIF rejection with the protected worker identity accepted only through its established gate.
+
+The approved owner-authenticated alternative is Google Cloud Console **Cloud Shell** in the existing `rrgh-nonproduction` Google Cloud project, signed in by the authorized owner. This is not a request to paste credentials, tokens, or private records into chat. The source-only preflight `verify_remote_regional_candidate_readonly_20261118.py` can run in that session with the owner's own short-lived `gcloud auth print-access-token` (never echo or share it). The verifier uses only GET operations, an exact unchanged controller, 3 immutable small record byte reads (candidate, checkpoint, receipt), 125 current object metadata reads, a strict 131-call/3-MiB ceiling, no archive bodies, and prints only a redacted PASS/FAIL summary. It checks complete inactive candidates and their original verified receipt lineage; this is **remote identity validation, not Firestore staging/activation**.
+
+Owner Cloud Shell one-time command, only after verifying the project context:
+```sh
+gcloud config set project rrgh-nonproduction
+git clone --depth 1 --branch lane20/nonprod-regional-catalog-generation-gate-20261118 \
+  https://github.com/ryanredrivergorgehiker/red-river-gorge-hiker.git rrgh-regional-readonly
+cd rrgh-regional-readonly
+RRGH_GCS_READONLY_TOKEN="$(gcloud auth print-access-token)" \
+  python3 backend/scripts/verify_remote_regional_candidate_readonly_20261118.py \
+  --controller .github/automation/rrgh-controller-state.json
+```
+Do not post full Cloud Shell history, access token, identity file, private object path or raw source record to chat. If the signed-in account lacks `storage.objects.get` for the existing private bucket, stop and escalate only that permission; **do not grant broader IAM automatically**. The first command only sets the existing project locally; the clone only reads public GitHub; the Python command is a bounded read-only audit.
+
+After an independently authenticated PASS, prepare the inactive private 125-entry staging plan and verify production/customer access remains denied. Actual nonproduction Firestore write and activation require their own separately reviewed controlled change. No default/production branch merge or customer rollout is implied.
