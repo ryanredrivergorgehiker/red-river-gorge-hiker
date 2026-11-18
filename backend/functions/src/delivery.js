@@ -56,7 +56,11 @@ export function regionalObjectGeneration(packageId, packageData) {
       ? { valid: false, generation: null }
       : { valid: true, generation: null };
   }
-  const generation = String(value);
+  // Generation is a 64-bit object identity, never a Firestore float.
+  if (typeof value !== "string") {
+    return { valid: false, generation: null };
+  }
+  const generation = value;
   if (!/^[1-9][0-9]{0,19}$/.test(generation)) {
     return { valid: false, generation: null };
   }
