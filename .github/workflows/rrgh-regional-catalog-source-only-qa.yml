@@ -45,8 +45,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install pinned backend runtime dependencies
-        run: npm ci --prefix backend/functions --no-audit --no-fund
+      - name: Install pinned dependencies (repository has no backend package lockfile)
+        run: npm install --prefix backend/functions --no-audit --no-fund --ignore-scripts
       - name: Check backend syntax and run bounded download unit tests only
         run: |
           node --check backend/functions/src/delivery.js
