@@ -6,6 +6,7 @@ import { ALLOWED_OPERATIONS } from "./domain.js";
 import { leaseSignerForRuntime } from "./offlineLease.js";
 import {
   createProtectedPackageDelivery,
+  capabilityMatchesCurrentObject,
   MAX_PROXY_RANGE_BYTES,
   parseBearerToken,
   resolvePackageCapability,
@@ -168,7 +169,8 @@ export const rrghPackageDownload = onRequest(
       packageData.version !== capability.packageVersion ||
       packageData.requiredEntitlement !== capability.requiredEntitlement ||
       packageData.storageBucket !== capability.storageBucket ||
-      packageData.objectName !== capability.objectName
+      packageData.objectName !== capability.objectName ||
+      !capabilityMatchesCurrentObject(packageData, capability)
     ) {
       packageError(res, 409, "package_version_superseded");
       return;

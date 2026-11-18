@@ -40,6 +40,50 @@ function objectMetadataValue(metadata, key) {
   return metadata?.metadata?.[key] ?? null;
 }
 
+const REGIONAL_PACKAGE_ID = /^(?:gorge-core|gorge-aerial-leaf-on|gorge-aerial-leaf-off)(?:-|$)/;
+
+/**
+ * The verified 2026 regional producer pins a unique immutable object
+ * generation in each inactive catalog candidate. Do not authorize that
+ * generationless catalog or coerce its (potentially 64-bit) ID to Number.
+ * Legacy route/gorge-base records can remain generationless for compatibility.
+ */
+export function regionalObjectGeneration(packageId, packageData) {
+  const required = REGIONAL_PACKAGE_ID.test(packageId);
+  const value = packageData?.objectGeneration;
+  if (value == null || value === "") {
+    return required
+      ? { valid: false, generation: null }
+      : { valid: true, generation: null };
+  }
+  // Generation is a 64-bit object identity, never a Firestore float.
+  if (typeof value !== "string") {
+    return { valid: false, generation: null };
+  }
+  const generation = value;
+  if (!/^[1-9][0-9]{0,19}$/.test(generation)) {
+    return { valid: false, generation: null };
+  }
+  return { valid: true, generation };
+}
+
+/** A stale 5-minute capability cannot follow a replacement catalog object. */
+export function capabilityMatchesCurrentObject(packageData, capability) {
+  const generationPin = regionalObjectGeneration(capability.packageId, packageData);
+  if (!generationPin.valid) return false;
+  return String(packageData.objectGeneration ?? "") ===
+      String(capability.objectGeneration ?? "") &&
+    (capability.packageSha256 == null ||
+      packageData.sha256 === capability.packageSha256) &&
+    (capability.packageByteCount == null ||
+      Number(packageData.byteCount) === capability.packageByteCount) &&
+    // New regional capabilities MUST carry all three object identity fields.
+    (!REGIONAL_PACKAGE_ID.test(capability.packageId) ||
+      (capability.objectGeneration === generationPin.generation &&
+        capability.packageSha256 === packageData.sha256 &&
+        capability.packageByteCount === Number(packageData.byteCount)));
+}
+
 export async function validatePackageObject(
   packageId,
   packageData,
@@ -56,8 +100,19 @@ export async function validatePackageObject(
     return { ready: false, reason: "package_object_unavailable" };
   }
 
+  const generationPin = regionalObjectGeneration(packageId, packageData);
+  if (!generationPin.valid) {
+    return { ready: false, reason: "package_object_mismatch" };
+  }
+
   try {
-    const file = storage.bucket(bucketName).file(objectName);
+    // Pin the immutable generation in the File handle itself: every resumed
+    // 8 MiB range must read the exact object validated by the catalog.
+    const file = generationPin.generation === null
+      ? storage.bucket(bucketName).file(objectName)
+      : storage.bucket(bucketName).file(objectName, {
+        generation: generationPin.generation,
+      });
     const [metadata] = await file.getMetadata();
     const expectedByteCount = Number(packageData.byteCount);
     const actualByteCount = Number(metadata.size);
@@ -72,6 +127,8 @@ export async function validatePackageObject(
       !Number.isSafeInteger(expectedByteCount) ||
       expectedByteCount <= 0 ||
       actualByteCount !== expectedByteCount ||
+      (generationPin.generation !== null &&
+        String(metadata.generation ?? "") !== generationPin.generation) ||
       !expectedSha256 ||
       objectSha256 !== expectedSha256 ||
       objectPackageId !== packageId ||
@@ -84,6 +141,7 @@ export async function validatePackageObject(
       ready: true,
       file,
       metadata,
+      objectGeneration: generationPin.generation,
     };
   } catch (error) {
     if (error?.code === 404) {
@@ -133,6 +191,11 @@ export async function createProtectedPackageDelivery({
     requiredEntitlement: packageData.requiredEntitlement,
     storageBucket: packageData.storageBucket,
     objectName: packageData.objectName,
+    // Immutable regional object identity survives each capability renewal;
+    // do not allow an old capability to follow a catalog replacement.
+    objectGeneration: object.objectGeneration,
+    packageSha256: packageData.sha256,
+    packageByteCount: Number(packageData.byteCount),
     issuedAt: now,
     expiresAt,
     state: "active",
