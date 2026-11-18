@@ -32,7 +32,7 @@ jobs:
   deploy-and-verify:
     # A one-time READ-ONLY audit merge must never redeploy any backend functions,
     # rebuild Gorge Base, upload packages or mutate a Firestore catalog.
-    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message, '[regional-readonly-verification]') || startsWith(github.event.head_commit.message, '[regional-inactive-stage]'))) }}
+    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message, '[regional-readonly-verification]') || startsWith(github.event.head_commit.message, '[regional-inactive-stage]') || startsWith(github.event.head_commit.message, '[regional-functions-deploy]'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -478,3 +478,75 @@ jobs:
         if: always()
         shell: bash
         run: rm -f "$RUNNER_TEMP/rrgh-regional-inactive-plan.json"
+
+  regional-core-functions-deploy:
+    # Upgrade ONLY two existing nonproduction Functions to generation-pinned
+    # regional object reads. No map generation, bucket/object writes, catalog
+    # mutations, Firestore rule changes, IAM changes or public activation.
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/backend/phase-3-nonprod' &&
+      github.run_attempt == 1 &&
+      startsWith(github.event.head_commit.message, '[regional-functions-deploy]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Recheck exact generation-pinned code and baseline guardrails
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check backend/functions/src/delivery.js
+          node --check backend/functions/src/index.js
+          node backend/scripts/phase3-readiness.mjs
+      - name: Install existing Functions dependencies without other build steps
+        run: npm install --prefix backend/functions --no-audit --no-fund
+      - name: Re-execute existing Firebase emulator security and contract suite
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@15.30.2 emulators:exec
+          --project demo-rrgh-entitlements
+          --only auth,firestore,functions,storage
+          "npm --prefix functions test"
+      - name: Authenticate using established nonproduction WIF service account
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: rrgh-nonproduction
+      - name: Update existing rrghAccountApi and rrghPackageDownload ONLY
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes firebase-tools@15.30.2 deploy \
+            --project rrgh-nonproduction \
+            --only functions:rrgh-account:rrghAccountApi,functions:rrgh-account:rrghPackageDownload \
+            --non-interactive
+      - name: Verify both existing nonproduction functions are ACTIVE
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in rrghAccountApi rrghPackageDownload; do
+            state="$(gcloud functions describe "$f" --gen2 --region=us-east5 --project=rrgh-nonproduction --format='value(state)')"
+            test "$state" = "ACTIVE"
+            echo "FUNCTION_DEPLOYED_ACTIVE=$f"
+          done
