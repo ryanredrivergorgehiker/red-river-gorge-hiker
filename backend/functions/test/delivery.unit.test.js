@@ -6,6 +6,8 @@ import {
   hashCapabilityToken,
   parseBearerToken,
   resolveProtectedPackageRange,
+  regionalObjectGeneration,
+  validatePackageObject,
 } from "../src/delivery.js";
 
 test("package capability TTL is frozen at five minutes", () => {
@@ -105,4 +107,112 @@ test("range contract rejects oversized or invalid requests", () => {
     beyond.reason,
     "range_not_satisfiable",
   );
+});
+
+
+function syntheticRegionalStorage(metadata) {
+  const requests = [];
+  return {
+    requests,
+    storage: {
+      bucket(bucket) {
+        return {
+          file(object, options) {
+            requests.push({ bucket, object, options: options ?? null });
+            return { getMetadata: async () => [metadata] };
+          },
+        };
+      },
+    },
+  };
+}
+
+function genuineShape(overrides = {}) {
+  return {
+    storageBucket: "rrgh-nonproduction-protected-packages",
+    objectName: "engineering/map-production/plans/sha/slots/00001/verified.bin",
+    objectGeneration: "1794960002423784",
+    byteCount: 1024,
+    sha256: "a".repeat(64),
+    version: "2026.11.10.regional.abc123",
+    ...overrides,
+  };
+}
+
+test("regional candidate generation is mandatory, canonical and not rounded", () => {
+  const missing = regionalObjectGeneration("gorge-core", genuineShape({
+    objectGeneration: undefined,
+  }));
+  assert.equal(missing.valid, false);
+  assert.equal(
+    regionalObjectGeneration("gorge-core-" + "a".repeat(64), genuineShape({
+      objectGeneration: "",
+    })).valid,
+    false,
+  );
+  assert.equal(
+    regionalObjectGeneration("gorge-aerial-leaf-on", genuineShape({
+      objectGeneration: "0",
+    })).valid,
+    false,
+  );
+  assert.equal(
+    regionalObjectGeneration("gorge-aerial-leaf-off", genuineShape({
+      objectGeneration: "1.25",
+    })).valid,
+    false,
+  );
+  assert.deepEqual(
+    regionalObjectGeneration("gorge-core", genuineShape({
+      objectGeneration: "18446744073709551615",
+    })),
+    { valid: true, generation: "18446744073709551615" },
+  );
+  assert.deepEqual(
+    regionalObjectGeneration("route-rte-0001", { objectGeneration: undefined }),
+    { valid: true, generation: null },
+  );
+});
+
+test("verified regional object metadata and every range bind the same generation", async () => {
+  const pkg = genuineShape();
+  const metadata = {
+    size: "1024",
+    generation: pkg.objectGeneration,
+    metadata: {
+      "rrgh-sha256": pkg.sha256,
+      "rrgh-package-id": "gorge-core",
+      "rrgh-version": pkg.version,
+    },
+  };
+  const fake = syntheticRegionalStorage(metadata);
+  const accepted = await validatePackageObject("gorge-core", pkg, fake.storage);
+  assert.equal(accepted.ready, true);
+  assert.equal(accepted.objectGeneration, pkg.objectGeneration);
+  assert.deepEqual(fake.requests, [{
+    bucket: pkg.storageBucket,
+    object: pkg.objectName,
+    options: { generation: pkg.objectGeneration },
+  }]);
+  // This file is the generation-pinned handle used by createReadStream.
+  assert.ok(accepted.file);
+
+  const replaced = syntheticRegionalStorage({
+    ...metadata, generation: "1794960002423785",
+  });
+  const rejected = await validatePackageObject("gorge-core", pkg, replaced.storage);
+  assert.deepEqual(rejected, {
+    ready: false, reason: "package_object_mismatch",
+  });
+});
+
+test("regional download fails before object read if pin is absent or malformed", async () => {
+  for (const bad of [null, "", "0", "00017", "fake"]) {
+    const pkg = genuineShape({ objectGeneration: bad });
+    const fake = syntheticRegionalStorage({});
+    const result = await validatePackageObject("gorge-core", pkg, fake.storage);
+    assert.equal(result.ready, false);
+    assert.equal(result.reason, "package_object_mismatch");
+    assert.equal(fake.requests.length, 0);
+  }
 });
