@@ -7,6 +7,7 @@ import {
   parseBearerToken,
   resolveProtectedPackageRange,
   regionalObjectGeneration,
+  capabilityMatchesCurrentObject,
   validatePackageObject,
 } from "../src/delivery.js";
 
@@ -215,4 +216,40 @@ test("regional download fails before object read if pin is absent or malformed",
     assert.equal(result.reason, "package_object_mismatch");
     assert.equal(fake.requests.length, 0);
   }
+});
+
+test("stale regional capability cannot read a changed generation, hash or length", () => {
+  const pkg = genuineShape();
+  const cap = {
+    packageId: "gorge-core",
+    objectGeneration: pkg.objectGeneration,
+    packageSha256: pkg.sha256,
+    packageByteCount: pkg.byteCount,
+  };
+  assert.equal(capabilityMatchesCurrentObject(pkg, cap), true);
+  assert.equal(capabilityMatchesCurrentObject(
+    genuineShape({ objectGeneration: "1794960002423785" }), cap
+  ), false);
+  assert.equal(capabilityMatchesCurrentObject(
+    genuineShape({ sha256: "b".repeat(64) }), cap
+  ), false);
+  assert.equal(capabilityMatchesCurrentObject(
+    genuineShape({ byteCount: 1025 }), cap
+  ), false);
+  assert.equal(capabilityMatchesCurrentObject(pkg, {
+    ...cap, objectGeneration: null,
+  }), false);
+  assert.equal(capabilityMatchesCurrentObject(pkg, {
+    ...cap, packageSha256: null,
+  }), false);
+  assert.equal(capabilityMatchesCurrentObject(pkg, {
+    ...cap, packageByteCount: null,
+  }), false);
+  // Old route catalog, which predates the new regional generation pin,
+  // retains the existing short-lived capability behavior.
+  assert.equal(capabilityMatchesCurrentObject({
+    objectGeneration: undefined,
+    sha256: pkg.sha256,
+    byteCount: pkg.byteCount,
+  }, { packageId: "route-rte-0001" }), true);
 });
