@@ -63,6 +63,23 @@ export function regionalObjectGeneration(packageId, packageData) {
   return { valid: true, generation };
 }
 
+/** A stale 5-minute capability cannot follow a replacement catalog object. */
+export function capabilityMatchesCurrentObject(packageData, capability) {
+  const generationPin = regionalObjectGeneration(capability.packageId, packageData);
+  if (!generationPin.valid) return false;
+  return String(packageData.objectGeneration ?? "") ===
+      String(capability.objectGeneration ?? "") &&
+    (capability.packageSha256 == null ||
+      packageData.sha256 === capability.packageSha256) &&
+    (capability.packageByteCount == null ||
+      Number(packageData.byteCount) === capability.packageByteCount) &&
+    // New regional capabilities MUST carry all three object identity fields.
+    (!REGIONAL_PACKAGE_ID.test(capability.packageId) ||
+      (capability.objectGeneration === generationPin.generation &&
+        capability.packageSha256 === packageData.sha256 &&
+        capability.packageByteCount === Number(packageData.byteCount)));
+}
+
 export async function validatePackageObject(
   packageId,
   packageData,
