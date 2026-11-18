@@ -15,6 +15,8 @@ on:
       - backend/scripts/test_prepare_inactive_regional_catalog_staging_20261118.py
       - backend/scripts/verify_remote_regional_candidate_readonly_20261118.py
       - backend/scripts/test_verify_remote_regional_candidate_readonly_20261118.py
+      - backend/scripts/insert_inactive_regional_catalog_nonprod_20261118.py
+      - backend/scripts/test_insert_inactive_regional_catalog_nonprod_20261118.py
       - .github/workflows/rrgh-regional-catalog-source-only-qa.yml
 
 permissions:
@@ -35,10 +37,11 @@ jobs:
           persist-credentials: false
       - name: Run source-only regional structural catalog unit tests (no GCS)
         run: |
-          python3 -m py_compile backend/scripts/preflight_verified_regional_catalog_20261118.py backend/scripts/test_preflight_verified_regional_catalog_20261118.py backend/scripts/prepare_inactive_regional_catalog_staging_20261118.py backend/scripts/test_prepare_inactive_regional_catalog_staging_20261118.py backend/scripts/verify_remote_regional_candidate_readonly_20261118.py backend/scripts/test_verify_remote_regional_candidate_readonly_20261118.py
+          python3 -m py_compile backend/scripts/preflight_verified_regional_catalog_20261118.py backend/scripts/test_preflight_verified_regional_catalog_20261118.py backend/scripts/prepare_inactive_regional_catalog_staging_20261118.py backend/scripts/test_prepare_inactive_regional_catalog_staging_20261118.py backend/scripts/verify_remote_regional_candidate_readonly_20261118.py backend/scripts/test_verify_remote_regional_candidate_readonly_20261118.py backend/scripts/insert_inactive_regional_catalog_nonprod_20261118.py backend/scripts/test_insert_inactive_regional_catalog_nonprod_20261118.py
           python3 -m unittest discover -s backend/scripts -p 'test_preflight_verified_regional_catalog_20261118.py' -v
           python3 -m unittest discover -s backend/scripts -p 'test_prepare_inactive_regional_catalog_staging_20261118.py' -v
           python3 -m unittest discover -s backend/scripts -p 'test_verify_remote_regional_candidate_readonly_20261118.py' -v
+          python3 -m unittest discover -s backend/scripts -p 'test_insert_inactive_regional_catalog_nonprod_20261118.py' -v
   immutable-download-unit:
     runs-on: ubuntu-latest
     timeout-minutes: 8
