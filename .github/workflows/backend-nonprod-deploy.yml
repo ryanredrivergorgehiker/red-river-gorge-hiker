@@ -32,7 +32,7 @@ jobs:
   deploy-and-verify:
     # A one-time READ-ONLY audit merge must never redeploy any backend functions,
     # rebuild Gorge Base, upload packages or mutate a Firestore catalog.
-    if: ${{ !(github.event_name == 'push' && startsWith(github.event.head_commit.message, '[regional-readonly-verification]')) }}
+    if: ${{ !(github.event_name == 'push' && (startsWith(github.event.head_commit.message, '[regional-readonly-verification]') || startsWith(github.event.head_commit.message, '[regional-inactive-stage]'))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
 
@@ -397,3 +397,84 @@ jobs:
         shell: bash
         run: |
           echo "AUDIT_FINISHED_NO_GCS_WRITES_NO_FIRESTORE_WRITES_NO_ARCHIVES_FETCHED"
+
+  regional-core-inactive-stage:
+    # Already-authorized INACTIVE nonproduction stage. Strictly separate from
+    # public/customer activation, producer and existing backend deployments.
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'ryanredrivergorgehiker/red-river-gorge-hiker' &&
+      github.ref == 'refs/heads/backend/phase-3-nonprod' &&
+      github.run_attempt == 1 &&
+      startsWith(github.event.head_commit.message, '[regional-inactive-stage]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout fixed protected controller without production dispatch
+        uses: actions/checkout@v4
+        with:
+          ref: 274364a5b0b67000dcdd45b03b777c96d6cb315a
+          path: protected-controller
+          persist-credentials: false
+
+      - name: Checkout exact independently tested private candidate stage source
+        uses: actions/checkout@v4
+        with:
+          ref: 223a0579529732c70fc56753f4638ed95e02d7a7
+          path: verifier-source
+          persist-credentials: false
+
+      - name: Enforce unchanged source, catalog authority and no-write unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C protected-controller hash-object .github/automation/rrgh-controller-state.json)" = "04bd859c55d981cbacdc259ea59ba8d4ae12e459"
+          test "$(git -C verifier-source rev-parse HEAD)" = "223a0579529732c70fc56753f4638ed95e02d7a7"
+          cd verifier-source
+          python3 -m unittest discover -s backend/scripts -p 'test_verify_remote_regional_candidate_readonly_20261118.py' -q
+          python3 -m unittest discover -s backend/scripts -p 'test_insert_inactive_regional_catalog_nonprod_20261118.py' -q
+          cd ..
+
+      - name: Authenticate as existing nonproduction deploy identity (no new IAM)
+        id: stage-auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: rrgh-nonproduction
+          workload_identity_provider: projects/843975209563/locations/global/workloadIdentityPools/github-actions/providers/rrgh-nonprod
+          service_account: github-deploy@rrgh-nonproduction.iam.gserviceaccount.com
+          create_credentials_file: false
+          export_environment_variables: false
+          token_format: access_token
+          access_token_lifetime: 600s
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+
+      - name: Reverify full immutable 131-read source and construct LOCAL PRIVATE inactive plan
+        shell: bash
+        env:
+          RRGH_GCS_READONLY_TOKEN: ${{ steps.stage-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$RRGH_GCS_READONLY_TOKEN"
+          umask 077
+          python3 verifier-source/backend/scripts/verify_remote_regional_candidate_readonly_20261118.py \
+            --controller protected-controller/.github/automation/rrgh-controller-state.json \
+            --private-staging-output "$RUNNER_TEMP/rrgh-regional-inactive-plan.json"
+          test -f "$RUNNER_TEMP/rrgh-regional-inactive-plan.json"
+
+      - name: Atomically INSERT 125 INACTIVE private nonproduction Firestore docs only
+        shell: bash
+        env:
+          RRGH_GOOGLE_ACCESS_TOKEN: ${{ steps.stage-auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          test -n "$RRGH_GOOGLE_ACCESS_TOKEN"
+          python3 verifier-source/backend/scripts/insert_inactive_regional_catalog_nonprod_20261118.py \
+            --private-stage-plan "$RUNNER_TEMP/rrgh-regional-inactive-plan.json"
+
+      - name: Delete private local candidate path listing even after failure
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/rrgh-regional-inactive-plan.json"
