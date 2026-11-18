@@ -1,0 +1,54 @@
+name: Lane20 verified regional catalog — SOURCE ONLY QA
+on:
+  push:
+    branches:
+      - lane20/nonprod-regional-catalog-generation-gate-20261118
+    paths:
+      - backend/functions/src/delivery.js
+      - backend/functions/src/index.js
+      - backend/functions/test/delivery.unit.test.js
+      - backend/functions/package.json
+      - backend/functions/package-lock.json
+      - backend/scripts/preflight_verified_regional_catalog_20261118.py
+      - backend/scripts/test_preflight_verified_regional_catalog_20261118.py
+      - .github/workflows/rrgh-regional-catalog-source-only-qa.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lane20-regional-catalog-source-only-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  catalog-preflight-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Source checkout without persisted GitHub credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run source-only regional structural catalog unit tests (no GCS)
+        run: |
+          python3 -m py_compile backend/scripts/preflight_verified_regional_catalog_20261118.py backend/scripts/test_preflight_verified_regional_catalog_20261118.py
+          python3 -m unittest discover -s backend/scripts -p 'test_preflight_verified_regional_catalog_20261118.py' -v
+  immutable-download-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Source checkout without persisted GitHub credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node 22 without cloud credentials
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned backend runtime dependencies
+        run: npm ci --prefix backend/functions --no-audit --no-fund
+      - name: Check backend syntax and run bounded download unit tests only
+        run: |
+          node --check backend/functions/src/delivery.js
+          node --check backend/functions/src/index.js
+          node --test backend/functions/test/delivery.unit.test.js
