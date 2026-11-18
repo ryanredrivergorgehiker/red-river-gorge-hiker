@@ -6,6 +6,7 @@ import { ALLOWED_OPERATIONS } from "./domain.js";
 import { leaseSignerForRuntime } from "./offlineLease.js";
 import {
   createProtectedPackageDelivery,
+  capabilityMatchesCurrentObject,
   MAX_PROXY_RANGE_BYTES,
   parseBearerToken,
   resolvePackageCapability,
@@ -169,14 +170,7 @@ export const rrghPackageDownload = onRequest(
       packageData.requiredEntitlement !== capability.requiredEntitlement ||
       packageData.storageBucket !== capability.storageBucket ||
       packageData.objectName !== capability.objectName ||
-      // A renewed regional object must invalidate the old capability even
-      // when its human-facing version or storage object name is unchanged.
-      String(packageData.objectGeneration ?? "") !==
-        String(capability.objectGeneration ?? "") ||
-      (capability.packageSha256 != null &&
-        packageData.sha256 !== capability.packageSha256) ||
-      (capability.packageByteCount != null &&
-        Number(packageData.byteCount) !== capability.packageByteCount)
+      !capabilityMatchesCurrentObject(packageData, capability)
     ) {
       packageError(res, 409, "package_version_superseded");
       return;
