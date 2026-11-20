@@ -10,6 +10,38 @@ EAST="-83.40"
 NORTH="37.95"
 RETRIEVED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
+# Offline-only v4 repackage of a previously verified approved native v3
+# extraction. This exits BEFORE the old remote v3 builder's downloads,
+# `rm -rf`, and upstream TIFF dependency, and never deploys any bytes.
+if [[ -n "${RRGH_V4_APPROVED_V3_ROOT:-}" || -n "${RRGH_V4_APPROVED_XYZ_ROOT:-}" ]]; then
+  : "${RRGH_V4_APPROVED_V3_ROOT:?Provide the immutable approved v3 extracted root}"
+  : "${RRGH_V4_APPROVED_XYZ_ROOT:?Provide preapproved complete local XYZ tiles}"
+  : "${RRGH_V4_PACKAGE_VERSION:?Provide a distinct approved v4 immutable version}"
+  if [[ "$RRGH_V4_PACKAGE_VERSION" == "$PACKAGE_VERSION" ]]; then
+    echo "A schema-4 candidate must NOT reuse the currently published package version" >&2
+    exit 1
+  fi
+  command -v python3 >/dev/null || {
+    echo "Python3 required" >&2
+    exit 1
+  }
+  if [[ -e "$OUTPUT_DIR" && ! -d "$OUTPUT_DIR" ]]; then
+    echo "Refusing unsafe output destination" >&2
+    exit 1
+  fi
+  mkdir -p "$OUTPUT_DIR"
+  V4_PACKAGE="$OUTPUT_DIR/gorge-base-$RRGH_V4_PACKAGE_VERSION.rrghpkg"
+  python3 "$(dirname "${BASH_SOURCE[0]}")/build_gorge_base_native_v4.py" \
+    --approved-v3-root "$RRGH_V4_APPROVED_V3_ROOT" \
+    --approved-xyz-root "$RRGH_V4_APPROVED_XYZ_ROOT" \
+    --output-rrghpkg "$V4_PACKAGE" \
+    --new-version "$RRGH_V4_PACKAGE_VERSION" \
+    --min-zoom "${RRGH_V4_MIN_ZOOM:-10}" \
+    --max-zoom "${RRGH_V4_MAX_ZOOM:-16}"
+  echo "Private source-verified v4 CANDIDATE only; no deployment or catalog grant."
+  exit 0
+fi
+
 ROOT="$OUTPUT_DIR/root"
 DOWNLOADS="$OUTPUT_DIR/downloads"
 MANIFEST="$OUTPUT_DIR/gorge-base-manifest.json"
