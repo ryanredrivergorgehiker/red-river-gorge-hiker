@@ -41,7 +41,7 @@ jobs:
           ref: ${{ steps.handoff.outputs.source }}
           path: source-checkout
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: steps.handoff.outputs.active == 'true'
         with:
           python-version: '3.12'
