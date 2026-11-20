@@ -1,0 +1,413 @@
+{
+  "byLayerZoom": [
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 4,
+      "required": 4,
+      "verified": 0,
+      "zoom": 10
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 9,
+      "required": 9,
+      "verified": 0,
+      "zoom": 11
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 30,
+      "required": 30,
+      "verified": 0,
+      "zoom": 12
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 90,
+      "required": 90,
+      "verified": 0,
+      "zoom": 13
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 342,
+      "required": 342,
+      "verified": 0,
+      "zoom": 14
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 1294,
+      "required": 1295,
+      "verified": 1,
+      "zoom": 15
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 4721,
+      "required": 5180,
+      "verified": 459,
+      "zoom": 16
+    },
+    {
+      "group": "core",
+      "layer": "hiking",
+      "missing": 18458,
+      "required": 20294,
+      "verified": 1836,
+      "zoom": 17
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 4,
+      "required": 4,
+      "verified": 0,
+      "zoom": 10
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 9,
+      "required": 9,
+      "verified": 0,
+      "zoom": 11
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 30,
+      "required": 30,
+      "verified": 0,
+      "zoom": 12
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 90,
+      "required": 90,
+      "verified": 0,
+      "zoom": 13
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 342,
+      "required": 342,
+      "verified": 0,
+      "zoom": 14
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 1295,
+      "required": 1295,
+      "verified": 0,
+      "zoom": 15
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 5003,
+      "required": 5180,
+      "verified": 177,
+      "zoom": 16
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 19586,
+      "required": 20294,
+      "verified": 708,
+      "zoom": 17
+    },
+    {
+      "group": "leaf-off",
+      "layer": "leaf-off",
+      "missing": 78344,
+      "required": 81176,
+      "verified": 2832,
+      "zoom": 18
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 4,
+      "required": 4,
+      "verified": 0,
+      "zoom": 10
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 9,
+      "required": 9,
+      "verified": 0,
+      "zoom": 11
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 30,
+      "required": 30,
+      "verified": 0,
+      "zoom": 12
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 90,
+      "required": 90,
+      "verified": 0,
+      "zoom": 13
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 342,
+      "required": 342,
+      "verified": 0,
+      "zoom": 14
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 1295,
+      "required": 1295,
+      "verified": 0,
+      "zoom": 15
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 28,
+      "required": 5180,
+      "verified": 5152,
+      "zoom": 16
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 112,
+      "required": 20294,
+      "verified": 20182,
+      "zoom": 17
+    },
+    {
+      "group": "leaf-on",
+      "layer": "leaf-on",
+      "missing": 448,
+      "required": 81176,
+      "verified": 80728,
+      "zoom": 18
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 4,
+      "required": 4,
+      "verified": 0,
+      "zoom": 10
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 9,
+      "required": 9,
+      "verified": 0,
+      "zoom": 11
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 30,
+      "required": 30,
+      "verified": 0,
+      "zoom": 12
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 90,
+      "required": 90,
+      "verified": 0,
+      "zoom": 13
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 342,
+      "required": 342,
+      "verified": 0,
+      "zoom": 14
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 1294,
+      "required": 1295,
+      "verified": 1,
+      "zoom": 15
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 5005,
+      "required": 5180,
+      "verified": 175,
+      "zoom": 16
+    },
+    {
+      "group": "core",
+      "layer": "terrain",
+      "missing": 19594,
+      "required": 20294,
+      "verified": 700,
+      "zoom": 17
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 4,
+      "required": 4,
+      "verified": 0,
+      "zoom": 10
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 9,
+      "required": 9,
+      "verified": 0,
+      "zoom": 11
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 30,
+      "required": 30,
+      "verified": 0,
+      "zoom": 12
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 90,
+      "required": 90,
+      "verified": 0,
+      "zoom": 13
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 342,
+      "required": 342,
+      "verified": 0,
+      "zoom": 14
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 1295,
+      "required": 1295,
+      "verified": 0,
+      "zoom": 15
+    },
+    {
+      "group": "core",
+      "layer": "usgs-topo",
+      "missing": 1,
+      "required": 5180,
+      "verified": 5179,
+      "zoom": 16
+    }
+  ],
+  "completionBasis": "tile positions, not geographic area or package/device completion",
+  "deliveryStatus": "not_verified",
+  "deviceAcceptance": "not_tested",
+  "format": "rrgh-offline-inventory-summary-v1",
+  "geographicAreaPercent": null,
+  "historicalBytesReread": false,
+  "manifestRevision": "e8894db8837dea7faec947f09f30a5fbf988c7c659a99502222010a8863f3b62",
+  "outsideScopeAcceptedPreserved": 0,
+  "overviewMissing": 8848,
+  "planSHA256": "982bf03c6053808daeb55929cd33d6ed1f1bf00c11d0de1ba247fbb742b73833",
+  "predecessorReceipt": {
+    "bytes": 1541,
+    "generation": "1793626999921506",
+    "key": "engineering/map-production/plans/419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215/slots/00002/receipt.json",
+    "sha256": "ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea"
+  },
+  "productionTriggered": false,
+  "required": 278278,
+  "requiredManifestSHA256": "bef34f7e982d9651f7e092bbb48b5e48bf4c335060ab905aba2896eb5845945e",
+  "scopeStatus": "provisional",
+  "sourceSHA": "ec635afb75db606879ac95c7d2730ad899d54bb3",
+  "spec": {
+    "approvalReference": null,
+    "boundaryExplanation": "Preserve the existing producer's inclusive floored corner XYZ grid. East/south corners on a tile boundary include that boundary tile. Required tile extents may extend outside the rectangle. This is a tile denominator, not an area percentage.",
+    "boundaryRule": "inclusive-floor-corner-xyz-v1",
+    "boundsWGS84": [
+      -83.8,
+      37.65,
+      -83.4,
+      37.95
+    ],
+    "coreSupportingGroups": [
+      "sunlight",
+      "vectors",
+      "weather",
+      "shared-offline-dependencies"
+    ],
+    "countyContextOnly": [
+      "Breathitt",
+      "Estill",
+      "Lee",
+      "Menifee",
+      "Montgomery",
+      "Morgan",
+      "Powell",
+      "Wolfe"
+    ],
+    "format": "rrgh-required-xyz-v1",
+    "geographicRequirementVersion": "documented-production-rectangle-20261102-v1",
+    "profiles": {
+      "hiking": {
+        "group": "core",
+        "maxZoom": 17,
+        "minZoom": 10
+      },
+      "leaf-off": {
+        "group": "leaf-off",
+        "maxZoom": 18,
+        "minZoom": 10
+      },
+      "leaf-on": {
+        "group": "leaf-on",
+        "maxZoom": 18,
+        "minZoom": 10
+      },
+      "terrain": {
+        "group": "core",
+        "maxZoom": 17,
+        "minZoom": 10
+      },
+      "usgs-topo": {
+        "group": "core",
+        "maxZoom": 16,
+        "minZoom": 10
+      }
+    },
+    "scopeStatus": "provisional",
+    "sourceReference": "backend/scripts/forecast_gorge_checkpoint_campaign.py@ec635afb75db606879ac95c7d2730ad899d54bb3"
+  },
+  "supportingAssets": "Sunlight 320 historical assets; vectors/weather/shared dependency membership unverified",
+  "verified": 118130
+}

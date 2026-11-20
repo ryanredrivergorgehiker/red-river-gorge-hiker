@@ -1,0 +1,25 @@
+{
+  "activeRuns": null,
+  "allProducerEntryPointsEnumerated": false,
+  "authentication": {
+    "cloudProbePassed": false,
+    "sourceGuardPassed": false
+  },
+  "checkpoint": {
+    "bytes": 1541,
+    "generation": "1793626999921506",
+    "key": "engineering/map-production/plans/419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215/slots/00002/receipt.json",
+    "sha256": "ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea"
+  },
+  "format": "rrgh-controller-cutover-v1",
+  "knownBlockers": [
+    "Current production source requires original push workflow identity.",
+    "Existing replacement dispatch was previously denied by STS; current policy has not been independently re-read here.",
+    "No legacy fence or replacement ownership has been activated.",
+    "GitHub billing snapshot in Wave058 is dated 2026-10-30; fresh activation evidence is required."
+  ],
+  "legacyInitiationFenced": false,
+  "observedAt": null,
+  "productionTriggered": false,
+  "repository": "ryanredrivergorgehiker/red-river-gorge-hiker"
+}

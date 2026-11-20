@@ -1,0 +1,57 @@
+{
+  "acceptedJobs": 11144,
+  "acceptedRasterTiles": 118130,
+  "dispatchAuthorized": false,
+  "failedJobID": null,
+  "historicalExclusions": 45,
+  "jobsNew": 13,
+  "modeledCumulativeUSD": "11.92505885095891952514648438",
+  "modeledMonthlyStorageUSD": "0.7759602834396064281463623048",
+  "nextCarry": {
+    "chargedUSD": "11.92505885095891952514648438",
+    "priorCompletedJobs": 11144,
+    "priorRasterTiles": 118130,
+    "priorSunlightAssets": 320,
+    "storedBytes": 23143916947
+  },
+  "nextStep": "BILLING_GATE_REQUIRED",
+  "partialCompletedJobIDs": [],
+  "partialRecovered": false,
+  "planSHA256": "419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215",
+  "receiptGeneration": "1793626999921506",
+  "receiptRef": {
+    "bytes": 1541,
+    "generation": "1793626999921506",
+    "key": "engineering/map-production/plans/419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215/slots/00002/receipt.json",
+    "sha256": "ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea"
+  },
+  "receiptSHA256": "ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea",
+  "run": 41454631490,
+  "sourceCompletedJobIDs": [
+    "hiking-16-17566-25315",
+    "hiking-16-17567-25316",
+    "hiking-16-17561-25321",
+    "hiking-16-17563-25320",
+    "hiking-16-17562-25321",
+    "hiking-16-17560-25322",
+    "hiking-16-17560-25323",
+    "hiking-16-17564-25320",
+    "hiking-16-17565-25320",
+    "terrain-16-17543-25330",
+    "terrain-16-17542-25331",
+    "terrain-16-17541-25331",
+    "leaf-off-16-17550-25328"
+  ],
+  "sourcePixelGapJobs": [
+    "hiking-16-17565-25314",
+    "terrain-16-17538-25331",
+    "terrain-16-17539-25332",
+    "leaf-off-16-17548-25329",
+    "leaf-off-16-17549-25329",
+    "leaf-off-16-17544-25330",
+    "leaf-off-16-17544-25331"
+  ],
+  "sunlightAssets": 320,
+  "verified": true,
+  "wave": 57
+}

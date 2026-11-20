@@ -1,0 +1,23 @@
+{
+  "catalogSHA256": "fbffbb972a32e6b226519b94370443dc5e47d55759c2a85b55eeb6b993489193",
+  "counts": {
+    "hikingFullMetadataWindows": 5180,
+    "hikingMosaicWindows": 474,
+    "hikingRectangleIntersectionCovered": 5180,
+    "hikingWindows": 5180,
+    "leaf-offFullMetadataWindows": 5138,
+    "leaf-offMosaicWindows": 2900,
+    "leaf-offRectangleIntersectionCovered": 5180,
+    "leaf-offWindows": 5180,
+    "terrainFullMetadataWindows": 5138,
+    "terrainMosaicWindows": 2906,
+    "terrainRectangleIntersectionCovered": 5180,
+    "terrainWindows": 5180
+  },
+  "demUnitsConversionApplied": false,
+  "format": "rrgh-expanded-source-window-intake-v1",
+  "fullPixelCoverageProved": false,
+  "licenseReviewComplete": false,
+  "promotedToProduction": false,
+  "windowsSHA256": "06b3cd5ca600399dc2022c76ff64ff8241457561bf618c785e333c1547d7f4bd"
+}

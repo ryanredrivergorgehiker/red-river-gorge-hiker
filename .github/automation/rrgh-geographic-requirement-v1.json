@@ -1,0 +1,19 @@
+{
+  "format": "rrgh-required-xyz-v1",
+  "geographicRequirementVersion": "documented-production-rectangle-20261102-v1",
+  "scopeStatus": "provisional",
+  "approvalReference": null,
+  "sourceReference": "backend/scripts/forecast_gorge_checkpoint_campaign.py@ec635afb75db606879ac95c7d2730ad899d54bb3",
+  "boundsWGS84": [-83.8, 37.65, -83.4, 37.95],
+  "boundaryRule": "inclusive-floor-corner-xyz-v1",
+  "boundaryExplanation": "Preserve the existing producer's inclusive floored corner XYZ grid. East/south corners on a tile boundary include that boundary tile. Required tile extents may extend outside the rectangle. This is a tile denominator, not an area percentage.",
+  "profiles": {
+    "hiking": {"minZoom": 10, "maxZoom": 17, "group": "core"},
+    "terrain": {"minZoom": 10, "maxZoom": 17, "group": "core"},
+    "usgs-topo": {"minZoom": 10, "maxZoom": 16, "group": "core"},
+    "leaf-on": {"minZoom": 10, "maxZoom": 18, "group": "leaf-on"},
+    "leaf-off": {"minZoom": 10, "maxZoom": 18, "group": "leaf-off"}
+  },
+  "coreSupportingGroups": ["sunlight", "vectors", "weather", "shared-offline-dependencies"],
+  "countyContextOnly": ["Breathitt", "Estill", "Lee", "Menifee", "Montgomery", "Morgan", "Powell", "Wolfe"]
+}

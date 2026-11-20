@@ -1,0 +1,84 @@
+{
+  "evidenceOrigin": {
+    "job": 125310296745,
+    "kind": "recovery_report_fields_from_public_GitHub_job_log",
+    "note": "Receipt reference is preserved; this normalized report is not the raw GCS receipt payload.",
+    "rawProtectedReceiptDownloaded": false,
+    "run": 41454631490
+  },
+  "phase": "independent-recovery",
+  "receiptRef": {
+    "bytes": 1541,
+    "generation": "1793626999921506",
+    "key": "engineering/map-production/plans/419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215/slots/00002/receipt.json",
+    "sha256": "ec01fd3837dab8f0eb1a3a0dd4d45b44cde0d621d60c0b92afe32cf7f48a60ea"
+  },
+  "result": {
+    "allExistingCachesPreserved": true,
+    "allNewPackageChunksReadBack": true,
+    "allOutputHashesAndPixelsVerified": true,
+    "nextCarry": {
+      "chargedUSD": "11.92505885095891952514648438",
+      "priorCompletedJobs": 11144,
+      "priorRasterTiles": 118130,
+      "priorSunlightAssets": 320,
+      "storedBytes": 23143916947
+    },
+    "settlement": {
+      "ambiguousAllocationRetained": false,
+      "campaignID": "gorge-full-quality-125usd-20261031",
+      "ceilingUSD": "125.00",
+      "chargedUSD": "11.92505885095891952514648438",
+      "demonstrablyUnused": {
+        "attempts": 0,
+        "classARequests": 2936,
+        "classBRequests": 2905,
+        "egressBytes": 1939491977,
+        "seconds": 8002,
+        "sourceBytes": 31751077888,
+        "sourceRequests": 26340,
+        "storedBytes": 1605950754
+      },
+      "format": "rrgh-campaign-settlement-v1",
+      "historicalReleasedUSDRetained": "0.70",
+      "independentRecoveryComplete": true,
+      "invoiceReading": false,
+      "observedReservedUsage": {
+        "attempts": 20,
+        "classARequests": 64,
+        "classBRequests": 95,
+        "egressBytes": 207991671,
+        "seconds": 4298,
+        "sourceBytes": 2608660480,
+        "sourceRequests": 3660,
+        "storedBytes": 4661982
+      },
+      "originalAllocation": {
+        "attempts": 20,
+        "classARequests": 3000,
+        "classBRequests": 3000,
+        "egressBytes": 2147483648,
+        "seconds": 12300,
+        "sourceBytes": 34359738368,
+        "sourceRequests": 30000,
+        "storedBytes": 1610612736
+      },
+      "planSHA256": "419275b279777a2467ee2a05e6be3749f9013ef7d3175ca4a9dce3571af4e215",
+      "remainingAuthorityUSD": "113.0749411490410804748535156",
+      "retainedUsage": {
+        "attempts": 20,
+        "classARequests": 64,
+        "classBRequests": 95,
+        "egressBytes": 207991671,
+        "seconds": 4298,
+        "sourceBytes": 2608660480,
+        "sourceRequests": 3660,
+        "storedBytes": 4661982
+      },
+      "sequence": 57,
+      "storageEstimateUSDPerMonth": "0.7759602834396064281463623048",
+      "storedBytes": 23143916947
+    },
+    "status": "verified"
+  }
+}
